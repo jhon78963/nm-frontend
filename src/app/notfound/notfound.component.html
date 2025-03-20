@@ -1,0 +1,39 @@
+<div>
+  <div
+    class="flex align-items-center py-0 px-3 w-full z-2 px-5"
+    style="
+      height: 62px;
+      box-shadow: 0 10px 40px 0 rgb(41 50 65 / 6%);
+      background: var(--surface-card);
+    ">
+    <a id="logolink" [routerLink]="['/']">
+      <img src="assets/logo/logo3.png" alt="logo.svg" width="10%" />
+    </a>
+  </div>
+  <div
+    class="flex flex-column justify-content-center align-items-center px-4"
+    style="min-height: calc(100vh - 62px)">
+    <div
+      class="flex flex-column justify-content-center align-items-center text-center">
+      <img
+        src="assets/layout/images/pages/asset-404.svg"
+        alt="freya-layout"
+        style="margin-bottom: -150px; width: 332px; height: 271px" />
+      <span class="" style="font-size: 140px; line-height: 171px">404</span>
+      <span class="block text-300 text-center font-medium">
+        Parece que estas perdido.
+      </span>
+      <button
+        pButton
+        pRipple
+        type="button"
+        label="volver al inicio"
+        class="mt-4 font-medium p-button-lg"
+        [routerLink]="['/']">volver al inicio</button>
+    </div>
+    <div class="flex flex-wrap align-items-center pt-8 pb-4 px-4">
+      <h4 class="m-0 mr-5">DATA CODE</h4>
+      <h6 class="m-0 mt-1 text-300 font-medium">Copyright Ⓒ ZeroGroups</h6>
+    </div>
+  </div>
+</div>
