@@ -1,0 +1,28 @@
+<div
+  class="layout-sidebar"
+  (mouseenter)="onMouseEnter()"
+  (mouseleave)="onMouseLeave()">
+  <div class="sidebar-header">
+    <a [routerLink]="['/']" class="app-logo cursor-pointer">
+      <img
+        src="assets/logo/logo3.png"
+        width="100%"
+        style="height: 5rem; mix-blend-mode: multiply"
+        class="app-logo-normal"
+        alt="logo.png" />
+      <img
+        src="assets/logo/logo3.png"
+        class="app-logo-single h-2rem"
+        style="mix-blend-mode: multiply"
+        alt="logo.png" />
+    </a>
+    <button
+      class="layout-sidebar-anchor p-link"
+      type="button"
+      (click)="anchor()">asd</button>
+  </div>
+
+  <div #menuContainer class="layout-menu-container">
+    <app-menu></app-menu>
+  </div>
+</div>

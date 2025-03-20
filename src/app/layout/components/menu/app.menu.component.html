@@ -1,0 +1,9 @@
+<ul class="layout-menu">
+  <ng-container *ngFor="let item of model; let i = index">
+    <li *ngIf="!item.separator">
+      <a [routerLink]="item.route" *ngIf="item.route">{{ item.label }}</a>
+      <span *ngIf="!item.route">{{ item.label }}</span>
+    </li>
+    <li *ngIf="item.separator" class="menu-separator"></li>
+  </ng-container>
+</ul>

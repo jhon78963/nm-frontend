@@ -1,0 +1,65 @@
+<!-- eslint-disable @angular-eslint/template/click-events-have-key-events -->
+<!-- eslint-disable @angular-eslint/template/interactive-supports-focus -->
+<div class="layout-topbar">
+  <div class="topbar-start">
+    <button
+      #menubutton
+      type="button"
+      class="topbar-menubutton p-link p-trigger transition-duration-300"
+      (click)="onMenuButtonClick()">
+      <i class="pi pi-bars"></i>
+    </button>
+  </div>
+  <div class="layout-topbar-menu-section">
+    <app-sidebar></app-sidebar>
+  </div>
+  <div class="topbar-end flex align-items-center justify-content-end gap-3">
+    <!-- [disabled]="(countFacilities | async) !== 0"></button> -->
+    <ul class="topbar-menu">
+      <li class="topbar-item">
+        <a
+          pStyleClass="@next"
+          enterFromClass="ng-hidden"
+          enterActiveClass="px-scalein"
+          leaveToClass="ng-hidden"
+          leaveActiveClass="px-fadeout"
+          pRipple
+          class="cursor-pointer">
+          <img
+            class="border-round-xl"
+            [src]="
+              fakeImage
+                ? 'assets/layout/images/user-default.png'
+                : imgProfile || 'assets/layout/images/user-default.png'
+            "
+            alt="Profile" />
+        </a>
+        <ul
+          [class]="
+            'topbar-menu active-topbar-menu p-4 w-15rem   z-5 ng-hidden'
+          ">
+          <li role="menuitem" class="m-0 mb-3">
+            <a
+              routerLink="/profile"
+              class="flex align-items-center hover:text-primary-500 transition-duration-200"
+              pStyleClass="@grandparent"
+              enterFromClass="ng-hidden"
+              enterActiveClass="px-scalein"
+              leaveToClass="ng-hidden"
+              leaveActiveClass="px-fadeout">
+              <i class="pi pi-fw pi-user mr-2"></i>
+              <span>Perfíl</span>
+            </a>
+          </li>
+          <li
+            role="menuitem"
+            class="cursor-pointer hover:text-primary-500 transition-duration-200 m-0"
+            (click)="onLogout()">
+            <i class="pi pi-fw pi-sign-out mr-2"></i>
+            <span>Cerrar Sesión</span>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+</div>

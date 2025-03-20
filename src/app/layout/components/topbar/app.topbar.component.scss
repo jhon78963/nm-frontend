@@ -1,0 +1,32 @@
+::ng-deep {
+  .layout-topbar .topbar-menu {
+    padding: 0 1.15rem 0 0;
+
+    li.topbar-item {
+      margin-left: 0;
+    }
+  }
+
+  .bt-width {
+    width: 6rem;
+    font-size: 12px;
+  }
+
+  .bt-width-1 {
+    width: 10rem;
+    font-size: 12px;
+  }
+}
+
+.ml-1-px {
+  margin-left: 1px;
+}
+
+.font-size {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.font-cash {
+  text-align: center;
+}

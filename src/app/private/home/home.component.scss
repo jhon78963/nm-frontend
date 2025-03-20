@@ -1,0 +1,25 @@
+.container {
+  position: relative;
+}
+.img-center {
+  margin: 0;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+  mix-blend-mode: multiply;
+  width: 30%;
+
+  @media screen and (max-width: 768px) {
+    width: 80%;
+  }
+
+  @media screen and (min-width: 769px) and (max-width: 1024px) {
+    width: 30%;
+  }
+
+  @media screen and (min-width: 1025px) {
+    width: 30%;
+  }
+}
