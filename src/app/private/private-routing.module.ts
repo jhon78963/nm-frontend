@@ -25,33 +25,6 @@ const routes: Routes = [
       ),
   },
   {
-    path: 'management',
-    title: 'Gestión',
-    data: { breadcrumb: 'Gestión' },
-    loadChildren: () =>
-      import('./management/management.module').then(m => m.ManagementModule),
-  },
-  {
-    path: 'facility',
-    title: 'Instalaciones',
-    data: { breadcrumb: 'Instalaciones' },
-    loadChildren: () =>
-      import('./facility/facility.module').then(m => m.FacilityModule),
-  },
-  {
-    path: 'reservation',
-    title: 'Reservaciones',
-    data: { breadcrumb: 'Reservaciones' },
-    loadChildren: () =>
-      import('./reservation/reservation.module').then(m => m.ReservationModule),
-  },
-  {
-    path: 'cash',
-    title: 'Caja',
-    data: { breadcrumb: 'Caja' },
-    loadChildren: () => import('./cash/cash.module').then(m => m.CashModule),
-  },
-  {
     path: '',
     pathMatch: 'full',
     redirectTo: 'home',
