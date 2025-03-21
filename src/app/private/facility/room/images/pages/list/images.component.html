@@ -1,0 +1,11 @@
+<app-table-pagination
+  [data]="(images | async) ?? []"
+  [columns]="columns"
+  [callToAction]="callToAction"
+  [cellToAction]="cellToAction"
+  [total]="(total | async) ?? 0"
+  [limit]="limit"
+  (paginateSelected)="onPageSelected($event)"
+  [rowsPerPageOptions]="[10, 20, 50]"></app-table-pagination>
+<p-toast />
+<p-confirmDialog></p-confirmDialog>

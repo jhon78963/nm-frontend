@@ -1,0 +1,14 @@
+.hover:hover {
+    background-color: rgb(244, 244, 244);
+    cursor: pointer;
+}
+
+.width-default {
+  width: 200px;
+}
+
+::ng-deep {
+  .p-paginator {
+    border-radius: 0;
+  }
+}

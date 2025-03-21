@@ -1,0 +1,76 @@
+<div class="grid">
+  <div class="col-12">
+    <div class="card">
+      <p-fileUpload
+        name="file[]"
+        [url]="url"
+        (onUpload)="onUpload()"
+        [multiple]="true"
+        accept="image/*"
+        [maxFileSize]="5000000">
+        <ng-template pTemplate="content">
+          @if (uploadedFiles.length) {
+            @for (image of uploadedFiles; track $index) {
+              <div class="p-fileupload-row">
+                <div class="file-thumbnail">
+                  <img
+                    src="{{ image.imagePath }}"
+                    width="50"
+                    alt="constancia-3.png"
+                    class="file-thumbnail-image" />
+                </div>
+                <div class="p-fileupload-filename">{{ image.imageName }}</div>
+                <div class="p-fileupload-actions">
+                  <p-button
+                    icon="pi pi-times"
+                    pTooltip="Remover"
+                    tooltipPosition="bottom"
+                    (click)="removeImage(image.id)"></p-button>
+                </div>
+              </div>
+            }
+          }
+        </ng-template>
+        <ng-template pTemplate="toolbar">
+          <p-button
+            label="Choose existing"
+            icon="pi pi-plus-circle"
+            (click)="op2.toggle($event)">
+          </p-button>
+          <p-overlayPanel
+            #op2
+            [showCloseIcon]="true"
+            [style]="{ width: '160px' }">
+            <ng-template pTemplate>
+              <p-toast />
+              <p-table
+                [value]="leftFiles"
+                selectionMode="single"
+                [(selection)]="selectedFile"
+                dataKey="code"
+                (onRowSelect)="addImage($event)"
+                appendTo="body">
+                <ng-template pTemplate="header">
+                  <tr>
+                    <th class="text-center">Imagen</th>
+                  </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-image>
+                  <tr [pSelectableRow]="image">
+                    <td class="text-center">
+                      <img
+                        [src]="image.imagePath"
+                        [alt]="image.imageName"
+                        width="50"
+                        class="shadow-2" />
+                    </td>
+                  </tr>
+                </ng-template>
+              </p-table>
+            </ng-template>
+          </p-overlayPanel>
+        </ng-template>
+      </p-fileUpload>
+    </div>
+  </div>
+</div>

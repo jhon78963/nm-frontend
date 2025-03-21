@@ -1,0 +1,38 @@
+<div class="card">
+  <div
+    class="flex justify-content-between align-items-center"
+    [formGroup]="formGroup">
+    <span class="p-input-icon-left p-input-icon-right mb-2 w-full md:w-3 mr-4">
+      <span class="search-icon">
+        <i class="pi pi-search"></i>
+      </span>
+      <input
+        pinputtext=""
+        type="text"
+        placeholder="Buscar por descripción"
+        class="p-inputtext w-full"
+        formControlName="description" />
+      <span class="clear-icon" *ngIf="description" (click)="clearFilter()">
+        <i class="pi pi-times" style="font-size: 12px"></i>
+      </span>
+    </span>
+    <p-button
+      size="small"
+      icon="pi pi-plus"
+      [outlined]="true"
+      pTooltip="Crear"
+      tooltipPosition="bottom"
+      (click)="createInventoryButton()"></p-button>
+  </div>
+  <app-table-pagination
+    [data]="(inventories | async) ?? []"
+    [columns]="columns"
+    [callToAction]="callToAction"
+    [cellToAction]="cellToAction"
+    [total]="(total | async) ?? 0"
+    [limit]="limit"
+    (paginateSelected)="onPageSelected($event)"
+    [rowsPerPageOptions]="[10, 20, 50]"></app-table-pagination>
+  <p-toast />
+  <p-confirmDialog></p-confirmDialog>
+</div>

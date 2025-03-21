@@ -1,0 +1,35 @@
+.card {
+  padding-top: 0;
+}
+.title-uploade {
+  color: gray;
+  font-weight: 700;
+  text-align: center;
+}
+.image-name {
+  font-size: 10px;
+  color: gray;
+  font-weight: 700;
+}
+
+:host ::ng-deep {
+  .p-fileupload-content {
+    border: 0 none;
+  }
+
+  .p-fileupload-row {
+    display: none;
+  }
+
+  .p-progressbar {
+    display: none;
+  }
+
+  .p-fileupload {
+    padding: 0;
+  }
+
+  .p-fileupload-buttonbar {
+    display: none;
+  }
+}

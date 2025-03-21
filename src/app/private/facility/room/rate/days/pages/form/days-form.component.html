@@ -1,0 +1,25 @@
+@if (form) {
+  <form [formGroup]="form" (ngSubmit)="buttonSaveDay()" class="pt-2">
+    <div class="p-fluid p-formgrid grid">
+      <div class="field col-12 md:col-6">
+        <app-input-text
+          label="Nombre"
+          for="name"
+          type="text"
+          id="name"
+          placeholder="Ingresa el día"
+          controlName="name"></app-input-text>
+      </div>
+      <div class="field col-12 md:col-6">
+        <app-input-text
+          label="Abreviación"
+          for="abbreviation"
+          type="text"
+          id="abbreviation"
+          placeholder="Ingresa el día abreviado"
+          controlName="abbreviation"></app-input-text>
+      </div>
+      <button type="submit" pButton label="Guardar" class="mt-3"></button>
+    </div>
+  </form>
+}

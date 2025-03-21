@@ -1,0 +1,32 @@
+.p-width {
+  width: 5rem;
+}
+
+.additional-height {
+  height: 1rem;
+}
+
+.b-width {
+  width: 1.8rem;
+  height: 1.8rem;
+}
+
+.facilities-width {
+  margin-left: 3rem;
+}
+
+.paid-status {
+  color: green !important;
+}
+
+.unpaid-status{
+  color: red !important;
+}
+
+::ng-deep .col-12 {
+  padding: 4px !important;
+}
+
+.p-size {
+  font-size: 12px;
+}

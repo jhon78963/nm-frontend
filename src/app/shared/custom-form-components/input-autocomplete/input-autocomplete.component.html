@@ -1,0 +1,17 @@
+<span class="p-float-label">
+  <p-autoComplete
+    #autoComplete
+    class="float"
+    [dropdown]="false"
+    [formControl]="formControl"
+    [placeholder]="placeholder"
+    [suggestions]="filteredValue"
+    (completeMethod)="filterData($event)"
+    [showClear]="true"
+    (click)="
+      !autoComplete.name && autoComplete.handleDropdownClick($event)
+    "></p-autoComplete>
+  <label for="float-label">{{ label }}</label>
+</span>
+<p-toast></p-toast>
+<p-confirmDialog [style]="{ width: '18vw' }"></p-confirmDialog>

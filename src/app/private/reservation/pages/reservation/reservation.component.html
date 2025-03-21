@@ -1,0 +1,318 @@
+<div class="card">
+  <div class="grid p-fluid text-center">
+    <div class="col-12 md:col-2">
+      @for (facility of selectedFacilities; track $index) {
+        @if (reservationId && facility.type === 'locker') {
+          <button
+            pButton
+            pRipple
+            [label]="facility.number"
+            class="mb-1 mr-1 p-width p-button-rounded"
+            (click)="
+              reservationId
+                ? changeLocker(reservationId, facility.id, facility.price)
+                : null
+            "></button>
+        } @else {
+          <button
+            pButton
+            pRipple
+            [label]="facility.number"
+            class="mb-1 mr-1 p-width p-button-rounded"
+            (click)="
+              reservationId
+                ? changeRoom(reservationId, facility.id, facility.price)
+                : null
+            "></button>
+        }
+      }
+      <p-divider *ngIf="selectedFacilities.length > 0" />
+      <p class="text-left m-0 p-0" *ngIf="startDateParsed">Fecha de inicio</p>
+      <p class="text-left p-size">{{ startDateParsed }}</p>
+      <p class="text-left m-0 p-0" *ngIf="rentedTime">Horas transcurridas</p>
+      <p class="text-left">{{ rentedTime }}</p>
+
+      @for (inventory of selectedInventories; track $index) {
+        <div class="flex justify-content-between align-items-center mb-3">
+          <p class="m-0 p-0 paragraph">
+            {{ inventory.description }}
+          </p>
+          <p-inputNumber
+            class="input-number-custom text-center"
+            placeholder="{{ inventory.stock }} u."
+            inputId="integeronly"
+            [(ngModel)]="inventory.quantity"
+            [min]="0"
+            [max]="inventory.stock" />
+        </div>
+      }
+    </div>
+    <div class="col-12 md:col-8">
+      <div class="flex">
+        <button
+          pButton
+          pRipple
+          [label]="showProductsForm ? 'Ocultar productos' : 'Agregar products'"
+          class="p-button-info mr-1"
+          (click)="showProducts()"
+          [disabled]="(cashType | async)?.id === 1"></button>
+        <button
+          pButton
+          pRipple
+          [label]="showCustomerForm ? 'Ocultar cliente' : 'Agregar cliente'"
+          class="p-button-warning mr-1 ml-1"
+          (click)="showCustomers()"
+          [disabled]="(cashType | async)?.id === 1"></button>
+        <button
+          pButton
+          pRipple
+          [label]="reservationId ? 'Pagar todo' : 'Pagar'"
+          class="ml-1"
+          (click)="
+            saveReservationButton(
+              customer,
+              reservationId,
+              selectedPaymentTypes,
+              selectedFacilities,
+              selectedProducts,
+              selectedServices,
+              selectedInventories,
+              additionalPeople,
+              pricePerAdditionalPerson,
+              extraHours,
+              pricePerExtraHour,
+              brokenThings,
+              notes
+            )
+          "
+          [disabled]="(cashType | async)?.id === 1"></button>
+        @if (!reservationId && isLocker) {
+          <button
+            pButton
+            pRipple
+            label="Reservar"
+            class="ml-1"
+            (click)="
+              saveBookingButton(
+                customer,
+                selectedPaymentTypes,
+                selectedFacilities,
+                selectedProducts,
+                selectedServices,
+                additionalPeople,
+                pricePerAdditionalPerson,
+                notes
+              )
+            "
+            [disabled]="(cashType | async)?.id === 1"></button>
+        }
+      </div>
+
+      <div class="card">
+        <p class="m-0 p-0">Productos</p>
+        <div *ngIf="showProductsForm">
+          <app-products
+            [selectedProducts]="selectedProducts"
+            (productChanges)="getProducts($event)" />
+        </div>
+        <div *ngIf="selectedProducts.length > 0">
+          @for (product of selectedProducts; track $index) {
+            <div class="grid">
+              <div class="col-12 md:col-0"></div>
+              <div class="col-12 md:col-12 flex justify-content-between">
+                <p
+                  class="m-0 p-0 mr-4 flex"
+                  [ngClass]="
+                    product.isPaid || product.isFree
+                      ? 'paid-status'
+                      : 'unpaid-status'
+                  ">
+                  X{{ product.quantity }} {{ product.name }} - S/
+                  {{ product.total }}
+                </p>
+                <div class="flex align-items-center">
+                  <!-- @for (
+                    facility of product.selectedFacilities;
+                    track facility.number
+                  ) {
+                    <p
+                      class="m-0 p-0 mr-1"
+                      [ngClass]="
+                        facility.isSelected ? 'paid-status' : 'unpaid-status'
+                      ">
+                      {{ facility.number }}
+                    </p>
+                    <p-checkbox
+                      class="mr-2"
+                      [(ngModel)]="facility.isSelected"
+                      [binary]="true"
+                      [inputId]="'binary-' + $index + '-' + facility.number" />
+                  } -->
+                  <p
+                    class="m-0 p-0 mr-1"
+                    [ngClass]="
+                      product.isPaid ? 'paid-status' : 'unpaid-status'
+                    ">
+                    P
+                  </p>
+                  <p-checkbox
+                    class="mr-2"
+                    [(ngModel)]="product.isPaid"
+                    [binary]="true"
+                    [inputId]="'binary-' + $index"
+                    [disabled]="
+                      product.isBd && (product.isFreeBd || product.isPaidBd)
+                    " />
+                  <p
+                    class="m-0 p-0 mr-1"
+                    [ngClass]="
+                      product.isFree ? 'paid-status' : 'unpaid-status'
+                    ">
+                    C
+                  </p>
+                  <p-checkbox
+                    class="mr-2"
+                    [(ngModel)]="product.isFree"
+                    (ngModelChange)="changeFreeProduct($event, product)"
+                    [binary]="true"
+                    [inputId]="'binary-' + $index"
+                    [disabled]="
+                      product.isBd && (product.isFreeBd || product.isPaidBd)
+                    " />
+                  <button
+                    pButton
+                    pRipple
+                    class="p-button-primary p-button-rounded b-width"
+                    icon="pi pi-fw pi-trash"
+                    (click)="
+                      removeProduct(product, reservationId, $event)
+                    "></button>
+                </div>
+              </div>
+              <div class="col-12 md:col-0"></div>
+            </div>
+          }
+        </div>
+        <p class="m-0 p-0">Cliente</p>
+        <div *ngIf="showCustomerForm">
+          <app-customer (customerChanges)="getCustomer($event)" />
+        </div>
+        <p class="m-0 p-0" *ngIf="customer">
+          {{ customer.name }} {{ customer.surname }}
+        </p>
+        <p class="m-0 p-0">Nota</p>
+        <textarea
+          rows="3"
+          cols="10"
+          pInputTextarea
+          [(ngModel)]="notes"
+          [disabled]="(cashType | async)?.id === 1">
+        </textarea>
+      </div>
+    </div>
+    <div class="col-12 md:col-2">
+      <p class="m-0 p-0">Total por pagar</p>
+      <h1 class="m-0 p-0">S/ {{ total }}</h1>
+      @if (this.pricePerAdditionalPerson > 0) {
+        <p class="m-0 p-0">Personas adicionales</p>
+        <div class="flex align-items-center justify-content-center gap-2">
+          <button
+            pButton
+            pRipple
+            icon="pi pi-minus"
+            class="p-button-warning additional-height"
+            (click)="subAdditionalPerson()"
+            [disabled]="additionalPeople <= 0"></button>
+          <span class="text-900 font-bold">{{ additionalPeople }}</span>
+          <button
+            pButton
+            pRipple
+            icon="pi pi-plus"
+            class="p-button-warning additional-height"
+            (click)="addAdditionalPerson()"></button>
+        </div>
+      }
+      @if (this.pricePerExtraHour > 0) {
+        <p class="m-0 p-0">Horas adicionales</p>
+        <div class="flex align-items-center justify-content-center gap-2">
+          <button
+            pButton
+            pRipple
+            icon="pi pi-minus"
+            class="p-button-warning additional-height"
+            (click)="subAdditionalHour()"
+            [disabled]="extraHours <= 0"></button>
+          <span class="text-900 font-bold">{{ extraHours }}</span>
+          <button
+            pButton
+            pRipple
+            icon="pi pi-plus"
+            class="p-button-warning additional-height"
+            (click)="addAdditionalHour()"></button>
+        </div>
+      }
+      @if (customer && reservationId) {
+        <p class="m-0 p-0">Cosas rotas</p>
+        <p class="m-0 p-0">
+          <input
+            [(ngModel)]="brokenThings"
+            (ngModelChange)="addBrokenThings()"
+            type="text"
+            class="w-6 text-center"
+            pInputText
+            [pKeyFilter]="'num'"
+            [disabled]="reservationId === undefined" />
+        </p>
+      }
+      @if (reservationId) {
+        <div class="flex align-items-center justify-content-center mt-3">
+          <input
+            type="text"
+            pInputText
+            [(ngModel)]="refund"
+            (ngModelChange)="refundedTotal()"
+            class="w-4 mr-1 text-center" />
+          <button
+            pButton
+            pRipple
+            class="p-button-primary w-full lg:w-auto flex-order-1 lg:flex-order-2"
+            label="Devolución"
+            style="padding: 10px"
+            (click)="refunded()"
+            [disabled]="refund <= 0"></button>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<div class="facilities-width">
+  @for (facility of facilities | async; track $index) {
+    <button
+      pButton
+      pRipple
+      class="mr-1 mt-1 p-width p-button-rounded"
+      [label]="facility.number"
+      (click)="
+        facility.status === 'AVAILABLE'
+          ? addFacility(facility)
+          : facility.status === 'BOOKED'
+            ? bookedFacility(facility)
+            : showFacility(facility)
+      "
+      [ngClass]="facility | buttonClass: isSelected(facility)"
+      [disabled]="(cashType | async)?.id === 1"></button>
+  }
+</div>
+
+<div class="flex justify-content-center align-items-center mb-2">
+  <button
+    pButton
+    pRipple
+    class="mt-3 p-button-rounded p-button-secondary"
+    icon="pi pi-refresh"
+    (click)="clearSelections()"></button>
+</div>
+
+<p-confirmDialog />
+<p-toast />

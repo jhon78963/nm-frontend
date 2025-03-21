@@ -1,0 +1,17 @@
+<!-- <p>input-phone works!</p> -->
+<div class="flex w-full align-items-end">
+  <app-input-select
+    [label]="labelPrefix"
+    [options]="phoneNumbers"
+    [optionValue]="'code'"
+    [formGroup]="formGroup"
+    [optionLabel]="'codeFlag'"
+    [controlName]="controlNamePrefix"
+    class="custom-margin"></app-input-select>
+  <app-input-text
+    class="w-full"
+    [placeholder]="placeholder"
+    [label]="labelNumber"
+    [formGroup]="formGroup"
+    [controlName]="controlNameNumber"></app-input-text>
+</div>

@@ -1,0 +1,35 @@
+<p-toast />
+<p-pickList
+  [source]="sourceRates"
+  [target]="targetRates"
+  sourceHeader="Disponibles"
+  targetHeader="Seleccionados"
+  [dragdrop]="true"
+  [responsive]="true"
+  [sourceStyle]="{ height: '30rem', width: '30rem' }"
+  [targetStyle]="{ height: '30rem', width: '30rem' }"
+  [showSourceControls]="false"
+  [showTargetControls]="false"
+  (onMoveToTarget)="addRate($event)"
+  (onMoveAllToTarget)="addRate($event)"
+  (onMoveToSource)="removeRate($event)"
+  (onMoveAllToSource)="removeRate($event)"
+  filterBy="day"
+  sourceFilterPlaceholder="Buscar por día"
+  targetFilterPlaceholder="Buscar por día"
+  breakpoint="1400px">
+  <ng-template let-rate pTemplate="item">
+    <div class="flex flex-wrap p-2 align-items-center gap-3">
+      <div class="flex-1 flex flex-column gap-2">
+        <span class="font-bold">{{ rate.day }}</span>
+        <div class="flex align-items-center gap-2">
+          <i class="pi pi-hourglass text-sm"></i>
+          <span> {{ rate.hour }} h </span>
+        </div>
+      </div>
+      <span class="font-bold text-900">
+        {{ 'S/ ' + rate.price }}
+      </span>
+    </div>
+  </ng-template>
+</p-pickList>

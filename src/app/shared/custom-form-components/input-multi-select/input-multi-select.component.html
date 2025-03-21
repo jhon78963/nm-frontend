@@ -1,0 +1,16 @@
+<span class="p-float-label">
+  <p-multiSelect
+    class="float"
+    [options]="options"
+    [(ngModel)]="selectedMulti"
+    [placeholder]="placeholder"
+    [optionLabel]="optionLabel"
+    [display]="display">
+    <ng-template let-item pTemplate="item">
+      <div class="flex align-items-center">
+        <span class="ml-2">{{ item.name }}</span>
+      </div>
+    </ng-template>
+  </p-multiSelect>
+  <label for="float-label">{{ label }}</label>
+</span>

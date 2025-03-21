@@ -1,0 +1,44 @@
+@if (form) {
+  <form [formGroup]="form" (ngSubmit)="buttonSaveUser()" class="pt-2">
+    <div class="p-fluid">
+      <div class="field">
+        @if (userId === 0) {
+          <app-input-select
+            placeholder="Seleccione role"
+            label="Rol"
+            controlName="roleId"
+            for="role"
+            [options]="(roles | async) ?? []"
+            id="role"
+            optionLabel="name"
+            optionValue="id"></app-input-select>
+        }
+      </div>
+      <div class="field">
+        <app-input-text
+          placeholder="Ingrese nombres"
+          label="Nombre"
+          controlName="name"></app-input-text>
+      </div>
+      <div class="field">
+        <app-input-text
+          placeholder="Ingrese apellidos"
+          label="Apellidos"
+          controlName="surname"></app-input-text>
+      </div>
+      <div class="field">
+        <app-input-text
+          placeholder="Ingrese username"
+          label="Username"
+          controlName="username"></app-input-text>
+      </div>
+      <div class="field">
+        <app-input-text
+          placeholder="Ingrese email"
+          label="Email"
+          controlName="email"></app-input-text>
+      </div>
+      <button type="submit" pButton label="Guardar"></button>
+    </div>
+  </form>
+}

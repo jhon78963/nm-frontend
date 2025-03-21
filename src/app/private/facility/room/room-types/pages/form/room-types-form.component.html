@@ -1,0 +1,75 @@
+@if (form) {
+  <form [formGroup]="form" (ngSubmit)="roomTypeSaveButton()" class="pt-2">
+    <div class="p-fluid p-formgrid grid">
+      <div class="field col-12 md:col-6">
+        <app-input-text
+          label="Tipo de Habitación"
+          for="description"
+          type="text"
+          id="description"
+          placeholder="Ingrese tipo de habitación"
+          controlName="description"></app-input-text>
+      </div>
+      <div class="field col-12 md:col-6">
+        <app-input-text
+          label="Precio"
+          for="pricePerCapacity"
+          type="text"
+          id="pricePerCapacity"
+          placeholder="Ingrese precio"
+          controlName="pricePerCapacity"></app-input-text>
+      </div>
+      <div class="field col-12 md:col-6">
+        <app-input-text
+          label="Capacidad"
+          for="capacity"
+          type="text"
+          id="capacity"
+          placeholder="Ingrese capacidad de personas"
+          controlName="capacity"></app-input-text>
+      </div>
+      <div class="field col-12 md:col-6">
+        <app-input-text
+          label="Horas alquiladas"
+          for="rentalHours"
+          type="text"
+          id="rentalHours"
+          placeholder="Ingrese la cantidad de horas"
+          controlName="rentalHours"></app-input-text>
+      </div>
+      <div class="field col-12 md:col-6">
+        <app-input-text
+          label="Precio por persona adicional"
+          for="pricePerAdditionalPerson"
+          type="text"
+          id="pricePerAdditionalPerson"
+          placeholder="Ingrese precio por persona adicional"
+          controlName="pricePerAdditionalPerson"></app-input-text>
+      </div>
+      <div class="field col-12 md:col-6">
+        <app-input-text
+          label="Precio por hora extra"
+          for="pricePerExtraHour"
+          type="text"
+          id="pricePerExtraHour"
+          placeholder="Ingrese precio por hora extra"
+          controlName="pricePerExtraHour"></app-input-text>
+      </div>
+      <div class="field col-12 md:col-6">
+        <app-input-text
+          label="Edad libre de pago"
+          for="ageFree"
+          type="text"
+          id="ageFree"
+          placeholder="Ingrese edad libre de pago"
+          controlName="ageFree"></app-input-text>
+      </div>
+      <button
+        type="submit"
+        pButton
+        label="Guardar"
+        class="mt-3"
+        [disabled]="!isFormValid"></button>
+    </div>
+  </form>
+}

@@ -1,0 +1,9 @@
+.p-fileupload {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1rem;
+}
+
+::ng-deep p-table {
+  z-index: 1000;
+}

@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { ActivatedRouteSnapshot, NavigationEnd, Router } from '@angular/router';
 import { BehaviorSubject, filter } from 'rxjs';
@@ -10,7 +9,6 @@ interface Breadcrumb {
 
 @Component({
   selector: 'app-breadcrumb',
-  imports: [CommonModule],
   templateUrl: './app.breadcrumb.component.html',
   styleUrl: './app.breadcrumb.component.scss',
 })

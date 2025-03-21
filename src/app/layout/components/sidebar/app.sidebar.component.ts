@@ -1,12 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { LayoutService } from '../../services/app.layout.service';
-import { RouterModule } from '@angular/router';
-import { AppMenuComponent } from '../menu/app.menu.component';
 
 @Component({
   selector: 'app-sidebar',
-  imports: [RouterModule, AppMenuComponent],
   templateUrl: './app.sidebar.component.html',
   styleUrl: './app.sidebar.component.scss',
 })

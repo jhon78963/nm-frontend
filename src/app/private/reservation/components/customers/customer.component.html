@@ -1,0 +1,61 @@
+<div class="mb-3 flex justify-content-center">
+  <span class="p-input-icon-left p-input-icon-right mb-2 w-full">
+    <span class="search-icon">
+      <i class="pi pi-search"></i>
+    </span>
+    <input
+      pinputtext=""
+      type="text"
+      placeholder="Buscar por nombre"
+      class="p-inputtext w-full"
+      [(ngModel)]="nameQuery"
+      (input)="onSearchTermChange($event)" />
+    <span class="clear-icon" *ngIf="nameQuery" (click)="clearFilter()">
+      <i class="pi pi-times" style="font-size: 12px"></i>
+    </span>
+  </span>
+</div>
+
+<!-- <form
+  [formGroup]="reservationForm"
+  (ngSubmit)="buttonSaveReservation()"
+  class="pt-2 mt-3">
+  <div class="p-fluid p-formgrid grid">
+    <div class="field col-12">
+      <app-input-text
+        label="DNI"
+        for="dni"
+        type="text"
+        id="dni"
+        placeholder="Ingrese dni del cliente"
+        controlName="dni"
+        (input)="searchDni($event)"
+        pattern="[0-9]*"></app-input-text>
+    </div>
+    <div class="field col-12 md:col-6">
+      <app-input-text
+        label="Nombre"
+        for="name"
+        type="text"
+        id="name"
+        placeholder="Ingrese nombre del cliente"
+        controlName="name"></app-input-text>
+    </div>
+    <div class="field col-12 md:col-6">
+      <app-input-text
+        label="Apellidos"
+        for="surname"
+        type="text"
+        id="surname"
+        placeholder="Ingrese apellidos del cliente"
+        controlName="surname"></app-input-text>
+    </div>
+    <button
+      type="submit"
+      pButton
+      label="Agregar"
+      class="mt-3"
+      [disabled]="!isFormValid"></button>
+  </div>
+</form>
+<p-toast></p-toast> -->

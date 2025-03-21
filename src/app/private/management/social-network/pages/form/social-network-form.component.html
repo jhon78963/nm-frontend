@@ -1,0 +1,38 @@
+@if (form) {
+  <form [formGroup]="form" (ngSubmit)="buttonSaveSocialNetwork()" class="pt-2">
+    <div class="p-fluid p-formgrid grid">
+      <div class="field col-12">
+        <app-input-text
+          label="Nombre"
+          for="name"
+          type="text"
+          id="name"
+          placeholder="Ingresa el nombre de la red social"
+          controlName="name"></app-input-text>
+      </div>
+    </div>
+    <div class="p-fluid p-formgrid grid">
+      <div class="field col-12">
+        <app-input-text
+          label="Ícono"
+          for="icon"
+          type="text"
+          id="icon"
+          placeholder="Ingresa el ícono/logo de la red social"
+          controlName="icon"></app-input-text>
+      </div>
+    </div>
+    <div class="p-fluid p-formgrid grid">
+      <div class="field col-12">
+        <app-input-text
+          label="Enlace"
+          for="url"
+          type="text"
+          id="url"
+          placeholder="Ingresa el enlace de su página"
+          controlName="url"></app-input-text>
+      </div>
+      <button type="submit" pButton label="Guardar" class="mt-3"></button>
+    </div>
+  </form>
+}

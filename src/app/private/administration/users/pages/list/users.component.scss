@@ -1,0 +1,23 @@
+::ng-deep {
+  .dialog-custom-form {
+    width: 30% !important;
+    height: auto !important;
+  }
+
+  .dialog-custom-assign {
+    width: 15% !important;
+    height: auto !important;
+  }
+
+  @media (max-width: 480px) {
+    .dialog-custom-form {
+        width: 70% !important;
+        height: auto !important;
+    }
+
+    .dialog-custom-assign {
+        width: 70% !important;
+        height: auto !important;
+    }
+  }
+}

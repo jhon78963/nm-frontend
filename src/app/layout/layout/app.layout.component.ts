@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   Component,
   OnDestroy,
@@ -11,19 +10,11 @@ import { Subscription, filter } from 'rxjs';
 import { AppSidebarComponent } from '../components/sidebar/app.sidebar.component';
 import { AppTopbarComponent } from '../components/topbar/app.topbar.component';
 import { LayoutService } from '../services/app.layout.service';
-import { NavigationEnd, Router, RouterModule } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
 import { MenuService } from '../services/app.menu.service';
-import { AppBreadcrumbComponent } from '../components/breadcrumb/app.breadcrumb.component';
-import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-layout-layout',
-  imports: [
-    AppBreadcrumbComponent,
-    AppTopbarComponent,
-    CommonModule,
-    RouterModule,
-  ],
   templateUrl: './app.layout.component.html',
   styleUrl: './app.layout.component.scss',
 })

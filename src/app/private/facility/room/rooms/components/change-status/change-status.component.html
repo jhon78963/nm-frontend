@@ -1,0 +1,13 @@
+@if (form) {
+  <form [formGroup]="form" (ngSubmit)="changeRoomStatusButton()" class="pt-2">
+    <div class="p-fluid">
+      <div *ngFor="let status of statuses" class="field-checkbox">
+        <p-radioButton [value]="status.value" formControlName="status" />
+        <label [for]="status.value" class="ml-2">
+          {{ status.label }}
+        </label>
+      </div>
+      <button type="submit" pButton label="Guardar"></button>
+    </div>
+  </form>
+}

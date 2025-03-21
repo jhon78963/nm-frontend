@@ -1,0 +1,21 @@
+@if (form) {
+  <form [formGroup]="form" (ngSubmit)="lockerSaveButton()" class="pt-2">
+    <div class="p-fluid p-formgrid grid">
+      <div class="field col-12">
+        <app-input-text
+          label="Precio"
+          for="price"
+          type="text"
+          id="price"
+          placeholder="Ingrese precio"
+          controlName="price"
+          pKeyFilter="num"></app-input-text>
+      </div>
+      <button
+        type="submit"
+        pButton
+        label="Guardar"
+        [disabled]="!isFormValid"></button>
+    </div>
+  </form>
+}

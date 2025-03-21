@@ -20,6 +20,11 @@ export const routes: Routes = [
     data: { breadcrumb: 'Auth' },
     loadChildren: () => import('./auth/auth.module').then(m => m.AuthModule),
   },
+  {
+    path: 'notfound',
+    loadChildren: () =>
+      import('./notfound/notfound.module').then(m => m.NotfoundModule),
+  },
   { path: '', pathMatch: 'full', redirectTo: '' },
   { path: '**', redirectTo: '/notfound' },
 ];

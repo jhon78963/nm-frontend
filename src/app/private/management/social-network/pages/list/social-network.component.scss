@@ -1,0 +1,40 @@
+::ng-deep {
+  /* Estilos predeterminados para el diálogo personalizado de agregar */
+  .dialog-custom {
+      width: 40% !important;
+      height: auto !important;
+      min-height: 350px;
+  }
+
+  /* Media query para pantallas pequeñas (dispositivos móviles pequeños) */
+  @media (max-width: 480px) {
+      .dialog-custom {
+        width: 90% !important;
+        height: auto !important;
+      }
+  }
+
+  /* Media query para pantallas medianas (dispositivos móviles medianos y grandes) */
+  @media (min-width: 481px) and (max-width: 768px) {
+      .dialog-custom {
+          width: 70% !important;
+          height: auto !important;
+      }
+  }
+
+  /* Media query para pantallas grandes (laptops pequeñas y tablets grandes) */
+  @media (min-width: 769px) and (max-width: 1024px) {
+      .dialog-custom {
+        width: 60% !important;
+        height: auto !important;
+      }
+  }
+
+  /* Media query para pantallas muy grandes (ordenadores portátiles y de escritorio) */
+  @media (min-width: 1025px) {
+      .dialog-custom {
+          width: 40% !important;
+          height: auto !important;
+      }
+  }
+}

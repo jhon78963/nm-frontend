@@ -1,0 +1,41 @@
+@if (form) {
+  <form [formGroup]="form" (ngSubmit)="roomSaveButton()" class="pt-2">
+    <div class="p-fluid p-formgrid grid">
+      <div class="field col-12 md:col-6">
+        <app-input-select
+          placeholder="Seleccione tipo de habitación"
+          label="Tipo de Habitación"
+          controlName="roomTypeId"
+          for="roomTypeId"
+          [options]="(roomTypes | async) ?? []"
+          id="roomTypeId"
+          optionLabel="description"
+          optionValue="id"></app-input-select>
+      </div>
+      <div class="field col-12 md:col-6">
+        <app-input-text
+          label="Número de habitación"
+          for="number"
+          type="text"
+          id="number"
+          placeholder="Ingrese número de habitación"
+          controlName="number"></app-input-text>
+      </div>
+      <div class="field col-12">
+        <app-input-text
+          label="Nombre de la habitación"
+          for="description"
+          type="text"
+          id="description"
+          placeholder="Ingrese nombre de la habitación"
+          controlName="description"></app-input-text>
+      </div>
+      <button
+        type="submit"
+        pButton
+        label="Guardar"
+        class="mt-3"
+        [disabled]="!isFormValid"></button>
+    </div>
+  </form>
+}

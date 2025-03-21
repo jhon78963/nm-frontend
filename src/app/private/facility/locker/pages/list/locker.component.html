@@ -1,0 +1,17 @@
+<div class="card">
+  <div class="flex justify-content-end align-items-center">
+    <p-button [outlined]="true" (click)="updateLockerButton()">
+      Actualizar precio
+    </p-button>
+  </div>
+  <app-table-pagination
+    [data]="(lockers | async) ?? []"
+    [columns]="columns"
+    [callToAction]="callToAction"
+    [cellToAction]="cellToAction"
+    [total]="(total | async) ?? 0"
+    [limit]="limit"
+    (paginateSelected)="onPageSelected($event)"
+    [rowsPerPageOptions]="[10, 20, 50]"></app-table-pagination>
+  <p-toast />
+</div>

@@ -1,0 +1,360 @@
+<p-messages />
+<div class="grid grid-nogutter">
+  <div class="col-12 h-full px-4 py-4 md:px-6">
+    <div class="flex justify-content-between align-items-center">
+      <span class="text-900 text-2xl font-medium block"
+        >Cliente: {{ customer.name }} {{ customer.surname }}</span
+      >
+      <div class="flex flex-wrap gap-3">
+        <div *ngFor="let payment of payments" class="field-checkbox">
+          <div class="flex align-items-center">
+            <p-radioButton
+              [inputId]="payment.id.toString()"
+              name="category"
+              [value]="payment"
+              [(ngModel)]="selectedPaymentType"
+              [disabled]="
+                status === 'COMPLETED' || status === 'CANCELLED' || isList
+              " />
+            <label [for]="payment.id" class="ml-2">
+              {{ payment.description }}
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 lg:col-6 h-full px-4 py-4 md:px-6">
+    @if (products && products.length > 0) {
+      <div class="pb-3 surface-border">
+        <span class="text-900 text-2xl font-medium block">Productos</span>
+      </div>
+      @for (product of products; track $index) {
+        <div
+          class="flex flex-column lg:flex-row flex-wrap lg:align-items-center py-2 surface-border">
+          <div class="flex-auto lg:ml-3">
+            <div class="flex align-items-center justify-content-between mb-3">
+              <span class="text-900 font-bold">
+                X{{ product.quantity }} {{ product.name }}
+              </span>
+              <div class="flex align-items-center gap-1">
+                <span class="text-900 font-bold"> S/ {{ product.total }}</span>
+              </div>
+            </div>
+            <div class="text-600 text-sm mb-3">
+              Precio Unit. {{ product.price }}
+            </div>
+          </div>
+        </div>
+      }
+    }
+    @if (services && services.length > 0 && products && products.length === 0) {
+      <div class="pb-3 surface-border">
+        <span class="text-900 text-2xl font-medium block">Servicios</span>
+      </div>
+      @for (service of services; track $index) {
+        <div
+          class="flex flex-column lg:flex-row flex-wrap lg:align-items-center py-2 surface-border">
+          <div class="flex-auto lg:ml-3">
+            <div class="flex align-items-center justify-content-between mb-3">
+              <span class="text-900 font-bold">
+                X{{ service.quantity }} {{ service.name }}
+              </span>
+              <div class="flex align-items-center gap-1">
+                <span class="text-900 font-bold"> S/ {{ service.total }} </span>
+              </div>
+            </div>
+            <div class="text-600 text-sm mb-3">
+              Precio Unit. {{ service.price }}
+            </div>
+          </div>
+        </div>
+      }
+    }
+    @if (facilities && facilities.length > 0) {
+      @if (isBooking) {
+        <div class="pb-3 surface-border">
+          <span class="text-900 text-2xl font-medium block">Habitación</span>
+        </div>
+        <div
+          class="flex flex-column lg:flex-row flex-wrap lg:align-items-center py-2 surface-border">
+          <div class="flex-auto lg:ml-3">
+            @for (facility of facilities; track $index) {
+              <div class="flex align-items-center justify-content-between mb-3">
+                <span class="text-900 font-bold">
+                  Habitación {{ facility.number }}
+                </span>
+                <div class="flex align-items-center gap-1">
+                  <span class="text-900 font-bold"
+                    >S/ {{ facility.price }}</span
+                  >
+                </div>
+              </div>
+            }
+            <div class="flex align-items-center justify-content-between">
+              <span class="text-900 font-bold"> Fecha de reserva </span>
+              <div class="flex align-items-center gap-1">
+                <p-calendar
+                  appendTo="body"
+                  class="filter-width"
+                  [(ngModel)]="startDate"
+                  [showTime]="true"
+                  dateFormat="dd/mm/yy"
+                  [stepMinute]="10"
+                  [stepSecond]="00"
+                  (onSelect)="onDateSelectFrom($event)"
+                  (onInput)="onDateInputFrom($event)" />
+              </div>
+            </div>
+          </div>
+        </div>
+      } @else {
+        <div class="pb-3 surface-border">
+          <span class="text-900 text-2xl font-medium block"
+            >Lockers/Habitaciones</span
+          >
+        </div>
+        @for (facility of facilities; track $index) {
+          <div
+            class="flex flex-column lg:flex-row flex-wrap lg:align-items-center py-2 surface-border">
+            <div class="flex-auto lg:ml-3">
+              <div class="flex align-items-center justify-content-between">
+                <span class="text-900 font-bold">
+                  {{ facility.type === 'locker' ? 'Locker' : 'Habitación' }}
+                  {{ facility.number }}
+                </span>
+                <div class="flex align-items-center gap-1">
+                  <span class="text-900 font-bold"
+                    >S/ {{ facility.price }}</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      }
+    }
+  </div>
+  <div class="col-12 lg:col-6 h-full px-4 py-4 md:px-6">
+    @if (services && services.length > 0 && products && products.length > 0) {
+      <div class="pb-3 surface-border">
+        <span class="text-900 text-2xl font-medium block">Servicios</span>
+      </div>
+      @for (service of services; track $index) {
+        <div
+          class="flex flex-column lg:flex-row flex-wrap lg:align-items-center py-2 surface-border">
+          <div class="flex-auto lg:ml-3">
+            <div class="flex align-items-center justify-content-between mb-3">
+              <span class="text-900 font-bold">
+                X{{ service.quantity }} {{ service.name }}
+              </span>
+              <div class="flex align-items-center gap-1">
+                <span class="text-900 font-bold"> S/ {{ service.total }}</span>
+              </div>
+            </div>
+            <div class="text-600 text-sm mb-3">
+              Precio Unit. {{ service.price }}
+            </div>
+          </div>
+        </div>
+      }
+    }
+    <div class="pb-3 surface-border">
+      <span class="text-900 text-2xl font-medium block">Resumen</span>
+    </div>
+    <div class="py-2 px-4">
+      <div class="flex flex-column align-items-start">
+        <div
+          class="flex justify-content-between align-items-center mb-1 w-full">
+          <span class="text-900 font-medium">Locker/Habitación</span>
+          <div
+            class="flex justify-content-between align-items-center mb-1 gap-6">
+            <span class="text-900">S/ {{ lockerPrice }}</span>
+          </div>
+        </div>
+        @if (pricePerAdditionalPerson) {
+          <div
+            class="flex justify-content-between align-items-center mb-1 w-full">
+            <span class="text-900 font-medium"
+              >Personas adicionales ({{ additionalPeople }})</span
+            >
+            <div
+              class="flex justify-content-between align-items-center mb-1 gap-6">
+              <span class="text-900">S/ {{ pricePerAdditionalPerson }}</span>
+            </div>
+          </div>
+        }
+        @if (pricePerExtraHour) {
+          <div
+            class="flex justify-content-between align-items-center mb-1 w-full">
+            <span class="text-900 font-medium"
+              >Horas extras ({{ extraHours }})</span
+            >
+            <div
+              class="flex justify-content-between align-items-center mb-1 gap-6">
+              <span class="text-900">S/ {{ pricePerExtraHour }}</span>
+            </div>
+          </div>
+        }
+        @if (brokenThings) {
+          <div
+            class="flex justify-content-between align-items-center mb-1 w-full">
+            <span class="text-900 font-medium">Cosas rotas</span>
+            <div
+              class="flex justify-content-between align-items-center mb-1 gap-6">
+              <span class="text-900">S/ {{ brokenThings }}</span>
+            </div>
+          </div>
+        }
+        <div
+          class="flex justify-content-between align-items-center mb-1 w-full">
+          <span class="text-900 font-medium">Productos</span>
+          <div
+            class="flex justify-content-between align-items-center mb-1 gap-6">
+            <span class="text-900">S/ {{ totalProducts }}</span>
+          </div>
+        </div>
+        <div
+          class="flex justify-content-between align-items-center mb-1 w-full">
+          <span class="text-900 font-medium">Servicios</span>
+          <span class="text-900">S/ {{ totalServices }}</span>
+        </div>
+        <div
+          class="flex justify-content-between align-items-center mb-1 w-full">
+          <span class="text-900 font-bold">Total</span>
+          <span class="text-900 font-medium text-xl">S/ {{ total }}</span>
+        </div>
+        @if (advance > 0) {
+          <div
+            class="flex justify-content-between align-items-center mb-1 w-full">
+            <span class="text-900 font-bold">Anticipo</span>
+            <span class="text-900 font-medium text-xl">S/ {{ advance }}</span>
+          </div>
+          <div
+            class="flex justify-content-between align-items-center mb-3 w-full">
+            <span class="text-900 font-bold">Por pagar</span>
+            <span class="text-900 font-medium text-xl">S/ {{ pending }}</span>
+          </div>
+        }
+        <div
+          class="flex justify-content-between align-items-center mb-3 w-full"
+          *ngIf="selectedPaymentType.id === 1">
+          <span class="text-900 font-bold"> Efectivo </span>
+          <span class="text-900 font-medium text-xl">
+            <p-inputNumber
+              inputId="integeronly"
+              [(ngModel)]="paid"
+              [min]="0"
+              [max]="reservationId || bookingId ? pending : total"
+              [disabled]="
+                status === 'COMPLETED' || status === 'CANCELLED' || isList
+              " />
+          </span>
+        </div>
+        <div
+          class="flex justify-content-between align-items-center mb-3 w-full"
+          *ngIf="selectedPaymentType.id === 2">
+          <span class="text-900 font-bold"> Tarjeta </span>
+          <span class="text-900 font-medium text-xl">
+            <p-inputNumber
+              inputId="integeronly"
+              [(ngModel)]="paid"
+              [min]="0"
+              [max]="reservationId || bookingId ? pending : total"
+              [disabled]="
+                status === 'COMPLETED' || status === 'CANCELLED' || isList
+              " />
+          </span>
+        </div>
+        <div
+          class="flex justify-content-between align-items-center mb-3 w-full"
+          *ngIf="selectedPaymentType.id === 3">
+          <span class="text-900 font-bold"> Pagado </span>
+          <span class="text-900 font-medium text-xl">
+            <p-inputNumber
+              inputId="integeronly"
+              [(ngModel)]="paid"
+              [min]="0"
+              [max]="reservationId || bookingId ? pending : total"
+              [disabled]="
+                status === 'COMPLETED' ||
+                status === 'CANCELLED' ||
+                status === 'CANCELLED' ||
+                isList
+              " />
+          </span>
+        </div>
+        <div
+          class="flex justify-content-between align-items-center mb-3 w-full"
+          *ngIf="selectedPaymentType.id === 3">
+          <span class="text-900 font-bold"> Efectivo </span>
+          <span class="text-900 font-medium text-xl">
+            <p-inputNumber
+              inputId="integeronly"
+              [(ngModel)]="cash"
+              (ngModelChange)="calculateTotalCash($event)"
+              [disabled]="
+                status === 'COMPLETED' || status === 'CANCELLED' || isList
+              " />
+          </span>
+        </div>
+        <div
+          class="flex justify-content-between align-items-center mb-3 w-full"
+          *ngIf="selectedPaymentType.id === 3">
+          <span class="text-900 font-bold"> Tarjeta </span>
+          <span class="text-900 font-medium text-xl">
+            <p-inputNumber
+              class="text-end"
+              inputId="integeronly"
+              [(ngModel)]="card"
+              (ngModelChange)="calculateTotalCard($event)"
+              [disabled]="
+                status === 'COMPLETED' || status === 'CANCELLED' || isList
+              " />
+          </span>
+        </div>
+      </div>
+    </div>
+    <div
+      class="flex flex-column lg:flex-row justify-content-center align-items-center lg:justify-content-end">
+      @if (status !== 'COMPLETED' && status !== 'CANCELLED' && !isList) {
+        @if (reservationId > 0) {
+          <p class="m-0 p-0 mr-1">Finalizar</p>
+          <p-checkbox
+            class="mr-2"
+            [(ngModel)]="isFinish"
+            [binary]="true"
+            [inputId]="'binary'"
+            (ngModelChange)="finishReservation($event)" />
+        }
+        @if (pending < 0) {
+          <button
+            pButton
+            pRipple
+            class="p-button-primary w-full lg:w-auto mr-1 flex-order-1 lg:flex-order-2"
+            label="Devolución"
+            icon="pi pi-fw pi-history"></button>
+        }
+        <button
+          pButton
+          pRipple
+          class="p-button-primary w-full lg:w-auto flex-order-1 lg:flex-order-2"
+          label="Pagar"
+          icon="pi pi-fw pi-check"
+          (click)="
+            !isBooking
+              ? payment(
+                  customer,
+                  reservationId,
+                  facilities,
+                  products,
+                  services,
+                  total
+                )
+              : booking(customer, facilities, products, services, total)
+          "
+          [disabled]="validatePaidButton()"></button>
+      }
+    </div>
+  </div>
+</div>

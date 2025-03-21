@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   animate,
   AnimationEvent,
@@ -18,18 +17,17 @@ import {
   OnInit,
   ViewChild,
 } from '@angular/core';
-import { NavigationEnd, Router, RouterModule } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
+import { DomHandler } from 'primeng/dom';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { LayoutService } from '../../services/app.layout.service';
 import { MenuService } from '../../services/app.menu.service';
 import { AppSidebarComponent } from '../sidebar/app.sidebar.component';
-import { CommonModule } from '@angular/common';
 
 @Component({
   // eslint-disable-next-line @angular-eslint/component-selector
   selector: '[app-menuitem]',
-  imports: [CommonModule, RouterModule],
   template: `
     <ng-container>
       <div
@@ -45,7 +43,10 @@ import { CommonModule } from '@angular/common';
           (mouseenter)="onMouseEnter()"
           [ngClass]="item.class"
           [attr.target]="item.target"
-          tabindex="0">
+          tabindex="0"
+          pRipple
+          [pTooltip]="item.label"
+          [tooltipDisabled]="!(isSlim && root && !active)">
           <i [ngClass]="item.icon" class="layout-menuitem-icon"></i>
           <span class="layout-menuitem-text">{{ item.label }} </span>
           <i
@@ -78,7 +79,10 @@ import { CommonModule } from '@angular/common';
           [state]="item.state"
           [queryParams]="item.queryParams"
           [attr.target]="item.target"
-          tabindex="0">
+          tabindex="0"
+          pRipple
+          [pTooltip]="item.label"
+          [tooltipDisabled]="!(isSlim && root)">
           <i [ngClass]="item.icon" class="layout-menuitem-icon"></i>
           <span class="layout-menuitem-text">{{ item.label }}</span>
           <i
@@ -269,12 +273,13 @@ export class AppMenuitemComponent
       const { left, top } = target.getBoundingClientRect();
       const [vWidth, vHeight] = [window.innerWidth, window.innerHeight];
       const [oWidth, oHeight] = [overlay.offsetWidth, overlay.offsetHeight];
+      const scrollbarWidth = DomHandler.calculateScrollbarWidth();
       // reset
       overlay.style.top = '';
       overlay.style.left = '';
 
       if (this.layoutService.isHorizontal()) {
-        const width = left + oWidth;
+        const width = left + oWidth + scrollbarWidth;
         overlay.style.left =
           vWidth < width ? `${left - (width - vWidth)}px` : `${left}px`;
       } else if (

@@ -1,0 +1,30 @@
+@if (form) {
+  <form [formGroup]="form" (ngSubmit)="inventoriesSaveButton()" class="pt-2">
+    <div class="p-fluid p-formgrid grid">
+      <div class="field col-12">
+        <app-input-text
+          label="Descripción"
+          for="description"
+          type="text"
+          id="description"
+          placeholder="Ingrese descripción"
+          controlName="description"></app-input-text>
+      </div>
+      <div class="field col-12">
+        <app-input-text
+          label="Cantidad"
+          for="stock"
+          type="text"
+          id="stock"
+          placeholder="Ingrese cantidad"
+          controlName="stock"
+          pKeyFilter="num"></app-input-text>
+      </div>
+      <button
+        type="submit"
+        pButton
+        label="Guardar"
+        [disabled]="!isFormValid"></button>
+    </div>
+  </form>
+}

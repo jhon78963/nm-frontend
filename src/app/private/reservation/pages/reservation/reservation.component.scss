@@ -1,0 +1,52 @@
+.p-width {
+  width: 5rem;
+}
+
+.additional-height {
+  height: 1rem;
+}
+
+.b-width {
+  width: 2rem;
+  height: 2rem;
+}
+
+.facilities-width {
+  margin-left: 3rem;
+}
+
+.paid-status {
+  color: green !important;
+}
+
+.unpaid-status{
+  color: red !important;
+}
+
+::ng-deep .col-12 {
+  padding: 4px !important;
+}
+
+.p-size {
+  font-size: 12px;
+}
+
+.stock-size {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.paragraph {
+  font-size: 12px;
+}
+
+::ng-deep {
+  p-inputNumber {
+    width: 45%;
+    height: 21px;
+    white-space: nowrap;
+    .p-inputtext {
+      text-align: end;
+    }
+  }
+}

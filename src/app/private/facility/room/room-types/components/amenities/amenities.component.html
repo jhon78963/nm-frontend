@@ -1,0 +1,30 @@
+<p-toast />
+<p-pickList
+  [source]="sourceAmenities"
+  [target]="targetAmenities"
+  sourceHeader="Disponibles"
+  targetHeader="Seleccionados"
+  [dragdrop]="true"
+  [responsive]="true"
+  [sourceStyle]="{ height: '30rem', width: '30rem' }"
+  [targetStyle]="{ height: '30rem', width: '30rem' }"
+  [showSourceControls]="false"
+  [showTargetControls]="false"
+  (onMoveToTarget)="addAmenity($event)"
+  (onMoveAllToTarget)="addAmenity($event)"
+  (onMoveToSource)="removeAmenity($event)"
+  (onMoveAllToSource)="removeAmenity($event)"
+  filterBy="description"
+  sourceFilterPlaceholder="Buscar por descripción"
+  targetFilterPlaceholder="Buscar por descripción"
+  breakpoint="1400px">
+  <ng-template let-amenity pTemplate="item">
+    <div class="flex flex-wrap p-2 align-items-center gap-3">
+      <div class="flex-1 flex flex-column gap-2">
+        <span class="font-bold">
+          {{ amenity.description }}
+        </span>
+      </div>
+    </div>
+  </ng-template>
+</p-pickList>
