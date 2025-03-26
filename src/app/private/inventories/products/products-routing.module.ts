@@ -5,8 +5,15 @@ const routes: Routes = [
   {
     path: '',
     loadComponent: () =>
-      import('./pages/List/products.component').then(
+      import('./pages/list/products.component').then(
         c => c.ProductListComponent,
+      ),
+  },
+  {
+    path: 'create',
+    loadComponent: () =>
+      import('./pages/form/products-form.component').then(
+        c => c.ProductsFormComponent,
       ),
   },
   { path: '', pathMatch: 'full', redirectTo: 'products' },

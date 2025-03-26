@@ -14,11 +14,18 @@ import { LoadingService } from '../../../../../services/loading.service';
 import { ProductsService } from '../../services/products.service';
 import { PaginatorState } from 'primeng/paginator';
 import { Observable } from 'rxjs';
+import { Router, RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-products',
   standalone: true,
-  imports: [CommonModule, ToastModule, ConfirmDialogModule, SharedModule],
+  imports: [
+    CommonModule,
+    ToastModule,
+    ConfirmDialogModule,
+    SharedModule,
+    RouterModule,
+  ],
   templateUrl: './products.component.html',
   styleUrl: './products.component.scss',
   providers: [ConfirmationService, DialogService, MessageService],
@@ -100,6 +107,7 @@ export class ProductListComponent implements OnInit {
     private readonly confirmationService: ConfirmationService,
     private readonly loadingService: LoadingService,
     private readonly productsService: ProductsService,
+    private readonly router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -131,7 +139,10 @@ export class ProductListComponent implements OnInit {
     return this.productsService.getTotal();
   }
 
-  addUserButton() {}
+  addProductButton() {
+    this.router.navigate(['/inventories/products/create']);
+  }
+
   editProductButton(id: number) {
     console.log(id);
   }

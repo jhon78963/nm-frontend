@@ -1,0 +1,21 @@
+@if (form) {
+  <form [formGroup]="form" (ngSubmit)="saveProductButton()" class="pt-2">
+    <div class="p-fluid">
+      <div class="field">
+        @if (productId === 0) {
+          <app-input-select
+            placeholder="Seleccione genero"
+            label="Genero"
+            controlName="genderId"
+            for="gender"
+            [options]="genders"
+            id="gender"
+            optionLabel="gender"
+            optionValue="id"></app-input-select>
+        }
+      </div>
+
+      <button type="submit" pButton label="Guardar"></button>
+    </div>
+  </form>
+}
