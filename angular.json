@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "sslaissApp": {
+    "nmaritexApp": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -17,7 +17,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/sslaiss-app",
+            "outputPath": "dist/nmaritex-app",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [ "zone.js"],
@@ -63,10 +63,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "sslaissApp:build:production"
+              "buildTarget": "nmaritexApp:build:production"
             },
             "development": {
-              "buildTarget": "sslaissApp:build:development"
+              "buildTarget": "nmaritexApp:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -74,7 +74,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "buildTarget": "sslaissApp:build"
+            "buildTarget": "nmaritexApp:build"
           }
         },
         "test": {
