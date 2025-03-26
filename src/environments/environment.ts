@@ -1,5 +1,5 @@
 export const environment = {
   production: false,
-  BASE_URL: 'https://api-datacode.zerogroups.uk/api',
+  BASE_URL: 'http://localhost:8000/api',
   COMPANY_ID: 1,
 };

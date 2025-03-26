@@ -9,6 +9,13 @@ const routes: Routes = [
     loadChildren: () => import('./home/home.module').then(m => m.HomeModule),
   },
   {
+    path: 'inventories',
+    title: 'Inventario',
+    data: { breadcrumb: 'Inventario' },
+    loadChildren: () =>
+      import('./inventories/inventories.module').then(m => m.InventoriesModule),
+  },
+  {
     path: 'profile',
     title: 'Profile',
     data: { breadcrumb: 'Profile' },

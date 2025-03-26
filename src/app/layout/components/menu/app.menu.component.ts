@@ -36,6 +36,17 @@ export class AppMenuComponent implements OnInit {
             },
           ],
         },
+        {
+          label: 'Inventario',
+          icon: 'pi pi-home',
+          items: [
+            {
+              label: 'Productos',
+              icon: 'pi pi-fw pi-cog',
+              routerLink: ['/inventories/products'],
+            },
+          ],
+        },
       ];
     } else {
       this.model = [];
