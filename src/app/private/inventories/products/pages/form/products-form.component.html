@@ -1,7 +1,7 @@
 @if (form) {
   <form [formGroup]="form" (ngSubmit)="saveProductButton()" class="pt-2">
-    <div class="p-fluid">
-      <div class="field">
+    <div class="p-fluid p-formgrid grid">
+      <div class="field col-12 md:col-4">
         @if (productId === 0) {
           <app-input-select
             placeholder="Seleccione genero"
@@ -14,7 +14,48 @@
             optionValue="id"></app-input-select>
         }
       </div>
-
+      <div class="field col-12 md:col-8">
+        <app-input-text
+          placeholder="Ingrese nombre"
+          label="Nombre"
+          controlName="name"></app-input-text>
+      </div>
+      <div class="field col-12">
+        <app-input-textarea
+          placeholder="Ingrese descripción"
+          label="Descripción"
+          controlName="description"></app-input-textarea>
+      </div>
+      <div class="field col-12 md:col-2">
+        <app-input-text
+          placeholder="Ingrese precio de compra"
+          label="Precio de compra"
+          controlName="purchasePrice"></app-input-text>
+      </div>
+      <div class="field col-12 md:col-3">
+        <app-input-text
+          placeholder="Ingrese precio de venta al por mayor"
+          label="Precio de venta al por mayor"
+          controlName="wholesalePrice"></app-input-text>
+      </div>
+      <div class="field col-12 md:col-2">
+        <app-input-text
+          placeholder="Ingrese precio mínimo de venta al por mayor"
+          label="Precio mínimo de venta al por mayor"
+          controlName="minWholesalePrice"></app-input-text>
+      </div>
+      <div class="field col-12 md:col-3">
+        <app-input-text
+          placeholder="Ingrese precio de venta al por menor"
+          label="Precio de venta al por menor"
+          controlName="ratailPrice"></app-input-text>
+      </div>
+      <div class="field col-12 md:col-2">
+        <app-input-text
+          placeholder="Ingrese precio de venta al por menor"
+          label="Precio mínimo de venta al por menor"
+          controlName="minRatailPrice"></app-input-text>
+      </div>
       <button type="submit" pButton label="Guardar"></button>
     </div>
   </form>

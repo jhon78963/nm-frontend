@@ -1,13 +1,13 @@
 .p-inputtext.float {
-    border: none;
-    border-bottom: 1px solid #d4d6d9;
-    border-radius: 0;
-    width: 100%;
+  border: none;
+  border-bottom: 1px solid #d4d6d9;
+  border-radius: 0;
+  width: 100%;
 }
 
 .p-inputtext.float:enabled:focus {
-    box-shadow: none;
-    border-color: var(--primary-color);
+  box-shadow: none;
+  border-color: var(--primary-color);
 }
 
 .p-float-label input:focus ~ label,
@@ -16,6 +16,7 @@
 .p-float-label textarea.p-filled ~ label,
 .p-float-label .p-inputwrapper-focus ~ label,
 .p-float-label .p-inputwrapper-filled ~ label {
-    top: -0.05rem;
-    font-size: 12px;
+  top: -0.7rem;
+  left: 0;
+  font-size: 12px;
 }
