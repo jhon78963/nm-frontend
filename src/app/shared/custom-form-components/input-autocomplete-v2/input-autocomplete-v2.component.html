@@ -19,7 +19,9 @@
     <div class="dropdown-panel">
       <ul>
         @for (item of collection; track $index) {
-          <li class="dropdown-items">{{ item.value }}</li>
+          <li class="dropdown-items" (click)="getSelecteditem(item)">
+            {{ item.value }}
+          </li>
         }
       </ul>
     </div>

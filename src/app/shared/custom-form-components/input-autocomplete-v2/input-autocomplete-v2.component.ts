@@ -28,7 +28,9 @@ export class InputAutocompleteV2Component implements OnInit {
   @Input() readonly: boolean = false;
   @Input() collectionToCall: string | null = null;
   @Input() queryParam: string | null = null;
+  private keyToAddString = '+ ';
   collection: any[] = [];
+  firstTimeLoaded = false;
 
   formGroup: FormGroup = new FormGroup({
     size: new FormControl(),
@@ -42,7 +44,8 @@ export class InputAutocompleteV2Component implements OnInit {
       ?.valueChanges.pipe(debounceTime(600))
       .subscribe((value: string | null) => {
         this.collection = [];
-        if (value) {
+        if (value && !this.firstTimeLoaded) {
+          this.firstTimeLoaded = true;
           this.apiService
             .get<
               AutocompleteResponse[]
@@ -54,19 +57,28 @@ export class InputAutocompleteV2Component implements OnInit {
                 } else {
                   this.collection.push({
                     id: 0,
-                    value: `+ ${value}`,
+                    value: `${this.keyToAddString}${value}`,
                   });
                 }
               },
             });
         } else {
           this.collection = [];
+          this.firstTimeLoaded = false;
         }
       });
   }
 
   clearFilter() {
     this.formGroup.get('size')?.setValue(null);
+    this.collection = [];
+    this.firstTimeLoaded = false;
+  }
+
+  getSelecteditem(item: AutocompleteResponse) {
+    this.formGroup
+      .get('size')
+      ?.setValue(item.value.replace(this.keyToAddString, '').toUpperCase());
     this.collection = [];
   }
 }
