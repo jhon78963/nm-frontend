@@ -16,6 +16,13 @@ const routes: Routes = [
         c => c.ProductsFormComponent,
       ),
   },
+  {
+    path: 'edit/:id',
+    loadComponent: () =>
+      import('./pages/form/products-form.component').then(
+        c => c.ProductsFormComponent,
+      ),
+  },
   { path: '', pathMatch: 'full', redirectTo: 'products' },
 ];
 

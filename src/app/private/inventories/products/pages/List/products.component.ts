@@ -144,7 +144,7 @@ export class ProductListComponent implements OnInit {
   }
 
   editProductButton(id: number) {
-    console.log(id);
+    this.router.navigate([`/inventories/products/edit/${id}`]);
   }
   deleteProductButton(id: number, event: Event) {
     console.log({ id, event });

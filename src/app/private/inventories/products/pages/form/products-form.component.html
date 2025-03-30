@@ -1,18 +1,19 @@
 @if (form) {
   <form [formGroup]="form" (ngSubmit)="saveProductButton()" class="pt-2">
     <div class="p-fluid p-formgrid grid">
+      <div class="field col-12">
+        <span class="text-lg font-bold">Producto</span>
+      </div>
       <div class="field col-12 md:col-4">
-        @if (productId === 0) {
-          <app-input-select
-            placeholder="Seleccione genero"
-            label="Genero"
-            controlName="genderId"
-            for="gender"
-            [options]="genders"
-            id="gender"
-            optionLabel="gender"
-            optionValue="id"></app-input-select>
-        }
+        <app-input-select
+          placeholder="Seleccione genero"
+          label="Genero"
+          controlName="genderId"
+          for="gender"
+          [options]="genders"
+          id="gender"
+          optionLabel="gender"
+          optionValue="id"></app-input-select>
       </div>
       <div class="field col-12 md:col-8">
         <app-input-text
@@ -30,33 +31,101 @@
         <app-input-text
           placeholder="Ingrese precio de compra"
           label="Precio de compra"
-          controlName="purchasePrice"></app-input-text>
+          controlName="purchasePrice"
+          pKeyFilter="num"></app-input-text>
       </div>
       <div class="field col-12 md:col-3">
         <app-input-text
           placeholder="Ingrese precio de venta al por mayor"
           label="Precio de venta al por mayor"
-          controlName="wholesalePrice"></app-input-text>
+          controlName="wholesalePrice"
+          pKeyFilter="num"></app-input-text>
       </div>
       <div class="field col-12 md:col-2">
         <app-input-text
           placeholder="Ingrese precio mínimo de venta al por mayor"
           label="Precio mínimo de venta al por mayor"
-          controlName="minWholesalePrice"></app-input-text>
+          controlName="minWholesalePrice"
+          pKeyFilter="num"></app-input-text>
       </div>
       <div class="field col-12 md:col-3">
         <app-input-text
           placeholder="Ingrese precio de venta al por menor"
           label="Precio de venta al por menor"
-          controlName="ratailPrice"></app-input-text>
+          controlName="ratailPrice"
+          pKeyFilter="num"></app-input-text>
       </div>
       <div class="field col-12 md:col-2">
         <app-input-text
           placeholder="Ingrese precio de venta al por menor"
           label="Precio mínimo de venta al por menor"
-          controlName="minRatailPrice"></app-input-text>
+          controlName="minRatailPrice"
+          pKeyFilter="num"></app-input-text>
       </div>
-      <button type="submit" pButton label="Guardar"></button>
+      <div
+        class="flex flex-column justify-content-center m-0 w-custom md:ml-auto md:mr-auto md:mt-4">
+        <div class="flex justify-content-between align-items-center pb-2">
+          <span class="text-lg font-bold">Tallas</span>
+          <p-button [outlined]="true">
+            <i class="pi pi-plus" style="font-size: 1rem"></i>
+          </p-button>
+        </div>
+        <div class="table-container">
+          <table class="table">
+            <thead class="table__header">
+              <tr>
+                <th>Talla</th>
+                <th>Stock</th>
+                <th>Precio</th>
+                <th>Colores</th>
+                <th class="w-2">&nbsp;</th>
+              </tr>
+            </thead>
+            <tbody class="table__body">
+              @for (size of sizes; track size) {
+                <tr class="table__body--tr">
+                  <td>{{ size.size }}</td>
+                  <td>{{ size.stock }}</td>
+                  <td>{{ size.price }}</td>
+                  <td>
+                    <ul class="m-0 p-0">
+                      @for (color of size.colors; track color) {
+                        <li>{{ color.color }}</li>
+                      }
+                    </ul>
+                  </td>
+                  <td class="text-center">
+                    <button type="button" class="edit md:mr-3">
+                      <span aria-hidden="true">
+                        <i class="pi pi-pencil"></i>
+                      </span>
+                    </button>
+                    <button type="button" class="close">
+                      <span aria-hidden="true">
+                        <i class="pi pi-times"></i>
+                      </span>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="flex justify-content-end w-full gap-2 p-4">
+        <button
+          [routerLink]="['/inventories/products']"
+          type="button"
+          class="w-full md:w-2 p-button-secondary border-none"
+          pButton
+          [outlined]="true"
+          label="Regresar"></button>
+        <button
+          type="submit"
+          class="w-full md:w-2"
+          pButton
+          label="Guardar"></button>
+      </div>
     </div>
   </form>
 }
