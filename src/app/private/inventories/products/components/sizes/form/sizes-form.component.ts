@@ -31,7 +31,7 @@ export class SizesFormComponent implements OnInit {
   }
 
   form: FormGroup = this.formBuilder.group({
-    description: [null, Validators.required],
+    sizeId: [null, Validators.required],
     colors: [null, Validators.required],
   });
 

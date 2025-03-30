@@ -2,7 +2,7 @@
   <form [formGroup]="form" (ngSubmit)="saveSizeButton()">
     <div class="p-fluid p-formgrid grid mt-2">
       <div class="field col-12">
-        <app-input-select
+        <!-- <app-input-select
           placeholder="Seleccione talla"
           label="Talla"
           controlName="description"
@@ -10,7 +10,25 @@
           [options]="(sizes | async) ?? []"
           id="description"
           optionLabel="description"
-          optionValue="id"></app-input-select>
+          optionValue="id"></app-input-select> -->
+        <!-- <app-input-autocomplete-api
+          class="anagrafica-api-filter float autocomplete-icon"
+          label="Talla"
+          placeholder="Seleccione talla"
+          [collectionToCall]="'sizes/autocomplete'"
+          [decodeUrl]="'sizes'"
+          decodeValueField="id"
+          decodeLabelField="description"
+          [isEnum]="true"
+          controlName="sizeId"></app-input-autocomplete-api> -->
+        <app-input-autocomplete-v2
+          id="sizeId"
+          for="sizeId"
+          label="Talla"
+          type="text"
+          placeholder="Escriba la talla a buscar"
+          collectionToCall="sizes/autocomplete"
+          queryParam="search"></app-input-autocomplete-v2>
       </div>
       <button type="submit" pButton label="Guardar"></button>
     </div>

@@ -1,3 +1,26 @@
 .field {
   margin-bottom: 0;
 }
+
+::ng-deep {
+  p-autocomplete.float .p-inputtext {
+      width: 100%;
+      top: 1rem !important;
+  }
+
+  .p-float-label input:focus ~ label,
+  .p-float-label input.p-filled ~ label,
+  .p-float-label textarea:focus ~ label,
+  .p-float-label textarea.p-filled ~ label,
+  .p-float-label .p-inputwrapper-focus ~ label,
+  .p-float-label .p-inputwrapper-filled ~ label {
+      top: -0.75rem !important;
+  }
+
+  .anagrafica-api-filter .float .p-inputtext {
+      border: none !important;
+      border-bottom: 1px solid #d4d6d9 !important;
+      border-radius: 0 !important;
+      width: 100%;
+  }
+}

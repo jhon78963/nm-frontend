@@ -30,6 +30,8 @@ import { PaginatorModule } from 'primeng/paginator';
 import { FileUploadModule } from 'primeng/fileupload';
 import { UploadExcelComponent } from './custom-form-components/upload-excel/upload-excel.component';
 import { TabViewComponent } from './custom-form-components/tab-view/tab-view.component';
+import { InputAutocompleteApiComponent } from './custom-form-components/input-autocomplete-api/input-autocomplete-api.component';
+import { InputAutocompleteV2Component } from './custom-form-components/input-autocomplete-v2/input-autocomplete-v2.component';
 
 const PRIMENG_MODULES = [
   InputTextModule,
@@ -50,6 +52,7 @@ const PRIMENG_MODULES = [
 
 const STANDALONES_COMPONENTS = [
   InputAutocompleteComponent,
+  InputAutocompleteApiComponent,
   InputCheckboxComponent,
   InputDateComponent,
   InputMoneyComponent,
@@ -64,6 +67,7 @@ const STANDALONES_COMPONENTS = [
   TablePaginationComponent,
   UploadExcelComponent,
   TabViewComponent,
+  InputAutocompleteV2Component,
 ];
 
 @NgModule({
