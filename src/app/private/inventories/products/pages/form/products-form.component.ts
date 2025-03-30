@@ -6,14 +6,28 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { CommonModule } from '@angular/common';
+
+import { KeyFilterModule } from 'primeng/keyfilter';
+
 import { ProductsService } from '../../services/products.service';
 import { GendersService } from '../../../../../services/genders.service';
-import { Gender } from '../../../../../models/gender.interface';
-import { CommonModule } from '@angular/common';
+
 import { SharedModule } from '../../../../../shared/shared.module';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { Product, ProductSave, Size } from '../../models/products.model';
-import { KeyFilterModule } from 'primeng/keyfilter';
+
+import {
+  Product,
+  ProductSave,
+  ProductSize,
+  Size,
+} from '../../models/products.model';
+import { Gender } from '../../../../../models/gender.interface';
+import { SizesTableComponent } from '../../components/sizes/table/sizes-table.component';
+import { DialogService } from 'primeng/dynamicdialog';
+import { SizesFormComponent } from '../../components/sizes/form/sizes-form.component';
+import { showError, showSuccess } from '../../../../../utils/notifications';
+import { MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-products-form',
@@ -21,13 +35,15 @@ import { KeyFilterModule } from 'primeng/keyfilter';
   imports: [
     CommonModule,
     FormsModule,
-    ReactiveFormsModule,
-    SharedModule,
-    RouterLink,
     KeyFilterModule,
+    ReactiveFormsModule,
+    RouterLink,
+    SharedModule,
+    SizesTableComponent,
   ],
   templateUrl: './products-form.component.html',
   styleUrl: './products-form.component.scss',
+  providers: [DialogService, MessageService],
 })
 export class ProductsFormComponent implements OnInit {
   productId: number = 0;
@@ -36,9 +52,11 @@ export class ProductsFormComponent implements OnInit {
 
   constructor(
     private readonly formBuilder: FormBuilder,
+    private readonly dialogService: DialogService,
+    private readonly messageService: MessageService,
     private readonly productsService: ProductsService,
     private readonly gendersService: GendersService,
-    private route: ActivatedRoute,
+    private readonly route: ActivatedRoute,
   ) {
     if (this.route.snapshot.paramMap.get('id')) {
       this.productId = Number(this.route.snapshot.paramMap.get('id'));
@@ -66,12 +84,9 @@ export class ProductsFormComponent implements OnInit {
         next: (product: Product) => {
           this.form.patchValue(product);
           this.sizes = product.sizes;
-          console.log(this.sizes);
         },
       });
     }
-
-    console.log(this.productId);
   }
 
   saveProductButton() {
@@ -81,5 +96,27 @@ export class ProductsFormComponent implements OnInit {
         alert('producto creado');
       },
     });
+  }
+
+  addSize(productId: number) {
+    const modal = this.dialogService.open(SizesFormComponent, {
+      data: { productId },
+      header: 'Agregar talla',
+      styleClass: 'dialog-custom-form',
+    });
+
+    modal.onClose.subscribe({
+      next: value => {
+        value && value?.success
+          ? showSuccess(this.messageService, 'Talla agregada')
+          : value?.error
+            ? showError(this.messageService, value?.error)
+            : null;
+      },
+    });
+  }
+
+  getProductsizeSeletected(productSize: ProductSize) {
+    console.log(productSize);
   }
 }

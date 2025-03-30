@@ -66,51 +66,16 @@
         class="flex flex-column justify-content-center m-0 w-custom md:ml-auto md:mr-auto md:mt-4">
         <div class="flex justify-content-between align-items-center pb-2">
           <span class="text-lg font-bold">Tallas</span>
-          <p-button [outlined]="true">
+          <p-button [outlined]="true" (click)="addSize(productId)">
             <i class="pi pi-plus" style="font-size: 1rem"></i>
           </p-button>
         </div>
-        <div class="table-container">
-          <table class="table">
-            <thead class="table__header">
-              <tr>
-                <th>Talla</th>
-                <th>Stock</th>
-                <th>Precio</th>
-                <th>Colores</th>
-                <th class="w-2">&nbsp;</th>
-              </tr>
-            </thead>
-            <tbody class="table__body">
-              @for (size of sizes; track size) {
-                <tr class="table__body--tr">
-                  <td>{{ size.size }}</td>
-                  <td>{{ size.stock }}</td>
-                  <td>{{ size.price }}</td>
-                  <td>
-                    <ul class="m-0 p-0">
-                      @for (color of size.colors; track color) {
-                        <li>{{ color.color }}</li>
-                      }
-                    </ul>
-                  </td>
-                  <td class="text-center">
-                    <button type="button" class="edit md:mr-3">
-                      <span aria-hidden="true">
-                        <i class="pi pi-pencil"></i>
-                      </span>
-                    </button>
-                    <button type="button" class="close">
-                      <span aria-hidden="true">
-                        <i class="pi pi-times"></i>
-                      </span>
-                    </button>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+        <app-size-table
+          [productId]="productId"
+          [sizes]="sizes"
+          (productSizeSelected)="
+            getProductsizeSeletected($event)
+          "></app-size-table>
       </div>
       <div class="flex justify-content-end w-full gap-2 p-4">
         <button

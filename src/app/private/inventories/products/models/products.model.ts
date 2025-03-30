@@ -1,16 +1,22 @@
 export interface Color {
   id: number;
-  color: string;
+  description: string;
   stock?: number;
   price?: number;
 }
 
 export interface Size {
   id: number;
-  size: string;
+  description: string;
   stock?: number;
   price?: number;
   colors?: Color[];
+}
+
+export interface ProductSize {
+  sizeId: number;
+  productId: number;
+  type: string;
 }
 
 export interface Product {

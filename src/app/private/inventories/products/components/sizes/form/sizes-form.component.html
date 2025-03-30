@@ -1,0 +1,18 @@
+@if (form) {
+  <form [formGroup]="form" (ngSubmit)="saveSizeButton()">
+    <div class="p-fluid p-formgrid grid mt-2">
+      <div class="field col-12">
+        <app-input-select
+          placeholder="Seleccione talla"
+          label="Talla"
+          controlName="description"
+          for="description"
+          [options]="(sizes | async) ?? []"
+          id="description"
+          optionLabel="description"
+          optionValue="id"></app-input-select>
+      </div>
+      <button type="submit" pButton label="Guardar"></button>
+    </div>
+  </form>
+}

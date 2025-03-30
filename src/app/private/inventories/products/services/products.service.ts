@@ -61,7 +61,7 @@ export class ProductsService {
 
   delete(id: number): Observable<void> {
     return this.apiService
-      .delete(`users/${id}`)
+      .delete(`products/${id}`)
       .pipe(switchMap(() => this.callGetList()));
   }
 
