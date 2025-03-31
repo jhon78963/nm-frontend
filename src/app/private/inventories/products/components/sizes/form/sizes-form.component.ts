@@ -12,6 +12,7 @@ import { SharedModule } from '../../../../../../shared/shared.module';
 import { SizesService } from '../../../../size/services/sizes.service';
 import { Observable } from 'rxjs';
 import { Size } from '../../../../size/models/sizes.model';
+import { AutocompleteResponse } from '../../../../../../shared/models/autocomplete.interface';
 
 @Component({
   selector: 'app-sizes-form',
@@ -41,6 +42,10 @@ export class SizesFormComponent implements OnInit {
 
   get sizes(): Observable<Size[]> {
     return this.sizesService.getList();
+  }
+
+  getItemSelected(size: AutocompleteResponse) {
+    console.log(size);
   }
 
   saveSizeButton() {

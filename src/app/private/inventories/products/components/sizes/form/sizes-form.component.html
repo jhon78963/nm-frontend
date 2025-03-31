@@ -28,7 +28,10 @@
           type="text"
           placeholder="Escriba la talla a buscar"
           collectionToCall="sizes/autocomplete"
-          queryParam="search"></app-input-autocomplete-v2>
+          collectionToSave="sizes"
+          bodyColumn="description"
+          queryParam="search"
+          (itemSelected)="getItemSelected($event)"></app-input-autocomplete-v2>
       </div>
       <button type="submit" pButton label="Guardar"></button>
     </div>
