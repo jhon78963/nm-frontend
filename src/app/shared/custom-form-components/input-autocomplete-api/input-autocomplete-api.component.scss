@@ -1,40 +1,69 @@
-::ng-deep .anagrafica-api-autocomplete .float .p-inputtext {
-    border: none;
-    border-bottom: 1px solid #d4d6d9;
-    border-radius: 0;
-    width: 100%;
+.p-inputtext.float {
+  border: none;
+  border-bottom: 1px solid #d4d6d9;
+  border-radius: 0;
+  width: 100%;
 }
 
-::ng-deep .anagrafica-api-autocomplete.float .p-inputtext:enabled:focus {
-    box-shadow: none;
-    border-color: var(--primary-color);
+.p-inputtext.float:enabled:focus {
+  box-shadow: none;
+  border-color: var(--primary-color);
 }
 
 .p-float-label input:focus ~ label,
-.p-float-label input.p-filled ~ label,
-.p-float-label textarea:focus ~ label,
-.p-float-label textarea.p-filled ~ label,
-.p-float-label .p-inputwrapper-focus ~ label,
-.p-float-label .p-inputwrapper-filled ~ label {
-    top: -0.05rem;
-    font-size: 12px;
+.p-float-label input.p-filled ~ label {
+  top: -0.7rem;
+  left: 0.75rem;
+  font-size: 12px;
 }
 
-::ng-deep p-autocomplete.float .p-component.p-inputwrapper {
-    width: 100%;
+.mb-custom {
+  margin-top: 1rem;
 }
 
-::ng-deep {
-    p-autocomplete.p-autocomplete-clearable .p-autocomplete-clear-icon {
-        width: 12px;
-    }
+.pi.pi-times {
+  z-index: 1;
 }
 
-::ng-deep {
-    .anagrafica-api-autocomplete .p-element.p-icon-wrapper .p-icon-spin {
-        display: none;
+.pi.pi-times:hover {
+  cursor: pointer;
+}
+
+.clear-icon {
+  position: absolute;
+  right: 0.75rem;
+  top: 52%;
+  color: #83888f;
+  transform: translateY(-50%);
+}
+
+.p-inputtext {
+  padding-right: 2.5rem;
+}
+
+.dropdown-panel {
+  background: #ffffff;
+  color: #69707a;
+  border: 0 none;
+  border-radius: 10px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+
+  position: absolute;
+  left: 0;
+  top: 100%;
+  width: 100%;
+  z-index: 1000;
+  ul {
+    margin: 0;
+    padding: 0.75rem 0;
+    .dropdown-items {
+      padding: 0.75rem;
+      list-style: none;
+      &:hover {
+        background-color: rgba(255, 179, 64, 0.24);
+        cursor: pointer;
+      }
     }
-    .anagrafica-api-filter .p-element.p-icon-wrapper .p-icon-spin {
-        display: none;
-    }
+  }
+
 }

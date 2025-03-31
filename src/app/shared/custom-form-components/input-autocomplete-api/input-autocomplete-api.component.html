@@ -1,21 +1,31 @@
-<span class="p-float-label">
-  <p-autoComplete
-    #autoComplete
+<span class="p-float-label mb-4 w-full" [formGroup]="formGroup">
+  <input
+    pInputText
     class="float"
-    optionLabel="description"
-    optionValue="id"
-    [dropdown]="false"
-    [formControl]="formControl"
     [placeholder]="placeholder"
-    [suggestions]="filteredValue"
-    (completeMethod)="filterMethod($event)"
-    [delay]="500"
-    [showClear]="showClear"
+    [type]="type"
+    [id]="id"
     [readonly]="readonly"
-    (click)="!autoComplete.id && autoComplete.handleDropdownClick($event)"
-    (onSelect)="onSelect($event)"
-    (onClear)="onClear()"></p-autoComplete>
-  <label for="float-label">{{ label }}</label>
+    formControlName="size" />
+  <span
+    class="clear-icon"
+    *ngIf="formGroup.get('size')?.value"
+    (click)="clearFilter()">
+    <i class="pi pi-times" style="font-size: 12px"></i>
+  </span>
+  <label [for]="id">{{ label }}</label>
+
+  @if (collection.length > 0) {
+    <div class="dropdown-panel">
+      <ul>
+        @for (item of collection; track $index) {
+          <li class="dropdown-items" (click)="getSelecteditem(item)">
+            {{ item.value }}
+          </li>
+        }
+      </ul>
+    </div>
+  }
 </span>
 <p-toast></p-toast>
 <p-confirmDialog [style]="{ width: '18vw' }"></p-confirmDialog>

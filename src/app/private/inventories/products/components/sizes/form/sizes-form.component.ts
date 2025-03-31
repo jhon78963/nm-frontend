@@ -45,7 +45,7 @@ export class SizesFormComponent implements OnInit {
   }
 
   getItemSelected(size: AutocompleteResponse) {
-    console.log(size);
+    this.form.get('sizeId')?.setValue(size.id);
   }
 
   saveSizeButton() {
