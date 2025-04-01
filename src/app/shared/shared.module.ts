@@ -31,6 +31,7 @@ import { FileUploadModule } from 'primeng/fileupload';
 import { UploadExcelComponent } from './custom-form-components/upload-excel/upload-excel.component';
 import { TabViewComponent } from './custom-form-components/tab-view/tab-view.component';
 import { InputAutocompleteApiComponent } from './custom-form-components/input-autocomplete-api/input-autocomplete-api.component';
+import { InputChipsApiComponent } from './custom-form-components/input-chips-api/input-chips-api.component';
 
 const PRIMENG_MODULES = [
   InputTextModule,
@@ -66,6 +67,7 @@ const STANDALONES_COMPONENTS = [
   UploadExcelComponent,
   TabViewComponent,
   InputAutocompleteApiComponent,
+  InputChipsApiComponent,
 ];
 
 @NgModule({

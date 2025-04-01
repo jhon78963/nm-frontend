@@ -1,0 +1,46 @@
+<span class="mb-4 w-full" [formGroup]="formGroup">
+  <label [for]="id" class="pl-3">{{ label }}</label>
+  <ul class="chips-multiple-container">
+    @if (collectionSelected.length > 0) {
+      @for (item of collectionSelected; track $index) {
+        <li class="chips-item">
+          <span class="mr-2">{{ item.value }}</span>
+          <i class="pi pi-times" (click)="removeItem(item)"></i>
+        </li>
+      }
+    }
+    <li>
+      <span class="p-float-label w-full">
+        <input
+          pInputText
+          class="float"
+          [placeholder]="placeholder"
+          [type]="type"
+          [id]="id"
+          [readonly]="readonly"
+          formControlName="color" />
+        <span
+          class="clear-icon"
+          *ngIf="formGroup.get('color')?.value"
+          (click)="clearFilter()">
+          <i class="pi pi-times" style="font-size: 12px"></i>
+        </span>
+      </span>
+    </li>
+  </ul>
+  @if (collection.length > 0) {
+    <div class="dropdown-panel">
+      <ul>
+        @for (items of collection; track $index) {
+          @for (item of items; track $index) {
+            <li class="dropdown-items" (click)="getSelecteditem(item)">
+              {{ item.value }}
+            </li>
+          }
+        }
+      </ul>
+    </div>
+  }
+</span>
+<p-toast></p-toast>
+<p-confirmDialog [style]="{ width: '18vw' }"></p-confirmDialog>

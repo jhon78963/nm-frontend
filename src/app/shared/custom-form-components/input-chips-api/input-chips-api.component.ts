@@ -10,12 +10,12 @@ import {
   AutocompleteSaveResponse,
 } from '../../models/autocomplete.interface';
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { showError, showSuccess } from '../../../utils/notifications';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { showError, showSuccess } from '../../../utils/notifications';
 
 @Component({
-  selector: 'app-input-autocomplete-api',
+  selector: 'app-input-chips-api',
   standalone: true,
   imports: [
     CommonModule,
@@ -25,11 +25,11 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
     ToastModule,
     ConfirmDialogModule,
   ],
-  templateUrl: './input-autocomplete-api.component.html',
-  styleUrl: './input-autocomplete-api.component.scss',
+  templateUrl: './input-chips-api.component.html',
+  styleUrl: './input-chips-api.component.scss',
   providers: [ConfirmationService, MessageService],
 })
-export class InputAutocompleteApiComponent implements OnInit {
+export class InputChipsApiComponent implements OnInit {
   @Input() placeholder: string | null = null;
   @Input() label: string | null = null;
   @Input() for: string | null = null;
@@ -41,12 +41,13 @@ export class InputAutocompleteApiComponent implements OnInit {
   @Input() collectionToSave: string | null = null;
   @Input() bodyColumn: string = '';
   @Input() multipleOptions: boolean = false;
-  itemSelected = output<AutocompleteResponse>();
+  itemSelected = output<AutocompleteResponse[]>();
   private keyToAddString = '+ ';
   collection: any[] = [];
+  collectionSelected: any[] = [];
 
   formGroup: FormGroup = new FormGroup({
-    size: new FormControl(),
+    color: new FormControl(),
   });
 
   constructor(
@@ -57,7 +58,7 @@ export class InputAutocompleteApiComponent implements OnInit {
 
   ngOnInit(): void {
     this.formGroup
-      .get('size')
+      .get('color')
       ?.valueChanges.pipe(debounceTime(200))
       .subscribe((value: string | null) => {
         this.collection = [];
@@ -69,12 +70,14 @@ export class InputAutocompleteApiComponent implements OnInit {
             .subscribe({
               next: (res: AutocompleteResponse[]) => {
                 if (res.length > 0) {
-                  this.collection = res;
+                  this.collection.push(res);
                 } else {
-                  this.collection.push({
-                    id: 0,
-                    value: `${this.keyToAddString}${value}`,
-                  });
+                  this.collection.push([
+                    {
+                      id: 0,
+                      value: `${this.keyToAddString}${value}`,
+                    },
+                  ]);
                 }
               },
             });
@@ -85,7 +88,7 @@ export class InputAutocompleteApiComponent implements OnInit {
   }
 
   clearFilter() {
-    this.formGroup.get('size')?.setValue(null);
+    this.formGroup.get('color')?.setValue(null);
     this.collection = [];
   }
 
@@ -109,7 +112,7 @@ export class InputAutocompleteApiComponent implements OnInit {
           )
           .subscribe({
             next: (newItem: AutocompleteSaveResponse) => {
-              this.itemSelected.emit(newItem.item);
+              this.collectionSelected.push(newItem.item);
               showSuccess(this.messageService, 'Talla registrada!');
             },
             error: () => {
@@ -122,9 +125,17 @@ export class InputAutocompleteApiComponent implements OnInit {
       },
       reject: () => {
         this.collection = [];
-        this.formGroup.get('size')?.setValue('');
+        this.formGroup.get('color')?.setValue('');
       },
     });
+  }
+
+  removeItem(item: AutocompleteResponse) {
+    const index = this.collectionSelected.findIndex(
+      itemInColection => itemInColection.id === item.id,
+    );
+    this.collectionSelected.splice(index, 1);
+    this.itemSelected.emit(this.collectionSelected);
   }
 
   getSelecteditem(item: AutocompleteResponse) {
@@ -132,14 +143,13 @@ export class InputAutocompleteApiComponent implements OnInit {
       id: item.id,
       value: item.value.replace(this.keyToAddString, '').toUpperCase(),
     };
-    this.formGroup
-      .get('size')
-      ?.setValue(formattedItem.value, { emitEvent: false });
+    this.formGroup.get('color')?.setValue(null, { emitEvent: false });
     if (item.id > 0) {
-      this.itemSelected.emit(formattedItem);
+      this.collectionSelected.push(formattedItem);
     } else {
       this.addNewItem(formattedItem);
     }
+    this.itemSelected.emit(this.collectionSelected);
     this.collection = [];
   }
 }
