@@ -22,6 +22,7 @@ import { SizesTableComponent } from '../../components/sizes/table/sizes-table.co
 import { DialogService } from 'primeng/dynamicdialog';
 // import { showError, showSuccess } from '../../../../../utils/notifications';
 import { MessageService } from 'primeng/api';
+import { ProductSizesService } from '../../services/productSizes.service';
 
 @Component({
   selector: 'app-products-form',
@@ -50,6 +51,7 @@ export class ProductsFormComponent implements OnInit {
     private readonly dialogService: DialogService,
     private readonly messageService: MessageService,
     private readonly productsService: ProductsService,
+    private readonly productSizesService: ProductSizesService,
     private readonly gendersService: GendersService,
     private readonly route: ActivatedRoute,
   ) {
@@ -84,11 +86,36 @@ export class ProductsFormComponent implements OnInit {
   }
 
   saveProductButton() {
-    console.log(this.form.value);
+    const productSizes = this.form.get('productSizes')?.value;
+    productSizes.map((productSize: any) => {
+      this.productSizesService
+        .getProductSizeId(this.productId, productSize.size.id)
+        .subscribe({
+          next: (res: any) => {
+            console.log(res);
+          },
+        });
+    });
+    console.log(productSizes);
     const product = new ProductSave(this.form.value);
     this.productsService.create(product).subscribe({
-      next: () => {
-        alert('producto creado');
+      next: (res: any) => {
+        const productSizes = this.form.get('productSizes')?.value;
+        productSizes.map((productSize: any) => {
+          this.productSizesService
+            .add(res.productId, productSize.size.id, {
+              stock: productSize.stock,
+              price: productSize.price,
+            })
+            .subscribe();
+          this.productSizesService
+            .getProductSizeId(this.productId, productSize.size.id)
+            .subscribe({
+              next: (res: any) => {
+                console.log(res);
+              },
+            });
+        });
       },
     });
   }

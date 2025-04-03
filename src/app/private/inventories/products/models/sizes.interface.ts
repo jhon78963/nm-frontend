@@ -6,3 +6,8 @@ export interface SizeForm {
     value: string;
   };
 }
+
+export interface ProductSizeSave {
+  stock: number;
+  price: number;
+}
