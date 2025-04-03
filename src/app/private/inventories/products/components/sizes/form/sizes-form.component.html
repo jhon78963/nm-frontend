@@ -1,7 +1,7 @@
 @if (form) {
   <form [formGroup]="form" (ngSubmit)="saveSizeButton()">
     <div class="p-fluid p-formgrid grid mt-2">
-      <div class="field col-12">
+      <div class="field col-12 pb-0">
         <app-input-autocomplete-api
           id="sizeId"
           for="sizeId"
@@ -13,6 +13,13 @@
           bodyColumn="description"
           queryParam="search"
           (itemSelected)="getItemSelected($event)"></app-input-autocomplete-api>
+      </div>
+      <div class="field col-12 pb-0">
+        <app-input-text
+          placeholder="Ingrese stock"
+          label="Stock"
+          controlName="stock"
+          pKeyFilter="num"></app-input-text>
       </div>
       <div class="field col-12">
         <app-input-chips-api
@@ -27,7 +34,11 @@
           queryParam="search"
           (itemSelected)="getItemsSelected($event)"></app-input-chips-api>
       </div>
-      <button type="submit" pButton label="Guardar"></button>
+      <button
+        type="submit"
+        pButton
+        label="Guardar"
+        [disabled]="!isValid"></button>
     </div>
   </form>
 }

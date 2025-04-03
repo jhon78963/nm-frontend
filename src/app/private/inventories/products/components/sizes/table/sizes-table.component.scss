@@ -1,10 +1,8 @@
 .table-container {
-  overflow-x: auto;
   max-width: 100%;
-  white-space: nowrap;
 }
 .table {
-  width: 100vh;
+  width: 100%;
   background: #fff;
   -webkit-box-shadow: 0px 5px 12px -12px rgba(0, 0, 0, 0.29);
   -moz-box-shadow: 0px 5px 12px -12px rgba(0, 0, 0, 0.29);
@@ -70,7 +68,33 @@
     }
   }
 }
+.p-inputtext.float {
+  border: none;
+  border-bottom: 1px solid #d4d6d9;
+  border-radius: 0;
+  width: 100%;
+}
+
+.p-inputtext.float:enabled:focus {
+  box-shadow: none;
+  border-color: var(--primary-color);
+}
+
+.p-float-label input:focus ~ label,
+.p-float-label input.p-filled ~ label,
+.p-float-label textarea:focus ~ label,
+.p-float-label textarea.p-filled ~ label,
+.p-float-label .p-inputwrapper-focus ~ label,
+.p-float-label .p-inputwrapper-filled ~ label {
+  top: -0.7rem;
+  left: 0;
+  font-size: 12px;
+}
 @media screen and (max-width: 1200px) {
+  .table-container {
+    overflow-x: auto;
+    white-space: nowrap;
+  }
   .table {
     width: 100%;
   }

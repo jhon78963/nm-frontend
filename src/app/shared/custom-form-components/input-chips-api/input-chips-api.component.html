@@ -1,5 +1,4 @@
-<span class="mb-4 w-full" [formGroup]="formGroup">
-  <label [for]="id" class="pl-3">{{ label }}</label>
+<span class="p-float-label w-full" [formGroup]="formGroup">
   <ul class="chips-multiple-container">
     @if (collectionSelected.length > 0) {
       @for (item of collectionSelected; track $index) {
@@ -19,6 +18,7 @@
           [id]="id"
           [readonly]="readonly"
           formControlName="color" />
+        <label [for]="id" class="pl-3">{{ label }}</label>
         <span
           class="clear-icon"
           *ngIf="formGroup.get('color')?.value"

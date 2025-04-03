@@ -1,16 +1,16 @@
-<div class="table-container">
-  <table class="table">
-    <thead class="table__header">
-      <tr>
-        <th>Talla</th>
-        <th>Stock</th>
-        <th>Precio</th>
-        <th>Colores</th>
-        <th class="w-2">&nbsp;</th>
-      </tr>
-    </thead>
-    <tbody class="table__body">
-      @if (sizes.length > 0) {
+<form [formGroup]="mainForm">
+  <div class="table-container">
+    <table class="table">
+      <thead class="table__header">
+        <tr>
+          <th>Talla</th>
+          <th>Stock</th>
+          <th>Precio</th>
+          <th>Colores</th>
+          <th class="w-2">&nbsp;</th>
+        </tr>
+      </thead>
+      <tbody class="table__body" formArrayName="sizes">
         @for (size of sizes; track size) {
           <tr class="table__body--tr">
             <td>{{ size.description }}</td>
@@ -19,7 +19,7 @@
             <td>
               <ul class="m-0 p-0">
                 @for (color of size.colors; track color) {
-                  <li>{{ color.description }}</li>
+                  <li>{{ color.description || color.value }}</li>
                 }
               </ul>
             </td>
@@ -43,11 +43,143 @@
             </td>
           </tr>
         }
-      } @else {
-        <tr class="table__body--tr">
-          <td colspan="5" class="text-center">Sin tallas</td>
-        </tr>
-      }
-    </tbody>
-  </table>
-</div>
+        <!-- <tr class="table__body--tr" [formGroup]="form">
+          <td>
+            <app-input-autocomplete-api
+              id="sizeId"
+              for="sizeId"
+              label="Talla"
+              type="text"
+              placeholder="Escriba la talla a buscar"
+              collectionToCall="sizes/autocomplete"
+              collectionToSave="sizes"
+              bodyColumn="description"
+              queryParam="search"
+              (itemSelected)="
+                getItemSelected($event)
+              "></app-input-autocomplete-api>
+          </td>
+          <td>
+            <app-input-text
+              placeholder="Ingrese stock"
+              label="Stock"
+              controlName="stock"
+              pKeyFilter="num"></app-input-text>
+          </td>
+          <td>
+            <app-input-text
+              placeholder="Ingrese precio"
+              label="Precio"
+              controlName="price"
+              pKeyFilter="num"></app-input-text>
+          </td>
+          <td>
+            <app-input-chips-api
+              id="colors"
+              for="colors"
+              label="Colores"
+              type="text"
+              placeholder="Escriba el color a buscar"
+              collectionToCall="colors/autocomplete"
+              collectionToSave="colors"
+              bodyColumn="description"
+              queryParam="search"
+              (itemSelected)="getItemsSelected($event)"></app-input-chips-api>
+          </td>
+          <td class="text-center">
+            <button
+              type="button"
+              class="edit md:mr-3"
+              (click)="productSizeButton(0, 0, 'create')">
+              <span aria-hidden="true">
+                <i class="pi pi-pencil"></i>
+              </span>
+            </button>
+          </td>
+        </tr> -->
+        @for (row of sizesArray.controls; track row; let i = $index) {
+          <tr class="table__body--tr" [formGroupName]="i">
+            <td>
+              <app-input-autocomplete-api
+                id="sizeId-{{ i }}"
+                for="sizeId-{{ i }}"
+                label="Talla"
+                type="text"
+                placeholder="Escriba la talla a buscar"
+                collectionToCall="sizes/autocomplete"
+                collectionToSave="sizes"
+                bodyColumn="description"
+                queryParam="search"
+                (itemSelected)="getItemSelected($event, i)">
+              </app-input-autocomplete-api>
+            </td>
+            <td>
+              <span class="p-float-label">
+                <input
+                  class="float"
+                  placeholder="Ingrese stock"
+                  id="stock-{{ i }}"
+                  pInputText
+                  formControlName="stock" />
+                <label for="stock-{{ i }}">Stock</label>
+              </span>
+            </td>
+            <td>
+              <span class="p-float-label">
+                <input
+                  class="float"
+                  placeholder="Ingrese precio"
+                  id="price-{{ i }}"
+                  pInputText
+                  formControlName="price" />
+                <label for="price-{{ i }}">Precio</label>
+              </span>
+            </td>
+            <td>
+              <app-input-chips-api
+                id="colors-{{ i }}"
+                for="colors-{{ i }}"
+                label="Colores"
+                type="text"
+                placeholder="Escriba el color a buscar"
+                collectionToCall="colors/autocomplete"
+                collectionToSave="colors"
+                bodyColumn="description"
+                queryParam="search"
+                (itemSelected)="getItemsSelected($event, i)">
+              </app-input-chips-api>
+            </td>
+            <td class="text-center">
+              <button
+                type="button"
+                class="edit md:mr-3"
+                (click)="productSizeButton(0, 0, 'create', i)">
+                <span aria-hidden="true">
+                  <i class="pi pi-save"></i>
+                </span>
+              </button>
+              <button
+                type="button"
+                class="close md:mr-3"
+                (click)="removeItem(i)">
+                <span aria-hidden="true">
+                  <i class="pi pi-trash"></i>
+                </span>
+              </button>
+              <!-- <button type="button" class="edit md:mr-3" (click)="addRow()">
+                <span aria-hidden="true">
+                  <i class="pi pi-plus"></i>
+                </span>
+              </button>
+              <button type="button" class="edit md:mr-3" (click)="showRow()">
+                <span aria-hidden="true">
+                  <i class="pi pi-plus"></i>
+                </span>
+              </button> -->
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</form>

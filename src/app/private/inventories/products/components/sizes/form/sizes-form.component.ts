@@ -13,6 +13,7 @@ import { SizesService } from '../../../../size/services/sizes.service';
 import { Observable } from 'rxjs';
 import { Size } from '../../../../size/models/sizes.model';
 import { AutocompleteResponse } from '../../../../../../shared/models/autocomplete.interface';
+import { DynamicDialogRef } from 'primeng/dynamicdialog';
 
 @Component({
   selector: 'app-sizes-form',
@@ -25,6 +26,7 @@ export class SizesFormComponent implements OnInit {
   constructor(
     private readonly formBuilder: FormBuilder,
     private readonly sizesService: SizesService,
+    private readonly dynamicDialogRef: DynamicDialogRef,
   ) {}
 
   ngOnInit(): void {
@@ -33,6 +35,7 @@ export class SizesFormComponent implements OnInit {
 
   form: FormGroup = this.formBuilder.group({
     sizeId: [null, Validators.required],
+    stock: [null, Validators.required],
     colors: [null, Validators.required],
   });
 
@@ -53,6 +56,13 @@ export class SizesFormComponent implements OnInit {
   }
 
   saveSizeButton() {
-    console.log(this.form.value);
+    // console.log(this.form.value);
+    if (this.form.valid) {
+      this.dynamicDialogRef.close({ sizeSelected: this.form.value });
+    }
+  }
+
+  get isValid(): boolean {
+    return this.form.valid;
   }
 }

@@ -1,6 +1,7 @@
 export interface Color {
   id: number;
   description: string;
+  value?: string;
   stock?: number;
   price?: number;
 }
@@ -25,10 +26,8 @@ export interface Product {
   description: string;
   stock: number;
   purchasePrice: number;
-  wholesalePrice: number;
-  minWholesalePrice: number;
-  ratailPrice: number;
-  minRatailPrice: number;
+  salePrice: number;
+  minSalePrice: number;
   status: string;
   genderId: number;
   gender: string;
@@ -50,10 +49,8 @@ export class ProductSave {
   name: string;
   description: string;
   purchasePrice: number;
-  wholesalePrice: number;
-  minWholesalePrice: number;
-  ratailPrice: number;
-  minRatailPrice: number;
+  salePrice: number;
+  minSalePrice: number;
   status: string;
   genderId: number;
   constructor(product: Product) {
@@ -61,10 +58,8 @@ export class ProductSave {
     this.name = product.name;
     this.description = product.description;
     this.purchasePrice = product.purchasePrice;
-    this.wholesalePrice = product.wholesalePrice;
-    this.minWholesalePrice = product.minWholesalePrice;
-    this.ratailPrice = product.ratailPrice;
-    this.minRatailPrice = product.minRatailPrice;
+    this.salePrice = product.salePrice;
+    this.minSalePrice = product.minSalePrice;
     this.status = product.status;
     this.genderId = product.genderId;
   }

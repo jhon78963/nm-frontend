@@ -62,7 +62,7 @@ export class ProductListComponent implements OnInit {
     },
     {
       header: 'Precio de venta',
-      field: 'wholesalePrice',
+      field: 'salePrice',
       clickable: false,
       image: false,
       money: false,

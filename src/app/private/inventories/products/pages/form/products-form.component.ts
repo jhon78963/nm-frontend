@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -16,17 +16,11 @@ import { GendersService } from '../../../../../services/genders.service';
 
 import { SharedModule } from '../../../../../shared/shared.module';
 
-import {
-  Product,
-  ProductSave,
-  ProductSize,
-  Size,
-} from '../../models/products.model';
+import { Product, ProductSave, Size } from '../../models/products.model';
 import { Gender } from '../../../../../models/gender.interface';
 import { SizesTableComponent } from '../../components/sizes/table/sizes-table.component';
 import { DialogService } from 'primeng/dynamicdialog';
-import { SizesFormComponent } from '../../components/sizes/form/sizes-form.component';
-import { showError, showSuccess } from '../../../../../utils/notifications';
+// import { showError, showSuccess } from '../../../../../utils/notifications';
 import { MessageService } from 'primeng/api';
 
 @Component({
@@ -46,6 +40,7 @@ import { MessageService } from 'primeng/api';
   providers: [DialogService, MessageService],
 })
 export class ProductsFormComponent implements OnInit {
+  @Output() addSizeEvent = new EventEmitter<void>();
   productId: number = 0;
   genders: Gender[] = [];
   sizes: Size[] = [];
@@ -67,11 +62,10 @@ export class ProductsFormComponent implements OnInit {
     name: ['', Validators.required],
     description: ['', Validators.required],
     purchasePrice: ['', Validators.required],
-    wholesalePrice: ['', Validators.required],
-    minWholesalePrice: ['', Validators.required],
-    ratailPrice: ['', Validators.required],
-    minRatailPrice: [null, Validators.required],
-    genderId: [{ value: null, disabled: true }, Validators.required],
+    salePrice: ['', Validators.required],
+    minSalePrice: ['', Validators.required],
+    genderId: [{ value: 1, disabled: false }, Validators.required],
+    productSizes: this.formBuilder.array([]),
   });
 
   ngOnInit(): void {
@@ -90,6 +84,7 @@ export class ProductsFormComponent implements OnInit {
   }
 
   saveProductButton() {
+    console.log(this.form.value);
     const product = new ProductSave(this.form.value);
     this.productsService.create(product).subscribe({
       next: () => {
@@ -98,25 +93,34 @@ export class ProductsFormComponent implements OnInit {
     });
   }
 
-  addSize(productId: number) {
-    const modal = this.dialogService.open(SizesFormComponent, {
-      data: { productId },
-      header: 'Agregar talla',
-      styleClass: 'dialog-custom-form',
-    });
-
-    modal.onClose.subscribe({
-      next: value => {
-        value && value?.success
-          ? showSuccess(this.messageService, 'Talla agregada')
-          : value?.error
-            ? showError(this.messageService, value?.error)
-            : null;
-      },
-    });
+  addSize() {
+    this.addSizeEvent.emit();
   }
 
-  getProductsizeSeletected(productSize: ProductSize) {
-    console.log(productSize);
+  // addSize(productId: number) {
+  //   const modal = this.dialogService.open(SizesFormComponent, {
+  //     data: { productId },
+  //     header: 'Agregar talla',
+  //     styleClass: 'dialog-custom-form',
+  //   });
+
+  //   modal.onClose.subscribe({
+  //     next: (res: any) => {
+  //       if (res && res.sizeSelected) {
+  //         console.log(res.sizeSelected);
+  //         this.sizes.push({
+  //           id: res.sizeSelected.sizeId,
+  //           description: 'S',
+  //           stock: res.sizeSelected.stock,
+  //           price: 10,
+  //           colors: res.sizeSelected.colors,
+  //         });
+  //       }
+  //     },
+  //   });
+  // }
+
+  getProductsizeSeletected(form: any) {
+    console.log(form);
   }
 }
