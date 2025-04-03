@@ -53,10 +53,13 @@ export class ProductsService {
     return this.total$.asObservable();
   }
 
-  create(data: ProductSave): Observable<void> {
-    return this.apiService
-      .post('products', data)
-      .pipe(switchMap(() => this.callGetList()));
+  create(
+    data: ProductSave,
+  ): Observable<{ message: string; productId: number }> {
+    return this.apiService.post<{ message: string; productId: number }>(
+      'products',
+      data,
+    );
   }
 
   delete(id: number): Observable<void> {

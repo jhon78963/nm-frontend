@@ -6,7 +6,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
 import { KeyFilterModule } from 'primeng/keyfilter';
@@ -23,6 +23,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 // import { showError, showSuccess } from '../../../../../utils/notifications';
 import { MessageService } from 'primeng/api';
 import { ProductSizesService } from '../../services/productSizes.service';
+import { ProductSizeColorsService } from '../../services/productColors.service';
 
 @Component({
   selector: 'app-products-form',
@@ -47,11 +48,13 @@ export class ProductsFormComponent implements OnInit {
   sizes: Size[] = [];
 
   constructor(
+    private readonly router: Router,
     private readonly formBuilder: FormBuilder,
     private readonly dialogService: DialogService,
     private readonly messageService: MessageService,
     private readonly productsService: ProductsService,
     private readonly productSizesService: ProductSizesService,
+    private readonly productSizeColorsService: ProductSizeColorsService,
     private readonly gendersService: GendersService,
     private readonly route: ActivatedRoute,
   ) {
@@ -86,33 +89,32 @@ export class ProductsFormComponent implements OnInit {
   }
 
   saveProductButton() {
-    const productSizes = this.form.get('productSizes')?.value;
-    productSizes.map((productSize: any) => {
-      this.productSizesService
-        .getProductSizeId(this.productId, productSize.size.id)
-        .subscribe({
-          next: (res: any) => {
-            console.log(res);
-          },
-        });
-    });
-    console.log(productSizes);
     const product = new ProductSave(this.form.value);
     this.productsService.create(product).subscribe({
-      next: (res: any) => {
-        const productSizes = this.form.get('productSizes')?.value;
-        productSizes.map((productSize: any) => {
+      next: (resP: any) => {
+        const productSizes = this.form.get('productSizes')?.value || [];
+        productSizes.forEach((productSize: any) => {
           this.productSizesService
-            .add(res.productId, productSize.size.id, {
+            .add(resP.productId, productSize.size.id, {
               stock: productSize.stock,
               price: productSize.price,
             })
-            .subscribe();
-          this.productSizesService
-            .getProductSizeId(this.productId, productSize.size.id)
             .subscribe({
               next: (res: any) => {
-                console.log(res);
+                productSize.colors?.forEach((color: any) => {
+                  this.productSizeColorsService
+                    .add(res.productSizeId, color.id, {
+                      stock: 1,
+                      price: productSize.price,
+                    })
+                    .subscribe({
+                      next: () => {
+                        this.router.navigate([
+                          `/inventories/products/edit/${resP.productId}`,
+                        ]);
+                      },
+                    });
+                });
               },
             });
         });
