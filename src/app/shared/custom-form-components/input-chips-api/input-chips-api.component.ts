@@ -39,6 +39,7 @@ export class InputChipsApiComponent implements OnInit {
   @Input() collectionToCall: string | null = null;
   @Input() queryParam: string | null = null;
   @Input() collectionToSave: string | null = null;
+  @Input() collectionToEdit: any;
   @Input() bodyColumn: string = '';
   @Input() multipleOptions: boolean = false;
   itemSelected = output<AutocompleteResponse[]>();
@@ -57,6 +58,14 @@ export class InputChipsApiComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    if (Array.isArray(this.collectionToEdit)) {
+      this.collectionToEdit.forEach((color: any) => {
+        this.collectionSelected.push({
+          id: color.id,
+          value: color.description,
+        });
+      });
+    }
     this.formGroup
       .get('color')
       ?.valueChanges.pipe(debounceTime(200))

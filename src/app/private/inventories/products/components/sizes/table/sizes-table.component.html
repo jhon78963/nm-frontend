@@ -13,15 +13,37 @@
       <tbody class="table__body" formArrayName="sizes">
         @for (size of sizes; track size) {
           <tr class="table__body--tr">
-            <td>{{ size.description }}</td>
-            <td>{{ size.stock }}</td>
+            <td>
+              <app-input-autocomplete-api
+                id="sizeId-{{ size.id }}"
+                for="sizeId-{{ size.id }}"
+                label="Talla"
+                type="text"
+                placeholder="Escriba la talla a buscar"
+                collectionToCall="sizes/autocomplete"
+                [collectionToEdit]="size.description"
+                collectionToSave="sizes"
+                bodyColumn="description"
+                queryParam="search">
+              </app-input-autocomplete-api>
+            </td>
+            <td>
+              {{ size.stock }}
+            </td>
             <td>{{ size.price }}</td>
             <td>
-              <ul class="m-0 p-0">
-                @for (color of size.colors; track color) {
-                  <li>{{ color.description || color.value }}</li>
-                }
-              </ul>
+              <app-input-chips-api
+                id="colors-{{ size.id }}"
+                for="colors-{{ size.id }}"
+                label="Colores"
+                type="text"
+                placeholder="Escriba el color a buscar"
+                collectionToCall="colors/autocomplete"
+                collectionToSave="colors"
+                [collectionToEdit]="size.colors"
+                bodyColumn="description"
+                queryParam="search">
+              </app-input-chips-api>
             </td>
             <td class="text-center">
               <button
@@ -107,6 +129,7 @@
                 type="text"
                 placeholder="Escriba la talla a buscar"
                 collectionToCall="sizes/autocomplete"
+                collectionToSearch="sizes/autocomplete/1"
                 collectionToSave="sizes"
                 bodyColumn="description"
                 queryParam="search"
