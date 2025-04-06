@@ -17,6 +17,10 @@ export class ProductSizesService {
     return this.apiService.post(`products/${productId}/size/${sizeId}`, data);
   }
 
+  get(productId: number, sizeId: number): Observable<void> {
+    return this.apiService.get(`products/${productId}/size/${sizeId}`);
+  }
+
   remove(productId: number, sizeId: number): Observable<void> {
     return this.apiService.delete(`products/${productId}/size/${sizeId}`);
   }

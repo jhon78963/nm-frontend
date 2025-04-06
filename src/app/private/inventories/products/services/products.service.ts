@@ -68,10 +68,14 @@ export class ProductsService {
       .pipe(switchMap(() => this.callGetList()));
   }
 
-  edit(id: number, data: ProductSave): Observable<void> {
-    return this.apiService
-      .patch(`products/${id}`, data)
-      .pipe(switchMap(() => this.callGetList()));
+  edit(
+    id: number,
+    data: ProductSave,
+  ): Observable<{ message: string; productId: number }> {
+    return this.apiService.patch<{ message: string; productId: number }>(
+      `products/${id}`,
+      data,
+    );
   }
 
   getOne(id: number): Observable<Product> {

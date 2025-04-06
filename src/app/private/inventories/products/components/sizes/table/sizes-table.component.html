@@ -11,115 +11,7 @@
         </tr>
       </thead>
       <tbody class="table__body" formArrayName="sizes">
-        @for (size of sizes; track size) {
-          <tr class="table__body--tr">
-            <td>
-              <app-input-autocomplete-api
-                id="sizeId-{{ size.id }}"
-                for="sizeId-{{ size.id }}"
-                label="Talla"
-                type="text"
-                placeholder="Escriba la talla a buscar"
-                collectionToCall="sizes/autocomplete"
-                [collectionToEdit]="size.description"
-                collectionToSave="sizes"
-                bodyColumn="description"
-                queryParam="search">
-              </app-input-autocomplete-api>
-            </td>
-            <td>
-              {{ size.stock }}
-            </td>
-            <td>{{ size.price }}</td>
-            <td>
-              <app-input-chips-api
-                id="colors-{{ size.id }}"
-                for="colors-{{ size.id }}"
-                label="Colores"
-                type="text"
-                placeholder="Escriba el color a buscar"
-                collectionToCall="colors/autocomplete"
-                collectionToSave="colors"
-                [collectionToEdit]="size.colors"
-                bodyColumn="description"
-                queryParam="search">
-              </app-input-chips-api>
-            </td>
-            <td class="text-center">
-              <button
-                type="button"
-                class="edit md:mr-3"
-                (click)="productSizeButton(size.id, productId, 'edit')">
-                <span aria-hidden="true">
-                  <i class="pi pi-pencil"></i>
-                </span>
-              </button>
-              <button
-                type="button"
-                class="close"
-                (click)="productSizeButton(size.id, productId, 'delete')">
-                <span aria-hidden="true">
-                  <i class="pi pi-times"></i>
-                </span>
-              </button>
-            </td>
-          </tr>
-        }
-        <!-- <tr class="table__body--tr" [formGroup]="form">
-          <td>
-            <app-input-autocomplete-api
-              id="sizeId"
-              for="sizeId"
-              label="Talla"
-              type="text"
-              placeholder="Escriba la talla a buscar"
-              collectionToCall="sizes/autocomplete"
-              collectionToSave="sizes"
-              bodyColumn="description"
-              queryParam="search"
-              (itemSelected)="
-                getItemSelected($event)
-              "></app-input-autocomplete-api>
-          </td>
-          <td>
-            <app-input-text
-              placeholder="Ingrese stock"
-              label="Stock"
-              controlName="stock"
-              pKeyFilter="num"></app-input-text>
-          </td>
-          <td>
-            <app-input-text
-              placeholder="Ingrese precio"
-              label="Precio"
-              controlName="price"
-              pKeyFilter="num"></app-input-text>
-          </td>
-          <td>
-            <app-input-chips-api
-              id="colors"
-              for="colors"
-              label="Colores"
-              type="text"
-              placeholder="Escriba el color a buscar"
-              collectionToCall="colors/autocomplete"
-              collectionToSave="colors"
-              bodyColumn="description"
-              queryParam="search"
-              (itemSelected)="getItemsSelected($event)"></app-input-chips-api>
-          </td>
-          <td class="text-center">
-            <button
-              type="button"
-              class="edit md:mr-3"
-              (click)="productSizeButton(0, 0, 'create')">
-              <span aria-hidden="true">
-                <i class="pi pi-pencil"></i>
-              </span>
-            </button>
-          </td>
-        </tr> -->
-        @for (row of sizesArray.controls; track row; let i = $index) {
+        @for (size of sizesArray.controls; track size; let i = $index) {
           <tr class="table__body--tr" [formGroupName]="i">
             <td>
               <app-input-autocomplete-api
@@ -129,7 +21,7 @@
                 type="text"
                 placeholder="Escriba la talla a buscar"
                 collectionToCall="sizes/autocomplete"
-                collectionToSearch="sizes/autocomplete/1"
+                [collectionToEdit]="size.value.size.value"
                 collectionToSave="sizes"
                 bodyColumn="description"
                 queryParam="search"
@@ -140,7 +32,7 @@
               <span class="p-float-label">
                 <input
                   class="float"
-                  placeholder="Ingrese stock"
+                  placeholder="Ingrese stock {{ i }}"
                   id="stock-{{ i }}"
                   pInputText
                   formControlName="stock" />
@@ -167,6 +59,7 @@
                 placeholder="Escriba el color a buscar"
                 collectionToCall="colors/autocomplete"
                 collectionToSave="colors"
+                [collectionToEdit]="size.value.colors"
                 bodyColumn="description"
                 queryParam="search"
                 (itemSelected)="getItemsSelected($event, i)">
@@ -175,30 +68,12 @@
             <td class="text-center">
               <button
                 type="button"
-                class="edit md:mr-3"
-                (click)="productSizeButton(0, 0, 'create', i)">
+                class="close"
+                (click)="removeItem(size.value.size.id, productId, i)">
                 <span aria-hidden="true">
-                  <i class="pi pi-save"></i>
+                  <i class="pi pi-times"></i>
                 </span>
               </button>
-              <button
-                type="button"
-                class="close md:mr-3"
-                (click)="removeItem(i)">
-                <span aria-hidden="true">
-                  <i class="pi pi-trash"></i>
-                </span>
-              </button>
-              <!-- <button type="button" class="edit md:mr-3" (click)="addRow()">
-                <span aria-hidden="true">
-                  <i class="pi pi-plus"></i>
-                </span>
-              </button>
-              <button type="button" class="edit md:mr-3" (click)="showRow()">
-                <span aria-hidden="true">
-                  <i class="pi pi-plus"></i>
-                </span>
-              </button> -->
             </td>
           </tr>
         }
@@ -206,3 +81,4 @@
     </table>
   </div>
 </form>
+<p-confirmDialog />

@@ -24,6 +24,8 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { MessageService } from 'primeng/api';
 import { ProductSizesService } from '../../services/productSizes.service';
 import { ProductSizeColorsService } from '../../services/productColors.service';
+import { showSuccess } from '../../../../../utils/notifications';
+import { ToastModule } from 'primeng/toast';
 
 @Component({
   selector: 'app-products-form',
@@ -36,6 +38,7 @@ import { ProductSizeColorsService } from '../../services/productColors.service';
     RouterLink,
     SharedModule,
     SizesTableComponent,
+    ToastModule,
   ],
   templateUrl: './products-form.component.html',
   styleUrl: './products-form.component.scss',
@@ -64,6 +67,7 @@ export class ProductsFormComponent implements OnInit {
   }
 
   form: FormGroup = this.formBuilder.group({
+    id: [null],
     name: ['', Validators.required],
     description: ['', Validators.required],
     purchasePrice: ['', Validators.required],
@@ -88,38 +92,57 @@ export class ProductsFormComponent implements OnInit {
     }
   }
 
+  formatProductSizes() {
+    return (this.form.get('productSizes')?.value || []).filter((item: any) => {
+      return !(
+        item.size === '' &&
+        item.stock === '' &&
+        item.price === '' &&
+        item.colors === ''
+      );
+    });
+  }
+
+  saveProductSizes(resP: any, message: string) {
+    const productSizes = this.formatProductSizes();
+    productSizes.forEach((productSize: any) => {
+      this.productSizesService
+        .add(resP.productId, productSize.size.id, {
+          stock: productSize.stock,
+          price: productSize.price,
+        })
+        .subscribe({
+          next: (res: any) => {
+            productSize.colors?.forEach((color: any) => {
+              this.productSizeColorsService
+                .add(res.productSizeId, color.id, {
+                  stock: 1,
+                  price: productSize.price,
+                })
+                .subscribe();
+            });
+          },
+        });
+    });
+    showSuccess(this.messageService, message);
+    this.router.navigate([`/inventories/products/edit/${resP.productId}`]);
+  }
+
   saveProductButton() {
     const product = new ProductSave(this.form.value);
-    this.productsService.create(product).subscribe({
-      next: (resP: any) => {
-        const productSizes = this.form.get('productSizes')?.value || [];
-        productSizes.forEach((productSize: any) => {
-          this.productSizesService
-            .add(resP.productId, productSize.size.id, {
-              stock: productSize.stock,
-              price: productSize.price,
-            })
-            .subscribe({
-              next: (res: any) => {
-                productSize.colors?.forEach((color: any) => {
-                  this.productSizeColorsService
-                    .add(res.productSizeId, color.id, {
-                      stock: 1,
-                      price: productSize.price,
-                    })
-                    .subscribe({
-                      next: () => {
-                        this.router.navigate([
-                          `/inventories/products/edit/${resP.productId}`,
-                        ]);
-                      },
-                    });
-                });
-              },
-            });
-        });
-      },
-    });
+    if (product.id) {
+      this.productsService.edit(product.id, product).subscribe({
+        next: (resP: any) => {
+          this.saveProductSizes(resP, 'Producto actualizado!');
+        },
+      });
+    } else {
+      this.productsService.create(product).subscribe({
+        next: (resP: any) => {
+          this.saveProductSizes(resP, 'Producto creado!');
+        },
+      });
+    }
   }
 
   addSize() {
