@@ -23,6 +23,13 @@ const routes: Routes = [
         c => c.ProductsFormComponent,
       ),
   },
+  {
+    path: 'ecommerce/:id',
+    loadComponent: () =>
+      import('./pages/form/ecommerce/products-ecommerce-form.component').then(
+        c => c.ProductsEcommerceFormComponent,
+      ),
+  },
   { path: '', pathMatch: 'full', redirectTo: 'products' },
 ];
 

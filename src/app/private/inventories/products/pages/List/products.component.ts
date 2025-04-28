@@ -92,6 +92,15 @@ export class ProductListComponent implements OnInit {
     {
       type: 'button',
       size: 'small',
+      icon: 'pi pi-shop',
+      outlined: true,
+      pTooltip: 'Ecommerce',
+      tooltipPosition: 'bottom',
+      click: (rowData: Product) => this.ecommerceProductButton(rowData.id),
+    },
+    {
+      type: 'button',
+      size: 'small',
       icon: 'pi pi-trash',
       outlined: true,
       pTooltip: 'Eliminar',
@@ -146,6 +155,11 @@ export class ProductListComponent implements OnInit {
   editProductButton(id: number) {
     this.router.navigate([`/inventories/products/edit/${id}`]);
   }
+
+  ecommerceProductButton(id: number) {
+    this.router.navigate([`/inventories/products/ecommerce/${id}`]);
+  }
+
   deleteProductButton(id: number, event: Event) {
     console.log({ id, event });
   }
