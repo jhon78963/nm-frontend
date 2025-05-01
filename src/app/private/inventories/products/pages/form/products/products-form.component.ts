@@ -1,4 +1,6 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   FormBuilder,
   FormGroup,
@@ -6,26 +8,25 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { CommonModule } from '@angular/common';
 
-import { KeyFilterModule } from 'primeng/keyfilter';
-
-import { ProductsService } from '../../services/products.service';
-import { GendersService } from '../../../../../services/genders.service';
-
-import { SharedModule } from '../../../../../shared/shared.module';
-
-import { Product, ProductSave, Size } from '../../models/products.model';
-import { Gender } from '../../../../../models/gender.interface';
-import { SizesTableComponent } from '../../components/sizes/table/sizes-table.component';
 import { DialogService } from 'primeng/dynamicdialog';
-// import { showError, showSuccess } from '../../../../../utils/notifications';
+import { KeyFilterModule } from 'primeng/keyfilter';
 import { MessageService } from 'primeng/api';
-import { ProductSizesService } from '../../services/productSizes.service';
-import { ProductSizeColorsService } from '../../services/productColors.service';
-import { showSuccess } from '../../../../../utils/notifications';
+import { StepsModule } from 'primeng/steps';
 import { ToastModule } from 'primeng/toast';
+
+import { SharedModule } from '../../../../../../shared/shared.module';
+
+import { GendersService } from '../../../../../../services/genders.service';
+import { ProductSizeColorsService } from '../../../services/productColors.service';
+import { ProductSizesService } from '../../../services/productSizes.service';
+import { ProductsService } from '../../../services/products.service';
+
+import { Gender } from '../../../../../../models/gender.interface';
+import { Product, ProductSave, Size } from '../../../models/products.model';
+
+import { showSuccess } from '../../../../../../utils/notifications';
+import { ButtonModule } from 'primeng/button';
 
 @Component({
   selector: 'app-products-form',
@@ -33,11 +34,11 @@ import { ToastModule } from 'primeng/toast';
   imports: [
     CommonModule,
     FormsModule,
-    KeyFilterModule,
     ReactiveFormsModule,
-    RouterLink,
+    ButtonModule,
+    KeyFilterModule,
     SharedModule,
-    SizesTableComponent,
+    StepsModule,
     ToastModule,
   ],
   templateUrl: './products-form.component.html',
@@ -69,12 +70,12 @@ export class ProductsFormComponent implements OnInit {
   form: FormGroup = this.formBuilder.group({
     id: [null],
     name: ['', Validators.required],
-    description: ['', Validators.required],
-    purchasePrice: ['', Validators.required],
-    salePrice: ['', Validators.required],
-    minSalePrice: ['', Validators.required],
+    // description: ['', Validators.required],
+    // purchasePrice: ['', Validators.required],
+    // salePrice: ['', Validators.required],
+    // minSalePrice: ['', Validators.required],
     genderId: [{ value: 1, disabled: false }, Validators.required],
-    productSizes: this.formBuilder.array([]),
+    // productSizes: this.formBuilder.array([]),
   });
 
   ngOnInit(): void {
@@ -133,13 +134,20 @@ export class ProductsFormComponent implements OnInit {
     if (product.id) {
       this.productsService.edit(product.id, product).subscribe({
         next: (resP: any) => {
-          this.saveProductSizes(resP, 'Producto actualizado!');
+          // this.saveProductSizes(resP, 'Producto actualizado!');
+          this.router.navigate([
+            `/inventories/products/edit/sizes/${resP.productId}`,
+          ]);
         },
       });
     } else {
       this.productsService.create(product).subscribe({
         next: (resP: any) => {
-          this.saveProductSizes(resP, 'Producto creado!');
+          // this.saveProductSizes(resP, 'Producto creado!');
+          this.router.navigate([
+            '/inventories/products/create/sizes',
+            resP.productId,
+          ]);
         },
       });
     }

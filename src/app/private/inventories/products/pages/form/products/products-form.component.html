@@ -1,9 +1,6 @@
 @if (form) {
   <form [formGroup]="form" (ngSubmit)="saveProductButton()" class="pt-2">
     <div class="p-fluid p-formgrid grid">
-      <div class="field col-12">
-        <span class="text-lg font-bold">Producto</span>
-      </div>
       <div class="field col-12 md:col-4">
         <app-input-select
           placeholder="Seleccione genero"
@@ -21,13 +18,13 @@
           label="Nombre"
           controlName="name"></app-input-text>
       </div>
-      <div class="field col-12">
+      <!-- <div class="field col-12">
         <app-input-textarea
           placeholder="Ingrese descripción"
           label="Descripción"
           controlName="description"></app-input-textarea>
-      </div>
-      <div class="field col-12 md:col-4">
+      </div> -->
+      <!-- <div class="field col-12 md:col-4">
         <app-input-text
           placeholder="Ingrese precio de compra"
           label="Precio de compra"
@@ -47,8 +44,8 @@
           label="Precio mínimo de venta"
           controlName="minSalePrice"
           pKeyFilter="num"></app-input-text>
-      </div>
-      <div
+      </div> -->
+      <!-- <div
         class="flex flex-column justify-content-center pl-3 pr-3 w-custom md:ml-auto md:mr-auto md:mt-4">
         <div class="flex justify-content-between align-items-center pb-2">
           <span class="text-lg font-bold">Tallas</span>
@@ -64,7 +61,7 @@
           (productSizeSelected)="
             getProductsizeSeletected($event)
           "></app-size-table>
-      </div>
+      </div> -->
       <div class="flex justify-content-end w-full gap-2 p-4">
         <button
           [routerLink]="['/inventories/products']"
@@ -74,8 +71,8 @@
           [outlined]="true"
           label="Regresar"></button>
         <button
-          type="submit"
           class="w-full md:w-2"
+          type="submit"
           pButton
           label="Guardar"></button>
       </div>
