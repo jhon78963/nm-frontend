@@ -25,22 +25,22 @@ const routes: Routes = [
       {
         path: 'sizes/:id',
         loadComponent: () =>
-          import('./pages/form/products/products-form.component').then(
-            c => c.ProductsFormComponent,
+          import('./pages/form/sizes/sizes-form.component').then(
+            c => c.SizesFormComponent,
           ),
       },
       {
         path: 'colors/:id',
         loadComponent: () =>
-          import('./pages/form/products/products-form.component').then(
-            c => c.ProductsFormComponent,
+          import('./pages/form/colors/colors-form.component').then(
+            c => c.ColorsFormComponent,
           ),
       },
       {
         path: 'ecommerce/:id',
         loadComponent: () =>
-          import('./pages/form/products/products-form.component').then(
-            c => c.ProductsFormComponent,
+          import('./pages/form/ecommerce/ecommerce-form.component').then(
+            c => c.EcommerceFormComponent,
           ),
       },
     ],
@@ -62,8 +62,8 @@ const routes: Routes = [
   {
     path: 'ecommerce/:id',
     loadComponent: () =>
-      import('./pages/form/ecommerce/products-ecommerce-form.component').then(
-        c => c.ProductsEcommerceFormComponent,
+      import('./pages/form/ecommerce/ecommerce-form.component').then(
+        c => c.EcommerceFormComponent,
       ),
   },
   { path: '', pathMatch: 'full', redirectTo: 'products' },

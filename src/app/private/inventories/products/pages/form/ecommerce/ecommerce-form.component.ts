@@ -29,11 +29,11 @@ import { TooltipModule } from 'primeng/tooltip';
     ImageModule,
     TooltipModule,
   ],
-  templateUrl: './products-ecommerce-form.component.html',
-  styleUrl: './products-ecommerce-form.component.scss',
+  templateUrl: './ecommerce-form.component.html',
+  styleUrl: './ecommerce-form.component.scss',
   providers: [MessageService],
 })
-export class ProductsEcommerceFormComponent {
+export class EcommerceFormComponent {
   productId: number = 0;
 
   constructor(

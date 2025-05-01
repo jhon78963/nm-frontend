@@ -1,9 +1,6 @@
 @if (form) {
   <form [formGroup]="form" (ngSubmit)="saveProductButton()" class="pt-2">
     <div class="p-fluid p-formgrid grid">
-      <div class="field col-12">
-        <span class="text-lg font-bold">Producto</span>
-      </div>
       <div class="field col-12 md:col-6">
         <app-input-text
           placeholder="Ingrese descuento por porcentaje (%)"
