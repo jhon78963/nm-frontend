@@ -11,6 +11,10 @@ import { Observable } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { ProductsService } from '../../../services/products.service';
+import { DialogService } from 'primeng/dynamicdialog';
+import { SizesCreateFormComponent } from '../../../../size/pages/form/sizes-form.component';
+import { showError, showSuccess } from '../../../../../../utils/notifications';
+import { MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-sizes-form',
@@ -25,6 +29,7 @@ import { ProductsService } from '../../../services/products.service';
   ],
   templateUrl: './sizes-form.component.html',
   styleUrl: './sizes-form.component.scss',
+  providers: [DialogService, MessageService],
 })
 export class SizesFormComponent implements OnInit {
   productId: number = 0;
@@ -35,11 +40,14 @@ export class SizesFormComponent implements OnInit {
   selectedSizes: any[] = [];
   selectedSizeTypeId: number = 1;
   cols: any[] = [];
+  alreadySelected: boolean = false;
 
   constructor(
     private readonly sizesSelectedService: SizesSelectedService,
     private readonly productsService: ProductsService,
     private readonly route: ActivatedRoute,
+    private readonly dialogService: DialogService,
+    private readonly messageService: MessageService,
   ) {
     if (this.route.snapshot.paramMap.get('id')) {
       this.productId = Number(this.route.snapshot.paramMap.get('id'));
@@ -88,14 +96,50 @@ export class SizesFormComponent implements OnInit {
       .subscribe();
   }
 
-  createSize() {}
-  saveSelectedSizes() {}
+  createSize() {
+    const modal = this.dialogService.open(SizesCreateFormComponent, {
+      data: {
+        productId: this.productId,
+        sizeTypeId: this.sizeTypeId || this.selectedSizeTypeId,
+      },
+      header: 'Crear Talla',
+      styleClass: 'dialog-custom-form',
+    });
+
+    modal.onClose.subscribe({
+      next: value => {
+        value && value?.success
+          ? showSuccess(this.messageService, 'Talla Creada.')
+          : value?.error
+            ? showError(
+                this.messageService,
+                'Hubo un error, intente nuevamente',
+              )
+            : null;
+      },
+    });
+  }
+
+  selectSize(size: Size) {
+    const exists = this.selectedSizes.some(s => s.id === size.id);
+    if (!exists) {
+      this.selectedSizes = [...this.selectedSizes, size];
+    }
+  }
+
+  saveAllSelectedSizes() {}
+
+  deleteAllSelectedSizes() {}
+
+  saveSelectedSizes(size: any) {
+    console.log({ size });
+  }
+
   deleteSelectedSizes() {}
 
   editSizeProductButton(size: any) {
     console.log({ size, sizes: this.selectedSizes });
   }
-
   removeSizeProductButton(size: any) {
     console.log({ size, sizes: this.selectedSizes });
   }

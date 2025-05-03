@@ -38,7 +38,7 @@
           severity="secondary"
           class="btn-menu"
           size="small"
-          (click)="saveSelectedSizes()"
+          (click)="saveAllSelectedSizes()"
           [disabled]="!selectedSizes || !selectedSizes.length"></button>
         <button
           pButton
@@ -48,7 +48,7 @@
           severity="secondary"
           class="btn-menu"
           size="small"
-          (click)="deleteSelectedSizes()"
+          (click)="deleteAllSelectedSizes()"
           [disabled]="!selectedSizes || !selectedSizes.length"></button>
       </div>
     </div>
@@ -68,6 +68,7 @@
           </th>
           <th>#</th>
           <th>Talla</th>
+          <th>Código de barras</th>
           <th>Stock</th>
           <th>Precio de compra</th>
           <th>Precio de venta</th>
@@ -90,7 +91,11 @@
           </td>
           <td style="width: 14%; min-width: 10rem">
             <div class="bg-input-text">
-              <input type="text" class="input-text" value="{{ size.stock }}" />
+              <input
+                type="text"
+                class="input-text"
+                value="{{ size.codebar }}"
+                (keydown)="selectSize(size)" />
             </div>
           </td>
           <td style="width: 14%; min-width: 10rem">
@@ -98,7 +103,8 @@
               <input
                 type="text"
                 class="input-text"
-                value="{{ size.minSalePrice }}" />
+                value="{{ size.stock }}"
+                (keydown)="selectSize(size)" />
             </div>
           </td>
           <td style="width: 14%; min-width: 10rem">
@@ -106,7 +112,8 @@
               <input
                 type="text"
                 class="input-text"
-                value="{{ size.purchasePrice }}" />
+                value="{{ size.minSalePrice }}"
+                (keydown)="selectSize(size)" />
             </div>
           </td>
           <td style="width: 14%; min-width: 10rem">
@@ -114,7 +121,17 @@
               <input
                 type="text"
                 class="input-text"
-                value="{{ size.salePrice }}" />
+                value="{{ size.purchasePrice }}"
+                (keydown)="selectSize(size)" />
+            </div>
+          </td>
+          <td style="width: 14%; min-width: 10rem">
+            <div class="bg-input-text">
+              <input
+                type="text"
+                class="input-text"
+                value="{{ size.salePrice }}"
+                (keydown)="selectSize(size)" />
             </div>
           </td>
           <td>
@@ -124,13 +141,19 @@
                 pRipple
                 [icon]="size.isExists ? 'pi pi-pencil' : 'pi pi-save'"
                 class="p-button-rounded p-menu"
-                (click)="editSizeProductButton(size)"></button>
-              <button
-                pButton
-                pRipple
-                icon="pi pi-trash"
-                class="p-button-rounded p-menu"
-                (click)="removeSizeProductButton(size)"></button>
+                (click)="
+                  size.isExists
+                    ? editSizeProductButton(size)
+                    : saveSelectedSizes(size)
+                "></button>
+              @if (size.isExists) {
+                <button
+                  pButton
+                  pRipple
+                  icon="pi pi-trash"
+                  class="p-button-rounded p-menu"
+                  (click)="removeSizeProductButton(size)"></button>
+              }
             </div>
           </td>
         </tr>
