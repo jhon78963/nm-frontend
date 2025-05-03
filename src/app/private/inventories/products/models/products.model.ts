@@ -23,6 +23,7 @@ export interface ProductSize {
 export interface Product {
   id: number;
   name: string;
+  barcode: string;
   description: string;
   stock: number;
   purchasePrice: number;
@@ -32,6 +33,8 @@ export interface Product {
   genderId: number;
   gender: string;
   sizes: Size[];
+  filter: boolean;
+  sizeTypeId?: number;
 }
 
 export interface Paginate {
@@ -47,6 +50,7 @@ export interface ProductListResponse {
 export class ProductSave {
   id: number;
   name: string;
+  barcode: string;
   description: string;
   purchasePrice: number;
   salePrice: number;
@@ -56,6 +60,7 @@ export class ProductSave {
   constructor(product: Product) {
     this.id = product.id;
     this.name = product.name;
+    this.barcode = product.barcode;
     this.description = product.description;
     this.purchasePrice = product.purchasePrice;
     this.salePrice = product.salePrice;

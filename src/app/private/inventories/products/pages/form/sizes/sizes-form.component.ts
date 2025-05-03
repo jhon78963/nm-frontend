@@ -6,10 +6,11 @@ import { Table, TableModule } from 'primeng/table';
 
 import { ToolbarModule } from 'primeng/toolbar';
 import { SizesSelectedService } from '../../../../size/services/sizes-selected.service';
-import { Size } from '../../../models/products.model';
+import { Product, Size } from '../../../models/products.model';
 import { Observable } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
+import { ProductsService } from '../../../services/products.service';
 
 @Component({
   selector: 'app-sizes-form',
@@ -27,13 +28,17 @@ import { ActivatedRoute } from '@angular/router';
 })
 export class SizesFormComponent implements OnInit {
   productId: number = 0;
+  sizeTypeId: number = 0;
+  filter: boolean = true;
   products: any[] = [];
   sizeTypes: Size[] = [];
-  selectedProducts: any[] = [];
+  selectedSizes: any[] = [];
+  selectedSizeTypeId: number = 1;
   cols: any[] = [];
 
   constructor(
     private readonly sizesSelectedService: SizesSelectedService,
+    private readonly productsService: ProductsService,
     private readonly route: ActivatedRoute,
   ) {
     if (this.route.snapshot.paramMap.get('id')) {
@@ -41,8 +46,6 @@ export class SizesFormComponent implements OnInit {
     }
   }
 
-  openNew() {}
-  deleteSelectedProducts() {}
   onGlobalFilter(table: Table, event: Event) {
     table.filterGlobal((event.target as HTMLInputElement).value, 'contains');
   }
@@ -61,10 +64,39 @@ export class SizesFormComponent implements OnInit {
   }
 
   async getSizes(): Promise<void> {
-    this.sizesSelectedService.callGetList(this.productId).subscribe();
+    if (this.productId !== 0) {
+      this.productsService.getOne(this.productId).subscribe({
+        next: (product: Product) => {
+          this.filter = product.filter;
+          this.sizeTypeId = product.sizeTypeId || 0;
+          this.sizesSelectedService
+            .callGetList(this.productId, this.sizeTypeId)
+            .subscribe();
+        },
+      });
+    }
   }
 
   get sizes(): Observable<Size[]> {
     return this.sizesSelectedService.getList();
+  }
+
+  selectFilter(sizeTypeId: number) {
+    this.selectedSizeTypeId = sizeTypeId;
+    this.sizesSelectedService
+      .callGetList(this.productId, this.selectedSizeTypeId)
+      .subscribe();
+  }
+
+  createSize() {}
+  saveSelectedSizes() {}
+  deleteSelectedSizes() {}
+
+  editSizeProductButton(size: any) {
+    console.log({ size, sizes: this.selectedSizes });
+  }
+
+  removeSizeProductButton(size: any) {
+    console.log({ size, sizes: this.selectedSizes });
   }
 }

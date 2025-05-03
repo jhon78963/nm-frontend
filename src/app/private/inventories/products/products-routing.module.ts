@@ -3,7 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 
 const routes: Routes = [
   {
-    path: 'create',
+    path: 'step',
     loadComponent: () =>
       import('./pages/form/form.component').then(c => c.StepperFormComponent),
     children: [

@@ -16,10 +16,10 @@ export class SizesSelectedService {
   sizes: Size[] = [];
   sizes$: BehaviorSubject<Size[]> = new BehaviorSubject<Size[]>(this.sizes);
   constructor(private apiService: ApiService) {}
-  callGetList(productId: number): Observable<void> {
+  callGetList(productId: number, sizeTypeId: number): Observable<void> {
     let url = `sizes/selected`;
     if (productId) {
-      url += `?productId=${productId}&sizeTypeId=3`;
+      url += `?productId=${productId}&sizeTypeId=${sizeTypeId || 1}`;
     }
     return this.apiService.get<Size[]>(url).pipe(
       debounceTime(600),
@@ -33,10 +33,14 @@ export class SizesSelectedService {
     return this.sizes$.asObservable();
   }
 
-  create(data: SizeSave, productId: number): Observable<void> {
+  create(
+    data: SizeSave,
+    productId: number,
+    sizeTypeId: number,
+  ): Observable<void> {
     return this.apiService
       .post('sizes', data)
-      .pipe(switchMap(() => this.callGetList(productId)));
+      .pipe(switchMap(() => this.callGetList(productId, sizeTypeId)));
   }
 
   getSizeTypes(): Observable<Size[]> {

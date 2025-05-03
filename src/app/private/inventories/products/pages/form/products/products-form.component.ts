@@ -70,6 +70,7 @@ export class ProductsFormComponent implements OnInit {
   form: FormGroup = this.formBuilder.group({
     id: [null],
     name: ['', Validators.required],
+    barcode: ['', Validators.required],
     // description: ['', Validators.required],
     // purchasePrice: ['', Validators.required],
     // salePrice: ['', Validators.required],
@@ -136,7 +137,8 @@ export class ProductsFormComponent implements OnInit {
         next: (resP: any) => {
           // this.saveProductSizes(resP, 'Producto actualizado!');
           this.router.navigate([
-            `/inventories/products/edit/sizes/${resP.productId}`,
+            '/inventories/products/step/sizes',
+            resP.productId,
           ]);
         },
       });
@@ -145,7 +147,7 @@ export class ProductsFormComponent implements OnInit {
         next: (resP: any) => {
           // this.saveProductSizes(resP, 'Producto creado!');
           this.router.navigate([
-            '/inventories/products/create/sizes',
+            '/inventories/products/step/sizes',
             resP.productId,
           ]);
         },

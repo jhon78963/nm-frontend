@@ -3,14 +3,20 @@
     <div class="flex flex-column md:flex-row md:justify-content-between">
       <div
         class="flex justify-content-center md:justify-content-start gap-2 mb-3">
-        @for (sizeType of sizeTypes; track $index) {
-          <button
-            pButton
-            pRipple
-            [label]="sizeType.description"
-            severity="secondary"
-            class="btn-menu"
-            size="small"></button>
+        @if (filter) {
+          @for (sizeType of sizeTypes; track $index) {
+            <button
+              pButton
+              pRipple
+              [label]="sizeType.description"
+              severity="secondary"
+              class="btn-menu"
+              [ngClass]="[
+                sizeType.id === selectedSizeTypeId ? 'btn-selected' : '',
+              ]"
+              size="small"
+              (click)="selectFilter(sizeType.id)"></button>
+          }
         }
       </div>
       <div
@@ -23,7 +29,7 @@
           severity="secondary"
           class="btn-menu"
           size="small"
-          (click)="openNew()"></button>
+          (click)="createSize()"></button>
         <button
           pButton
           pRipple
@@ -32,8 +38,8 @@
           severity="secondary"
           class="btn-menu"
           size="small"
-          (click)="openNew()"
-          [disabled]="!selectedProducts || !selectedProducts.length"></button>
+          (click)="saveSelectedSizes()"
+          [disabled]="!selectedSizes || !selectedSizes.length"></button>
         <button
           pButton
           pRipple
@@ -42,8 +48,8 @@
           severity="secondary"
           class="btn-menu"
           size="small"
-          (click)="deleteSelectedProducts()"
-          [disabled]="!selectedProducts || !selectedProducts.length"></button>
+          (click)="deleteSelectedSizes()"
+          [disabled]="!selectedSizes || !selectedSizes.length"></button>
       </div>
     </div>
 
@@ -51,7 +57,7 @@
       #dt
       [value]="(sizes | async) ?? []"
       [tableStyle]="{ 'min-width': '50rem' }"
-      [(selection)]="selectedProducts"
+      [(selection)]="selectedSizes"
       responsiveLayout="scroll"
       selectionMode="multiple"
       dataKey="id">
@@ -116,13 +122,15 @@
               <button
                 pButton
                 pRipple
-                [icon]="size.stock ? 'pi pi-pencil' : 'pi pi-save'"
-                class="p-button-rounded p-menu"></button>
+                [icon]="size.isExists ? 'pi pi-pencil' : 'pi pi-save'"
+                class="p-button-rounded p-menu"
+                (click)="editSizeProductButton(size)"></button>
               <button
                 pButton
                 pRipple
                 icon="pi pi-trash"
-                class="p-button-rounded p-menu"></button>
+                class="p-button-rounded p-menu"
+                (click)="removeSizeProductButton(size)"></button>
             </div>
           </td>
         </tr>
