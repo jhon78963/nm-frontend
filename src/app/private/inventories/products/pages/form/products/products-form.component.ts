@@ -107,24 +107,24 @@ export class ProductsFormComponent implements OnInit {
 
   saveProductSizes(resP: any, message: string) {
     const productSizes = this.formatProductSizes();
-    productSizes.forEach((productSize: any) => {
-      this.productSizesService
-        .add(resP.productId, productSize.size.id, {
-          stock: productSize.stock,
-          price: productSize.price,
-        })
-        .subscribe({
-          next: (res: any) => {
-            productSize.colors?.forEach((color: any) => {
-              this.productSizeColorsService
-                .add(res.productSizeId, color.id, {
-                  stock: 1,
-                  price: productSize.price,
-                })
-                .subscribe();
-            });
-          },
-        });
+    productSizes.forEach(() => {
+      // this.productSizesService
+      //   .add(resP.productId, productSize.size.id, {
+      //     stock: productSize.stock,
+      //     price: productSize.price,
+      //   })
+      //   .subscribe({
+      //     next: (res: any) => {
+      //       productSize.colors?.forEach((color: any) => {
+      //         this.productSizeColorsService
+      //           .add(res.productSizeId, color.id, {
+      //             stock: 1,
+      //             price: productSize.price,
+      //           })
+      //           .subscribe();
+      //       });
+      //     },
+      //   });
     });
     showSuccess(this.messageService, message);
     this.router.navigate([`/inventories/products/edit/${resP.productId}`]);

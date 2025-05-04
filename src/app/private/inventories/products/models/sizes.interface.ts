@@ -8,6 +8,9 @@ export interface SizeForm {
 }
 
 export interface ProductSizeSave {
+  codebar: number;
   stock: number;
-  price: number;
+  purchasePrice: number;
+  salePrice: number;
+  minSalePrice: number;
 }

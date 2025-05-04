@@ -7,7 +7,7 @@ import { Table, TableModule } from 'primeng/table';
 import { ToolbarModule } from 'primeng/toolbar';
 import { SizesSelectedService } from '../../../../size/services/sizes-selected.service';
 import { Product, Size } from '../../../models/products.model';
-import { Observable } from 'rxjs';
+import { catchError, forkJoin, Observable, of } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { ProductsService } from '../../../services/products.service';
@@ -15,6 +15,9 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { SizesCreateFormComponent } from '../../../../size/pages/form/sizes-form.component';
 import { showError, showSuccess } from '../../../../../../utils/notifications';
 import { MessageService } from 'primeng/api';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ProductSizesService } from '../../../services/productSizes.service';
+import { ProductSizeSave } from '../../../models/sizes.interface';
 
 @Component({
   selector: 'app-sizes-form',
@@ -26,6 +29,8 @@ import { MessageService } from 'primeng/api';
     ButtonModule,
     InputTextModule,
     RippleModule,
+    ReactiveFormsModule,
+    FormsModule,
   ],
   templateUrl: './sizes-form.component.html',
   styleUrl: './sizes-form.component.scss',
@@ -45,6 +50,7 @@ export class SizesFormComponent implements OnInit {
   constructor(
     private readonly sizesSelectedService: SizesSelectedService,
     private readonly productsService: ProductsService,
+    private readonly productSizesService: ProductSizesService,
     private readonly route: ActivatedRoute,
     private readonly dialogService: DialogService,
     private readonly messageService: MessageService,
@@ -120,27 +126,96 @@ export class SizesFormComponent implements OnInit {
     });
   }
 
-  selectSize(size: Size) {
+  selectSize(size: any) {
     const exists = this.selectedSizes.some(s => s.id === size.id);
     if (!exists) {
       this.selectedSizes = [...this.selectedSizes, size];
     }
+
+    const isEmpty =
+      !size.codebar?.toString().trim() &&
+      !size.stock?.toString().trim() &&
+      !size.purchasePrice?.toString().trim() &&
+      !size.salePrice?.toString().trim() &&
+      !size.minSalePrice?.toString().trim();
+    if (isEmpty) {
+      this.selectedSizes = this.selectedSizes.filter(s => s.id !== size.id);
+    }
   }
 
-  saveAllSelectedSizes() {}
+  saveAllSelectedSizes() {
+    const requests = this.selectedSizes.map(size => {
+      const productSizeSave: ProductSizeSave = {
+        codebar: size.codebar,
+        stock: size.stock,
+        purchasePrice: size.purchasePrice,
+        salePrice: size.salePrice,
+        minSalePrice: size.minSalePrice,
+      };
 
-  deleteAllSelectedSizes() {}
+      return this.productSizesService
+        .add(this.productId, size.id, productSizeSave)
+        .pipe(
+          catchError(() => {
+            return of(null);
+          }),
+        );
+    });
 
-  saveSelectedSizes(size: any) {
-    console.log({ size });
+    forkJoin(requests).subscribe({
+      next: () => {
+        this.getSizes();
+        this.selectedSizes = [];
+      },
+    });
   }
 
-  deleteSelectedSizes() {}
+  deleteAllSelectedSizes() {
+    const requests = this.selectedSizes.map(size => {
+      return this.productSizesService.remove(this.productId, size.id).pipe(
+        catchError(() => {
+          return of(null);
+        }),
+      );
+    });
+
+    forkJoin(requests).subscribe({
+      next: () => {
+        this.getSizes();
+        this.selectedSizes = [];
+      },
+    });
+  }
+
+  saveSizeProductButton(size: any) {
+    const productSizeSave: ProductSizeSave = {
+      codebar: size.codebar,
+      stock: size.stock,
+      purchasePrice: size.purchasePrice,
+      salePrice: size.salePrice,
+      minSalePrice: size.minSalePrice,
+    };
+    this.productSizesService
+      .add(this.productId, size.id, productSizeSave)
+      .subscribe({
+        next: () => {
+          this.getSizes();
+          this.selectedSizes = this.selectedSizes.filter(s => s.id !== size.id);
+        },
+        error: () => this.getSizes(),
+      });
+  }
 
   editSizeProductButton(size: any) {
-    console.log({ size, sizes: this.selectedSizes });
+    this.saveSizeProductButton(size);
   }
   removeSizeProductButton(size: any) {
-    console.log({ size, sizes: this.selectedSizes });
+    this.productSizesService.remove(this.productId, size.id).subscribe({
+      next: () => {
+        this.getSizes();
+        this.selectedSizes = this.selectedSizes.filter(s => s.id !== size.id);
+      },
+      error: () => this.getSizes(),
+    });
   }
 }
