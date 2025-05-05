@@ -74,12 +74,11 @@ export class StepperFormComponent implements OnInit {
 
   updateStepStatus() {
     const isDisabled = this.productId === 0;
-    [1, 3].forEach(index => {
+    [1, 2, 3].forEach(index => {
       if (this.items[index]) {
         this.items[index].disabled = isDisabled;
       }
     });
-    this.items[2].disabled = true;
   }
 
   updateQueryParam() {

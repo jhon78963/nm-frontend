@@ -45,7 +45,6 @@ export class SizesFormComponent implements OnInit {
   selectedSizes: any[] = [];
   selectedSizeTypeId: number = 1;
   cols: any[] = [];
-  alreadySelected: boolean = false;
 
   constructor(
     private readonly sizesSelectedService: SizesSelectedService,
