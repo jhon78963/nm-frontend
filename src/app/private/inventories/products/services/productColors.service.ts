@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { ApiService } from '../../../../services/api.service';
 import { Observable } from 'rxjs';
 import { ProductSizeSave } from '../models/sizes.interface';
+import { Size } from '../../size/models/sizes.model';
 
 @Injectable({
   providedIn: 'root',
@@ -34,6 +35,20 @@ export class ProductSizeColorsService {
     return this.apiService.patch(
       `product-size/${productSizeId}/color/${colorId}`,
       data,
+    );
+  }
+
+  getSizes(productId: number, size?: string): Observable<Size[]> {
+    let url = `colors/sizes?productId=${productId}`;
+    if (size) {
+      url += `&size=${size}`;
+    }
+    return this.apiService.get<Size[]>(url);
+  }
+
+  getColors(productSizeId: number) {
+    return this.apiService.get(
+      `colors/selected?productSizeId=${productSizeId}`,
     );
   }
 }

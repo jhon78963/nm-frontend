@@ -8,7 +8,7 @@ export interface SizeForm {
 }
 
 export interface ProductSizeSave {
-  codebar: number;
+  barcode: number;
   stock: number;
   purchasePrice: number;
   salePrice: number;

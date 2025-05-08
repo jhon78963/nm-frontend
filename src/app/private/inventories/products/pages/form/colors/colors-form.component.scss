@@ -57,3 +57,31 @@
     }
   }
 }
+
+::ng-deep {
+  .p-dropdown-header {
+    input {
+      font-size: 1rem;
+      color: #334155;
+      background: #ffffff;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #cbd5e1;
+    }
+    input:focus-visible {
+      outline: none;
+    }
+    button {
+      color: #475569;
+      background: #f1f5f9;
+      border: 1px solid #f1f5f9;
+    }
+    button:hover {
+      background: #e2e8f0;
+      color: #334155;
+      border-color: #e2e8f0;
+    }
+    button:focus {
+      box-shadow: none;
+    }
+  }
+}

@@ -2,7 +2,49 @@
   <div class="w-full">
     <div class="flex flex-column md:flex-row md:justify-content-between">
       <div
-        class="flex justify-content-center md:justify-content-start gap-2 mb-3"></div>
+        class="flex justify-content-center md:justify-content-start gap-2 mb-3">
+        <p-dropdown
+          [options]="sizes"
+          optionLabel="description"
+          [filter]="true"
+          filterBy="description"
+          [showClear]="true"
+          placeholder="Selecciona una talla"
+          styleClass="w-20rem"
+          (onChange)="getSelectedSize($event)">
+          <ng-template pTemplate="filter" let-options="options">
+            <div class="flex gap-1">
+              <div
+                class="p-inputgroup"
+                (click)="$event.stopPropagation()"
+                [formGroup]="formGroup">
+                <span class="p-inputgroup-addon"
+                  ><i class="pi pi-search"></i
+                ></span>
+                <input
+                  type="text"
+                  pInputText
+                  placeholder="Filter"
+                  formControlName="size" />
+              </div>
+              <button
+                pButton
+                icon="pi pi-times"
+                (click)="resetFunction()"></button>
+            </div>
+          </ng-template>
+          <ng-template pTemplate="selectedItem" let-size>
+            <div class="flex align-items-center gap-2">
+              <div>{{ size.description }}</div>
+            </div>
+          </ng-template>
+          <ng-template let-size pTemplate="item">
+            <div class="flex align-items-center gap-2">
+              <div>{{ size.description }}</div>
+            </div>
+          </ng-template>
+        </p-dropdown>
+      </div>
       <div
         class="flex justify-content-center md:justify-content-end gap-2 mb-3">
         <button
@@ -36,5 +78,80 @@
           [disabled]="!selectedColors || !selectedColors.length"></button>
       </div>
     </div>
+
+    @if (colors.length > 0) {
+      <p-table
+        #dt
+        [value]="colors"
+        [tableStyle]="{ 'min-width': '50rem' }"
+        [(selection)]="selectedColors"
+        responsiveLayout="scroll"
+        selectionMode="multiple"
+        dataKey="id">
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="width: 3rem">
+              <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+            </th>
+            <th>#</th>
+            <th>Color</th>
+            <th>Hash</th>
+            <th>Stock</th>
+            <th></th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-color>
+          <tr>
+            <td>
+              <p-tableCheckbox [value]="color"></p-tableCheckbox>
+            </td>
+            <td style="width: 15%; min-width: 10rem">
+              <span class="p-column-title">Code</span>
+              {{ color.id }}
+            </td>
+            <td style="width: 15%; min-width: 10rem">
+              <span class="p-column-title">Name</span>
+              {{ color.description }}
+            </td>
+            <td style="width: 15%; min-width: 10rem">
+              <span class="p-column-title">Name</span>
+              {{ color.hash }}
+            </td>
+            <td style="width: 15%; min-width: 10rem">
+              <div class="bg-input-text">
+                <input
+                  type="text"
+                  class="input-text"
+                  value="{{ color.stock }}"
+                  [(ngModel)]="color.stock"
+                  (keyup)="selectColor(color)" />
+              </div>
+            </td>
+            <td>
+              <div class="flex justify-content-end gap-2">
+                <button
+                  pButton
+                  pRipple
+                  [icon]="color.isExists ? 'pi pi-pencil' : 'pi pi-save'"
+                  class="p-button-rounded p-menu"
+                  (click)="
+                    color.isExists
+                      ? editColorSizeProductButton()
+                      : saveColorSizeProductButton()
+                  "></button>
+                @if (color.isExists) {
+                  <button
+                    pButton
+                    pRipple
+                    icon="pi pi-trash"
+                    class="p-button-rounded p-menu"
+                    (click)="removeColorSizeProductButton()"></button>
+                }
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
   </div>
 </div>

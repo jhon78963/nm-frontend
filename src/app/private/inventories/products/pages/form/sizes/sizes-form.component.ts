@@ -132,7 +132,7 @@ export class SizesFormComponent implements OnInit {
     }
 
     const isEmpty =
-      !size.codebar?.toString().trim() &&
+      !size.barcode?.toString().trim() &&
       !size.stock?.toString().trim() &&
       !size.purchasePrice?.toString().trim() &&
       !size.salePrice?.toString().trim() &&
@@ -145,12 +145,13 @@ export class SizesFormComponent implements OnInit {
   saveAllSelectedSizes() {
     const requests = this.selectedSizes.map(size => {
       const productSizeSave: ProductSizeSave = {
-        codebar: size.codebar,
+        barcode: size.barcode,
         stock: size.stock,
         purchasePrice: size.purchasePrice,
         salePrice: size.salePrice,
         minSalePrice: size.minSalePrice,
       };
+      console.log(productSizeSave);
 
       return this.productSizesService
         .add(this.productId, size.id, productSizeSave)
@@ -188,12 +189,13 @@ export class SizesFormComponent implements OnInit {
 
   saveSizeProductButton(size: any) {
     const productSizeSave: ProductSizeSave = {
-      codebar: size.codebar,
+      barcode: size.barcode,
       stock: size.stock,
       purchasePrice: size.purchasePrice,
       salePrice: size.salePrice,
       minSalePrice: size.minSalePrice,
     };
+    console.log(productSizeSave);
     this.productSizesService
       .add(this.productId, size.id, productSizeSave)
       .subscribe({
