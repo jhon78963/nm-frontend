@@ -90,7 +90,6 @@ export class ColorsFormComponent implements OnInit {
 
   resetFunction() {
     this.getSizes();
-    this.colors = [];
     this.formGroup.get('size')?.patchValue('');
   }
 
