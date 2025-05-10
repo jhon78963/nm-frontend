@@ -1,0 +1,17 @@
+@if (form) {
+  <form [formGroup]="form" (ngSubmit)="buttonSaveColor()" class="pt-2 mt-5">
+    <div class="p-fluid p-formgrid grid">
+      <div class="field col-12">
+        <app-input-text
+          placeholder="Ingrese talla"
+          label="Talla"
+          controlName="description"></app-input-text>
+      </div>
+      <div class="field col-12">
+        <app-input-color-picker controlName="hash" />
+      </div>
+      <button type="submit" pButton label="Guardar"></button>
+    </div>
+  </form>
+}
+<p-toast />

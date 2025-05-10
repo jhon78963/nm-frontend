@@ -153,7 +153,7 @@ export class ProductListComponent implements OnInit {
   }
 
   editProductButton(id: number) {
-    this.router.navigate([`/inventories/products/edit/${id}`]);
+    this.router.navigate([`/inventories/products/step/general/${id}`]);
   }
 
   ecommerceProductButton(id: number) {

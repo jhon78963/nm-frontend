@@ -1,0 +1,13 @@
+.input-color {
+  border: none;
+  border-bottom: 1px solid #d4d6d9;
+  border-radius: 0;
+  width: 100%;
+  font-size: 12px;
+  padding: 0.75rem 0.75rem;
+  cursor: pointer;
+}
+
+.input-color:focus-visible {
+  outline: none;
+}

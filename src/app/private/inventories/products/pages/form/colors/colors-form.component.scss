@@ -8,6 +8,7 @@
     border: 1px solid #dfe3e8;
     color: #475569;
     border-radius: 5px;
+    height: 39px;
   }
   .btn-selected {
     background-color: #75787b;
@@ -83,5 +84,11 @@
     button:focus {
       box-shadow: none;
     }
+  }
+}
+
+::ng-deep {
+  p-messages {
+    margin-top: -13px;
   }
 }

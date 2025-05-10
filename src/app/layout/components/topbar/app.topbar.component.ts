@@ -43,6 +43,7 @@ export class AppTopbarComponent {
       next: () => {
         localStorage.removeItem('tokenData');
         localStorage.removeItem('user');
+        localStorage.removeItem('selectedSize');
         this.router.navigate(['/auth/login']);
       },
       error: () => {},

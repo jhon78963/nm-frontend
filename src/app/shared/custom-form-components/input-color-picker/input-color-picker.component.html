@@ -1,0 +1,8 @@
+<label for="color">Seleccione color</label>
+<input
+  [(colorPicker)]="color"
+  [cpPosition]="'bottom'"
+  [style.background]="color"
+  (colorPickerChange)="onColorSelected($event)"
+  class="input-color mt-3"
+  readonly="true" />
