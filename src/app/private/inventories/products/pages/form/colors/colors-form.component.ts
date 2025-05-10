@@ -161,7 +161,7 @@ export class ColorsFormComponent implements OnInit {
         this.messageService.add({
           severity: 'warn',
           summary: 'Stock',
-          detail: 'No se puede seleccionar más tallas: stock limitado',
+          detail: `No se puede seleccionar más tallas: stock maximo ${this.selectedSize.stock}`,
         });
       }
     }
