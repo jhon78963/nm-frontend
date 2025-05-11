@@ -20,6 +20,8 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { MessageService } from 'primeng/api';
 import { showError, showSuccess } from '../../../../../../utils/notifications';
 import { MessagesModule } from 'primeng/messages';
+import { ProductSizeColorSave } from '../../../models/colors.interface';
+import { catchError, forkJoin, of } from 'rxjs';
 
 @Component({
   selector: 'app-colors-form',
@@ -47,11 +49,6 @@ export class ColorsFormComponent implements OnInit {
   filterValue: any;
   selectedColors: any[] = [];
   selectedSize: any;
-  saveAllSelectedColors() {}
-  deleteAllSelectedColors() {}
-  editColorSizeProductButton() {}
-  saveColorSizeProductButton() {}
-  removeColorSizeProductButton() {}
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -81,6 +78,7 @@ export class ColorsFormComponent implements OnInit {
     if (selectedSize && selectedSize.productId == this.productId) {
       this.selectedSize = {
         id: selectedSize.id,
+        productSizeId: selectedSize.productSizeId,
         description: selectedSize.description,
         stock: selectedSize.stock,
       };
@@ -98,8 +96,8 @@ export class ColorsFormComponent implements OnInit {
     });
   }
 
-  getColors(productSizeColorId: number) {
-    this.productSizeColorsService.getColors(productSizeColorId).subscribe({
+  getColors(sizeId: number) {
+    this.productSizeColorsService.getColors(this.productId, sizeId).subscribe({
       next: (colors: any) => {
         this.colors = colors;
       },
@@ -112,6 +110,7 @@ export class ColorsFormComponent implements OnInit {
       localStorage.setItem('selectedSize', JSON.stringify(event.value));
       this.getColors(event.value.id);
     } else {
+      this.messageService.clear();
       this.colors = [];
     }
   }
@@ -149,7 +148,7 @@ export class ColorsFormComponent implements OnInit {
         this.messageService.add({
           severity: 'warn',
           summary: 'Stock',
-          detail: 'Stock máximo alcanzado',
+          detail: `Stock máximo alcanzado: ${this.selectedSize.stock}`,
         });
       }
     } else {
@@ -187,5 +186,81 @@ export class ColorsFormComponent implements OnInit {
         }
       },
     });
+  }
+
+  saveAllSelectedColors() {
+    const requests = this.selectedColors.map(color => {
+      const productSizeColorSave: ProductSizeColorSave = {
+        stock: color.stock,
+      };
+
+      return this.productSizeColorsService
+        .add(color.productSizeId, color.id, productSizeColorSave)
+        .pipe(
+          catchError(() => {
+            return of(null);
+          }),
+        );
+    });
+
+    forkJoin(requests).subscribe({
+      next: () => {
+        this.loadColors();
+        this.selectedColors = [];
+      },
+    });
+  }
+
+  deleteAllSelectedColors() {
+    const requests = this.selectedColors.map(color => {
+      return this.productSizeColorsService
+        .remove(color.productSizeId, color.id)
+        .pipe(
+          catchError(() => {
+            return of(null);
+          }),
+        );
+    });
+
+    forkJoin(requests).subscribe({
+      next: () => {
+        this.loadColors();
+        this.selectedColors = [];
+      },
+    });
+  }
+
+  saveColorSizeProductButton(color: any) {
+    const productSizeColorSave: ProductSizeColorSave = {
+      stock: color.stock,
+    };
+
+    this.productSizeColorsService
+      .add(color.productSizeId, color.id, productSizeColorSave)
+      .subscribe({
+        next: () => {
+          this.loadColors();
+          this.selectedColors = this.selectedColors.filter(
+            c => c.id !== color.id,
+          );
+        },
+        error: () => this.loadColors(),
+      });
+  }
+
+  editColorSizeProductButton(color: any) {
+    this.saveColorSizeProductButton(color);
+  }
+
+  removeColorSizeProductButton(color: any) {
+    this.productSizeColorsService
+      .remove(color.productSizeId, color.id)
+      .subscribe({
+        next: () => {
+          this.loadColors();
+          this.selectedColors = [];
+        },
+        error: () => this.loadColors(),
+      });
   }
 }

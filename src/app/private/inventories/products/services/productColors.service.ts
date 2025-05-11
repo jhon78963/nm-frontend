@@ -3,6 +3,7 @@ import { ApiService } from '../../../../services/api.service';
 import { Observable } from 'rxjs';
 import { ProductSizeSave } from '../models/sizes.interface';
 import { Size } from '../../size/models/sizes.model';
+import { ProductSizeColorSave } from '../models/colors.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -13,7 +14,7 @@ export class ProductSizeColorsService {
   add(
     productSizeId: number,
     colorId: number,
-    data: ProductSizeSave,
+    data: ProductSizeColorSave,
   ): Observable<void> {
     return this.apiService.post(
       `product-size/${productSizeId}/color/${colorId}`,
@@ -46,9 +47,9 @@ export class ProductSizeColorsService {
     return this.apiService.get<Size[]>(url);
   }
 
-  getColors(productSizeId: number) {
+  getColors(productId: number, sizeId: number) {
     return this.apiService.get(
-      `colors/selected?productSizeId=${productSizeId}`,
+      `colors/selected?productId=${productId}&sizeId=${sizeId}`,
     );
   }
 }

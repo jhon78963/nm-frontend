@@ -151,7 +151,6 @@ export class SizesFormComponent implements OnInit {
         salePrice: size.salePrice,
         minSalePrice: size.minSalePrice,
       };
-      console.log(productSizeSave);
 
       return this.productSizesService
         .add(this.productId, size.id, productSizeSave)
@@ -195,7 +194,7 @@ export class SizesFormComponent implements OnInit {
       salePrice: size.salePrice,
       minSalePrice: size.minSalePrice,
     };
-    console.log(productSizeSave);
+
     this.productSizesService
       .add(this.productId, size.id, productSizeSave)
       .subscribe({

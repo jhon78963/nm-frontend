@@ -149,8 +149,8 @@
                   class="p-button-rounded p-menu"
                   (click)="
                     color.isExists
-                      ? editColorSizeProductButton()
-                      : saveColorSizeProductButton()
+                      ? editColorSizeProductButton(color)
+                      : saveColorSizeProductButton(color)
                   "></button>
                 @if (color.isExists) {
                   <button
@@ -158,7 +158,7 @@
                     pRipple
                     icon="pi pi-trash"
                     class="p-button-rounded p-menu"
-                    (click)="removeColorSizeProductButton()"></button>
+                    (click)="removeColorSizeProductButton(color)"></button>
                 }
               </div>
             </td>
