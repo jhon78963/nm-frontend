@@ -3,8 +3,9 @@
     <div class="card">
       <p-fileUpload
         name="file[]"
-        [url]="url"
+        url="https://www.primefaces.org/cdn/api/upload.php"
         (onUpload)="onUpload()"
+        (onSelect)="onSelectedFiles($event)"
         [multiple]="true"
         accept="image/*"
         [maxFileSize]="5000000">

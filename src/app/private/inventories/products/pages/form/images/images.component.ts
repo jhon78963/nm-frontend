@@ -1,10 +1,11 @@
 import { Component } from '@angular/core';
+import { SharedModule } from '../../../../../../shared/shared.module';
 
 @Component({
-  selector: 'app-images',
+  selector: 'app-product-images',
   standalone: true,
-  imports: [],
+  imports: [SharedModule],
   templateUrl: './images.component.html',
   styleUrl: './images.component.scss',
 })
-export class ImagesComponent {}
+export class ProductImagesComponent {}

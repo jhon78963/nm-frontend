@@ -35,6 +35,10 @@ export class InputImageComponent implements OnInit {
     console.log('hola');
   }
 
+  onSelectedFiles(event: any) {
+    console.log(event);
+  }
+
   onUpload() {}
   removeImage(id: number) {
     console.log(id);

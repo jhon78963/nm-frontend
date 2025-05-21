@@ -14,6 +14,7 @@ import { KeyFilterModule } from 'primeng/keyfilter';
 import { MessageService } from 'primeng/api';
 import { ImageModule } from 'primeng/image';
 import { TooltipModule } from 'primeng/tooltip';
+import { ProductImagesComponent } from '../images/images.component';
 
 @Component({
   selector: 'app-products-ecommerce-form',
@@ -28,6 +29,7 @@ import { TooltipModule } from 'primeng/tooltip';
     KeyFilterModule,
     ImageModule,
     TooltipModule,
+    ProductImagesComponent,
   ],
   templateUrl: './ecommerce-form.component.html',
   styleUrl: './ecommerce-form.component.scss',

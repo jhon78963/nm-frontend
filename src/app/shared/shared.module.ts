@@ -33,6 +33,7 @@ import { TabViewComponent } from './custom-form-components/tab-view/tab-view.com
 import { InputAutocompleteApiComponent } from './custom-form-components/input-autocomplete-api/input-autocomplete-api.component';
 import { InputChipsApiComponent } from './custom-form-components/input-chips-api/input-chips-api.component';
 import { InputColorPickerComponent } from './custom-form-components/input-color-picker/input-color-picker.component';
+import { InputImageComponent } from './custom-form-components/input-image/input-image.component';
 
 const PRIMENG_MODULES = [
   InputTextModule,
@@ -70,6 +71,7 @@ const STANDALONES_COMPONENTS = [
   InputAutocompleteApiComponent,
   InputChipsApiComponent,
   InputColorPickerComponent,
+  InputImageComponent,
 ];
 
 @NgModule({
