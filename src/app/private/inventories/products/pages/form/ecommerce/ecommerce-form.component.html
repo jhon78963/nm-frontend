@@ -16,7 +16,10 @@
           pKeyFilter="num"></app-input-text>
       </div>
       <div class="field col-12">
-        <app-input-image (selectedFilesChange)="getFormData($event)" />
+        <app-input-image
+          [productId]="productId"
+          [images]="(images | async) ?? []"
+          (selectedFilesChange)="getFormData($event)" />
       </div>
       <div class="flex justify-content-end w-full gap-2 p-4">
         <button

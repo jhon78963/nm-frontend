@@ -4,7 +4,7 @@
   (dragleave)="onDragLeave($event)"
   (drop)="onDrop($event)"
   [class.dragging]="isDragging">
-  @if (selectedFiles.length === 0) {
+  @if (selectedFiles.length === 0 && images.length === 0) {
     <svg
       width="44"
       height="43"
@@ -19,11 +19,33 @@
         d="M14.3214 5.78045C14.3206 5.25129 14.4242 4.72717 14.6262 4.2381C14.8283 3.74903 15.1248 3.30461 15.4988 2.93029C15.8728 2.55598 16.317 2.25912 16.806 2.05671C17.2949 1.85431 17.8189 1.75033 18.3481 1.75073H25.6458C26.7149 1.75073 27.7403 2.17545 28.4963 2.93146C29.2523 3.68747 29.677 4.71283 29.677 5.78198C29.677 6.85114 29.2523 7.8765 28.4963 8.63251C27.7403 9.38851 26.7149 9.81323 25.6458 9.81323H18.3511C17.8214 9.81364 17.2968 9.7096 16.8074 9.50708C16.3179 9.30455 15.8732 9.00752 15.4986 8.63296C15.1241 8.2584 14.827 7.81367 14.6245 7.32421C14.422 6.83474 14.321 6.31015 14.3214 5.78045Z"
         fill="#000" />
     </svg>
-    <p>
+    <p class="drop-zone__wrapper">
       Soltar archivo o
       <label for="fileInput" class="drop-zone__label">Examinar</label>
     </p>
   }
+
+  <ul *ngIf="images.length > 0" class="file-list">
+    <li *ngFor="let image of images; let i = index" class="file-list__items">
+      <div class="file-list__left">
+        <img [src]="s3_url + image.path" alt="preview" class="thumb" />
+        <div class="file-data">
+          <span class="file-data__p-name">{{ image.name }}</span>
+          <span class="file-data__p-size">{{ image.size }}</span>
+        </div>
+      </div>
+      <div class="file-list__right">
+        <button
+          pButton
+          pRipple
+          class="btn-menu"
+          (click)="removeFile(i)"
+          icon="pi pi-times"
+          pTooltip="Eliminar archivo"
+          tooltipPosition="bottom"></button>
+      </div>
+    </li>
+  </ul>
 
   <ul *ngIf="selectedFiles.length > 0" class="file-list">
     <li
@@ -73,7 +95,8 @@
       (click)="uploadFiles()"
       icon="pi pi-cloud-upload"
       pTooltip="Subir archivo"
-      tooltipPosition="bottom"></button>
+      tooltipPosition="bottom"
+      [disabled]="selectedFiles.length === 0"></button>
     <button
       pButton
       pRipple

@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Output } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  Output,
+  OnInit,
+  SimpleChanges,
+  OnChanges,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { FileUploadModule } from 'primeng/fileupload';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
@@ -8,6 +16,8 @@ import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { environment } from '../../../../environments/environment';
 import { ButtonModule } from 'primeng/button';
+import { getFileSize } from '../../../utils/files';
+import { BASE_S3_URL } from '../../../utils/constants';
 
 export interface InputImage {
   images: File | File[];
@@ -30,13 +40,26 @@ export interface InputImage {
   templateUrl: './input-image.component.html',
   styleUrl: './input-image.component.scss',
 })
-export class InputImageComponent {
+export class InputImageComponent implements OnInit, OnChanges {
   @Output()
   public selectedFilesChange: EventEmitter<InputImage> = new EventEmitter();
   apiUrl = environment.BASE_URL;
   selectedFiles: File[] = [];
   imagePreviews: string[] = [];
   isDragging = false;
+  @Input() productId: number = 0;
+  @Input() images: any[] = [];
+  s3_url: string = BASE_S3_URL;
+
+  ngOnInit(): void {
+    console.log(this.productId);
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['images']) {
+      console.log('Imágenes recibidas:', this.images);
+    }
+  }
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -112,9 +135,7 @@ export class InputImageComponent {
   }
 
   getFileSize(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    else if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    else return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    return getFileSize(bytes);
   }
 
   getImagePreview(file: File): string {

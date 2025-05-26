@@ -16,6 +16,10 @@ import { ImageModule } from 'primeng/image';
 import { TooltipModule } from 'primeng/tooltip';
 import { InputImage } from '../../../../../../shared/custom-form-components/input-image/input-image.component';
 import { FileService } from '../../../../../../services/file.service';
+import { getFileSize } from '../../../../../../utils/files';
+import { PImage } from '../../../models/images.interface';
+import { Observable } from 'rxjs';
+import { LoadingService } from '../../../../../../services/loading.service';
 
 @Component({
   selector: 'app-products-ecommerce-form',
@@ -37,11 +41,11 @@ import { FileService } from '../../../../../../services/file.service';
 })
 export class EcommerceFormComponent implements OnInit {
   productId: number = 0;
-
   constructor(
     private readonly route: ActivatedRoute,
     private readonly formBuilder: FormBuilder,
     private readonly fileService: FileService,
+    private readonly loadingService: LoadingService,
   ) {
     if (this.route.snapshot.paramMap.get('id')) {
       this.productId = Number(this.route.snapshot.paramMap.get('id'));
@@ -55,34 +59,52 @@ export class EcommerceFormComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.fileService.getImageByProduct(this.productId).subscribe({
-      next: (resp: any) => {
-        console.log(resp);
-      },
-    });
+    this.getImages(this.productId);
+  }
+
+  async getImages(productId = this.productId): Promise<void> {
+    this.fileService.callGetList(productId).subscribe();
+    setTimeout(() => {
+      this.loadingService.sendLoadingState(false);
+    }, 600);
+  }
+
+  get images(): Observable<PImage[]> {
+    return this.fileService.getList();
   }
 
   getFormData(inputImage: InputImage): void {
     const formData = new FormData();
-
+    const sizes: string[] = [];
+    const names: string[] = [];
+    let size: string = '';
+    let name: string = '';
     if (inputImage.multiply && Array.isArray(inputImage.images)) {
       inputImage.images.forEach((file: File) => {
         formData.append('file[]', file);
+        sizes.push(getFileSize(file.size));
+        names.push(file.name);
       });
     } else if (inputImage.images instanceof File) {
       formData.append('file', inputImage.images);
+      size = getFileSize(inputImage.images.size);
+      name = inputImage.images.name;
     }
 
     this.fileService.createImage(formData, inputImage.multiply).subscribe({
       next: (resp: any) => {
         if (resp.image) {
           this.fileService
-            .saveImage(this.productId, { image: resp.image })
+            .saveImage(this.productId, { image: resp.image, size, name })
             .subscribe();
         }
         if (resp.images) {
           this.fileService
-            .saveMultipleImage(this.productId, { image: resp.images })
+            .saveMultipleImage(this.productId, {
+              image: resp.images,
+              size: sizes,
+              name: names,
+            })
             .subscribe();
         }
       },

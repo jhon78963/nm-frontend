@@ -3,6 +3,10 @@
   padding: 40px 40px 40px 20px;
   text-align: center;
   position: relative;
+  &__wrapper {
+    margin: 0;
+    line-height: normal;
+  }
   &__label {
     color: #ffb340;
     font-weight: 700;
