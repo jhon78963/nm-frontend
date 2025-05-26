@@ -1,77 +1,101 @@
-<div class="grid">
-  <div class="col-12">
-    <div class="card">
-      <p-fileUpload
-        name="file[]"
-        url="https://www.primefaces.org/cdn/api/upload.php"
-        (onUpload)="onUpload()"
-        (onSelect)="onSelectedFiles($event)"
-        [multiple]="true"
-        accept="image/*"
-        [maxFileSize]="5000000">
-        <ng-template pTemplate="content">
-          @if (uploadedFiles.length) {
-            @for (image of uploadedFiles; track $index) {
-              <div class="p-fileupload-row">
-                <div class="file-thumbnail">
-                  <img
-                    src="{{ image.imagePath }}"
-                    width="50"
-                    alt="constancia-3.png"
-                    class="file-thumbnail-image" />
-                </div>
-                <div class="p-fileupload-filename">{{ image.imageName }}</div>
-                <div class="p-fileupload-actions">
-                  <p-button
-                    icon="pi pi-times"
-                    pTooltip="Remover"
-                    tooltipPosition="bottom"
-                    (click)="removeImage(image.id)"></p-button>
-                </div>
-              </div>
-            }
-          }
-        </ng-template>
-        <ng-template pTemplate="toolbar">
-          <p-button
-            label="Choose existing"
-            icon="pi pi-plus-circle"
-            (click)="op2.toggle($event)">
-          </p-button>
-          <p-overlayPanel
-            #op2
-            [showCloseIcon]="true"
-            [style]="{ width: '160px' }">
-            <ng-template pTemplate>
-              <p-toast />
-              <p-table
-                [value]="leftFiles"
-                selectionMode="single"
-                [(selection)]="selectedFile"
-                dataKey="code"
-                (onRowSelect)="addImage($event)"
-                appendTo="body">
-                <ng-template pTemplate="header">
-                  <tr>
-                    <th class="text-center">Imagen</th>
-                  </tr>
-                </ng-template>
-                <ng-template pTemplate="body" let-image>
-                  <tr [pSelectableRow]="image">
-                    <td class="text-center">
-                      <img
-                        [src]="image.imagePath"
-                        [alt]="image.imageName"
-                        width="50"
-                        class="shadow-2" />
-                    </td>
-                  </tr>
-                </ng-template>
-              </p-table>
-            </ng-template>
-          </p-overlayPanel>
-        </ng-template>
-      </p-fileUpload>
-    </div>
+<div
+  class="drop-zone"
+  (dragover)="onDragOver($event)"
+  (dragleave)="onDragLeave($event)"
+  (drop)="onDrop($event)"
+  [class.dragging]="isDragging">
+  @if (selectedFiles.length === 0) {
+    <svg
+      width="44"
+      height="43"
+      viewBox="0 0 44 43"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M30.7162 5.69678L30.7836 5.70557V5.70459L32.226 5.88916H32.2269L33.9769 6.11084H33.9818C34.8751 6.21612 35.7078 6.60983 36.3558 7.229L36.4828 7.35596C37.1057 8.00511 37.4992 8.83797 37.6058 9.72803L37.6234 9.90674C38.2189 18.2031 38.2559 26.5295 37.7347 34.8296L37.6234 36.4897V36.4907C37.5606 37.3923 37.1968 38.2447 36.5941 38.9136L36.4711 39.0454C35.8367 39.6892 35.0056 40.0996 34.1127 40.2153L33.933 40.2349C26.2568 40.8776 19.1881 40.9184 11.5853 40.356L10.057 40.2349C9.09653 40.1536 8.19647 39.732 7.5199 39.0454C6.88556 38.4017 6.4868 37.5648 6.38416 36.6704L6.36755 36.4907V36.4897L6.25623 34.8296C5.73501 26.5295 5.77198 18.2031 6.36755 9.90674C6.43595 9.00934 6.79458 8.15995 7.38708 7.48682L7.50916 7.35498C8.13253 6.70588 8.94907 6.27903 9.83435 6.13623L10.0121 6.11084H10.016L11.7699 5.88916H11.7709L13.2142 5.70459H13.2152L13.2787 5.69678H30.7162Z"
+        fill="#ffb340"
+        stroke="black" />
+      <path
+        d="M14.3214 5.78045C14.3206 5.25129 14.4242 4.72717 14.6262 4.2381C14.8283 3.74903 15.1248 3.30461 15.4988 2.93029C15.8728 2.55598 16.317 2.25912 16.806 2.05671C17.2949 1.85431 17.8189 1.75033 18.3481 1.75073H25.6458C26.7149 1.75073 27.7403 2.17545 28.4963 2.93146C29.2523 3.68747 29.677 4.71283 29.677 5.78198C29.677 6.85114 29.2523 7.8765 28.4963 8.63251C27.7403 9.38851 26.7149 9.81323 25.6458 9.81323H18.3511C17.8214 9.81364 17.2968 9.7096 16.8074 9.50708C16.3179 9.30455 15.8732 9.00752 15.4986 8.63296C15.1241 8.2584 14.827 7.81367 14.6245 7.32421C14.422 6.83474 14.321 6.31015 14.3214 5.78045Z"
+        fill="#000" />
+    </svg>
+    <p>
+      Soltar archivo o
+      <label for="fileInput" class="drop-zone__label">Examinar</label>
+    </p>
+  }
+
+  <ul *ngIf="selectedFiles.length > 0" class="file-list">
+    <li
+      *ngFor="let file of selectedFiles; let i = index"
+      class="file-list__items">
+      <div class="file-list__left">
+        <img [src]="imagePreviews[i]" alt="preview" class="thumb" />
+        <div class="file-data">
+          <span class="file-data__p-name">{{ file.name }}</span>
+          <span class="file-data__p-size">{{ getFileSize(file.size) }}</span>
+        </div>
+      </div>
+      <div class="file-list__right">
+        <button
+          pButton
+          pRipple
+          class="btn-menu"
+          (click)="uploadFile(file)"
+          icon="pi pi-cloud-upload"
+          pTooltip="Subir archivo"
+          tooltipPosition="bottom"></button>
+        <button
+          pButton
+          pRipple
+          class="btn-menu"
+          (click)="removeFile(i)"
+          icon="pi pi-times"
+          pTooltip="Eliminar archivo"
+          tooltipPosition="bottom"></button>
+      </div>
+    </li>
+  </ul>
+
+  <div class="buttons buttons__position">
+    <button
+      pButton
+      pRipple
+      class="btn-menu"
+      (click)="fileInput.click()"
+      icon="pi pi-images"
+      pTooltip="Seleccionar archivo"
+      tooltipPosition="bottom"></button>
+    <button
+      pButton
+      pRipple
+      class="btn-menu"
+      (click)="uploadFiles()"
+      icon="pi pi-cloud-upload"
+      pTooltip="Subir archivo"
+      tooltipPosition="bottom"></button>
+    <button
+      pButton
+      pRipple
+      class="btn-menu"
+      (click)="clearFiles()"
+      icon="pi pi-times"
+      pTooltip="Eliminar archivo"
+      tooltipPosition="bottom"
+      [disabled]="selectedFiles.length === 0"></button>
   </div>
 </div>
+
+<!-- Input oculto para seleccionar archivos manualmente -->
+<input
+  type="file"
+  id="fileInput"
+  #fileInput
+  (change)="onFileSelected($event)"
+  accept="image/*"
+  multiple
+  hidden />
+
+<!-- Botones -->
+
+<!-- Lista de archivos seleccionados -->

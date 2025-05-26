@@ -9,7 +9,12 @@ export class FileApiService {
   constructor(private readonly http: HttpClient) {}
 
   post<T>(path: string, body: any, headers?: any) {
-    const httpHeaders = { ...headers, Authorization: `Bearer ${FILE_TOKEN}` };
+    const httpHeaders = {
+      ...headers,
+      Authorization: `Bearer ${FILE_TOKEN}`,
+      'X-Use-Custom-Token': 'true',
+    };
+
     return this.http.post<T>(`${this.BASE_FILE_URL}/${path}`, body, {
       headers: httpHeaders,
     });

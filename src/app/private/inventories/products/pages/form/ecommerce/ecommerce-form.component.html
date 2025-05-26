@@ -16,34 +16,7 @@
           pKeyFilter="num"></app-input-text>
       </div>
       <div class="field col-12">
-        <div class="flex gap-3 justify-content-center">
-          <div class="border-1 surface-border border-round p-3">
-            <img
-              src="https://plus.unsplash.com/premium_photo-1711031505781-2a45c879ceac?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8aW0lQzMlQTFnZW5lcyUyMGltcHJlc2lvbmFudGVzfGVufDB8fDB8fHww"
-              alt="Image"
-              width="200"
-              height="150"
-              class="img-responsive" />
-            <div>
-              <div class="flex justify-content-between align-items-center pt-3">
-                <div class="mt-0 font-semibold text-xl">Activo</div>
-                <span>
-                  <p-button
-                    icon="pi pi-times"
-                    severity="secondary"
-                    [outlined]="true"
-                    pTooltip="Eliminar"
-                    tooltipPosition="bottom" />
-                  <p-button
-                    icon="pi pi-bookmark-fill"
-                    styleClass="ml-2"
-                    pTooltip="Ocultar"
-                    tooltipPosition="bottom" />
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <app-input-image (selectedFilesChange)="getFormData($event)" />
       </div>
       <div class="flex justify-content-end w-full gap-2 p-4">
         <button
@@ -60,7 +33,6 @@
           label="Guardar"></button>
       </div>
     </div>
-    <app-product-images />
   </form>
 }
 <p-toast />

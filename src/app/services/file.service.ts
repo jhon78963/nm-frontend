@@ -13,24 +13,25 @@ export class FileService {
     private fileApiService: FileApiService,
   ) {}
 
-  createImage(data: any) {
-    return this.fileApiService.post('images/upload', data);
+  createImage(data: FormData, multiply: boolean) {
+    const endpoint = multiply ? 'images/multiple-upload' : 'images/upload';
+    return this.fileApiService.post(endpoint, data);
   }
 
   deleteImage(path: string) {
     return this.fileApiService.delete(`images/${path}`);
   }
 
-  saveImage(path: string): any {
-    return this.apiService.post('images', { path });
+  saveImage(productId: number, image: any) {
+    return this.apiService.post(`products/${productId}/upload/image`, image);
   }
 
-  saveProductImage(productId: number, imageId: number) {
-    return this.apiService.post(`products/${productId}/image/${imageId}`, {});
+  saveMultipleImage(productId: number, images: any) {
+    return this.apiService.post(`products/${productId}/upload/images`, images);
   }
 
   getImageByProduct(productId: number) {
-    return this.apiService.get(`products/${productId}/image`);
+    return this.apiService.get(`products/${productId}/images`);
   }
 
   removeImageProduct(productId: number, imageId: number) {

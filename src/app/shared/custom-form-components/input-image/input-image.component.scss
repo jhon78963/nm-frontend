@@ -1,0 +1,84 @@
+.drop-zone {
+  border: 2px dashed #ccc;
+  padding: 40px 40px 40px 20px;
+  text-align: center;
+  position: relative;
+  &__label {
+    color: #ffb340;
+    font-weight: 700;
+    cursor: pointer;
+  }
+}
+.drop-zone.dragging {
+  border-color: #ffb340;
+  background-color: #fffcf8;
+}
+.buttons {
+  padding: 10px 10px 10px 20px;
+  display: flex;
+  gap: 10px;
+
+  &__position {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+}
+
+.file-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 20px;
+  &__items {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    .thumb {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      border: 1px solid #ddd;
+    }
+    .file-data {
+      display: flex;
+      flex-direction: column;
+      &__p-name {
+        font-size: 15px;
+        font-weight: 700;
+      }
+      &__p-size {
+        font-size: 11px;
+        font-style: oblique;
+        text-align: start;
+      }
+    }
+  }
+  &__right {
+    display: flex;
+    gap: 5px;
+  }
+}
+
+::ng-deep {
+  .btn-menu {
+    background-color: #dfe3e8;
+    border: 1px solid #dfe3e8;
+    color: #475569;
+    border-radius: 5px;
+    height: 39px;
+    border-radius: 50%;
+  }
+  .btn-menu:focus,
+  .btn-menu:focus-visible {
+    outline: transparent;
+    box-shadow: none;
+  }
+}
