@@ -43,12 +43,17 @@ export interface InputImage {
 export class InputImageComponent implements OnInit, OnChanges {
   @Output()
   public selectedFilesChange: EventEmitter<InputImage> = new EventEmitter();
+  @Input() productId: number = 0;
+  @Input() images: any[] = [];
+  @Input() imageSaved: any;
+  @Input() imagesSaved: any;
+  index: number = 0;
+  newImageIndexes: any[] = [];
+  newImages: any[] = [];
   apiUrl = environment.BASE_URL;
   selectedFiles: File[] = [];
   imagePreviews: string[] = [];
   isDragging = false;
-  @Input() productId: number = 0;
-  @Input() images: any[] = [];
   s3_url: string = BASE_S3_URL;
 
   ngOnInit(): void {
@@ -56,8 +61,25 @@ export class InputImageComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['images']) {
-      console.log('Imágenes recibidas:', this.images);
+    if (changes['imageSaved'] && this.imageSaved) {
+      this.images[this.index].size = this.imageSaved.size;
+      this.images[this.index].path = this.imageSaved.image;
+      delete this.images[this.index].preview;
+      this.index = 0;
+    }
+    if (changes['imagesSaved'] && this.imagesSaved) {
+      this.newImages = this.imagesSaved.images.map(
+        (image: any, index: number) => ({
+          path: image,
+          size: this.imagesSaved.sizes[index],
+          name: this.imagesSaved.names[index],
+          isDB: true,
+        }),
+      );
+      this.newImageIndexes.forEach((imageIndex, i) => {
+        this.images[imageIndex] = this.newImages[i];
+      });
+      this.newImageIndexes = [];
     }
   }
 
@@ -65,6 +87,7 @@ export class InputImageComponent implements OnInit, OnChanges {
     const input = event.target as HTMLInputElement;
     if (input.files) {
       this.addFiles(input.files);
+      input.value = '';
     }
   }
 
@@ -86,45 +109,35 @@ export class InputImageComponent implements OnInit, OnChanges {
     }
   }
 
-  private addFiles(files: FileList): void {
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      this.selectedFiles.push(file);
-      const blobUrl = URL.createObjectURL(file);
-      this.imagePreviews.push(blobUrl);
-    }
-  }
-
   uploadFiles(): void {
-    // const formData = new FormData();
-    // this.selectedFiles.forEach((file: File) => {
-    //   formData.append('image[]', file);
-    // });
+    this.newImageIndexes = [];
+    this.newImages = [];
+    this.images.forEach((image, index) => {
+      if (!image.isDB) {
+        this.newImageIndexes.push(index);
+        this.newImages.push(image);
+      }
+    });
+    const imagesToSave = this.newImages.map(image => image.file);
     this.selectedFilesChange.emit({
-      images: this.selectedFiles,
+      images: imagesToSave,
       multiply: true,
     });
-
-    // this.fileService.createImage(formData).subscribe({
-    //   next: (resp: any) => {
-    //     if (resp.image) {
-    //       this.fileService.saveImage(this.productId, resp.image).subscribe();
-    //     }
-    //   },
-    //   error: () => {
-    //     console.error('Error al subir');
-    //   },
-    // });
+    this.newImages.forEach(image => {
+      image.isDB = true;
+    });
   }
 
-  uploadFile(file: File) {
-    // const formData = new FormData();
-    // formData.append('image', file);
-    this.selectedFilesChange.emit({ images: file, multiply: false });
+  uploadFile(image: any, index: number) {
+    this.index = 0;
+    this.selectedFilesChange.emit({ images: image.file, multiply: false });
+    this.images[index].isDB = true;
+    this.index = index;
   }
 
   clearFiles(): void {
     this.imagePreviews.forEach(url => URL.revokeObjectURL(url));
+    this.images = [];
     this.selectedFiles = [];
     this.imagePreviews = [];
 
@@ -132,6 +145,19 @@ export class InputImageComponent implements OnInit, OnChanges {
     if (input) {
       input.value = '';
     }
+  }
+
+  clearFile(index: number): void {
+    console.log(this.images[index]);
+    // URL.revokeObjectURL(this.imagePreviews[index]);
+    // this.images.splice(index, 1);
+    // this.selectedFiles.splice(index, 1);
+    // this.imagePreviews.splice(index, 1);
+
+    // if (this.images.length === 0) {
+    //   const input = document.getElementById('fileInput') as HTMLInputElement;
+    //   if (input) input.value = '';
+    // }
   }
 
   getFileSize(bytes: number): string {
@@ -142,14 +168,31 @@ export class InputImageComponent implements OnInit, OnChanges {
     return URL.createObjectURL(file);
   }
 
-  removeFile(index: number): void {
-    URL.revokeObjectURL(this.imagePreviews[index]);
-    this.selectedFiles.splice(index, 1);
-    this.imagePreviews.splice(index, 1);
+  private addFiles(files: FileList): void {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
 
-    if (this.selectedFiles.length === 0) {
-      const input = document.getElementById('fileInput') as HTMLInputElement;
-      if (input) input.value = '';
+      // Verificar si ya fue agregado
+      const alreadyAdded = this.selectedFiles.some(
+        f => f.name === file.name && f.size === file.size,
+      );
+
+      if (alreadyAdded) {
+        alert(`El archivo "${file.name}" ya fue agregado.`);
+        continue;
+      }
+
+      this.selectedFiles.push(file);
+      const blobUrl = URL.createObjectURL(file);
+      this.imagePreviews.push(blobUrl);
+
+      this.images.push({
+        name: file.name,
+        size: file.size,
+        file,
+        preview: blobUrl,
+        isDB: false,
+      });
     }
   }
 }

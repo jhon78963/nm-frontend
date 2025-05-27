@@ -18,6 +18,8 @@
       <div class="field col-12">
         <app-input-image
           [productId]="productId"
+          [imageSaved]="imageSaved"
+          [imagesSaved]="imagesSaved"
           [images]="(images | async) ?? []"
           (selectedFilesChange)="getFormData($event)" />
       </div>

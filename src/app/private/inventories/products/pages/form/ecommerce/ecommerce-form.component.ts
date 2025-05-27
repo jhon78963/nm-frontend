@@ -20,6 +20,7 @@ import { getFileSize } from '../../../../../../utils/files';
 import { PImage } from '../../../models/images.interface';
 import { Observable } from 'rxjs';
 import { LoadingService } from '../../../../../../services/loading.service';
+import { ProgressSpinnerService } from '../../../../../../services/progress-spinner.service';
 
 @Component({
   selector: 'app-products-ecommerce-form',
@@ -41,11 +42,14 @@ import { LoadingService } from '../../../../../../services/loading.service';
 })
 export class EcommerceFormComponent implements OnInit {
   productId: number = 0;
+  imageSaved: any;
+  imagesSaved: any;
   constructor(
     private readonly route: ActivatedRoute,
     private readonly formBuilder: FormBuilder,
     private readonly fileService: FileService,
     private readonly loadingService: LoadingService,
+    private readonly progressSpinnerService: ProgressSpinnerService,
   ) {
     if (this.route.snapshot.paramMap.get('id')) {
       this.productId = Number(this.route.snapshot.paramMap.get('id'));
@@ -91,12 +95,19 @@ export class EcommerceFormComponent implements OnInit {
       name = inputImage.images.name;
     }
 
+    this.progressSpinnerService.show();
     this.fileService.createImage(formData, inputImage.multiply).subscribe({
       next: (resp: any) => {
         if (resp.image) {
           this.fileService
             .saveImage(this.productId, { image: resp.image, size, name })
-            .subscribe();
+            .subscribe({
+              next: () => {
+                this.imageSaved = { image: resp.image, size, name };
+                this.progressSpinnerService.hidden();
+              },
+              error: () => this.progressSpinnerService.hidden(),
+            });
         }
         if (resp.images) {
           this.fileService
@@ -105,7 +116,17 @@ export class EcommerceFormComponent implements OnInit {
               size: sizes,
               name: names,
             })
-            .subscribe();
+            .subscribe({
+              next: () => {
+                this.imagesSaved = {
+                  images: resp.images,
+                  sizes,
+                  names,
+                };
+                this.progressSpinnerService.hidden();
+              },
+              error: () => this.progressSpinnerService.hidden(),
+            });
         }
       },
       error: () => {

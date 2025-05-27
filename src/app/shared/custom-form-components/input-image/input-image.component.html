@@ -28,50 +28,33 @@
   <ul *ngIf="images.length > 0" class="file-list">
     <li *ngFor="let image of images; let i = index" class="file-list__items">
       <div class="file-list__left">
-        <img [src]="s3_url + image.path" alt="preview" class="thumb" />
+        <img
+          [src]="image.path ? s3_url + image.path : image.preview"
+          alt="preview"
+          class="thumb" />
         <div class="file-data">
           <span class="file-data__p-name">{{ image.name }}</span>
-          <span class="file-data__p-size">{{ image.size }}</span>
+          <span class="file-data__p-size">
+            {{ image.path ? image.size : getFileSize(image.size) }}
+          </span>
         </div>
       </div>
       <div class="file-list__right">
+        @if (!image.isDB) {
+          <button
+            pButton
+            pRipple
+            class="btn-menu"
+            (click)="uploadFile(image, i)"
+            icon="pi pi-cloud-upload"
+            pTooltip="Subir archivo"
+            tooltipPosition="bottom"></button>
+        }
         <button
           pButton
           pRipple
           class="btn-menu"
-          (click)="removeFile(i)"
-          icon="pi pi-times"
-          pTooltip="Eliminar archivo"
-          tooltipPosition="bottom"></button>
-      </div>
-    </li>
-  </ul>
-
-  <ul *ngIf="selectedFiles.length > 0" class="file-list">
-    <li
-      *ngFor="let file of selectedFiles; let i = index"
-      class="file-list__items">
-      <div class="file-list__left">
-        <img [src]="imagePreviews[i]" alt="preview" class="thumb" />
-        <div class="file-data">
-          <span class="file-data__p-name">{{ file.name }}</span>
-          <span class="file-data__p-size">{{ getFileSize(file.size) }}</span>
-        </div>
-      </div>
-      <div class="file-list__right">
-        <button
-          pButton
-          pRipple
-          class="btn-menu"
-          (click)="uploadFile(file)"
-          icon="pi pi-cloud-upload"
-          pTooltip="Subir archivo"
-          tooltipPosition="bottom"></button>
-        <button
-          pButton
-          pRipple
-          class="btn-menu"
-          (click)="removeFile(i)"
+          (click)="clearFile(i)"
           icon="pi pi-times"
           pTooltip="Eliminar archivo"
           tooltipPosition="bottom"></button>
