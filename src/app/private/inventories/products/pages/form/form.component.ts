@@ -53,23 +53,41 @@ export class StepperFormComponent implements OnInit {
     this.items = [
       {
         label: 'General',
-        routerLink: [
-          `${this.productId > 0 ? `./general/${this.productId}` : './general'}`,
-        ],
+        routerLink: [`/inventories/products/step/general/${this.productId}`],
       },
       {
         label: 'Tallas',
-        routerLink: [`./sizes/${this.productId}`],
+        routerLink: [`/inventories/products/step/sizes/${this.productId}`],
       },
       {
         label: 'Colores',
-        routerLink: [`./colors/${this.productId}`],
+        routerLink: [`/inventories/products/step/colors/${this.productId}`],
       },
       {
         label: 'Ecommerce',
-        routerLink: [`./ecommerce/${this.productId}`],
+        routerLink: [`/inventories/products/step/ecommerce/${this.productId}`],
       },
     ];
+  }
+
+  prev() {
+    if (this.currentIndex > 0) {
+      this.currentIndex -= 1;
+      const link = this.items[this.currentIndex].routerLink?.[0];
+      if (link) {
+        this.router.navigate([link]);
+      }
+    }
+  }
+
+  next() {
+    if (this.currentIndex < this.items.length - 1) {
+      this.currentIndex += 1;
+      const link = this.items[this.currentIndex].routerLink?.[0];
+      if (link) {
+        this.router.navigate([link]);
+      }
+    }
   }
 
   updateStepStatus() {
