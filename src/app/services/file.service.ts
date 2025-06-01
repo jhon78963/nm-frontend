@@ -37,10 +37,6 @@ export class FileService {
     return this.fileApiService.post(endpoint, data);
   }
 
-  deleteImage(path: string) {
-    return this.fileApiService.delete(`images/${path}`);
-  }
-
   saveImage(productId: number, image: any) {
     return this.apiService.post(`products/${productId}/upload/image`, image);
   }
@@ -49,16 +45,18 @@ export class FileService {
     return this.apiService.post(`products/${productId}/upload/images`, images);
   }
 
-  getImageByProduct(productId: number) {
-    return this.apiService.get(`products/${productId}/images`);
+  deleteImage(path: string) {
+    return this.fileApiService.delete(`images/${path}`);
   }
 
-  removeImageProduct(productId: number, imageId: number) {
-    return this.apiService.delete(`products/${productId}/image/${imageId}`);
+  removeImage(productId: number, path: string) {
+    return this.apiService.delete(`products/${productId}/image/${path}`);
   }
 
-  removeImage(imageId: number) {
-    return this.apiService.delete(`images/${imageId}`);
+  removeMultipleImage(productId: number, path: string[]) {
+    return this.apiService.post(`products/${productId}/remove/images`, {
+      path,
+    });
   }
 
   private updateImages(value: PImage[]): void {

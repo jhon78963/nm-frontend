@@ -7,6 +7,9 @@
           label="Descuento por porcentaje"
           controlName="percentageDiscount"
           pKeyFilter="num"></app-input-text>
+        <span class="discount-label">
+          * Dejar en blanco para desactivar descuento
+        </span>
       </div>
       <div class="field col-12 md:col-6">
         <app-input-text
@@ -14,6 +17,9 @@
           label="Descuento por efectivo (S/)"
           controlName="cashDiscount"
           pKeyFilter="num"></app-input-text>
+        <span class="discount-label">
+          * Dejar en blanco para desactivar descuento
+        </span>
       </div>
       <div class="field col-12">
         <app-input-image
@@ -21,7 +27,8 @@
           [imageSaved]="imageSaved"
           [imagesSaved]="imagesSaved"
           [images]="(images | async) ?? []"
-          (selectedFilesChange)="getFormData($event)" />
+          (selectedFilesChange)="getFormData($event)"
+          (imagesToDelete)="imagesToDelete($event)" />
       </div>
       <div class="flex justify-content-end w-full gap-2 p-4">
         <button

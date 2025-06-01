@@ -35,6 +35,8 @@ export interface Product {
   sizes: Size[];
   filter: boolean;
   sizeTypeId?: number;
+  percentageDiscount: number;
+  cashDiscount: number;
 }
 
 export interface Paginate {
@@ -57,6 +59,8 @@ export class ProductSave {
   minSalePrice: number;
   status: string;
   genderId: number;
+  percentageDiscount: number;
+  cashDiscount: number;
   constructor(product: Product) {
     this.id = product.id;
     this.name = product.name;
@@ -67,5 +71,7 @@ export class ProductSave {
     this.minSalePrice = product.minSalePrice;
     this.status = product.status;
     this.genderId = product.genderId;
+    this.percentageDiscount = product.percentageDiscount;
+    this.cashDiscount = product.cashDiscount;
   }
 }

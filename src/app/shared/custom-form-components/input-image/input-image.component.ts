@@ -1,12 +1,11 @@
 import { CommonModule } from '@angular/common';
 import {
   Component,
-  EventEmitter,
   Input,
-  Output,
   OnInit,
   SimpleChanges,
   OnChanges,
+  output,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { FileUploadModule } from 'primeng/fileupload';
@@ -41,12 +40,12 @@ export interface InputImage {
   styleUrl: './input-image.component.scss',
 })
 export class InputImageComponent implements OnInit, OnChanges {
-  @Output()
-  public selectedFilesChange: EventEmitter<InputImage> = new EventEmitter();
   @Input() productId: number = 0;
   @Input() images: any[] = [];
   @Input() imageSaved: any;
   @Input() imagesSaved: any;
+  selectedFilesChange = output<InputImage>();
+  imagesToDelete = output<any>();
   index: number = 0;
   newImageIndexes: any[] = [];
   newImages: any[] = [];
@@ -136,6 +135,14 @@ export class InputImageComponent implements OnInit, OnChanges {
   }
 
   clearFiles(): void {
+    const imagesToDelete = this.images
+      .filter(p => p.isDB === true)
+      .map(p => p.path);
+
+    this.imagesToDelete.emit({
+      images: imagesToDelete,
+      multiply: true,
+    });
     this.imagePreviews.forEach(url => URL.revokeObjectURL(url));
     this.images = [];
     this.selectedFiles = [];
@@ -148,16 +155,20 @@ export class InputImageComponent implements OnInit, OnChanges {
   }
 
   clearFile(index: number): void {
-    console.log(this.images[index]);
-    // URL.revokeObjectURL(this.imagePreviews[index]);
-    // this.images.splice(index, 1);
-    // this.selectedFiles.splice(index, 1);
-    // this.imagePreviews.splice(index, 1);
-
-    // if (this.images.length === 0) {
-    //   const input = document.getElementById('fileInput') as HTMLInputElement;
-    //   if (input) input.value = '';
-    // }
+    if (this.images[index].isDB) {
+      this.imagesToDelete.emit({
+        images: this.images[index].path,
+        multiply: false,
+      });
+    }
+    URL.revokeObjectURL(this.imagePreviews[index]);
+    this.images.splice(index, 1);
+    this.selectedFiles.splice(index, 1);
+    this.imagePreviews.splice(index, 1);
+    if (this.images.length === 0) {
+      const input = document.getElementById('fileInput') as HTMLInputElement;
+      if (input) input.value = '';
+    }
   }
 
   getFileSize(bytes: number): string {

@@ -21,6 +21,8 @@ import { PImage } from '../../../models/images.interface';
 import { Observable } from 'rxjs';
 import { LoadingService } from '../../../../../../services/loading.service';
 import { ProgressSpinnerService } from '../../../../../../services/progress-spinner.service';
+import { Product, ProductSave } from '../../../models/products.model';
+import { ProductsService } from '../../../services/products.service';
 
 @Component({
   selector: 'app-products-ecommerce-form',
@@ -48,6 +50,7 @@ export class EcommerceFormComponent implements OnInit {
     private readonly route: ActivatedRoute,
     private readonly formBuilder: FormBuilder,
     private readonly fileService: FileService,
+    private readonly productsService: ProductsService,
     private readonly loadingService: LoadingService,
     private readonly progressSpinnerService: ProgressSpinnerService,
   ) {
@@ -58,12 +61,31 @@ export class EcommerceFormComponent implements OnInit {
 
   form: FormGroup = this.formBuilder.group({
     id: [null],
-    percentageDiscount: ['', Validators.required],
-    cashDiscount: ['', Validators.required],
+    percentageDiscount: ['', Validators.nullValidator],
+    cashDiscount: ['', Validators.nullValidator],
   });
 
   ngOnInit(): void {
     this.getImages(this.productId);
+
+    if (this.productId !== 0) {
+      this.productsService.getOne(this.productId).subscribe({
+        next: (product: Product) => {
+          this.form.patchValue(product);
+        },
+      });
+    }
+  }
+
+  saveProductButton() {
+    this.progressSpinnerService.show();
+    const product = new ProductSave(this.form.value);
+    if (this.productId) {
+      this.productsService.edit(this.productId, product).subscribe({
+        next: () => this.progressSpinnerService.hidden(),
+        error: () => this.progressSpinnerService.hidden(),
+      });
+    }
   }
 
   async getImages(productId = this.productId): Promise<void> {
@@ -135,5 +157,28 @@ export class EcommerceFormComponent implements OnInit {
     });
   }
 
-  saveProductButton() {}
+  imagesToDelete(collection: any) {
+    this.progressSpinnerService.show();
+    if (collection.multiply) {
+      this.fileService
+        .removeMultipleImage(this.productId, collection.images)
+        .subscribe({
+          next: () => this.progressSpinnerService.hidden(),
+          error: () => this.progressSpinnerService.hidden(),
+        });
+    } else {
+      this.fileService.deleteImage(collection.images).subscribe({
+        next: () => {
+          this.fileService
+            .removeImage(this.productId, collection.images)
+            .subscribe({
+              next: () => {
+                this.progressSpinnerService.hidden();
+              },
+            });
+        },
+        error: () => this.progressSpinnerService.hidden(),
+      });
+    }
+  }
 }
