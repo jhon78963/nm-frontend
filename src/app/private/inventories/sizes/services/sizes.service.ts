@@ -33,6 +33,7 @@ export class SizesService {
     return this.apiService.get<SizeListResponse>(url).pipe(
       debounceTime(600),
       map((response: SizeListResponse) => {
+        console.log(response.data);
         this.updateSizes(response.data);
         this.updateTotalSizes(response.paginate.total);
       }),

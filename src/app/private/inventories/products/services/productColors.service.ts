@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { ApiService } from '../../../../services/api.service';
 import { Observable } from 'rxjs';
 import { ProductSizeSave } from '../models/sizes.interface';
-import { Size } from '../../size/models/sizes.model';
+import { Size } from '../../sizes/models/sizes.model';
 import { ProductSizeColorSave } from '../models/colors.interface';
 
 @Injectable({

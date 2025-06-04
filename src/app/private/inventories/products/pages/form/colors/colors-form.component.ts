@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
-import { Size } from '../../../../size/models/sizes.model';
+import { Size } from '../../../../sizes/models/sizes.model';
 import { ProductSizeColorsService } from '../../../services/productColors.service';
 import { ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';

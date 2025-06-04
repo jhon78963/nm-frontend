@@ -9,9 +9,9 @@ import {
 } from '@angular/forms';
 
 import { SharedModule } from '../../../../../../shared/shared.module';
-import { SizesService } from '../../../../size/services/sizes.service';
+import { SizesService } from '../../../../sizes/services/sizes.service';
 import { Observable } from 'rxjs';
-import { Size } from '../../../../size/models/sizes.model';
+import { Size } from '../../../../sizes/models/sizes.model';
 import { AutocompleteResponse } from '../../../../../../shared/models/autocomplete.interface';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 

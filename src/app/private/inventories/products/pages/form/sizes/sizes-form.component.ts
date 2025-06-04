@@ -5,14 +5,14 @@ import { RippleModule } from 'primeng/ripple';
 import { Table, TableModule } from 'primeng/table';
 
 import { ToolbarModule } from 'primeng/toolbar';
-import { SizesSelectedService } from '../../../../size/services/sizes-selected.service';
+import { SizesSelectedService } from '../../../../sizes/services/sizes-selected.service';
 import { Product, Size } from '../../../models/products.model';
 import { catchError, forkJoin, Observable, of } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { ProductsService } from '../../../services/products.service';
 import { DialogService } from 'primeng/dynamicdialog';
-import { SizesCreateFormComponent } from '../../../../size/pages/form/sizes-form.component';
+import { SizesCreateFormComponent } from '../../../../sizes/pages/form/sizes-form.component';
 import { showError, showSuccess } from '../../../../../../utils/notifications';
 import { MessageService } from 'primeng/api';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
