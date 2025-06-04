@@ -1,8 +1,24 @@
 <div class="card">
-  <div class="flex justify-content-end align-items-center">
-    <p-button [outlined]="true" (click)="addSizeButton()">
-      <i class="pi pi-plus" style="font-size: 1rem"></i>
-    </p-button>
+  <div class="flex flex-column md:flex-row md:justify-content-between">
+    <div
+      class="flex justify-content-center md:justify-content-start gap-2 mb-3">
+      @for (sizeType of sizeTypes; track $index) {
+        <button
+          pButton
+          pRipple
+          [label]="sizeType.description"
+          severity="secondary"
+          class="btn-menu"
+          [ngClass]="[sizeType.id === selectedSizeTypeId ? 'btn-selected' : '']"
+          size="small"
+          (click)="selectFilter(sizeType.id)"></button>
+      }
+    </div>
+    <div class="flex justify-content-center md:justify-content-end gap-2 mb-3">
+      <p-button [outlined]="true" (click)="addSizeButton()">
+        <i class="pi pi-plus" style="font-size: 1rem"></i>
+      </p-button>
+    </div>
   </div>
   <app-table-pagination
     [data]="(sizes | async) ?? []"

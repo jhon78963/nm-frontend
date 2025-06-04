@@ -15,6 +15,7 @@ import { SizesService } from '../../services/sizes.service';
 import { PaginatorState } from 'primeng/paginator';
 import { Observable } from 'rxjs';
 import { Router, RouterModule } from '@angular/router';
+import { SizesSelectedService } from '../../services/sizes-selected.service';
 
 @Component({
   selector: 'app-sizes',
@@ -65,6 +66,8 @@ export class SizeListComponent implements OnInit {
   limit: number = 10;
   page: number = 1;
   name: string = '';
+  sizeTypes: Size[] = [];
+  selectedSizeTypeId: number = 1;
   callToAction: CallToAction<Size>[] = [
     {
       type: 'button',
@@ -93,11 +96,13 @@ export class SizeListComponent implements OnInit {
     private readonly confirmationService: ConfirmationService,
     private readonly loadingService: LoadingService,
     private readonly sizesService: SizesService,
+    private readonly sizesSelectedService: SizesSelectedService,
     private readonly router: Router,
   ) {}
 
   ngOnInit(): void {
     this.getSizes(this.limit, this.page, this.name);
+    this.getSizeTypes();
   }
 
   async getSizes(
@@ -110,6 +115,21 @@ export class SizeListComponent implements OnInit {
     setTimeout(() => {
       this.loadingService.sendLoadingState(false);
     }, 600);
+  }
+
+  getSizeTypes() {
+    this.sizesSelectedService.getSizeTypes().subscribe({
+      next: (sizeTypes: Size[]) => {
+        this.sizeTypes = sizeTypes;
+      },
+    });
+  }
+
+  selectFilter(sizeTypeId: number) {
+    this.selectedSizeTypeId = sizeTypeId;
+    // this.sizesSelectedService
+    //   .callGetList(this.productId, this.selectedSizeTypeId)
+    //   .subscribe();
   }
 
   async onPageSelected(paginate: PaginatorState): Promise<void> {
