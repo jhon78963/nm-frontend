@@ -1,16 +1,17 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { UsersService } from '../../services/users.service';
+import { PaginatorState } from 'primeng/paginator';
 import { Observable } from 'rxjs';
-import { User } from '../../models/users.model';
-import { LoadingService } from '../../../../../services/loading.service';
-import { UserFormComponent } from '../form/users-form.component';
 import {
   CallToAction,
   Column,
 } from '../../../../../interfaces/table.interface';
-import { PaginatorState } from 'primeng/paginator';
+import { LoadingService } from '../../../../../services/loading.service';
+import { showError, showSuccess } from '../../../../../utils/notifications';
+import { User } from '../../models/users.model';
+import { UsersService } from '../../services/users.service';
+import { UserFormComponent } from '../form/users-form.component';
 
 @Component({
   selector: 'app-user-list',
@@ -138,9 +139,9 @@ export class UserListComponent implements OnInit, OnDestroy {
     this.userModal.onClose.subscribe({
       next: value => {
         value && value?.success
-          ? this.showSuccess('Usuario Creado.')
+          ? showSuccess(this.messageService, 'Usuario Creado.')
           : value?.error
-            ? this.showError(value?.error)
+            ? showError(this.messageService, value?.error)
             : null;
       },
     });
@@ -156,9 +157,9 @@ export class UserListComponent implements OnInit, OnDestroy {
     this.userModal.onClose.subscribe({
       next: value => {
         value && value?.success
-          ? this.showSuccess('Usuario actualizado.')
+          ? showSuccess(this.messageService, 'Usuario actualizado.')
           : value?.error
-            ? this.showError(value?.error)
+            ? showError(this.messageService, value?.error)
             : null;
       },
     });
@@ -177,30 +178,15 @@ export class UserListComponent implements OnInit, OnDestroy {
 
       accept: () => {
         this.usersService.delete(id).subscribe(() => {
-          this.showSuccess('El usuario ha sido eliminado');
+          showSuccess(this.messageService, 'El usuario ha sido eliminado');
         });
       },
       reject: () => {
-        this.showError('No se eleminó el usuario, intenteló nuevamente');
+        showError(
+          this.messageService,
+          'No se eleminó el usuario, intenteló nuevamente',
+        );
       },
-    });
-  }
-
-  showSuccess(message: string): void {
-    this.messageService.add({
-      severity: 'success',
-      summary: 'Confirmado',
-      detail: message,
-      life: 3000,
-    });
-  }
-
-  showError(message: string): void {
-    this.messageService.add({
-      severity: 'error',
-      summary: 'Error',
-      detail: message,
-      life: 3000,
     });
   }
 

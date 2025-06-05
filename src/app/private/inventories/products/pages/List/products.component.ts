@@ -15,6 +15,7 @@ import { ProductsService } from '../../services/products.service';
 import { PaginatorState } from 'primeng/paginator';
 import { Observable } from 'rxjs';
 import { Router, RouterModule } from '@angular/router';
+import { showError, showSuccess } from '../../../../../utils/notifications';
 
 @Component({
   selector: 'app-products',
@@ -56,13 +57,6 @@ export class ProductListComponent implements OnInit {
     {
       header: 'Stock',
       field: 'stock',
-      clickable: false,
-      image: false,
-      money: false,
-    },
-    {
-      header: 'Precio de venta',
-      field: 'salePrice',
       clickable: false,
       image: false,
       money: false,
@@ -161,7 +155,28 @@ export class ProductListComponent implements OnInit {
   }
 
   deleteProductButton(id: number, event: Event) {
-    console.log({ id, event });
+    this.confirmationService.confirm({
+      target: event.target as EventTarget,
+      message: 'Deseas eliminar este usuario?',
+      header: 'Eliminar usuario',
+      icon: 'pi pi-info-circle',
+      acceptButtonStyleClass: 'p-button-danger p-button-text',
+      rejectButtonStyleClass: 'p-button-text p-button-text',
+      acceptIcon: 'none',
+      rejectIcon: 'none',
+      accept: () => {
+        this.productsService.delete(id).subscribe({
+          next: () =>
+            showSuccess(this.messageService, 'El producto ha sido eliminado'),
+          error: () =>
+            showError(
+              this.messageService,
+              'No se eleminó el producto, intenteló nuevamente',
+            ),
+        });
+      },
+      reject: () => {},
+    });
   }
 
   private updatePage(value: number): void {
