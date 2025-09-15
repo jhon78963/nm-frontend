@@ -3,12 +3,8 @@ import { CommonModule } from '@angular/common';
 
 import { ColorsRoutingModule } from './colors-routing.module';
 
-
 @NgModule({
   declarations: [],
-  imports: [
-    CommonModule,
-    ColorsRoutingModule
-  ]
+  imports: [CommonModule, ColorsRoutingModule],
 })
-export class ColorsModule { }
+export class ColorsModule {}
