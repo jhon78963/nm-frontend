@@ -25,9 +25,14 @@
                     padding: 1.5rem 0rem;
 
                     .app-logo {
+                        width: 5rem;
+                        height: 5rem;
+                        padding-left: 5px;
                         .app-logo-single {
                             display: inline;
                             order: 1;
+                            width: 5rem;
+                            height: 5rem !important;
                         }
 
                         .app-logo-normal {

@@ -3,6 +3,7 @@
         &.layout-horizontal {
             &.layout-transparent-topbar {
                 .layout-sidebar {
+                    padding-left: 2rem;
                     background-color: var(--surface-ground);
                 }
                 .layout-menu {
@@ -36,6 +37,8 @@
 
                     .app-logo-single {
                         display: inline;
+                        width: 5rem;
+                        height: 5rem !important;
                     }
                 }
             }
@@ -59,7 +62,7 @@
                     }
                 }
                 .sidebar-header {
-                    padding: 0 2rem;
+                    padding: 0;
                 }
             }
 
