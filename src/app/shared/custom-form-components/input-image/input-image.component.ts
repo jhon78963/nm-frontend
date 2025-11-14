@@ -16,7 +16,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { environment } from '../../../../environments/environment';
 import { ButtonModule } from 'primeng/button';
 import { getFileSize } from '../../../utils/files';
-import { BASE_S3_URL } from '../../../utils/constants';
+import { BASE_STORAGE_URL } from '../../../utils/constants';
 
 export interface InputImage {
   images: File | File[];
@@ -53,7 +53,7 @@ export class InputImageComponent implements OnInit, OnChanges {
   selectedFiles: File[] = [];
   imagePreviews: string[] = [];
   isDragging = false;
-  s3_url: string = BASE_S3_URL;
+  storage_url: string = BASE_STORAGE_URL;
 
   ngOnInit(): void {
     console.log(this.productId);

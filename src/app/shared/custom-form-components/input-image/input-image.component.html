@@ -29,7 +29,7 @@
     <li *ngFor="let image of images; let i = index" class="file-list__items">
       <div class="file-list__left">
         <img
-          [src]="image.path ? s3_url + image.path : image.preview"
+          [src]="image.path ? storage_url + image.path : image.preview"
           alt="preview"
           class="thumb" />
         <div class="file-data">

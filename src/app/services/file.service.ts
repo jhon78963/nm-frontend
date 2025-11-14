@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ApiService } from './api.service';
-import { BASE_S3_URL } from '../utils/constants';
+import { BASE_STORAGE_URL } from '../utils/constants';
 import { FileApiService } from './file-api.service';
 import { PImage } from '../private/inventories/products/models/images.interface';
 import { BehaviorSubject, debounceTime, map, Observable } from 'rxjs';
@@ -9,7 +9,7 @@ import { BehaviorSubject, debounceTime, map, Observable } from 'rxjs';
   providedIn: 'root',
 })
 export class FileService {
-  BASE_S3_URL = BASE_S3_URL;
+  BASE_STORAGE_URL = BASE_STORAGE_URL;
   images: PImage[] = [];
   images$: BehaviorSubject<PImage[]> = new BehaviorSubject<PImage[]>(
     this.images,
