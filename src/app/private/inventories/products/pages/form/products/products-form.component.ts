@@ -83,7 +83,6 @@ export class ProductsFormComponent implements OnInit {
     this.gendersService.getAll().subscribe((genders: Gender[]) => {
       this.genders = genders;
     });
-
     if (this.productId !== 0) {
       this.productsService.getOne(this.productId).subscribe({
         next: (product: Product) => {

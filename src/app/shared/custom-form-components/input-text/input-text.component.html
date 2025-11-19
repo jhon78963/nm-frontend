@@ -1,4 +1,4 @@
-<span class="p-float-label">
+<!-- <span class="p-float-label">
   <input
     class="float"
     [placeholder]="placeholder"
@@ -9,4 +9,24 @@
     [formControl]="formControl"
     [name]="controlName" />
   <label [for]="id">{{ label }}</label>
-</span>
+</span> -->
+<div class="custom-field">
+  <input
+    class="custom-input"
+    [placeholder]="placeholder"
+    [type]="type"
+    [id]="controlName"
+    [readonly]="readonly"
+    [formControl]="formControl"
+    [name]="controlName" />
+
+  <label [for]="controlName" class="custom-label">
+    {{ label }}
+  </label>
+
+  <span class="highlight-bar"></span>
+</div>
+
+<!-- <div *ngIf="hasError()" class="error-msg">
+  <small class="p-error">El campo es requerido</small>
+</div> -->

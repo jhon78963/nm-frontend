@@ -1,6 +1,6 @@
 @if (form) {
   <form [formGroup]="form" (ngSubmit)="saveProductButton()" class="pt-2 mt-5">
-    <div class="p-fluid p-formgrid grid">
+    <div class="p-fluid grid">
       <div class="field col-12 md:col-4">
         <app-input-select
           placeholder="Seleccione genero"
@@ -24,50 +24,6 @@
           label="Código de barras"
           controlName="barcode"></app-input-text>
       </div>
-      <!-- <div class="field col-12">
-        <app-input-textarea
-          placeholder="Ingrese descripción"
-          label="Descripción"
-          controlName="description"></app-input-textarea>
-      </div> -->
-      <!-- <div class="field col-12 md:col-4">
-        <app-input-text
-          placeholder="Ingrese precio de compra"
-          label="Precio de compra"
-          controlName="purchasePrice"
-          pKeyFilter="num"></app-input-text>
-      </div>
-      <div class="field col-12 md:col-4">
-        <app-input-text
-          placeholder="Ingrese precio de venta"
-          label="Precio de venta"
-          controlName="salePrice"
-          pKeyFilter="num"></app-input-text>
-      </div>
-      <div class="field col-12 md:col-4">
-        <app-input-text
-          placeholder="Ingrese precio mínimo de venta"
-          label="Precio mínimo de venta"
-          controlName="minSalePrice"
-          pKeyFilter="num"></app-input-text>
-      </div> -->
-      <!-- <div
-        class="flex flex-column justify-content-center pl-3 pr-3 w-custom md:ml-auto md:mr-auto md:mt-4">
-        <div class="flex justify-content-between align-items-center pb-2">
-          <span class="text-lg font-bold">Tallas</span>
-          <p-button [outlined]="true" (click)="addSize()">
-            <i class="pi pi-plus" style="font-size: 1rem"></i>
-          </p-button>
-        </div>
-        <app-size-table
-          [productId]="productId"
-          [sizes]="sizes"
-          [parentForm]="form"
-          [addSizeEvent]="addSizeEvent"
-          (productSizeSelected)="
-            getProductsizeSeletected($event)
-          "></app-size-table>
-      </div> -->
       <div class="flex justify-content-end w-full gap-2 p-4">
         <button
           [routerLink]="['/inventories/products']"
