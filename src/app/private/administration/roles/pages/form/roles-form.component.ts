@@ -10,15 +10,16 @@ import { Role } from '../../models/roles.model';
   styleUrl: './roles-form.component.scss',
 })
 export class RolesFormComponent implements OnInit {
-  constructor(
-    private readonly formBuilder: FormBuilder,
-    private readonly rolesService: RolesService,
-    private readonly dialogRef: DynamicDialogRef,
-    private readonly dynamicDialogConfig: DynamicDialogConfig,
-  ) {}
   form: FormGroup = this.formBuilder.group({
     name: ['', Validators.required],
   });
+
+  constructor(
+    private readonly formBuilder: FormBuilder,
+    private readonly rolesService: RolesService,
+    private readonly dynamicDialogRef: DynamicDialogRef,
+    private readonly dynamicDialogConfig: DynamicDialogConfig,
+  ) {}
 
   ngOnInit(): void {
     if (this.dynamicDialogConfig.data.id) {
@@ -29,19 +30,26 @@ export class RolesFormComponent implements OnInit {
     }
   }
 
+  get isValid(): boolean {
+    return this.form.valid;
+  }
+
   buttonSaveRole() {
     if (this.form) {
       const role = new Role(this.form.value);
       if (this.dynamicDialogConfig.data.id) {
         const id = this.dynamicDialogConfig.data.id;
         this.rolesService.edit(id, role).subscribe({
-          next: () => this.dialogRef.close(),
-          error: () => this.dialogRef.close(),
+          next: () => this.dynamicDialogRef.close(),
+          error: () => {},
         });
       } else {
         this.rolesService.create(role).subscribe({
-          next: () => this.dialogRef.close(),
-          error: () => this.dialogRef.close(),
+          next: () => {
+            this.dynamicDialogRef.close({ success: true });
+            this.form.reset();
+          },
+          error: () => {},
         });
       }
     }

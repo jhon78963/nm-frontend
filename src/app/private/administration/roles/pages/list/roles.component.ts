@@ -202,15 +202,14 @@ export class RoleListComponent implements OnInit, OnDestroy {
       rejectButtonStyleClass: 'p-button-text p-button-text',
       acceptIcon: 'none',
       rejectIcon: 'none',
-
+      acceptLabel: 'Si',
+      rejectLabel: 'No',
       accept: () => {
         this.rolesService.delete(id).subscribe(() => {
           this.showSuccess('El rol ha sido eliminado');
         });
       },
-      reject: () => {
-        this.showError('No se eleminó el rol, intenteló nuevamente');
-      },
+      reject: () => {},
     });
   }
 

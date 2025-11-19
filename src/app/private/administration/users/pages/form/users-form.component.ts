@@ -31,8 +31,6 @@ export class UserFormComponent implements OnInit {
     email: ['', Validators.required],
     name: ['', Validators.required],
     surname: ['', Validators.required],
-    phoneNumber: ['', Validators.required],
-    address: ['', Validators.required],
     roleId: [null, Validators.required],
   });
 
@@ -66,7 +64,10 @@ export class UserFormComponent implements OnInit {
         });
       } else {
         this.usersService.create(user).subscribe({
-          next: () => this.dynamicDialogRef.close({ success: true }),
+          next: () => {
+            this.dynamicDialogRef.close({ success: true });
+            this.form.reset();
+          },
           error: () => {},
         });
       }
