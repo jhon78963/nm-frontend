@@ -1,14 +1,36 @@
-<span class="p-float-label">
-  <p-dropdown
-    class="float"
-    [options]="options"
-    [id]="id"
-    [formControl]="formControl"
-    [optionLabel]="optionLabel"
-    [placeholder]="placeholder"
-    [optionValue]="optionValue"
-    [showClear]="showClear"
-    [name]="controlName"
-    appendTo="body"></p-dropdown>
-  <label [for]="for">{{ label }}</label>
-</span>
+<div class="custom-field">
+  <!-- Label Estático -->
+  <label [for]="id" class="static-label" [class.active]="isFocused">
+    {{ label }}
+  </label>
+
+  <div class="select-wrapper">
+    <select
+      [id]="id"
+      [formControl]="formControl"
+      [name]="controlName"
+      class="custom-select"
+      (focus)="onFocus()"
+      (blur)="onBlur()">
+      <option value="" disabled selected hidden>{{ placeholder }}</option>
+      @for (option of options; track option) {
+        <option [value]="option[optionValue]">
+          {{ option[optionLabel] }}
+        </option>
+      }
+    </select>
+    <span class="arrow-icon">▼</span>
+  </div>
+  <span class="focus-border"></span>
+</div>
+
+<div
+  *ngIf="
+    formControl.invalid &&
+    (formControl.dirty || formControl.touched || submitted)
+  "
+  class="mt-1">
+  <small class="p-error block" *ngIf="formControl.errors?.['required']">
+    El campo {{ label }} es requerido
+  </small>
+</div>

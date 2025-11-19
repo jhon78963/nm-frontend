@@ -2,9 +2,8 @@
   <form [formGroup]="form" (ngSubmit)="buttonSaveUser()">
     <div class="p-fluid p-formgrid grid">
       @if (userId === 0) {
-        <div class="field col-12">
+        <div class="col-12">
           <app-input-select
-            class="pt-4"
             placeholder="Seleccione role"
             label="Rol"
             controlName="roleId"
@@ -15,31 +14,35 @@
             optionValue="id"></app-input-select>
         </div>
       }
-      <div class="field col-12">
+      <div class="col-12">
         <app-input-text
           placeholder="Ingrese nombres"
           label="Nombre"
           controlName="name"></app-input-text>
       </div>
-      <div class="field col-12">
+      <div class="col-12">
         <app-input-text
           placeholder="Ingrese apellidos"
           label="Apellidos"
           controlName="surname"></app-input-text>
       </div>
-      <div class="field col-12">
+      <div class="col-12">
         <app-input-text
           placeholder="Ingrese username"
           label="Username"
           controlName="username"></app-input-text>
       </div>
-      <div class="field col-12">
+      <div class="col-12">
         <app-input-text
           placeholder="Ingrese email"
           label="Email"
           controlName="email"></app-input-text>
       </div>
-      <button type="submit" pButton label="Guardar"></button>
+      <button
+        type="submit"
+        pButton
+        label="Guardar"
+        [disabled]="!isValid"></button>
     </div>
   </form>
 }

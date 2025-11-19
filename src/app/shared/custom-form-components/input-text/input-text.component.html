@@ -1,16 +1,12 @@
-<!-- <span class="p-float-label">
-  <input
-    class="float"
-    [placeholder]="placeholder"
-    [type]="type"
-    [id]="id"
-    [readonly]="readonly"
-    pInputText
-    [formControl]="formControl"
-    [name]="controlName" />
-  <label [for]="id">{{ label }}</label>
-</span> -->
 <div class="custom-field">
+  <!-- El label ahora es estático y siempre visible arriba -->
+  <label
+    [for]="controlName"
+    class="static-label"
+    [class.active]="formControl.value || isFocused">
+    {{ label }}
+  </label>
+
   <input
     class="custom-input"
     [placeholder]="placeholder"
@@ -18,15 +14,22 @@
     [id]="controlName"
     [readonly]="readonly"
     [formControl]="formControl"
-    [name]="controlName" />
+    [name]="controlName"
+    autocomplete="off"
+    (focus)="onFocus()"
+    (blur)="onBlur()" />
 
-  <label [for]="controlName" class="custom-label">
-    {{ label }}
-  </label>
-
-  <span class="highlight-bar"></span>
+  <!-- Barra animada opcional para un efecto "wow" extra -->
+  <span class="focus-border"></span>
 </div>
 
-<!-- <div *ngIf="hasError()" class="error-msg">
-  <small class="p-error">El campo es requerido</small>
-</div> -->
+<div
+  *ngIf="
+    formControl.invalid &&
+    (formControl.dirty || formControl.touched || submitted)
+  "
+  class="mt-1">
+  <small class="p-error block" *ngIf="formControl.errors?.['required']">
+    El campo {{ label }} es requerido
+  </small>
+</div>

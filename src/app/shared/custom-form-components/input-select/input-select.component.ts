@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import {
   FormControl,
   FormGroup,
@@ -6,40 +6,57 @@ import {
   FormsModule,
   ReactiveFormsModule,
 } from '@angular/forms';
-import { DropdownModule } from 'primeng/dropdown';
+import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-input-select',
   templateUrl: './input-select.component.html',
   styleUrl: './input-select.component.scss',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, DropdownModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
 })
-export class InputSelectComponent implements OnInit {
+export class InputSelectComponent implements OnInit, OnDestroy {
   @Input() label: string = '';
   @Input() for: string = '';
   @Input() options: any[] = [];
   @Input() id: string = '';
   @Input() controlName: string = 'select';
-  @Input() optionLabel: any;
-  @Input() placeholder: string = '';
-  @Input() optionValue: any;
+  @Input() optionLabel: string = 'name'; // Campo para mostrar texto
+  @Input() placeholder: string = 'Seleccione una opción';
+  @Input() optionValue: string = 'id'; // Campo para el valor
   @Input() showClear: boolean = false;
   @Input() formGroup?: FormGroup<any>;
-  selectedValue: any;
 
   formControl!: FormControl;
   submitted!: boolean;
+  isFocused: boolean = false;
+
+  private sub: Subscription = new Subscription();
 
   constructor(private formGroupDirective: FormGroupDirective) {}
 
   ngOnInit(): void {
-    this.formGroupDirective.ngSubmit.subscribe({
-      next: (value: any) => {
-        this.submitted = value.isTrusted;
-      },
-    });
     this.formGroup = this.formGroupDirective.form;
     this.formControl = this.formGroup.get(this.controlName) as FormControl;
+
+    const submitSub = this.formGroupDirective.ngSubmit.subscribe(
+      (value: any) => {
+        this.submitted = value.isTrusted;
+      },
+    );
+    this.sub.add(submitSub);
+  }
+
+  onFocus() {
+    this.isFocused = true;
+  }
+
+  onBlur() {
+    this.isFocused = false;
+  }
+
+  ngOnDestroy(): void {
+    this.sub.unsubscribe();
   }
 }

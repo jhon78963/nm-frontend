@@ -22,7 +22,7 @@ export class UserFormComponent implements OnInit {
     private readonly formBuilder: FormBuilder,
     private readonly usersService: UsersService,
     private readonly rolesService: RolesService,
-    private readonly dialogRef: DynamicDialogRef,
+    private readonly dynamicDialogRef: DynamicDialogRef,
     private readonly dynamicDialogConfig: DynamicDialogConfig,
   ) {}
 
@@ -51,19 +51,23 @@ export class UserFormComponent implements OnInit {
     return this.rolesService.getList();
   }
 
+  get isValid(): boolean {
+    return this.form.valid;
+  }
+
   buttonSaveUser(): void {
     if (this.form) {
       const user = new User(this.form.value);
       if (this.dynamicDialogConfig.data.id) {
         const id = this.dynamicDialogConfig.data.id;
         this.usersService.edit(id, user).subscribe({
-          next: () => this.dialogRef.close(),
-          error: () => this.dialogRef.close(),
+          next: () => this.dynamicDialogRef.close({ success: true }),
+          error: () => {},
         });
       } else {
         this.usersService.create(user).subscribe({
-          next: () => this.dialogRef.close(),
-          error: () => this.dialogRef.close(),
+          next: () => this.dynamicDialogRef.close({ success: true }),
+          error: () => {},
         });
       }
     }
