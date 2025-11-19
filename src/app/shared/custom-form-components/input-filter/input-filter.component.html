@@ -1,0 +1,13 @@
+<div class="flex flex-wrap justify-content-center gap-2">
+  @for (data of collection; track data.id) {
+    <button
+      pButton
+      pRipple
+      [label]="data.description"
+      severity="secondary"
+      class="btn-menu white-space-nowrap"
+      [ngClass]="{ 'btn-selected': data.id === selectedId }"
+      size="small"
+      (click)="onSelect(data.id)"></button>
+  }
+</div>

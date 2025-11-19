@@ -17,6 +17,8 @@ import { debounceTime, Observable } from 'rxjs';
 import { Router, RouterModule } from '@angular/router';
 import { showError, showSuccess } from '../../../../../utils/notifications';
 import { FormControl, FormGroup } from '@angular/forms';
+import { GendersService } from '../../../../../services/genders.service';
+import { Gender } from '../../../../../models/gender.interface';
 
 @Component({
   selector: 'app-products',
@@ -105,14 +107,18 @@ export class ProductListComponent implements OnInit {
     },
   ];
 
+  genders: Gender[] = [];
+  selectedGenderId: number = 0;
+
   formGroup: FormGroup = new FormGroup({
     search: new FormControl<string | null>(null),
   });
 
   constructor(
-    private readonly messageService: MessageService,
     private readonly confirmationService: ConfirmationService,
+    private readonly gendersService: GendersService,
     private readonly loadingService: LoadingService,
+    private readonly messageService: MessageService,
     private readonly productsService: ProductsService,
     private readonly router: Router,
   ) {}
@@ -127,6 +133,13 @@ export class ProductListComponent implements OnInit {
         this.loadingService.sendLoadingState(true);
         this.getProducts(this.limit, this.page, this.name);
       });
+    this.gendersService.getAll().subscribe((genders: Gender[]) => {
+      this.genders = genders;
+    });
+  }
+
+  selectFilter(genderId: number) {
+    this.selectedGenderId = genderId;
   }
 
   clearFilter(): void {
@@ -135,13 +148,20 @@ export class ProductListComponent implements OnInit {
     this.formGroup.get('search')?.setValue('');
   }
 
+  handleGenderSelection(genderId: number) {
+    this.selectedGenderId = genderId;
+    this.loadingService.sendLoadingState(true);
+    this.getProducts(this.limit, this.page, this.name, this.selectedGenderId);
+  }
+
   async getProducts(
     limit = this.limit,
     page = this.page,
     name = this.name,
+    gender = this.selectedGenderId,
   ): Promise<void> {
     this.updatePage(page);
-    this.productsService.callGetList(limit, page, name).subscribe();
+    this.productsService.callGetList(limit, page, name, gender).subscribe();
     setTimeout(() => {
       this.loadingService.sendLoadingState(false);
     }, 600);

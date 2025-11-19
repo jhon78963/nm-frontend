@@ -5,8 +5,8 @@ export interface Paginate {
 
 export interface Gender {
   id: number;
-  gender: string;
-  shortGender: string;
+  description: string;
+  shortDescription: string;
 }
 
 export interface GenderListResponse {

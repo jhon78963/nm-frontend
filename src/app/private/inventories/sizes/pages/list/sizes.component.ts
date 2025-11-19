@@ -14,7 +14,7 @@ import { LoadingService } from '../../../../../services/loading.service';
 import { SizesService } from '../../services/sizes.service';
 import { PaginatorState } from 'primeng/paginator';
 import { Observable } from 'rxjs';
-import { Router, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { SizesSelectedService } from '../../services/sizes-selected.service';
 
 @Component({
@@ -91,13 +91,9 @@ export class SizeListComponent implements OnInit {
   ];
 
   constructor(
-    private readonly dialogService: DialogService,
-    private readonly messageService: MessageService,
-    private readonly confirmationService: ConfirmationService,
     private readonly loadingService: LoadingService,
     private readonly sizesService: SizesService,
     private readonly sizesSelectedService: SizesSelectedService,
-    private readonly router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -127,9 +123,6 @@ export class SizeListComponent implements OnInit {
 
   selectFilter(sizeTypeId: number) {
     this.selectedSizeTypeId = sizeTypeId;
-    // this.sizesSelectedService
-    //   .callGetList(this.productId, this.selectedSizeTypeId)
-    //   .subscribe();
   }
 
   async onPageSelected(paginate: PaginatorState): Promise<void> {

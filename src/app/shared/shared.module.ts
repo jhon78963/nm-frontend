@@ -35,6 +35,7 @@ import { InputChipsApiComponent } from './custom-form-components/input-chips-api
 import { InputColorPickerComponent } from './custom-form-components/input-color-picker/input-color-picker.component';
 import { InputImageComponent } from './custom-form-components/input-image/input-image.component';
 import { InputSearchComponent } from './custom-form-components/input-search/input-search.component';
+import { InputFilterComponent } from './custom-form-components/input-filter/input-filter.component';
 
 const PRIMENG_MODULES = [
   InputTextModule,
@@ -74,6 +75,7 @@ const STANDALONES_COMPONENTS = [
   InputColorPickerComponent,
   InputImageComponent,
   InputSearchComponent,
+  InputFilterComponent,
 ];
 
 @NgModule({

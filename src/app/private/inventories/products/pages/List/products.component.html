@@ -1,14 +1,34 @@
 <div class="card">
-  <div class="flex justify-content-between align-items-center mt-3 gap-3">
-    <app-input-search
-      class="w-full md:w-3"
-      [formGroup]="formGroup"
-      controlName="search"
-      (clearFilter)="clearFilter()">
-    </app-input-search>
-    <p-button [routerLink]="['step/general']" [outlined]="true">
-      <i class="pi pi-plus" style="font-size: 1rem"></i>
-    </p-button>
+  <div
+    class="flex flex-column md:flex-row align-items-center justify-content-between gap-3 mt-3 w-full">
+    <div
+      class="w-full md:w-4 flex justify-content-start flex-order-2 md:flex-order-1">
+      <app-input-search
+        class="w-full"
+        [formGroup]="formGroup"
+        controlName="search"
+        (clearFilter)="clearFilter()">
+      </app-input-search>
+    </div>
+
+    <div
+      class="w-full md:w-auto flex flex-wrap justify-content-center gap-2 flex-order-3 md:flex-order-2">
+      <app-input-filter
+        [collection]="genders"
+        [selectedId]="selectedGenderId"
+        (selectionChange)="handleGenderSelection($event)">
+      </app-input-filter>
+    </div>
+
+    <div
+      class="w-full md:w-4 flex justify-content-center md:justify-content-end flex-order-1 md:flex-order-3">
+      <p-button
+        [routerLink]="['step/general']"
+        [outlined]="true"
+        styleClass="w-full md:w-auto">
+        <i class="pi pi-plus" style="font-size: 1rem"></i>
+      </p-button>
+    </div>
   </div>
   <app-table-pagination
     [data]="(products | async) ?? []"
