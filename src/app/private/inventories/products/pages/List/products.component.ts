@@ -13,9 +13,10 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { LoadingService } from '../../../../../services/loading.service';
 import { ProductsService } from '../../services/products.service';
 import { PaginatorState } from 'primeng/paginator';
-import { Observable } from 'rxjs';
+import { debounceTime, Observable } from 'rxjs';
 import { Router, RouterModule } from '@angular/router';
 import { showError, showSuccess } from '../../../../../utils/notifications';
+import { FormControl, FormGroup } from '@angular/forms';
 
 @Component({
   selector: 'app-products',
@@ -104,8 +105,11 @@ export class ProductListComponent implements OnInit {
     },
   ];
 
+  formGroup: FormGroup = new FormGroup({
+    search: new FormControl<string | null>(null),
+  });
+
   constructor(
-    private readonly dialogService: DialogService,
     private readonly messageService: MessageService,
     private readonly confirmationService: ConfirmationService,
     private readonly loadingService: LoadingService,
@@ -115,6 +119,20 @@ export class ProductListComponent implements OnInit {
 
   ngOnInit(): void {
     this.getProducts(this.limit, this.page, this.name);
+    this.formGroup
+      .get('search')
+      ?.valueChanges.pipe(debounceTime(600))
+      .subscribe((value: any) => {
+        this.name = value ? value : '';
+        this.loadingService.sendLoadingState(true);
+        this.getProducts(this.limit, this.page, this.name);
+      });
+  }
+
+  clearFilter(): void {
+    this.name = '';
+    this.loadingService.sendLoadingState(true);
+    this.formGroup.get('search')?.setValue('');
   }
 
   async getProducts(

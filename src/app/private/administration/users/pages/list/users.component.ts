@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { PaginatorState } from 'primeng/paginator';
-import { Observable } from 'rxjs';
+import { debounceTime, Observable } from 'rxjs';
 import {
   CallToAction,
   Column,
@@ -12,6 +12,7 @@ import { showError, showSuccess } from '../../../../../utils/notifications';
 import { User } from '../../models/users.model';
 import { UsersService } from '../../services/users.service';
 import { UserFormComponent } from '../form/users-form.component';
+import { FormControl, FormGroup } from '@angular/forms';
 
 @Component({
   selector: 'app-user-list',
@@ -47,6 +48,10 @@ export class UserListComponent implements OnInit, OnDestroy {
         this.buttonDeleteUser(rowData.id, event!),
     },
   ];
+
+  formGroup: FormGroup = new FormGroup({
+    search: new FormControl<string | null>(null),
+  });
 
   constructor(
     private readonly dialogService: DialogService,
@@ -95,7 +100,15 @@ export class UserListComponent implements OnInit, OnDestroy {
       },
     ];
 
-    this.getUSers(this.limit, this.page, this.name);
+    this.getUsers(this.limit, this.page, this.name);
+    this.formGroup
+      .get('search')
+      ?.valueChanges.pipe(debounceTime(600))
+      .subscribe((value: any) => {
+        this.name = value ? value : '';
+        this.loadingService.sendLoadingState(true);
+        this.getUsers(this.limit, this.page, this.name);
+      });
   }
 
   ngOnDestroy(): void {
@@ -104,7 +117,13 @@ export class UserListComponent implements OnInit, OnDestroy {
     }
   }
 
-  async getUSers(
+  clearFilter(): void {
+    this.name = '';
+    this.loadingService.sendLoadingState(true);
+    this.formGroup.get('search')?.setValue('');
+  }
+
+  async getUsers(
     limit = this.limit,
     page = this.page,
     name = this.name,
@@ -118,7 +137,7 @@ export class UserListComponent implements OnInit, OnDestroy {
 
   async onPageSelected(paginate: PaginatorState): Promise<void> {
     this.updatePage((paginate.page ?? 0) + 1);
-    this.getUSers(paginate.rows, this.page);
+    this.getUsers(paginate.rows, this.page);
   }
 
   get users(): Observable<User[]> {

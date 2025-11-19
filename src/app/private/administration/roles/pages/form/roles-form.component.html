@@ -1,7 +1,7 @@
 @if (form) {
-  <form [formGroup]="form" (ngSubmit)="buttonSaveRole()" class="pt-2">
-    <div class="p-fluid">
-      <div class="field mb-3">
+  <form [formGroup]="form" (ngSubmit)="buttonSaveRole()" class="pt-4">
+    <div class="p-fluid p-formgrid grid">
+      <div class="field col-12">
         <app-input-text
           label="Rol"
           for="role"

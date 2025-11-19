@@ -1,0 +1,19 @@
+<span class="p-input-icon-right mb-2 w-full mr-4" [formGroup]="formGroup">
+  <span class="search-icon">
+    <i class="pi pi-search"></i>
+  </span>
+
+  <input
+    type="text"
+    pInputText
+    class="p-inputtext w-full"
+    [placeholder]="placeholder"
+    [formControlName]="controlName" />
+
+  <span
+    class="clear-icon"
+    *ngIf="searchControl?.value"
+    (click)="onClearFilter()">
+    <i class="pi pi-times" style="font-size: 12px"></i>
+  </span>
+</span>

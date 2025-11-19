@@ -1,7 +1,7 @@
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { debounceTime, Observable, Subject } from 'rxjs';
+import { debounceTime, Observable } from 'rxjs';
 import { RolesService } from '../../services/roles.service';
 import { LoadingService } from '../../../../../services/loading.service';
 import { SharedModule } from '../../../../../shared/shared.module';
@@ -15,13 +15,26 @@ import {
 } from '../../../../../interfaces/table.interface';
 import { Role } from '../../models/roles.model';
 import { PaginatorState } from 'primeng/paginator';
+import {
+  FormControl,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+} from '@angular/forms';
 
 @Component({
   selector: 'app-roles',
   templateUrl: './roles.component.html',
   styleUrl: './roles.component.scss',
   standalone: true,
-  imports: [CommonModule, ConfirmDialogModule, ToastModule, SharedModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    ConfirmDialogModule,
+    ToastModule,
+    SharedModule,
+  ],
   providers: [ConfirmationService, MessageService],
 })
 export class RoleListComponent implements OnInit, OnDestroy {
@@ -54,7 +67,9 @@ export class RoleListComponent implements OnInit, OnDestroy {
     },
   ];
 
-  private searchTermSubject = new Subject<string>();
+  formGroup: FormGroup = new FormGroup({
+    search: new FormControl<string | null>(null),
+  });
 
   constructor(
     private readonly dialogService: DialogService,
@@ -90,10 +105,14 @@ export class RoleListComponent implements OnInit, OnDestroy {
     ];
 
     this.getRoles(this.limit, this.page, this.name);
-    this.searchTermSubject.pipe(debounceTime(600)).subscribe(() => {
-      this.loadingService.sendLoadingState(true);
-      this.getRoles(this.limit, this.page, this.name);
-    });
+    this.formGroup
+      .get('search')
+      ?.valueChanges.pipe(debounceTime(600))
+      .subscribe((value: any) => {
+        this.name = value ? value : '';
+        this.loadingService.sendLoadingState(true);
+        this.getRoles(this.limit, this.page, this.name);
+      });
   }
 
   ngOnDestroy(): void {
@@ -104,15 +123,12 @@ export class RoleListComponent implements OnInit, OnDestroy {
 
   clearFilter(): void {
     this.name = '';
-    this.onSearchTermChange('');
+    this.loadingService.sendLoadingState(true);
+    this.formGroup.get('search')?.setValue('');
   }
 
   private updatePage(value: number): void {
     this.page = value;
-  }
-
-  onSearchTermChange(term: any): void {
-    this.searchTermSubject.next(term);
   }
 
   async getRoles(
