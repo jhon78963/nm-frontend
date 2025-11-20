@@ -31,7 +31,7 @@ export class UserFormComponent implements OnInit {
     email: ['', Validators.required],
     name: ['', Validators.required],
     surname: ['', Validators.required],
-    roleId: [null, Validators.required],
+    roleId: [1, Validators.required],
   });
 
   ngOnInit(): void {
