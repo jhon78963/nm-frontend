@@ -60,6 +60,20 @@ const routes: Routes = [
       ),
   },
   {
+    path: 'sizes/:id',
+    loadComponent: () =>
+      import('./pages/form/sizes/sizes-form.component').then(
+        c => c.SizesFormComponent,
+      ),
+  },
+  {
+    path: 'colors/:id',
+    loadComponent: () =>
+      import('./pages/form/colors/colors-form.component').then(
+        c => c.ColorsFormComponent,
+      ),
+  },
+  {
     path: 'ecommerce/:id',
     loadComponent: () =>
       import('./pages/form/ecommerce/ecommerce-form.component').then(

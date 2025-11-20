@@ -9,7 +9,7 @@ import { SizesSelectedService } from '../../../../sizes/services/sizes-selected.
 import { Product, Size } from '../../../models/products.model';
 import { catchError, forkJoin, Observable, of } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProductsService } from '../../../services/products.service';
 import { DialogService } from 'primeng/dynamicdialog';
 import { SizesCreateFormComponent } from '../../../../sizes/pages/form/sizes-form.component';
@@ -48,17 +48,20 @@ export class SizesFormComponent implements OnInit {
   selectedSizes: any[] = [];
   selectedSizeTypeIds: number[] = [1];
   cols: any[] = [];
+  stepper: boolean = true;
 
   constructor(
-    private readonly sizesSelectedService: SizesSelectedService,
-    private readonly productsService: ProductsService,
-    private readonly productSizesService: ProductSizesService,
+    private readonly router: Router,
     private readonly route: ActivatedRoute,
     private readonly dialogService: DialogService,
     private readonly messageService: MessageService,
+    private readonly productSizesService: ProductSizesService,
+    private readonly productsService: ProductsService,
+    private readonly sizesSelectedService: SizesSelectedService,
   ) {
     if (this.route.snapshot.paramMap.get('id')) {
       this.productId = Number(this.route.snapshot.paramMap.get('id'));
+      this.stepper = this.router.url.includes('/step/');
     }
   }
 
@@ -87,7 +90,6 @@ export class SizesFormComponent implements OnInit {
           this.selectedSizeTypeIds = product.sizeTypeId.length
             ? product.sizeTypeId
             : [1];
-          console.log(this.selectedSizeTypeIds);
           this.sizesSelectedService
             .callGetList(this.productId, this.selectedSizeTypeIds)
             .subscribe();

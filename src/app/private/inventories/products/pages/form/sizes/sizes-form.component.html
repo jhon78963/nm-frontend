@@ -1,176 +1,171 @@
-<div class="col-12 mt-0">
-  <div class="w-full">
-    <div class="flex flex-column md:flex-row md:justify-content-between">
-      <div
-        class="flex justify-content-center md:justify-content-start gap-2 mb-3">
-        <app-input-filter
-          [collection]="sizeTypes"
-          [selectedIds]="selectedSizeTypeIds"
-          (selectionChange)="handleSizeTypeSelection($event)">
-        </app-input-filter>
+<div [class]="!stepper ? ' card' : ''">
+  <div class="col-12 mt-0">
+    <div class="w-full">
+      <div class="flex flex-column md:flex-row md:justify-content-between">
+        <div
+          class="flex justify-content-center md:justify-content-start gap-2 mb-3">
+          <app-input-filter
+            [collection]="sizeTypes"
+            [selectedIds]="selectedSizeTypeIds"
+            (selectionChange)="handleSizeTypeSelection($event)">
+          </app-input-filter>
+        </div>
+        <div
+          class="flex justify-content-center md:justify-content-end gap-2 mb-3">
+          <div class="flex flex-wrap justify-content-center gap-2">
+            <button
+              pButton
+              pRipple
+              label="Nuevo"
+              icon="pi pi-plus"
+              severity="secondary"
+              class="btn-menu w-9rem"
+              size="small"
+              (click)="createSize()"></button>
+            <button
+              pButton
+              pRipple
+              label="Guardar"
+              icon="pi pi-save"
+              severity="secondary"
+              class="btn-menu w-9rem"
+              size="small"
+              (click)="saveAllSelectedSizes()"
+              [disabled]="!selectedSizes || !selectedSizes.length"></button>
+            <button
+              pButton
+              pRipple
+              label="Remover"
+              icon="pi pi-trash"
+              severity="secondary"
+              class="btn-menu w-9rem"
+              size="small"
+              (click)="deleteAllSelectedSizes()"
+              [disabled]="!selectedSizes || !selectedSizes.length"></button>
+            <button
+              pButton
+              pRipple
+              label="Regresar"
+              icon="pi pi-arrow-left"
+              severity="help"
+              class="btn-menu-back w-9rem"
+              size="small"
+              [routerLink]="['/inventories/products']"></button>
+          </div>
+        </div>
       </div>
-      <div
-        class="flex justify-content-center md:justify-content-end gap-2 mb-3">
-        <button
-          pButton
-          pRipple
-          label="Nuevo"
-          icon="pi pi-plus"
-          severity="secondary"
-          class="btn-menu"
-          size="small"
-          (click)="createSize()"></button>
-        <button
-          pButton
-          pRipple
-          label="Guardar"
-          icon="pi pi-save"
-          severity="secondary"
-          class="btn-menu"
-          size="small"
-          (click)="saveAllSelectedSizes()"
-          [disabled]="!selectedSizes || !selectedSizes.length"></button>
-        <button
-          pButton
-          pRipple
-          label="Remover"
-          icon="pi pi-trash"
-          severity="secondary"
-          class="btn-menu"
-          size="small"
-          (click)="deleteAllSelectedSizes()"
-          [disabled]="!selectedSizes || !selectedSizes.length"></button>
-        <button
-          pButton
-          pRipple
-          label="Regresar"
-          icon="pi pi-home"
-          severity="secondary"
-          class="btn-menu"
-          size="small"
-          [routerLink]="['/inventories/products']"></button>
-      </div>
-    </div>
 
-    <p-table
-      #dt
-      [value]="(sizes | async) ?? []"
-      [tableStyle]="{ 'min-width': '50rem' }"
-      [(selection)]="selectedSizes"
-      responsiveLayout="scroll"
-      selectionMode="multiple"
-      dataKey="id">
-      <ng-template pTemplate="header">
-        <tr>
-          <th style="width: 3rem">
-            <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
-          </th>
-          <th>#</th>
-          <th>Talla</th>
-          <th>Código de barras</th>
-          <th>Stock</th>
-          <th>Precio de compra</th>
-          <th>Precio de venta</th>
-          <th>Precio de venta mínimo</th>
-          <th></th>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="body" let-size>
-        <tr>
-          <td>
-            <p-tableCheckbox [value]="size"></p-tableCheckbox>
-          </td>
-          <td style="width: 5%; min-width: 10rem">
-            <span class="p-column-title">Code</span>
-            {{ size.id }}
-          </td>
-          <td style="width: 10%; min-width: 10rem">
-            <span class="p-column-title">Name</span>
-            {{ size.description }}
-          </td>
-          <td style="width: 14%; min-width: 10rem">
-            <div class="bg-input-text">
-              <input
-                type="text"
-                class="input-text"
-                value="{{ size.barcode }}"
-                [(ngModel)]="size.barcode"
-                (keyup)="selectSize(size)" />
-            </div>
-          </td>
-          <td style="width: 14%; min-width: 10rem">
-            <div class="bg-input-text">
-              <input
-                type="text"
-                class="input-text"
-                value="{{ size.stock }}"
-                [(ngModel)]="size.stock"
-                (keyup)="selectSize(size)" />
-            </div>
-          </td>
-          <td style="width: 14%; min-width: 10rem">
-            <div class="bg-input-text">
-              <input
-                type="text"
-                class="input-text"
-                value="{{ size.purchasePrice }}"
-                [(ngModel)]="size.purchasePrice"
-                (keyup)="selectSize(size)" />
-            </div>
-          </td>
-          <td style="width: 14%; min-width: 10rem">
-            <div class="bg-input-text">
-              <input
-                type="text"
-                class="input-text"
-                value="{{ size.salePrice }}"
-                [(ngModel)]="size.salePrice"
-                (keyup)="selectSize(size)" />
-            </div>
-          </td>
-          <td style="width: 14%; min-width: 10rem">
-            <div class="bg-input-text">
-              <input
-                type="text"
-                class="input-text"
-                value="{{ size.minSalePrice }}"
-                [(ngModel)]="size.minSalePrice"
-                (keyup)="selectSize(size)" />
-            </div>
-          </td>
-          <td>
-            <div class="flex justify-content-end gap-2">
-              <button
-                pButton
-                pRipple
-                [icon]="size.isExists ? 'pi pi-pencil' : 'pi pi-save'"
-                class="p-button-rounded p-menu"
-                (click)="
-                  size.isExists
-                    ? editSizeProductButton(size)
-                    : saveSizeProductButton(size)
-                "></button>
-              @if (size.isExists) {
+      <p-table
+        #dt
+        [value]="(sizes | async) ?? []"
+        [tableStyle]="{ 'min-width': '50rem' }"
+        [(selection)]="selectedSizes"
+        responsiveLayout="scroll"
+        selectionMode="multiple"
+        dataKey="id">
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="width: 3rem">
+              <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+            </th>
+            <th>#</th>
+            <th>Talla</th>
+            <th>Código de barras</th>
+            <th>Stock</th>
+            <th>Precio de compra</th>
+            <th>Precio de venta</th>
+            <th>Precio de venta mínimo</th>
+            <th></th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-size>
+          <tr>
+            <td>
+              <p-tableCheckbox [value]="size"></p-tableCheckbox>
+            </td>
+            <td style="width: 5%; min-width: 10rem">
+              <span class="p-column-title">Code</span>
+              {{ size.id }}
+            </td>
+            <td style="width: 10%; min-width: 10rem">
+              <span class="p-column-title">Name</span>
+              {{ size.description }}
+            </td>
+            <td style="width: 14%; min-width: 10rem">
+              <div class="bg-input-text">
+                <input
+                  type="text"
+                  class="input-text"
+                  value="{{ size.barcode }}"
+                  [(ngModel)]="size.barcode"
+                  (keyup)="selectSize(size)" />
+              </div>
+            </td>
+            <td style="width: 14%; min-width: 10rem">
+              <div class="bg-input-text">
+                <input
+                  type="text"
+                  class="input-text"
+                  value="{{ size.stock }}"
+                  [(ngModel)]="size.stock"
+                  (keyup)="selectSize(size)" />
+              </div>
+            </td>
+            <td style="width: 14%; min-width: 10rem">
+              <div class="bg-input-text">
+                <input
+                  type="text"
+                  class="input-text"
+                  value="{{ size.purchasePrice }}"
+                  [(ngModel)]="size.purchasePrice"
+                  (keyup)="selectSize(size)" />
+              </div>
+            </td>
+            <td style="width: 14%; min-width: 10rem">
+              <div class="bg-input-text">
+                <input
+                  type="text"
+                  class="input-text"
+                  value="{{ size.salePrice }}"
+                  [(ngModel)]="size.salePrice"
+                  (keyup)="selectSize(size)" />
+              </div>
+            </td>
+            <td style="width: 14%; min-width: 10rem">
+              <div class="bg-input-text">
+                <input
+                  type="text"
+                  class="input-text"
+                  value="{{ size.minSalePrice }}"
+                  [(ngModel)]="size.minSalePrice"
+                  (keyup)="selectSize(size)" />
+              </div>
+            </td>
+            <td>
+              <div class="flex justify-content-end gap-2">
                 <button
                   pButton
                   pRipple
-                  icon="pi pi-trash"
+                  [icon]="size.isExists ? 'pi pi-pencil' : 'pi pi-save'"
                   class="p-button-rounded p-menu"
-                  (click)="removeSizeProductButton(size)"></button>
-              }
-            </div>
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
-  </div>
-  <div class="flex justify-content-end w-full gap-2 p-4">
-    <button
-      [routerLink]="['/inventories/products']"
-      type="button"
-      class="w-full md:w-2 p-button-secondary border-none"
-      pButton
-      [outlined]="true"
-      label="Regresar"></button>
+                  (click)="
+                    size.isExists
+                      ? editSizeProductButton(size)
+                      : saveSizeProductButton(size)
+                  "></button>
+                @if (size.isExists) {
+                  <button
+                    pButton
+                    pRipple
+                    icon="pi pi-trash"
+                    class="p-button-rounded p-menu"
+                    (click)="removeSizeProductButton(size)"></button>
+                }
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
   </div>
 </div>

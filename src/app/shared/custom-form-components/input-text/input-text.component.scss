@@ -10,54 +10,41 @@
   width: 100%;
 }
 
-/* --- LABEL ESTÁTICO --- */
 .static-label {
-  font-size: 0.85rem;     /* Tamaño pequeño y elegante */
+  font-size: 0.85rem;
   font-weight: 500;
-  color: #6b7280;         /* Gris neutro */
-  margin-bottom: 0.25rem; /* Separación con el input */
+  color: #6b7280;
+  margin-bottom: 0.25rem;
   transition: color 0.3s ease;
-
-  /* Cuando el input tiene foco, el label también se pinta */
   &.active {
-    color: #f59e0b;       /* Tu Naranja */
+    color: #f59e0b;
   }
 }
 
-/* --- INPUT MODERNO --- */
 .custom-input {
   width: 100%;
-  padding: 0.5rem 0;      /* Espacio vertical cómodo */
+  padding: 0.5rem 0;
   font-size: 1rem;
-  color: #374151;         /* Gris oscuro para texto */
+  color: #374151;
   background: transparent;
   border: none;
-  border-bottom: 1px solid #d1d5db; /* Línea gris sutil */
-  border-radius: 0;       /* Bordes rectos para estilo material */
+  border-bottom: 1px solid #d1d5db;
+  border-radius: 0;
   outline: none;
   transition: all 0.3s ease;
-
-  /* Placeholder sutil */
   &::placeholder {
     color: #9ca3af;
     opacity: 0.7;
   }
-
-  /* Al hacer foco, solo cambiamos el color del texto si quieres,
-     el borde lo maneja el span de abajo o el border-bottom directo */
   &:focus {
-    border-bottom-color: #f59e0b; /* Cambio de color directo */
+    border-bottom-color: #f59e0b;
   }
-
-  /* Si está deshabilitado */
   &:read-only {
     color: #9ca3af;
     border-bottom-style: dashed;
   }
 }
 
-/* --- EFECTO DE EXPANSIÓN (Opcional pero bonito) --- */
-/* Crea una línea que se expande desde el centro al hacer foco */
 .focus-border {
   position: absolute;
   bottom: 0;
@@ -68,7 +55,6 @@
   transition: width 0.3s ease, left 0.3s ease;
 }
 
-/* Cuando el input tiene foco (usando selector hermano adyacente) */
 .custom-input:focus ~ .focus-border {
   width: 100%;
   left: 0;

@@ -1,48 +1,60 @@
 @if (form) {
-  <form [formGroup]="form" (ngSubmit)="saveProductButton()" class="pt-2">
-    <div class="p-fluid p-formgrid grid">
-      <div class="field col-12 md:col-6">
-        <app-input-text
-          placeholder="Ingrese descuento por porcentaje (%)"
-          label="Descuento por porcentaje"
-          controlName="percentageDiscount"
-          pKeyFilter="num"></app-input-text>
-        <span class="discount-label">
-          * Dejar en blanco para desactivar descuento
-        </span>
+  <form [formGroup]="form" [class]="'col-12 mt-0' + (!stepper ? ' card' : '')">
+    <div class="w-full">
+      <div
+        class="flex justify-content-center md:justify-content-end gap-2 mb-3">
+        <div class="flex flex-wrap justify-content-center gap-2">
+          <button
+            pButton
+            pRipple
+            label="Guardar"
+            icon="pi pi-save"
+            severity="secondary"
+            class="btn-menu w-9rem"
+            size="small"
+            (click)="saveProductButton()"
+            [disabled]="!isValid"></button>
+          <button
+            pButton
+            pRipple
+            label="Regresar"
+            icon="pi pi-arrow-left"
+            severity="help"
+            class="btn-menu-back w-9rem"
+            size="small"
+            [routerLink]="['/inventories/products']"></button>
+        </div>
       </div>
-      <div class="field col-12 md:col-6">
-        <app-input-text
-          placeholder="Ingrese descuento por efectivo"
-          label="Descuento por efectivo (S/)"
-          controlName="cashDiscount"
-          pKeyFilter="num"></app-input-text>
-        <span class="discount-label">
-          * Dejar en blanco para desactivar descuento
-        </span>
-      </div>
-      <div class="field col-12">
-        <app-input-image
-          [productId]="productId"
-          [imageSaved]="imageSaved"
-          [imagesSaved]="imagesSaved"
-          [images]="(images | async) ?? []"
-          (selectedFilesChange)="getFormData($event)"
-          (imagesToDelete)="imagesToDelete($event)" />
-      </div>
-      <div class="flex justify-content-end w-full gap-2 p-4">
-        <button
-          [routerLink]="['/inventories/products']"
-          type="button"
-          class="w-full md:w-2 p-button-secondary border-none"
-          pButton
-          [outlined]="true"
-          label="Regresar"></button>
-        <button
-          type="submit"
-          class="w-full md:w-2"
-          pButton
-          label="Guardar"></button>
+      <div class="p-fluid p-formgrid grid">
+        <div class="field col-12 md:col-6">
+          <app-input-text
+            placeholder="Ingrese descuento por porcentaje (%)"
+            label="Descuento por porcentaje"
+            controlName="percentageDiscount"
+            pKeyFilter="num"></app-input-text>
+          <span class="discount-label">
+            * Dejar en blanco para desactivar descuento
+          </span>
+        </div>
+        <div class="field col-12 md:col-6">
+          <app-input-text
+            placeholder="Ingrese descuento por efectivo"
+            label="Descuento por efectivo (S/)"
+            controlName="cashDiscount"
+            pKeyFilter="num"></app-input-text>
+          <span class="discount-label">
+            * Dejar en blanco para desactivar descuento
+          </span>
+        </div>
+        <div class="field col-12">
+          <app-input-image
+            [productId]="productId"
+            [imageSaved]="imageSaved"
+            [imagesSaved]="imagesSaved"
+            [images]="(images | async) ?? []"
+            (selectedFilesChange)="getFormData($event)"
+            (imagesToDelete)="imagesToDelete($event)" />
+        </div>
       </div>
     </div>
   </form>

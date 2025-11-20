@@ -20,9 +20,9 @@ export class SizesSelectedService {
     productId: number,
     sizeTypeId: number | number[],
   ): Observable<void> {
-    let url = `sizes/selected`;
-    if (productId) {
-      url += `?productId=${productId}&sizeTypeId=${sizeTypeId || 1}`;
+    let url = `sizes/selected?productId=${productId}`;
+    if (sizeTypeId instanceof Array && sizeTypeId.length > 0) {
+      url += `&sizeTypeId=${sizeTypeId}`;
     }
     return this.apiService.get<Size[]>(url).pipe(
       debounceTime(600),

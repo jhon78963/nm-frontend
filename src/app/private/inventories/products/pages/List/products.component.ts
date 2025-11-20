@@ -89,6 +89,24 @@ export class ProductListComponent implements OnInit {
     {
       type: 'button',
       size: 'small',
+      icon: 'pi pi-tag',
+      outlined: true,
+      pTooltip: 'Tallas',
+      tooltipPosition: 'bottom',
+      click: (rowData: Product) => this.sizeProductButton(rowData.id),
+    },
+    {
+      type: 'button',
+      size: 'small',
+      icon: 'pi pi-palette',
+      outlined: true,
+      pTooltip: 'Colores',
+      tooltipPosition: 'bottom',
+      click: (rowData: Product) => this.colorProductButton(rowData.id),
+    },
+    {
+      type: 'button',
+      size: 'small',
       icon: 'pi pi-shop',
       outlined: true,
       pTooltip: 'Ecommerce',
@@ -188,6 +206,14 @@ export class ProductListComponent implements OnInit {
     this.router.navigate([`/inventories/products/step/general/${id}`]);
   }
 
+  sizeProductButton(id: number) {
+    this.router.navigate([`/inventories/products/sizes/${id}`]);
+  }
+
+  colorProductButton(id: number) {
+    this.router.navigate([`/inventories/products/colors/${id}`]);
+  }
+
   ecommerceProductButton(id: number) {
     this.router.navigate([`/inventories/products/ecommerce/${id}`]);
   }
@@ -195,13 +221,15 @@ export class ProductListComponent implements OnInit {
   deleteProductButton(id: number, event: Event) {
     this.confirmationService.confirm({
       target: event.target as EventTarget,
-      message: 'Deseas eliminar este usuario?',
-      header: 'Eliminar usuario',
+      message: 'Deseas eliminar este producto?',
+      header: 'Eliminar producto',
       icon: 'pi pi-info-circle',
       acceptButtonStyleClass: 'p-button-danger p-button-text',
       rejectButtonStyleClass: 'p-button-text p-button-text',
       acceptIcon: 'none',
       rejectIcon: 'none',
+      acceptLabel: 'Sí',
+      rejectLabel: 'No',
       accept: () => {
         this.productsService.delete(id).subscribe({
           next: () =>

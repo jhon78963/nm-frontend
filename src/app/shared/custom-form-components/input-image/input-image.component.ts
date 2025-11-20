@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   Input,
-  OnInit,
   SimpleChanges,
   OnChanges,
   output,
@@ -39,7 +38,7 @@ export interface InputImage {
   templateUrl: './input-image.component.html',
   styleUrl: './input-image.component.scss',
 })
-export class InputImageComponent implements OnInit, OnChanges {
+export class InputImageComponent implements OnChanges {
   @Input() productId: number = 0;
   @Input() images: any[] = [];
   @Input() imageSaved: any;
@@ -54,10 +53,6 @@ export class InputImageComponent implements OnInit, OnChanges {
   imagePreviews: string[] = [];
   isDragging = false;
   storage_url: string = BASE_STORAGE_URL;
-
-  ngOnInit(): void {
-    console.log(this.productId);
-  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['imageSaved'] && this.imageSaved) {

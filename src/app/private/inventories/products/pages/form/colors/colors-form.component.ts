@@ -3,7 +3,7 @@ import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 import { Size } from '../../../../sizes/models/sizes.model';
 import { ProductSizeColorsService } from '../../../services/productColors.service';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import {
   FormControl,
@@ -37,6 +37,7 @@ import { catchError, forkJoin, of } from 'rxjs';
     RippleModule,
     ColorPickerModule,
     MessagesModule,
+    RouterLink,
   ],
   templateUrl: './colors-form.component.html',
   styleUrl: './colors-form.component.scss',
@@ -49,15 +50,18 @@ export class ColorsFormComponent implements OnInit {
   filterValue: any;
   selectedColors: any[] = [];
   selectedSize: any;
+  stepper: boolean = true;
 
   constructor(
+    private readonly router: Router,
     private readonly route: ActivatedRoute,
-    private readonly productSizeColorsService: ProductSizeColorsService,
     private readonly dialogService: DialogService,
     private readonly messageService: MessageService,
+    private readonly productSizeColorsService: ProductSizeColorsService,
   ) {
     if (this.route.snapshot.paramMap.get('id')) {
       this.productId = Number(this.route.snapshot.paramMap.get('id'));
+      this.stepper = this.router.url.includes('/step/');
     }
   }
 

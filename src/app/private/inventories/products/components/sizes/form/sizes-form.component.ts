@@ -56,7 +56,6 @@ export class SizesFormComponent implements OnInit {
   }
 
   saveSizeButton() {
-    // console.log(this.form.value);
     if (this.form.valid) {
       this.dynamicDialogRef.close({ sizeSelected: this.form.value });
     }

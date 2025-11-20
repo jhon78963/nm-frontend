@@ -7,7 +7,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { SharedModule } from '../../../../../../shared/shared.module';
 import { ToastModule } from 'primeng/toast';
 import { KeyFilterModule } from 'primeng/keyfilter';
@@ -46,7 +46,9 @@ export class EcommerceFormComponent implements OnInit {
   productId: number = 0;
   imageSaved: any;
   imagesSaved: any;
+  stepper: boolean = true;
   constructor(
+    private readonly router: Router,
     private readonly route: ActivatedRoute,
     private readonly formBuilder: FormBuilder,
     private readonly fileService: FileService,
@@ -56,6 +58,7 @@ export class EcommerceFormComponent implements OnInit {
   ) {
     if (this.route.snapshot.paramMap.get('id')) {
       this.productId = Number(this.route.snapshot.paramMap.get('id'));
+      this.stepper = this.router.url.includes('/step/');
     }
   }
 
@@ -75,6 +78,10 @@ export class EcommerceFormComponent implements OnInit {
         },
       });
     }
+  }
+
+  get isValid(): boolean {
+    return this.form.valid;
   }
 
   saveProductButton() {

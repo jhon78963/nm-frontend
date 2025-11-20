@@ -1,6 +1,8 @@
 <div class="custom-field">
-  <!-- Label Estático -->
-  <label [for]="id" class="static-label" [class.active]="isFocused">
+  <label
+    [for]="controlName"
+    class="static-label"
+    [class.active]="formControl.value || isFocused">
     {{ label }}
   </label>
 

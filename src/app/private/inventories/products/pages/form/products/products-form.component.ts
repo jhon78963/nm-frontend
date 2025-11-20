@@ -74,6 +74,10 @@ export class ProductsFormComponent implements OnInit {
     }
   }
 
+  get isValid(): boolean {
+    return this.form.valid;
+  }
+
   saveProductButton() {
     const product = new ProductSave(this.form.value);
     if (product.id) {
