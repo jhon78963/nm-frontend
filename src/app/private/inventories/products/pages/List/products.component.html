@@ -10,16 +10,14 @@
         (clearFilter)="clearFilter()">
       </app-input-search>
     </div>
-
     <div
       class="w-full md:w-auto flex flex-wrap justify-content-center gap-2 flex-order-3 md:flex-order-2">
       <app-input-filter
         [collection]="genders"
-        [selectedId]="selectedGenderId"
+        [selectedIds]="selectedGenderIds"
         (selectionChange)="handleGenderSelection($event)">
       </app-input-filter>
     </div>
-
     <div
       class="w-full md:w-4 flex justify-content-center md:justify-content-end flex-order-1 md:flex-order-3">
       <p-button

@@ -34,7 +34,7 @@ export interface Product {
   gender: string;
   sizes: Size[];
   filter: boolean;
-  sizeTypeId?: number;
+  sizeTypeId: number[];
   percentageDiscount: number;
   cashDiscount: number;
 }

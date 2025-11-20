@@ -32,7 +32,7 @@ export class ColorsCreateFormComponent {
 
   form: FormGroup = this.formBuilder.group({
     description: ['', Validators.required],
-    hash: ['', Validators.nullValidator],
+    hash: ['#000000', Validators.nullValidator],
   });
 
   buttonSaveColor(): void {

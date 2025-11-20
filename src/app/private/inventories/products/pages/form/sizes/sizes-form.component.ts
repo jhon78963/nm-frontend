@@ -9,7 +9,7 @@ import { SizesSelectedService } from '../../../../sizes/services/sizes-selected.
 import { Product, Size } from '../../../models/products.model';
 import { catchError, forkJoin, Observable, of } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ProductsService } from '../../../services/products.service';
 import { DialogService } from 'primeng/dynamicdialog';
 import { SizesCreateFormComponent } from '../../../../sizes/pages/form/sizes-form.component';
@@ -18,6 +18,7 @@ import { MessageService } from 'primeng/api';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ProductSizesService } from '../../../services/productSizes.service';
 import { ProductSizeSave } from '../../../models/sizes.interface';
+import { SharedModule } from '../../../../../../shared/shared.module';
 
 @Component({
   selector: 'app-sizes-form',
@@ -31,6 +32,8 @@ import { ProductSizeSave } from '../../../models/sizes.interface';
     RippleModule,
     ReactiveFormsModule,
     FormsModule,
+    SharedModule,
+    RouterLink,
   ],
   templateUrl: './sizes-form.component.html',
   styleUrl: './sizes-form.component.scss',
@@ -43,7 +46,7 @@ export class SizesFormComponent implements OnInit {
   products: any[] = [];
   sizeTypes: Size[] = [];
   selectedSizes: any[] = [];
-  selectedSizeTypeId: number = 1;
+  selectedSizeTypeIds: number[] = [1];
   cols: any[] = [];
 
   constructor(
@@ -81,9 +84,12 @@ export class SizesFormComponent implements OnInit {
       this.productsService.getOne(this.productId).subscribe({
         next: (product: Product) => {
           this.filter = product.filter;
-          this.sizeTypeId = product.sizeTypeId || 0;
+          this.selectedSizeTypeIds = product.sizeTypeId.length
+            ? product.sizeTypeId
+            : [1];
+          console.log(this.selectedSizeTypeIds);
           this.sizesSelectedService
-            .callGetList(this.productId, this.sizeTypeId)
+            .callGetList(this.productId, this.selectedSizeTypeIds)
             .subscribe();
         },
       });
@@ -94,10 +100,10 @@ export class SizesFormComponent implements OnInit {
     return this.sizesSelectedService.getList();
   }
 
-  selectFilter(sizeTypeId: number) {
-    this.selectedSizeTypeId = sizeTypeId;
+  handleSizeTypeSelection(ids: number[]) {
+    this.selectedSizeTypeIds = ids;
     this.sizesSelectedService
-      .callGetList(this.productId, this.selectedSizeTypeId)
+      .callGetList(this.productId, this.selectedSizeTypeIds)
       .subscribe();
   }
 
@@ -105,7 +111,7 @@ export class SizesFormComponent implements OnInit {
     const modal = this.dialogService.open(SizesCreateFormComponent, {
       data: {
         productId: this.productId,
-        sizeTypeId: this.sizeTypeId || this.selectedSizeTypeId,
+        sizeTypeId: this.sizeTypeId || this.selectedSizeTypeIds,
       },
       header: 'Crear Talla',
       styleClass: 'dialog-custom-form',

@@ -31,13 +31,13 @@ export class ProductsService {
     limit: number = 10,
     page: number = 1,
     name: string = '',
-    genderId?: number,
+    genderId: number[] = [],
   ): Observable<void> {
     let url = `products?limit=${limit}&page=${page}`;
     if (name) {
       url += `&search=${name}`;
     }
-    if (genderId) {
+    if (genderId && genderId.length > 0) {
       url += `&genderId=${genderId}`;
     }
     return this.apiService.get<ProductListResponse>(url).pipe(

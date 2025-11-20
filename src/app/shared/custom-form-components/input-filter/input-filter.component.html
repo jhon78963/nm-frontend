@@ -6,7 +6,7 @@
       [label]="data.description"
       severity="secondary"
       class="btn-menu white-space-nowrap"
-      [ngClass]="{ 'btn-selected': data.id === selectedId }"
+      [ngClass]="{ 'btn-selected': selectedIds.includes(data.id) }"
       size="small"
       (click)="onSelect(data.id)"></button>
   }

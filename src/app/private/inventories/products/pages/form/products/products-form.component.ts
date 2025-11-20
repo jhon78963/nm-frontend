@@ -23,8 +23,6 @@ import { ProductsService } from '../../../services/products.service';
 import { Gender } from '../../../../../../models/gender.interface';
 import { Product, ProductSave } from '../../../models/products.model';
 
-import { ButtonModule } from 'primeng/button';
-
 @Component({
   selector: 'app-products-form',
   standalone: true,
@@ -32,7 +30,6 @@ import { ButtonModule } from 'primeng/button';
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    ButtonModule,
     KeyFilterModule,
     SharedModule,
     StepsModule,

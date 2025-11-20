@@ -16,7 +16,10 @@ export class SizesSelectedService {
   sizes: Size[] = [];
   sizes$: BehaviorSubject<Size[]> = new BehaviorSubject<Size[]>(this.sizes);
   constructor(private apiService: ApiService) {}
-  callGetList(productId: number, sizeTypeId: number): Observable<void> {
+  callGetList(
+    productId: number,
+    sizeTypeId: number | number[],
+  ): Observable<void> {
     let url = `sizes/selected`;
     if (productId) {
       url += `?productId=${productId}&sizeTypeId=${sizeTypeId || 1}`;

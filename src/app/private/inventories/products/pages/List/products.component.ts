@@ -25,10 +25,10 @@ import { Gender } from '../../../../../models/gender.interface';
   standalone: true,
   imports: [
     CommonModule,
-    ToastModule,
     ConfirmDialogModule,
-    SharedModule,
     RouterModule,
+    SharedModule,
+    ToastModule,
   ],
   templateUrl: './products.component.html',
   styleUrl: './products.component.scss',
@@ -108,7 +108,7 @@ export class ProductListComponent implements OnInit {
   ];
 
   genders: Gender[] = [];
-  selectedGenderId: number = 0;
+  selectedGenderIds: number[] = [];
 
   formGroup: FormGroup = new FormGroup({
     search: new FormControl<string | null>(null),
@@ -139,7 +139,7 @@ export class ProductListComponent implements OnInit {
   }
 
   selectFilter(genderId: number) {
-    this.selectedGenderId = genderId;
+    this.selectedGenderIds.push(genderId);
   }
 
   clearFilter(): void {
@@ -148,17 +148,17 @@ export class ProductListComponent implements OnInit {
     this.formGroup.get('search')?.setValue('');
   }
 
-  handleGenderSelection(genderId: number) {
-    this.selectedGenderId = genderId;
+  handleGenderSelection(ids: number[]) {
+    this.selectedGenderIds = ids;
     this.loadingService.sendLoadingState(true);
-    this.getProducts(this.limit, this.page, this.name, this.selectedGenderId);
+    this.getProducts(this.limit, 1, this.name, this.selectedGenderIds);
   }
 
   async getProducts(
     limit = this.limit,
     page = this.page,
     name = this.name,
-    gender = this.selectedGenderId,
+    gender = this.selectedGenderIds,
   ): Promise<void> {
     this.updatePage(page);
     this.productsService.callGetList(limit, page, name, gender).subscribe();
