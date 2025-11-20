@@ -133,12 +133,12 @@ export class ProductListComponent implements OnInit {
   });
 
   constructor(
+    private readonly router: Router,
     private readonly confirmationService: ConfirmationService,
     private readonly gendersService: GendersService,
     private readonly loadingService: LoadingService,
     private readonly messageService: MessageService,
     private readonly productsService: ProductsService,
-    private readonly router: Router,
   ) {}
 
   ngOnInit(): void {

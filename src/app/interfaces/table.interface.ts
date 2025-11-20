@@ -14,6 +14,7 @@ export interface Column {
   clickable: boolean;
   image: boolean;
   money: boolean;
+  color?: boolean;
 }
 
 export interface Paginate {

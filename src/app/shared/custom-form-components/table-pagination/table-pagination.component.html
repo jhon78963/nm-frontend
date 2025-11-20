@@ -30,6 +30,15 @@
             alt="constancia-3.png"
             class="file-thumbnail-image"
             [src]="getFieldValue(col.field, rowData)" />
+        } @else if (col.color) {
+          <div
+            [style]="{
+              'background-color': getFieldValue(col.field, rowData),
+              'border-radius': '50%',
+              border: '1px solid #d4d6d9',
+              width: '2rem',
+              height: '2rem',
+            }"></div>
         } @else {
           <span *ngIf="col.money">S/ </span
           >{{ getFieldValue(col.field, rowData) }}

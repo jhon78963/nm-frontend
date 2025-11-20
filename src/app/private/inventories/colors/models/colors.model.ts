@@ -14,3 +14,13 @@ export class ColorSave {
     this.hash = color.hash;
   }
 }
+
+export interface Paginate {
+  total: number;
+  pages: number;
+}
+
+export interface ColorListResponse {
+  data: Color[];
+  paginate: Paginate;
+}

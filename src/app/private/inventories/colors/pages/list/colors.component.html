@@ -1,1 +1,31 @@
-<p>colors works!</p>
+<div class="card">
+  <div
+    class="flex flex-column md:flex-row align-items-center justify-content-between gap-3 mt-3 w-full">
+    <div
+      class="w-full md:w-4 flex justify-content-start flex-order-2 md:flex-order-1">
+      <app-input-search
+        class="w-full"
+        [formGroup]="formGroup"
+        controlName="search"
+        (clearFilter)="clearFilter()">
+      </app-input-search>
+    </div>
+    <div
+      class="w-full md:w-4 flex justify-content-center md:justify-content-end flex-order-1 md:flex-order-3">
+      <p-button [outlined]="true" (click)="addColorButton()">
+        <i class="pi pi-plus" style="font-size: 1rem"></i>
+      </p-button>
+    </div>
+  </div>
+  <app-table-pagination
+    [data]="(sizes | async) ?? []"
+    [columns]="columns"
+    [callToAction]="callToAction"
+    [cellToAction]="cellToAction"
+    [total]="(total | async) ?? 0"
+    [limit]="limit"
+    (paginateSelected)="onPageSelected($event)"
+    [rowsPerPageOptions]="[10, 20, 50]"></app-table-pagination>
+  <p-toast />
+  <p-confirmDialog></p-confirmDialog>
+</div>

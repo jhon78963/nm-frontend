@@ -8,7 +8,11 @@ import {
   Column,
 } from '../../../../../interfaces/table.interface';
 import { LoadingService } from '../../../../../services/loading.service';
-import { showError, showSuccess } from '../../../../../utils/notifications';
+import {
+  showError,
+  showSuccess,
+  showToastWarn,
+} from '../../../../../utils/notifications';
 import { User } from '../../models/users.model';
 import { UsersService } from '../../services/users.service';
 import { UserFormComponent } from '../form/users-form.component';
@@ -194,17 +198,15 @@ export class UserListComponent implements OnInit, OnDestroy {
       rejectButtonStyleClass: 'p-button-text p-button-text',
       acceptIcon: 'none',
       rejectIcon: 'none',
-
+      acceptLabel: 'Sí',
+      rejectLabel: 'No',
       accept: () => {
         this.usersService.delete(id).subscribe(() => {
           showSuccess(this.messageService, 'El usuario ha sido eliminado');
         });
       },
       reject: () => {
-        showError(
-          this.messageService,
-          'No se eleminó el usuario, intenteló nuevamente',
-        );
+        showToastWarn(this.messageService, 'No se realizó ninguna acción.');
       },
     });
   }

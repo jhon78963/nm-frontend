@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { SharedModule } from '../../../../../shared/shared.module';
 import { CommonModule } from '@angular/common';
 import { ToastModule } from 'primeng/toast';
@@ -9,13 +9,20 @@ import {
   Column,
 } from '../../../../../interfaces/table.interface';
 import { Size } from '../../models/sizes.model';
-import { DialogService } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { LoadingService } from '../../../../../services/loading.service';
 import { SizesService } from '../../services/sizes.service';
 import { PaginatorState } from 'primeng/paginator';
-import { Observable } from 'rxjs';
+import { debounceTime, Observable } from 'rxjs';
 import { RouterModule } from '@angular/router';
 import { SizesSelectedService } from '../../services/sizes-selected.service';
+import { FormControl, FormGroup } from '@angular/forms';
+import { SizesCreateFormComponent } from '../form/sizes-form.component';
+import {
+  showError,
+  showSuccess,
+  showToastWarn,
+} from '../../../../../utils/notifications';
 
 @Component({
   selector: 'app-sizes',
@@ -31,7 +38,8 @@ import { SizesSelectedService } from '../../services/sizes-selected.service';
   styleUrl: './sizes.component.scss',
   providers: [ConfirmationService, DialogService, MessageService],
 })
-export class SizeListComponent implements OnInit {
+export class SizeListComponent implements OnInit, OnDestroy {
+  sizeModal: DynamicDialogRef | undefined;
   columns: Column[] = [
     {
       header: '#',
@@ -65,7 +73,7 @@ export class SizeListComponent implements OnInit {
   cellToAction: any;
   limit: number = 10;
   page: number = 1;
-  name: string = '';
+  search: string = '';
   sizeTypes: Size[] = [];
   selectedSizeTypeId: number = 1;
   callToAction: CallToAction<Size>[] = [
@@ -90,24 +98,60 @@ export class SizeListComponent implements OnInit {
     },
   ];
 
+  selectedSizes: any[] = [];
+  selectedSizeTypeIds: number[] = [];
+
+  formGroup: FormGroup = new FormGroup({
+    search: new FormControl<string | null>(null),
+  });
+
   constructor(
+    private readonly dialogService: DialogService,
+    private readonly messageService: MessageService,
+    private readonly confirmationService: ConfirmationService,
     private readonly loadingService: LoadingService,
-    private readonly sizesService: SizesService,
     private readonly sizesSelectedService: SizesSelectedService,
+    private readonly sizesService: SizesService,
   ) {}
 
   ngOnInit(): void {
-    this.getSizes(this.limit, this.page, this.name);
+    this.getSizes(this.limit, this.page, this.search);
+    this.formGroup
+      .get('search')
+      ?.valueChanges.pipe(debounceTime(600))
+      .subscribe((value: any) => {
+        this.search = value ? value : '';
+        this.loadingService.sendLoadingState(true);
+        this.getSizes(this.limit, this.page, this.search);
+      });
     this.getSizeTypes();
+  }
+
+  ngOnDestroy(): void {
+    if (this.sizeModal) {
+      this.sizeModal.close();
+    }
+  }
+
+  clearFilter(): void {
+    this.search = '';
+    this.loadingService.sendLoadingState(true);
+    this.formGroup.get('search')?.setValue('');
+  }
+
+  handleSizeTypeSelection(ids: number[]) {
+    this.selectedSizeTypeIds = ids;
+    this.getSizes(this.limit, this.page, this.search, this.selectedSizeTypeIds);
   }
 
   async getSizes(
     limit = this.limit,
     page = this.page,
-    name = this.name,
+    name = this.search,
+    sizeTypeIds = this.selectedSizeTypeIds,
   ): Promise<void> {
     this.updatePage(page);
-    this.sizesService.callGetList(limit, page, name).subscribe();
+    this.sizesService.callGetList(limit, page, name, sizeTypeIds).subscribe();
     setTimeout(() => {
       this.loadingService.sendLoadingState(false);
     }, 600);
@@ -139,15 +183,62 @@ export class SizeListComponent implements OnInit {
   }
 
   addSizeButton() {
-    console.log('add size button');
+    this.sizeModal = this.dialogService.open(SizesCreateFormComponent, {
+      data: {},
+      header: 'Crear Talla',
+      styleClass: 'dialog-custom-form',
+    });
+
+    this.sizeModal.onClose.subscribe({
+      next: value => {
+        value && value?.success
+          ? showSuccess(this.messageService, 'Talla Creada.')
+          : value?.error
+            ? showError(this.messageService, value?.error)
+            : null;
+      },
+    });
   }
 
   editSizeButton(id: number) {
-    console.log('edit size button', id);
+    this.sizeModal = this.dialogService.open(SizesCreateFormComponent, {
+      data: { id },
+      header: 'Editar Talla',
+      styleClass: 'dialog-custom-form',
+    });
+
+    this.sizeModal.onClose.subscribe({
+      next: value => {
+        value && value?.success
+          ? showSuccess(this.messageService, 'Talla actualizada.')
+          : value?.error
+            ? showError(this.messageService, value?.error)
+            : null;
+      },
+    });
   }
 
   deleteSizeButton(id: number, event: Event) {
-    console.log('delete size button', id, event);
+    this.confirmationService.confirm({
+      target: event.target as EventTarget,
+      message: 'Deseas eliminar esta talla?',
+      header: 'Eliminar Talla',
+      icon: 'pi pi-info-circle',
+      acceptButtonStyleClass: 'p-button-danger p-button-text',
+      rejectButtonStyleClass: 'p-button-text p-button-text',
+      acceptIcon: 'none',
+      rejectIcon: 'none',
+      acceptLabel: 'Sí',
+      rejectLabel: 'No',
+      accept: () => {
+        this.sizesService.delete(id).subscribe(() => {
+          showSuccess(this.messageService, 'La talla ha sido eliminada');
+        });
+      },
+      reject: () => {
+        showToastWarn(this.messageService, 'No se realizó ninguna acción.');
+      },
+    });
   }
 
   private updatePage(value: number): void {

@@ -25,10 +25,14 @@ export class SizesService {
     limit: number = 10,
     page: number = 1,
     name: string = '',
+    sizeTypeId: number | number[] = [],
   ): Observable<void> {
     let url = `sizes?limit=${limit}&page=${page}`;
     if (name) {
       url += `&search=${name}`;
+    }
+    if (sizeTypeId instanceof Array && sizeTypeId.length > 0) {
+      url += `&sizeTypeId=${sizeTypeId}`;
     }
     return this.apiService.get<SizeListResponse>(url).pipe(
       debounceTime(600),

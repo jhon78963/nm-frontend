@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -7,7 +7,7 @@ import {
 } from '@angular/forms';
 import { ColorsService } from '../../services/colors.service';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { ColorSave } from '../../models/colors.model';
+import { Color, ColorSave } from '../../models/colors.model';
 import { CommonModule } from '@angular/common';
 import { ToastModule } from 'primeng/toast';
 import { SharedModule } from '../../../../../shared/shared.module';
@@ -19,7 +19,7 @@ import { SharedModule } from '../../../../../shared/shared.module';
   templateUrl: './colors.component.html',
   styleUrl: './colors.component.scss',
 })
-export class ColorsCreateFormComponent {
+export class ColorsCreateFormComponent implements OnInit {
   colorId: number = 0;
   color: string = '';
 
@@ -35,11 +35,31 @@ export class ColorsCreateFormComponent {
     hash: ['#000000', Validators.nullValidator],
   });
 
+  ngOnInit(): void {
+    if (this.dynamicDialogConfig.data.id) {
+      const id = this.dynamicDialogConfig.data.id;
+      this.colorId = this.dynamicDialogConfig.data.id;
+      this.colorsService.getOne(id).subscribe((response: Color) => {
+        this.form.patchValue(response);
+      });
+    }
+  }
+
   buttonSaveColor(): void {
-    const color = new ColorSave(this.form.value);
-    this.colorsService.create(color).subscribe({
-      next: () => this.dynamicDialogRef.close({ success: true }),
-      error: () => this.dynamicDialogRef.close({ error: true }),
-    });
+    if (this.form) {
+      const color = new ColorSave(this.form.value);
+      if (this.dynamicDialogConfig.data.id) {
+        const id = this.dynamicDialogConfig.data.id;
+        this.colorsService.edit(id, color).subscribe({
+          next: () => this.dynamicDialogRef.close({ success: true }),
+          error: () => {},
+        });
+      } else {
+        this.colorsService.create(color).subscribe({
+          next: () => this.dynamicDialogRef.close({ success: true }),
+          error: () => this.dynamicDialogRef.close({ error: true }),
+        });
+      }
+    }
   }
 }
