@@ -26,18 +26,20 @@
           label="Apellidos"
           controlName="surname"></app-input-text>
       </div>
-      <div class="col-12">
-        <app-input-text
-          placeholder="Ingrese username"
-          label="Username"
-          controlName="username"></app-input-text>
-      </div>
-      <div class="col-12">
-        <app-input-text
-          placeholder="Ingrese email"
-          label="Email"
-          controlName="email"></app-input-text>
-      </div>
+      @if (userId === 0) {
+        <div class="col-12">
+          <app-input-text
+            placeholder="Ingrese username"
+            label="Username"
+            controlName="username"></app-input-text>
+        </div>
+        <div class="col-12">
+          <app-input-text
+            placeholder="Ingrese email"
+            label="Email"
+            controlName="email"></app-input-text>
+        </div>
+      }
       <button
         type="submit"
         pButton

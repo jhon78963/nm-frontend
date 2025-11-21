@@ -1,12 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-
 import { Observable } from 'rxjs';
-
 import { UsersService } from '../../services/users.service';
 import { RolesService } from '../../../roles/services/roles.service';
-
 import { Role } from '../../../roles/models/roles.model';
 import { User } from '../../models/users.model';
 
@@ -28,21 +25,31 @@ export class UserFormComponent implements OnInit {
 
   form: FormGroup = this.formBuilder.group({
     username: ['', Validators.required],
-    email: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
     name: ['', Validators.required],
     surname: ['', Validators.required],
     roleId: [1, Validators.required],
   });
 
   ngOnInit(): void {
+    this.rolesService.callGetList().subscribe();
     if (this.dynamicDialogConfig.data.id) {
       const id = this.dynamicDialogConfig.data.id;
-      this.userId = this.dynamicDialogConfig.data.id;
+      this.userId = id;
+      this.removeValidatorsForEdit();
+
       this.usersService.getOne(id).subscribe((response: User) => {
         this.form.patchValue(response);
       });
     }
-    this.rolesService.callGetList().subscribe();
+  }
+
+  private removeValidatorsForEdit(): void {
+    this.form.get('username')?.clearValidators();
+    this.form.get('username')?.updateValueAndValidity();
+
+    this.form.get('email')?.clearValidators();
+    this.form.get('email')?.updateValueAndValidity();
   }
 
   get roles(): Observable<Role[]> {
@@ -54,11 +61,11 @@ export class UserFormComponent implements OnInit {
   }
 
   buttonSaveUser(): void {
-    if (this.form) {
+    if (this.form.valid) {
       const user = new User(this.form.value);
-      if (this.dynamicDialogConfig.data.id) {
-        const id = this.dynamicDialogConfig.data.id;
-        this.usersService.edit(id, user).subscribe({
+
+      if (this.userId) {
+        this.usersService.edit(this.userId, user).subscribe({
           next: () => this.dynamicDialogRef.close({ success: true }),
           error: () => {},
         });
@@ -71,6 +78,8 @@ export class UserFormComponent implements OnInit {
           error: () => {},
         });
       }
+    } else {
+      this.form.markAllAsTouched();
     }
   }
 }
