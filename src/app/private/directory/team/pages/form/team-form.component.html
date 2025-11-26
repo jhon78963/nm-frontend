@@ -1,0 +1,44 @@
+@if (form) {
+  <form [formGroup]="form" (ngSubmit)="buttonSaveTeam()">
+    <div class="p-fluid p-formgrid grid">
+      <div class="col-12">
+        <app-input-text
+          label="Dni"
+          for="dni"
+          type="text"
+          id="dni"
+          placeholder="Ingrese nombres"
+          controlName="dni"></app-input-text>
+      </div>
+      <div class="col-12">
+        <app-input-text
+          label="Nombres"
+          for="name"
+          type="text"
+          id="name"
+          placeholder="Ingrese nombres"
+          controlName="name"></app-input-text>
+        <app-input-text
+          label="Apellidos"
+          for="surname"
+          type="text"
+          id="surname"
+          placeholder="Ingrese apellidos"
+          controlName="surname"></app-input-text>
+        <app-input-text
+          label="Salario"
+          for="salary"
+          type="text"
+          id="salary"
+          placeholder="Ingrese salario"
+          controlName="salary"></app-input-text>
+      </div>
+      <button
+        type="submit"
+        pButton
+        label="Guardar"
+        class="mt-3"
+        [disabled]="!isValid"></button>
+    </div>
+  </form>
+}

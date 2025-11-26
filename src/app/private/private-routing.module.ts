@@ -32,6 +32,13 @@ const routes: Routes = [
       ),
   },
   {
+    path: 'directory',
+    title: 'Directorio',
+    data: { breadcrumb: 'Directorio' },
+    loadChildren: () =>
+      import('./directory/directory.module').then(m => m.DirectoryModule),
+  },
+  {
     path: '',
     pathMatch: 'full',
     redirectTo: 'home',
