@@ -1,0 +1,58 @@
+<header
+  class="bg-white px-3 py-3 shadow-1 z-2 relative border-bottom-1 border-gray-100 flex-shrink-0">
+  <!-- Top Bar -->
+  <div class="flex justify-content-between align-items-center mb-2">
+    <i class="pi pi-bars text-xl text-gray-500"></i>
+    <div class="font-bold text-gray-700">POS</div>
+    <div
+      class="w-2rem h-2rem border-circle bg-gray-200 flex align-items-center justify-content-center">
+      <i class="pi pi-user text-gray-500"></i>
+    </div>
+  </div>
+
+  <!-- Buscador -->
+  <div class="relative w-full">
+    <i
+      class="pi pi-user absolute text-gray-400 z-1"
+      style="top: 50%; left: 1rem; transform: translateY(-50%)"></i>
+    <input
+      type="tel"
+      [(ngModel)]="dniQuery"
+      (keydown.enter)="search()"
+      class="w-full border-round-xl py-3 pl-6 pr-6 border-none bg-gray-100 font-medium text-gray-800 focus:bg-white focus:shadow-input transition-all"
+      placeholder="DNI / RUC Cliente"
+      inputmode="numeric" />
+    <button
+      (click)="search()"
+      class="absolute right-0 top-0 h-full w-3rem border-none bg-indigo-600 border-round-right-xl text-white cursor-pointer hover:bg-indigo-700">
+      <i class="pi pi-search"></i>
+    </button>
+  </div>
+
+  <!-- Tarjeta Cliente -->
+  @if (posService.currentCustomer()) {
+    <div
+      class="mt-2 bg-indigo-50 border-1 border-indigo-100 border-round-xl p-2 flex justify-content-between align-items-center slide-down animation-duration-200">
+      <div class="flex align-items-center gap-2 overflow-hidden">
+        <div
+          class="bg-indigo-600 text-white border-circle w-2rem h-2rem flex align-items-center justify-content-center flex-shrink-0">
+          <i class="pi pi-check text-xs"></i>
+        </div>
+        <div class="overflow-hidden">
+          <div
+            class="font-bold text-indigo-900 text-sm white-space-nowrap overflow-hidden text-overflow-ellipsis">
+            {{ posService.currentCustomer()?.name }}
+          </div>
+          <div class="text-xs text-indigo-500 font-medium">
+            {{ posService.currentCustomer()?.dni }}
+          </div>
+        </div>
+      </div>
+      <button
+        class="bg-transparent border-none text-gray-400 hover:text-gray-600 cursor-pointer p-2"
+        (click)="reset()">
+        <i class="pi pi-times"></i>
+      </button>
+    </div>
+  }
+</header>

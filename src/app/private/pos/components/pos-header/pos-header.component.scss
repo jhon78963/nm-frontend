@@ -1,0 +1,16 @@
+.shadow-input {
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+}
+.slide-down {
+  animation: slidedown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes slidedown {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

@@ -78,6 +78,17 @@ export class AppMenuComponent implements OnInit {
             },
           ],
         },
+        {
+          label: 'POS',
+          icon: 'pi pi-users',
+          items: [
+            {
+              label: 'POS',
+              icon: 'pi pi-fw pi-user',
+              routerLink: ['/pos'],
+            },
+          ],
+        },
       ];
     } else {
       this.model = [];

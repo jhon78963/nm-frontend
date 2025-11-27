@@ -1,0 +1,22 @@
+.fadein-animation {
+  animation: fadein 0.3s ease-out;
+}
+@keyframes fadein {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.item-card {
+  transition: transform 0.1s;
+}
+.item-card:active {
+  transform: scale(0.98);
+}
+/* Estilo para que el scrollbar sea invisible pero funcional */
+main::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}

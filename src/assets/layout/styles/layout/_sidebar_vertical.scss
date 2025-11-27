@@ -9,6 +9,7 @@
     box-shadow: var(--sidebar-shadow);
     display: flex;
     flex-direction: column;
+    z-index: 2;
 
     .sidebar-header {
         padding-top: 1.5rem;

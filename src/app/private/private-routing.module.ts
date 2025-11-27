@@ -39,6 +39,12 @@ const routes: Routes = [
       import('./directory/directory.module').then(m => m.DirectoryModule),
   },
   {
+    path: 'pos',
+    title: 'POS',
+    data: { breadcrumb: 'POS' },
+    loadChildren: () => import('./pos/pos.module').then(m => m.PosModule),
+  },
+  {
     path: '',
     pathMatch: 'full',
     redirectTo: 'home',

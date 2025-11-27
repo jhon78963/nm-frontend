@@ -1,0 +1,129 @@
+<div
+  class="flex flex-column h-screen bg-ground font-family overflow-hidden relative bg-white rounded-xl">
+  <!-- Toast Global -->
+  @if (posService.toastMessage()) {
+    <div
+      class="fixed top-0 left-50 border-round-2xl mt-4 px-4 py-3 shadow-6 z-5 bg-gray-900 text-white flex align-items-center gap-2 fadein-animation"
+      style="transform: translateX(-50%)">
+      <i class="pi pi-info-circle text-lg"></i>
+      <span class="font-bold text-sm">{{ posService.toastMessage() }}</span>
+    </div>
+  }
+
+  <!-- Header -->
+  <app-pos-header></app-pos-header>
+
+  <!-- Main Content -->
+  <main
+    class="flex-1 overflow-y-auto p-3 pb-8"
+    #mainScroll
+    style="padding-bottom: 140px !important">
+    <!-- Scanner -->
+    <div
+      class="mb-4 bg-white border-round-xl shadow-1 overflow-hidden flex align-items-center border-1 border-gray-100">
+      <input
+        #barcodeInput
+        type="text"
+        [(ngModel)]="barcodeQuery"
+        (keydown.enter)="onScan()"
+        class="flex-1 py-3 px-3 text-lg font-mono border-none outline-none text-gray-800 placeholder-gray-400"
+        placeholder="Escanear código..."
+        autofocus />
+      <button
+        class="bg-gray-100 text-gray-600 border-none px-4 py-3 cursor-pointer hover:bg-gray-200 border-left-1 border-gray-200"
+        (click)="onScan()">
+        <i class="pi pi-barcode text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Toolbar -->
+    <div
+      class="flex justify-content-between align-items-end mb-3 px-1 border-bottom-1 border-gray-200 pb-2">
+      <span class="text-xs font-bold text-gray-500 uppercase tracking-widest"
+        >Carrito ({{ posService.totalItems() }})</span
+      >
+      <span
+        class="text-xs font-bold text-red-500 cursor-pointer hover:text-red-700 uppercase"
+        *ngIf="posService.cart().length > 0"
+        (click)="posService.clearCart()"
+        >Vaciar</span
+      >
+    </div>
+
+    <!-- Lista -->
+    @if (posService.cart().length === 0) {
+      <div
+        class="flex flex-column align-items-center justify-content-center py-8 opacity-40 text-gray-400">
+        <i class="pi pi-shopping-bag text-6xl mb-3 text-gray-300"></i>
+        <span class="text-sm font-medium">Empieza a escanear</span>
+      </div>
+    } @else {
+      <div class="flex flex-column gap-3">
+        @for (item of posService.cart(); track item.cartId) {
+          <div
+            class="bg-white p-3 border-round-2xl shadow-1 flex gap-3 relative overflow-hidden fadein-animation border-1 border-gray-50 item-card">
+            <div
+              class="w-3rem h-3rem border-circle shadow-1 flex-shrink-0 mt-1"
+              [style.background-color]="item.color.hex"
+              [class.border-1]="item.color.hex === '#ffffff'"
+              [class.border-gray-200]="item.color.hex === '#ffffff'"></div>
+
+            <div class="flex-1 min-w-0">
+              <div class="flex justify-content-between align-items-start mb-1">
+                <span
+                  class="font-bold text-gray-900 text-sm line-height-2 block pr-2"
+                  >{{ item.name }}</span
+                >
+                <i
+                  class="pi pi-trash text-red-300 hover:text-red-500 cursor-pointer p-1"
+                  (click)="posService.removeItem(item.cartId)"></i>
+              </div>
+
+              <div class="flex align-items-center flex-wrap gap-2">
+                <div
+                  class="bg-gray-50 border-1 border-gray-200 border-round-lg px-2 py-1 flex align-items-center gap-1 cursor-pointer hover:bg-gray-100 transition-colors"
+                  (click)="posService.openEditModal(item)">
+                  <span class="text-xs font-bold text-gray-600 uppercase"
+                    >{{ item.size }} • {{ item.color.colorName }}</span
+                  >
+                  <i class="pi pi-pencil text-xs text-indigo-400 ml-1"></i>
+                </div>
+                <span
+                  class="ml-auto font-bold text-indigo-600 text-sm cursor-pointer border-bottom-1 border-indigo-300"
+                  (click)="posService.openEditModal(item)">
+                  S/ {{ item.unitPrice | number: '1.2-2' }}
+                </span>
+              </div>
+
+              <div
+                class="flex justify-content-between align-items-center mt-3 pt-2 border-top-1 border-gray-100">
+                <div
+                  class="flex align-items-center bg-gray-50 border-round-lg border-1 border-gray-200 h-2rem shadow-none">
+                  <button
+                    class="border-none bg-transparent px-3 h-full text-gray-500 font-bold hover:bg-gray-200 border-round-left-lg cursor-pointer"
+                    (click)="posService.updateQuantity(item.cartId, -1)">
+                    -
+                  </button>
+                  <span class="font-bold text-sm w-2rem text-center">{{
+                    item.quantity
+                  }}</span>
+                  <button
+                    class="border-none bg-transparent px-3 h-full text-indigo-600 font-bold hover:bg-indigo-50 border-round-right-lg cursor-pointer"
+                    (click)="posService.updateQuantity(item.cartId, 1)">
+                    +
+                  </button>
+                </div>
+                <span class="font-bold text-sm text-gray-800"
+                  >Total: S/ {{ item.total | number: '1.2-2' }}</span
+                >
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </main>
+
+  <app-pos-footer class="z-2"></app-pos-footer>
+  <app-pos-selector class="z-3"></app-pos-selector>
+</div>
