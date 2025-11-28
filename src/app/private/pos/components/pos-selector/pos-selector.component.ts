@@ -36,61 +36,76 @@ export class PosSelectorComponent {
   constructor() {
     effect(
       () => {
-        // 1. Leemos la señal (esto dispara el efecto)
         const state = this.posService.modalState();
 
-        // 2. Usamos untracked para que la lógica interna NO dispare el efecto en bucle
         untracked(() => {
           if (state.isOpen) {
-            // --- LIMPIEZA TOTAL AL ABRIR ---
+            // 1. LIMPIEZA INICIAL
             this.tempSize.set(null);
             this.tempColor.set(null);
             this.tempQty = 1;
             this.tempPrice = 0;
-            // Si tienes variables de arrays visibles, límpialas aquí también si es necesario,
-            // aunque selectSize debería encargarse.
 
-            // CASO A: EDICIÓN
+            // ---------------------------------------------------------
+            // CASO A: EDICIÓN (Aquí estaba tu problema, estaba vacío)
+            // ---------------------------------------------------------
             if (state.isEditing && state.editingCartItem) {
-              // ... (tu código de edición, está ok) ...
+              const item = state.editingCartItem;
+
+              // A.1 Restaurar Talla
+              this.tempSize.set(item.size);
+
+              // A.2 Restaurar Cantidad y Precio guardado
+              this.tempQty = item.quantity;
+              this.tempPrice = item.unitPrice;
+
+              // A.3 Restaurar Color (TRUCO: Buscar la referencia exacta)
+              // Necesitamos encontrar el objeto "color" dentro de las variantes del producto actual
+              // para que la comparación (===) del HTML funcione y se pinte seleccionado.
+              if (state.product && state.product.variants[item.size]) {
+                const variantesDeTalla = state.product.variants[item.size];
+
+                // Buscamos por ID o por Nombre para encontrar el objeto "fresco"
+                const matchColor = variantesDeTalla.find(
+                  (v: any) =>
+                    v.color_id === item.color.color_id &&
+                    v.colorName === item.color.colorName,
+                );
+
+                if (matchColor) {
+                  this.tempColor.set(matchColor);
+                }
+              }
             }
-            // CASO B: NUEVO PRODUCTO (Tu problema actual)
+
+            // ---------------------------------------------------------
+            // CASO B: NUEVO PRODUCTO
+            // ---------------------------------------------------------
             else if (state.product) {
-              const scannedSku = state.product.sku; // Ojo: asegúrate que este sea el SKU que quieres buscar
+              const scannedSku = state.product.sku;
               let foundSizeKey: string | null = null;
               let foundVariant: any = null;
 
-              // Búsqueda del SKU dentro de las variantes
-              // Iteramos las llaves del mapa (ej: "S", "M", "L" o "28", "30", etc.)
               for (const sizeKey in state.product.variants) {
                 const variantsList = state.product.variants[sizeKey];
-
-                // Buscamos si alguna variante en esta talla tiene el SKU escaneado
                 const match = variantsList.find(
                   (v: any) => v.sku === scannedSku,
                 );
-
                 if (match) {
                   foundSizeKey = sizeKey;
                   foundVariant = match;
-                  break; // ¡Encontrado! Salimos del loop
+                  break;
                 }
               }
 
-              console.log('SKU Encontrado en talla:', foundSizeKey); // Debería salir solo una vez
-
               if (foundSizeKey) {
-                // 1. Seleccionamos la talla (ESTO DEBE LIMPIAR EL ARRAY INTERNAMENTE)
                 this.selectSize(foundSizeKey);
 
-                // 2. Seleccionamos el color/variante específica
                 if (foundVariant) {
                   this.tempPrice = foundVariant.price;
-
                   if (foundVariant.color_id > 0) {
                     this.selectColor(foundVariant);
                   } else {
-                    // Caso color único
                     const unique = state.product.variants[foundSizeKey].find(
                       (v: any) => v.color_id === 0,
                     );
@@ -98,7 +113,6 @@ export class PosSelectorComponent {
                   }
                 }
               } else {
-                // Fallback: Si no se encuentra variante específica, precio base
                 this.tempPrice = state.product.basePrice;
               }
             }
