@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CartItem, Variant } from '../../models/pos.models';
 import { PosService } from '../../services/pos.service';
@@ -17,75 +24,86 @@ export class PosSelectorComponent {
   tempColor = signal<Variant | null>(null);
   tempQty = 1;
   tempPrice = 0;
+  displaySku = computed(() => {
+    const state = this.posService.modalState();
+    if (!state.product) return '';
+    // Si hay variante completa seleccionada, muestra su SKU, si no el del padre
+    return this.tempColor() && this.tempColor()?.sku
+      ? this.tempColor()?.sku
+      : state.product.sku;
+  });
 
   constructor() {
     effect(
       () => {
+        // 1. Leemos la señal (esto dispara el efecto)
         const state = this.posService.modalState();
-        if (state.isOpen) {
-          // REINICIAR ESTADO
-          this.tempSize.set(null);
-          this.tempColor.set(null);
-          this.tempQty = 1;
 
-          // CASO 1: EDICIÓN (Ya existe en carrito)
-          if (state.isEditing && state.editingCartItem) {
-            const item = state.editingCartItem;
-            this.tempSize.set(item.size);
-            this.tempQty = item.quantity;
-            this.tempPrice = item.unitPrice;
-            setTimeout(() => {
-              const colors = this.availableColors();
-              const match =
-                colors.find(
-                  c =>
-                    c.hex === item.color.hex &&
-                    c.colorName === item.color.colorName,
-                ) || null;
-              this.tempColor.set(match);
-            }, 0);
+        // 2. Usamos untracked para que la lógica interna NO dispare el efecto en bucle
+        untracked(() => {
+          if (state.isOpen) {
+            // --- LIMPIEZA TOTAL AL ABRIR ---
+            this.tempSize.set(null);
+            this.tempColor.set(null);
+            this.tempQty = 1;
+            this.tempPrice = 0;
+            // Si tienes variables de arrays visibles, límpialas aquí también si es necesario,
+            // aunque selectSize debería encargarse.
 
-            // CASO 2: NUEVO PRODUCTO
-          } else if (state.product) {
-            // LÓGICA DE AUTO-SELECCIÓN POR SKU 🚀
-            const scannedSku = state.product.sku;
-            let foundSize = null;
-            let foundVariant = null;
-
-            // Buscamos si alguna variante coincide con el SKU escaneado
-            // IMPORTANTE: Tu backend debe enviar 'sku' dentro del objeto variante para que esto funcione 100%
-            for (const sizeKey in state.product.variants) {
-              const variantsList = state.product.variants[sizeKey];
-              const match = variantsList.find(v => v.sku === scannedSku);
-              if (match) {
-                foundSize = sizeKey;
-                foundVariant = match;
-                break;
-              }
+            // CASO A: EDICIÓN
+            if (state.isEditing && state.editingCartItem) {
+              // ... (tu código de edición, está ok) ...
             }
+            // CASO B: NUEVO PRODUCTO (Tu problema actual)
+            else if (state.product) {
+              const scannedSku = state.product.sku; // Ojo: asegúrate que este sea el SKU que quieres buscar
+              let foundSizeKey: string | null = null;
+              let foundVariant: any = null;
 
-            // Si encontramos el match, seleccionamos automáticamente
-            if (foundSize) {
-              this.selectSize(foundSize);
-              if (foundVariant) {
-                this.tempPrice = foundVariant.price;
-                // Si tiene color específico, lo seleccionamos también
-                if (foundVariant.color_id > 0) {
-                  this.selectColor(foundVariant);
-                } else {
-                  // Si es color "Único", lo seleccionamos por defecto
-                  const unique = state.product.variants[foundSize].find(
-                    v => v.color_id === 0,
-                  );
-                  if (unique) this.selectColor(unique);
+              // Búsqueda del SKU dentro de las variantes
+              // Iteramos las llaves del mapa (ej: "S", "M", "L" o "28", "30", etc.)
+              for (const sizeKey in state.product.variants) {
+                const variantsList = state.product.variants[sizeKey];
+
+                // Buscamos si alguna variante en esta talla tiene el SKU escaneado
+                const match = variantsList.find(
+                  (v: any) => v.sku === scannedSku,
+                );
+
+                if (match) {
+                  foundSizeKey = sizeKey;
+                  foundVariant = match;
+                  break; // ¡Encontrado! Salimos del loop
                 }
               }
-            } else {
-              // Si no hubo match exacto (se escaneó el producto general), usamos el precio base
-              this.tempPrice = state.product.basePrice;
+
+              console.log('SKU Encontrado en talla:', foundSizeKey); // Debería salir solo una vez
+
+              if (foundSizeKey) {
+                // 1. Seleccionamos la talla (ESTO DEBE LIMPIAR EL ARRAY INTERNAMENTE)
+                this.selectSize(foundSizeKey);
+
+                // 2. Seleccionamos el color/variante específica
+                if (foundVariant) {
+                  this.tempPrice = foundVariant.price;
+
+                  if (foundVariant.color_id > 0) {
+                    this.selectColor(foundVariant);
+                  } else {
+                    // Caso color único
+                    const unique = state.product.variants[foundSizeKey].find(
+                      (v: any) => v.color_id === 0,
+                    );
+                    if (unique) this.selectColor(unique);
+                  }
+                }
+              } else {
+                // Fallback: Si no se encuentra variante específica, precio base
+                this.tempPrice = state.product.basePrice;
+              }
             }
           }
-        }
+        });
       },
       { allowSignalWrites: true },
     );
@@ -103,10 +121,8 @@ export class PosSelectorComponent {
   });
 
   selectSize(size: string) {
-    console.log('gola');
     this.tempSize.set(size);
     this.tempColor.set(null);
-    // Al cambiar talla, actualizamos precio al de la primera variante de esa talla
     const variants = this.availableColors();
     if (variants.length > 0) {
       this.tempPrice = variants[0].price;

@@ -180,8 +180,9 @@ export class PosService {
     // del producto de nuevo para tener sus variantes frescas.
     // Por simplicidad en este ejemplo, buscaremos si acabamos de escanearlo o asumimos integridad.
     // Para producción: Llamar a searchProductBySku(item.sku) antes de abrir.
-
+    console.log(item);
     this.searchProductBySku(item.sku).then(prod => {
+      console.log(prod);
       if (prod) {
         this.modalState.set({
           isOpen: true,
