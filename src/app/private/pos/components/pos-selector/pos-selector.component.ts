@@ -14,25 +14,21 @@ import { PosService } from '../../services/pos.service';
 export class PosSelectorComponent {
   posService = inject(PosService);
 
-  // Variables locales del formulario
   tempSize = signal<string | null>(null);
   tempColor = signal<Variant | null>(null);
   tempQty = 1;
   tempPrice = 0;
 
-  // Reactividad para cargar datos cuando se abre el modal
   constructor() {
     effect(
       () => {
         const state = this.posService.modalState();
         if (state.isOpen) {
           if (state.isEditing && state.editingCartItem) {
-            // Modo Edición: Cargar datos del item
             const item = state.editingCartItem;
             this.tempSize.set(item.size);
             this.tempQty = item.quantity;
             this.tempPrice = item.unitPrice;
-            // Buscar color exacto para setear referencia
             setTimeout(() => {
               const colors = this.availableColors();
               const match =
@@ -44,10 +40,10 @@ export class PosSelectorComponent {
               this.tempColor.set(match);
             }, 0);
           } else if (state.product) {
-            // Modo Agregar: Reset
             this.tempSize.set(null);
             this.tempColor.set(null);
             this.tempQty = 1;
+            // Usamos el precio de la talla seleccionada si ya hay, o el base
             this.tempPrice = state.product.basePrice;
           }
         }
@@ -56,7 +52,6 @@ export class PosSelectorComponent {
     );
   }
 
-  // Computeds para Opciones
   availableSizes = computed(() => {
     const prod = this.posService.modalState().product;
     return prod ? Object.keys(prod.variants) : [];
@@ -69,14 +64,23 @@ export class PosSelectorComponent {
     return prod.variants[size] || [];
   });
 
-  // Acciones
   selectSize(size: string) {
     this.tempSize.set(size);
     this.tempColor.set(null);
+
+    // Al cambiar talla, actualizar el precio sugerido
+    // Laravel nos devuelve el precio en la variante, pero aquí solo tenemos la lista de variantes por color.
+    // Podemos tomar el precio de la primera variante de color de esta talla como referencia
+    const variants = this.availableColors();
+    if (variants.length > 0) {
+      this.tempPrice = variants[0].price;
+    }
   }
 
   selectColor(variant: Variant) {
     this.tempColor.set(variant);
+    // Si la variante específica tiene un precio diferente, lo seteamos
+    this.tempPrice = variant.price;
   }
 
   adjustTempQty(delta: number) {
@@ -97,7 +101,6 @@ export class PosSelectorComponent {
     const total = this.tempPrice * this.tempQty;
 
     if (state.isEditing && state.editingCartItem) {
-      // Actualizar
       const updatedItem: CartItem = {
         ...state.editingCartItem,
         size,
@@ -108,7 +111,6 @@ export class PosSelectorComponent {
       };
       this.posService.updateItem(updatedItem);
     } else {
-      // Agregar Nuevo
       const newItem: CartItem = {
         cartId: Date.now(),
         productId: state.product.id,

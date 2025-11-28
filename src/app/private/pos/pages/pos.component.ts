@@ -31,17 +31,15 @@ export class PosComponent implements AfterViewChecked {
   barcodeQuery = '';
   @ViewChild('barcodeInput') barcodeInput!: ElementRef;
 
-  onScan() {
+  async onScan() {
     const code = this.barcodeQuery.trim();
     if (!code) return;
-
-    const prod = this.posService.searchProductBySku(code);
+    const prod = await this.posService.searchProductBySku(code);
     if (prod) {
       this.posService.openAddModal(prod);
       this.barcodeQuery = '';
     } else {
-      this.posService.showToast(`Código ${code} no existe`);
-      this.barcodeQuery = '';
+      this.barcodeQuery = ''; // Toast manejado en servicio
     }
   }
 

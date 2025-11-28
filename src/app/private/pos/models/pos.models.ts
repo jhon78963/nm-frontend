@@ -1,7 +1,13 @@
 export interface Variant {
+  // IDs necesarios para la venta (backend)
+  product_size_id: number;
+  color_id: number;
+
+  // Datos visuales
   colorName: string;
   hex: string;
   stock: number;
+  price: number; // Precio específico de la variante
 }
 
 export interface Product {
@@ -9,7 +15,7 @@ export interface Product {
   sku: string;
   name: string;
   basePrice: number;
-  variants: { [size: string]: Variant[] };
+  variants: { [size: string]: Variant[] }; // Mapa: "S" -> [Rojo, Azul]
 }
 
 export interface CartItem {
@@ -18,7 +24,7 @@ export interface CartItem {
   sku: string;
   name: string;
   size: string;
-  color: Variant;
+  color: Variant; // Aquí viajan los IDs product_size_id y color_id
   quantity: number;
   unitPrice: number;
   total: number;
@@ -26,11 +32,10 @@ export interface CartItem {
 
 export interface Customer {
   id: string;
-  dni: string;
+  dni: string; // O RUC
   name: string;
 }
 
-// Estado del Modal para manejarlo desde el servicio
 export interface ModalState {
   isOpen: boolean;
   product: Product | null;

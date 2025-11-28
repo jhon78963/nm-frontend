@@ -1,5 +1,45 @@
 <div
   class="fixed bottom-0 left-0 w-full bg-white z-4 shadow-top border-top-1 border-gray-100 px-4 py-3 fadein-animation">
+  <div class="flex gap-2 mb-3">
+    <!-- Opción: EFECTIVO -->
+    <div
+      class="flex-1 border-1 border-round-xl p-2 cursor-pointer transition-all flex flex-column align-items-center justify-content-center gap-1"
+      [class.border-indigo-600]="posService.paymentMethod() === 'CASH'"
+      [class.bg-indigo-50]="posService.paymentMethod() === 'CASH'"
+      [class.text-indigo-700]="posService.paymentMethod() === 'CASH'"
+      [class.border-gray-200]="posService.paymentMethod() !== 'CASH'"
+      [class.text-gray-500]="posService.paymentMethod() !== 'CASH'"
+      (click)="posService.setPaymentMethod('CASH')">
+      <i class="pi pi-money-bill text-xl"></i>
+      <span class="text-xs font-bold">Efectivo</span>
+    </div>
+
+    <!-- Opción: YAPE/PLIN -->
+    <div
+      class="flex-1 border-1 border-round-xl p-2 cursor-pointer transition-all flex flex-column align-items-center justify-content-center gap-1"
+      [class.border-pink-500]="posService.paymentMethod() === 'QR'"
+      [class.bg-pink-50]="posService.paymentMethod() === 'QR'"
+      [class.text-pink-600]="posService.paymentMethod() === 'QR'"
+      [class.border-gray-200]="posService.paymentMethod() !== 'QR'"
+      [class.text-gray-500]="posService.paymentMethod() !== 'QR'"
+      (click)="posService.setPaymentMethod('QR')">
+      <i class="pi pi-qrcode text-xl"></i>
+      <span class="text-xs font-bold">Yape/Plin</span>
+    </div>
+
+    <!-- Opción: TARJETA/TRANSF -->
+    <div
+      class="flex-1 border-1 border-round-xl p-2 cursor-pointer transition-all flex flex-column align-items-center justify-content-center gap-1"
+      [class.border-indigo-600]="posService.paymentMethod() === 'TRANSFER'"
+      [class.bg-indigo-50]="posService.paymentMethod() === 'TRANSFER'"
+      [class.text-indigo-700]="posService.paymentMethod() === 'TRANSFER'"
+      [class.border-gray-200]="posService.paymentMethod() !== 'TRANSFER'"
+      [class.text-gray-500]="posService.paymentMethod() !== 'TRANSFER'"
+      (click)="posService.setPaymentMethod('TRANSFER')">
+      <i class="pi pi-credit-card text-xl"></i>
+      <span class="text-xs font-bold">Tarjeta</span>
+    </div>
+  </div>
   <div class="flex justify-content-between align-items-center mb-3">
     <span class="text-xs font-bold text-gray-500 uppercase letter-spacing-1"
       >Total a Pagar</span

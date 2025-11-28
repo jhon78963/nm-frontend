@@ -1,51 +1,25 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { CartItem, Customer, Product, ModalState } from '../models/pos.models';
-
-// MOCK DB (Bórralo cuando conectes tu API)
-const MOCK_DB: Product[] = [
-  {
-    id: '1',
-    sku: '1001',
-    name: 'Polo Slim Fit Algodón',
-    basePrice: 35.0,
-    variants: {
-      S: [
-        { colorName: 'Negro', hex: '#000000', stock: 10 },
-        { colorName: 'Blanco', hex: '#ffffff', stock: 5 },
-      ],
-      M: [
-        { colorName: 'Rojo', hex: '#ef4444', stock: 3 },
-        { colorName: 'Negro', hex: '#000000', stock: 8 },
-      ],
-    },
-  },
-  {
-    id: '2',
-    sku: '2002',
-    name: 'Jeans Denim Clásico',
-    basePrice: 80.0,
-    variants: {
-      '30': [{ colorName: 'Azul', hex: '#1e3a8a', stock: 15 }],
-      '32': [{ colorName: 'Negro', hex: '#000000', stock: 4 }],
-    },
-  },
-];
+import { firstValueFrom } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable({ providedIn: 'root' })
 export class PosService {
-  // --- STATE SIGNALS ---
+  private http = inject(HttpClient);
+  // Cambia esto por la URL real de tu API Laravel
+  private readonly API_URL = 'http://localhost:8000/api/pos';
+
+  // --- STATE ---
   cart = signal<CartItem[]>([]);
   currentCustomer = signal<Customer | null>(null);
-
-  // Estado del Modal (Selector)
   modalState = signal<ModalState>({
     isOpen: false,
     product: null,
     isEditing: false,
   });
-
-  // Toast Global
   toastMessage = signal<string | null>(null);
+  paymentMethod = signal<'CASH' | 'QR' | 'TRANSFER'>('CASH');
+  isLoading = signal<boolean>(false);
 
   // --- COMPUTEDS ---
   grandTotal = computed(() =>
@@ -55,29 +29,106 @@ export class PosService {
     this.cart().reduce((acc, item) => acc + item.quantity, 0),
   );
 
-  // --- MÉTODOS (Aquí irían tus APIs) ---
+  // --- API METHODS ---
 
-  searchProductBySku(sku: string): Product | undefined {
-    // TODO: Reemplazar con API -> return this.http.get<Product>(`/api/products/${sku}`)
-    return MOCK_DB.find(p => p.sku === sku);
-  }
-
-  searchCustomerByDni(dni: string) {
-    // TODO: Reemplazar con API -> this.http.get<Customer>(`/api/customers/${dni}`).subscribe(...)
-    if (dni.length >= 8) {
-      this.currentCustomer.set({
-        id: 'c1',
-        dni,
-        name: 'Empresa Textil S.A.C.',
-      });
-      this.showToast('Cliente Encontrado');
-      return true;
+  async searchProductBySku(sku: string): Promise<Product | undefined> {
+    this.isLoading.set(true);
+    try {
+      // GET /api/pos/products?sku={sku}
+      const product = await firstValueFrom(
+        this.http.get<Product>(`${this.API_URL}/products`, { params: { sku } }),
+      );
+      return product;
+    } catch (error) {
+      console.error('Error buscando producto:', error);
+      this.showToast('Producto no encontrado');
+      return undefined;
+    } finally {
+      this.isLoading.set(false);
     }
-    this.showToast('DNI Inválido');
-    return false;
   }
 
-  // --- GESTIÓN DEL CARRITO ---
+  async searchCustomerByDni(dni: string): Promise<boolean> {
+    this.isLoading.set(true);
+    try {
+      // GET /api/pos/customers?dni={dni}
+      const customer = await firstValueFrom(
+        this.http.get<Customer>(`${this.API_URL}/customers`, {
+          params: { dni },
+        }),
+      );
+
+      if (customer) {
+        this.currentCustomer.set(customer);
+        this.showToast('Cliente encontrado');
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error buscando cliente:', error);
+      this.showToast('Cliente no encontrado / Error API');
+      return false;
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  async processCheckout() {
+    if (this.cart().length === 0) {
+      return this.showToast('El carrito está vacío');
+    }
+    if (!this.currentCustomer()) {
+      return this.showToast('Seleccione un cliente');
+    }
+
+    this.isLoading.set(true);
+
+    // Payload exacto para tu Laravel SaleService
+    const payload = {
+      customer: { id: this.currentCustomer()!.id },
+      total: this.grandTotal(),
+      payment_method: this.paymentMethod(),
+      items: this.cart().map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        total: item.total,
+        size: item.size, // Informativo
+        // Aquí enviamos el objeto color que contiene los IDs críticos
+        color: {
+          product_size_id: item.color.product_size_id,
+          color_id: item.color.color_id,
+          colorName: item.color.colorName,
+          hex: item.color.hex,
+          stock: item.color.stock,
+        },
+      })),
+    };
+
+    try {
+      // POST /api/pos/checkout
+      const response: any = await firstValueFrom(
+        this.http.post(`${this.API_URL}/checkout`, payload),
+      );
+
+      if (response.success) {
+        alert(
+          `✅ Venta Registrada ID: ${response.sale_id}\nImprimiendo ticket...`,
+        );
+        this.clearCart();
+      } else {
+        alert('❌ Error al procesar venta: ' + response.message);
+      }
+    } catch (error: any) {
+      console.error('Checkout error:', error);
+      const msg = error.error?.message || 'Error de conexión';
+      alert('❌ Error: ' + msg);
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  // --- GESTIÓN LOCAL (Sin cambios mayores) ---
 
   addItem(item: CartItem) {
     this.cart.update(prev => [...prev, item]);
@@ -98,6 +149,7 @@ export class PosService {
   clearCart() {
     this.cart.set([]);
     this.currentCustomer.set(null);
+    this.paymentMethod.set('CASH');
   }
 
   updateQuantity(cartId: number, delta: number) {
@@ -106,8 +158,10 @@ export class PosService {
         if (item.cartId === cartId) {
           const newQty = item.quantity + delta;
           if (newQty <= 0) return item;
+
+          // Validación local de stock
           if (newQty > item.color.stock) {
-            this.showToast(`Max Stock: ${item.color.stock}`);
+            this.showToast(`Stock máx: ${item.color.stock}`);
             return item;
           }
           return { ...item, quantity: newQty, total: newQty * item.unitPrice };
@@ -117,42 +171,38 @@ export class PosService {
     );
   }
 
-  // --- GESTIÓN DEL MODAL ---
-
   openAddModal(product: Product) {
     this.modalState.set({ isOpen: true, product, isEditing: false });
   }
 
   openEditModal(item: CartItem) {
-    const product = MOCK_DB.find(p => p.sku === item.sku); // O buscar en tu lista de productos cargados
-    if (product) {
-      this.modalState.set({
-        isOpen: true,
-        product,
-        isEditing: true,
-        editingCartItem: item,
-      });
-    }
+    // Nota: Como no tenemos toda la DB en memoria, idealmente aquí haríamos un fetch
+    // del producto de nuevo para tener sus variantes frescas.
+    // Por simplicidad en este ejemplo, buscaremos si acabamos de escanearlo o asumimos integridad.
+    // Para producción: Llamar a searchProductBySku(item.sku) antes de abrir.
+
+    this.searchProductBySku(item.sku).then(prod => {
+      if (prod) {
+        this.modalState.set({
+          isOpen: true,
+          product: prod,
+          isEditing: true,
+          editingCartItem: item,
+        });
+      }
+    });
   }
 
   closeModal() {
     this.modalState.set({ isOpen: false, product: null, isEditing: false });
   }
 
-  // --- UTILIDADES ---
   showToast(msg: string) {
     this.toastMessage.set(msg);
     setTimeout(() => this.toastMessage.set(null), 2500);
   }
 
-  processCheckout() {
-    // TODO: Enviar venta al backend
-    console.log('Venta:', {
-      customer: this.currentCustomer(),
-      items: this.cart(),
-      total: this.grandTotal(),
-    });
-    alert('✅ Venta Procesada');
-    this.clearCart();
+  setPaymentMethod(method: 'CASH' | 'QR' | 'TRANSFER') {
+    this.paymentMethod.set(method);
   }
 }
