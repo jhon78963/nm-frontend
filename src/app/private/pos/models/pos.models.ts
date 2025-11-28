@@ -8,6 +8,7 @@ export interface Variant {
   hex: string;
   stock: number;
   price: number; // Precio específico de la variante
+  sku?: string; // <--- NUEVO: Necesario para la auto-selección
 }
 
 export interface Product {

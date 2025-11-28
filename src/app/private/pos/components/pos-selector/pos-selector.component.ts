@@ -13,7 +13,6 @@ import { PosService } from '../../services/pos.service';
 })
 export class PosSelectorComponent {
   posService = inject(PosService);
-
   tempSize = signal<string | null>(null);
   tempColor = signal<Variant | null>(null);
   tempQty = 1;
@@ -24,6 +23,12 @@ export class PosSelectorComponent {
       () => {
         const state = this.posService.modalState();
         if (state.isOpen) {
+          // REINICIAR ESTADO
+          this.tempSize.set(null);
+          this.tempColor.set(null);
+          this.tempQty = 1;
+
+          // CASO 1: EDICIÓN (Ya existe en carrito)
           if (state.isEditing && state.editingCartItem) {
             const item = state.editingCartItem;
             this.tempSize.set(item.size);
@@ -39,12 +44,46 @@ export class PosSelectorComponent {
                 ) || null;
               this.tempColor.set(match);
             }, 0);
+
+            // CASO 2: NUEVO PRODUCTO
           } else if (state.product) {
-            this.tempSize.set(null);
-            this.tempColor.set(null);
-            this.tempQty = 1;
-            // Usamos el precio de la talla seleccionada si ya hay, o el base
-            this.tempPrice = state.product.basePrice;
+            // LÓGICA DE AUTO-SELECCIÓN POR SKU 🚀
+            const scannedSku = state.product.sku;
+            let foundSize = null;
+            let foundVariant = null;
+
+            // Buscamos si alguna variante coincide con el SKU escaneado
+            // IMPORTANTE: Tu backend debe enviar 'sku' dentro del objeto variante para que esto funcione 100%
+            for (const sizeKey in state.product.variants) {
+              const variantsList = state.product.variants[sizeKey];
+              const match = variantsList.find(v => v.sku === scannedSku);
+              if (match) {
+                foundSize = sizeKey;
+                foundVariant = match;
+                break;
+              }
+            }
+
+            // Si encontramos el match, seleccionamos automáticamente
+            if (foundSize) {
+              this.selectSize(foundSize);
+              if (foundVariant) {
+                this.tempPrice = foundVariant.price;
+                // Si tiene color específico, lo seleccionamos también
+                if (foundVariant.color_id > 0) {
+                  this.selectColor(foundVariant);
+                } else {
+                  // Si es color "Único", lo seleccionamos por defecto
+                  const unique = state.product.variants[foundSize].find(
+                    v => v.color_id === 0,
+                  );
+                  if (unique) this.selectColor(unique);
+                }
+              }
+            } else {
+              // Si no hubo match exacto (se escaneó el producto general), usamos el precio base
+              this.tempPrice = state.product.basePrice;
+            }
           }
         }
       },
@@ -56,7 +95,6 @@ export class PosSelectorComponent {
     const prod = this.posService.modalState().product;
     return prod ? Object.keys(prod.variants) : [];
   });
-
   availableColors = computed(() => {
     const prod = this.posService.modalState().product;
     const size = this.tempSize();
@@ -65,12 +103,10 @@ export class PosSelectorComponent {
   });
 
   selectSize(size: string) {
+    console.log('gola');
     this.tempSize.set(size);
     this.tempColor.set(null);
-
-    // Al cambiar talla, actualizar el precio sugerido
-    // Laravel nos devuelve el precio en la variante, pero aquí solo tenemos la lista de variantes por color.
-    // Podemos tomar el precio de la primera variante de color de esta talla como referencia
+    // Al cambiar talla, actualizamos precio al de la primera variante de esa talla
     const variants = this.availableColors();
     if (variants.length > 0) {
       this.tempPrice = variants[0].price;
@@ -79,8 +115,7 @@ export class PosSelectorComponent {
 
   selectColor(variant: Variant) {
     this.tempColor.set(variant);
-    // Si la variante específica tiene un precio diferente, lo seteamos
-    this.tempPrice = variant.price;
+    this.tempPrice = variant.price; // Actualizar precio al del color específico
   }
 
   adjustTempQty(delta: number) {
@@ -95,9 +130,7 @@ export class PosSelectorComponent {
     const state = this.posService.modalState();
     const size = this.tempSize();
     const color = this.tempColor();
-
     if (!state.product || !size || !color) return;
-
     const total = this.tempPrice * this.tempQty;
 
     if (state.isEditing && state.editingCartItem) {

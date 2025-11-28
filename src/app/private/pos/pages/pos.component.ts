@@ -7,10 +7,10 @@ import {
 } from '@angular/core';
 import { PosHeaderComponent } from '../components/pos-header/pos-header.component';
 import { PosFooterComponent } from '../components/pos-footer/pos-footer.component';
-import { PosSelectorComponent } from '../components/pos-selector/pos-selector.component';
 import { PosService } from '../services/pos.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { PosSelectorComponent } from '../components/pos-selector/pos-selector.component';
 
 @Component({
   selector: 'app-pos',

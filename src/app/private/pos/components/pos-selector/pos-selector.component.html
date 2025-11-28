@@ -22,8 +22,8 @@
       <!-- Precio Negociable -->
       <div
         class="mb-4 bg-yellow-50 border-1 border-yellow-200 border-round-xl p-3 flex justify-content-between align-items-center">
-        <label class="text-xs font-bold text-yellow-800 uppercase" htmlFor
-          >Precio Unitario:</label
+        <span class="text-xs font-bold text-yellow-800 uppercase"
+          >Precio Unitario:</span
         >
         <div class="relative">
           <span
@@ -41,10 +41,8 @@
 
       <!-- Tallas -->
       <div class="mb-4">
-        <label
-          class="text-xs font-bold text-gray-400 uppercase block mb-2"
-          htmlFor
-          >1. Selecciona Talla</label
+        <span class="text-xs font-bold text-gray-400 uppercase block mb-2"
+          >1. Selecciona Talla</span
         >
         <div class="flex gap-2 flex-wrap">
           @for (size of availableSizes(); track size) {
@@ -69,8 +67,8 @@
         [class.opacity-50]="!tempSize()"
         [class.pointer-events-none]="!tempSize()">
         <div class="flex justify-content-between mb-2">
-          <label class="text-xs font-bold text-gray-400 uppercase" htmlFor
-            >2. Selecciona Color</label
+          <span class="text-xs font-bold text-gray-400 uppercase"
+            >2. Selecciona Color</span
           >
           @if (tempColor(); as color) {
             <span
