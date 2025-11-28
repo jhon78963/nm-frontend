@@ -26,18 +26,20 @@ export class PosSelectorComponent {
   tempPrice = 0;
   displaySku = computed(() => {
     const state = this.posService.modalState();
+    const currentVariant = this.tempColor();
     if (!state.product) return '';
-    // Si hay variante completa seleccionada, muestra su SKU, si no el del padre
-    return this.tempColor() && this.tempColor()?.sku
-      ? this.tempColor()?.sku
-      : state.product.sku;
+
+    if (currentVariant && currentVariant.sku) {
+      return currentVariant.sku;
+    }
+
+    return state.product.sku;
   });
 
   constructor() {
     effect(
       () => {
         const state = this.posService.modalState();
-
         untracked(() => {
           if (state.isOpen) {
             // 1. LIMPIEZA INICIAL
@@ -135,12 +137,28 @@ export class PosSelectorComponent {
   });
 
   selectSize(size: string) {
+    // 1. Establecemos la talla
     this.tempSize.set(size);
-    this.tempColor.set(null);
-    const variants = this.availableColors();
+
+    // 2. Buscamos las variantes que pertenecen a esta talla
+    // Accedemos directo al estado para no depender de computeds asíncronos
+    const product = this.posService.modalState().product;
+    const variants =
+      product && product.variants[size] ? product.variants[size] : [];
+
+    // 3. Lógica de Auto-selección
     if (variants.length > 0) {
-      this.tempPrice = variants[0].price;
+      // ¡AQUÍ ESTÁ EL TRUCO!
+      // En lugar de limpiar el color, seleccionamos el primero de la lista.
+      // Esto actualiza tempColor inmediatamente y displaySku mostrará el SKU del hijo.
+      this.selectColor(variants[0]);
+    } else {
+      // Solo si la talla no tiene variantes (caso raro), limpiamos
+      this.tempColor.set(null);
     }
+
+    // Nota: Ya no necesitas setear tempPrice aquí manualmente,
+    // porque selectColor(variants[0]) ya se encarga de actualizar el precio.
   }
 
   selectColor(variant: Variant) {

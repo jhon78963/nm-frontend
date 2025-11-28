@@ -77,15 +77,15 @@ export class PosService {
     if (this.cart().length === 0) {
       return this.showToast('El carrito está vacío');
     }
-    if (!this.currentCustomer()) {
-      return this.showToast('Seleccione un cliente');
-    }
+    // if (!this.currentCustomer()) {
+    //   return this.showToast('Seleccione un cliente');
+    // }
 
     this.isLoading.set(true);
 
     // Payload exacto para tu Laravel SaleService
     const payload = {
-      customer: { id: this.currentCustomer()!.id },
+      customer: { id: this.currentCustomer()?.id },
       total: this.grandTotal(),
       payment_method: this.paymentMethod(),
       items: this.cart().map(item => ({
@@ -112,17 +112,15 @@ export class PosService {
       );
 
       if (response.success) {
-        alert(
-          `✅ Venta Registrada ID: ${response.sale_id}\nImprimiendo ticket...`,
+        this.showToast(
+          `Venta Registrada ID: ${response.sale_id}\nImprimiendo ticket...`,
         );
         this.clearCart();
       } else {
-        alert('❌ Error al procesar venta: ' + response.message);
+        this.showToast('Error al procesar venta: ');
       }
     } catch (error: any) {
-      console.error('Checkout error:', error);
-      const msg = error.error?.message || 'Error de conexión';
-      alert('❌ Error: ' + msg);
+      this.showToast('Error: Intente nuevamente!');
     } finally {
       this.isLoading.set(false);
     }
@@ -180,9 +178,7 @@ export class PosService {
     // del producto de nuevo para tener sus variantes frescas.
     // Por simplicidad en este ejemplo, buscaremos si acabamos de escanearlo o asumimos integridad.
     // Para producción: Llamar a searchProductBySku(item.sku) antes de abrir.
-    console.log(item);
     this.searchProductBySku(item.sku).then(prod => {
-      console.log(prod);
       if (prod) {
         this.modalState.set({
           isOpen: true,
