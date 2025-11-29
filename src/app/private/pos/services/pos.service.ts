@@ -2,10 +2,12 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { CartItem, Customer, Product, ModalState } from '../models/pos.models';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../../services/api.service'; // Asegúrate que la ruta sea correcta
+import { BASE_WEB_URL } from '../../../utils/constants';
 
 @Injectable({ providedIn: 'root' })
 export class PosService {
   // 1. Inyectamos solo tu ApiService centralizado
+  BASE_URL = BASE_WEB_URL;
   private apiService = inject(ApiService);
 
   // --- STATE ---
@@ -108,6 +110,8 @@ export class PosService {
         this.showToast(
           `Venta Registrada ID: ${response.sale_id}\nImprimiendo ticket...`,
         );
+        const ticketUrl = `${this.BASE_URL}/pos/sales/${response.sale_id}/ticket`;
+        window.open(ticketUrl, '_blank');
         this.clearCart();
       } else {
         this.showToast('Error al procesar venta');
