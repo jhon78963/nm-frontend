@@ -1,13 +1,12 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { CartItem, Customer, Product, ModalState } from '../models/pos.models';
 import { firstValueFrom } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
+import { ApiService } from '../../../services/api.service'; // Asegúrate que la ruta sea correcta
 
 @Injectable({ providedIn: 'root' })
 export class PosService {
-  private http = inject(HttpClient);
-  // Cambia esto por la URL real de tu API Laravel
-  private readonly API_URL = 'http://localhost:8000/api/pos';
+  // 1. Inyectamos solo tu ApiService centralizado
+  private apiService = inject(ApiService);
 
   // --- STATE ---
   cart = signal<CartItem[]>([]);
@@ -34,9 +33,10 @@ export class PosService {
   async searchProductBySku(sku: string): Promise<Product | undefined> {
     this.isLoading.set(true);
     try {
-      // GET /api/pos/products?sku={sku}
+      // Cambio: Usamos apiService.get y pasamos el query param en la URL
+      // Asumiendo que tu BASE_URL termina antes de "api"
       const product = await firstValueFrom(
-        this.http.get<Product>(`${this.API_URL}/products`, { params: { sku } }),
+        this.apiService.get<Product>(`pos/products?sku=${sku}`),
       );
       return product;
     } catch (error) {
@@ -51,11 +51,9 @@ export class PosService {
   async searchCustomerByDni(dni: string): Promise<boolean> {
     this.isLoading.set(true);
     try {
-      // GET /api/pos/customers?dni={dni}
+      // Cambio: Query param directo en el string
       const customer = await firstValueFrom(
-        this.http.get<Customer>(`${this.API_URL}/customers`, {
-          params: { dni },
-        }),
+        this.apiService.get<Customer>(`pos/customers?dni=${dni}`),
       );
 
       if (customer) {
@@ -77,15 +75,11 @@ export class PosService {
     if (this.cart().length === 0) {
       return this.showToast('El carrito está vacío');
     }
-    // if (!this.currentCustomer()) {
-    //   return this.showToast('Seleccione un cliente');
-    // }
 
     this.isLoading.set(true);
 
-    // Payload exacto para tu Laravel SaleService
     const payload = {
-      customer: { id: this.currentCustomer()?.id },
+      customer: { id: this.currentCustomer()?.id }, // Se maneja null en el backend con ??
       total: this.grandTotal(),
       payment_method: this.paymentMethod(),
       items: this.cart().map(item => ({
@@ -93,8 +87,7 @@ export class PosService {
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         total: item.total,
-        size: item.size, // Informativo
-        // Aquí enviamos el objeto color que contiene los IDs críticos
+        size: item.size,
         color: {
           product_size_id: item.color.product_size_id,
           color_id: item.color.color_id,
@@ -106,9 +99,9 @@ export class PosService {
     };
 
     try {
-      // POST /api/pos/checkout
+      // Cambio: Usamos apiService.post
       const response: any = await firstValueFrom(
-        this.http.post(`${this.API_URL}/checkout`, payload),
+        this.apiService.post('pos/checkout', payload),
       );
 
       if (response.success) {
@@ -117,16 +110,17 @@ export class PosService {
         );
         this.clearCart();
       } else {
-        this.showToast('Error al procesar venta: ');
+        this.showToast('Error al procesar venta');
       }
     } catch (error: any) {
       this.showToast('Error: Intente nuevamente!');
+      console.error(error);
     } finally {
       this.isLoading.set(false);
     }
   }
 
-  // --- GESTIÓN LOCAL (Sin cambios mayores) ---
+  // --- GESTIÓN LOCAL (Igual que antes) ---
 
   addItem(item: CartItem) {
     this.cart.update(prev => [...prev, item]);
@@ -174,10 +168,6 @@ export class PosService {
   }
 
   openEditModal(item: CartItem) {
-    // Nota: Como no tenemos toda la DB en memoria, idealmente aquí haríamos un fetch
-    // del producto de nuevo para tener sus variantes frescas.
-    // Por simplicidad en este ejemplo, buscaremos si acabamos de escanearlo o asumimos integridad.
-    // Para producción: Llamar a searchProductBySku(item.sku) antes de abrir.
     this.searchProductBySku(item.sku).then(prod => {
       if (prod) {
         this.modalState.set({
