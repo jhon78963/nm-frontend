@@ -110,8 +110,7 @@ export class PosService {
         this.showToast(
           `Venta Registrada ID: ${response.sale_id}\nImprimiendo ticket...`,
         );
-        const ticketUrl = `${this.BASE_URL}/pos/sales/${response.sale_id}/ticket`;
-        window.open(ticketUrl, '_blank');
+        this.printTicket(response.sale_id);
         this.clearCart();
       } else {
         this.showToast('Error al procesar venta');
@@ -195,5 +194,35 @@ export class PosService {
 
   setPaymentMethod(method: 'CASH' | 'QR' | 'TRANSFER') {
     this.paymentMethod.set(method);
+  }
+
+  printTicket(saleId: number | string) {
+    // URL pública o local de tu API Laravel donde se ve el PDF/HTML
+    // NOTA: Para que el celular vea la URL, tu Laravel debe estar en un hosting real
+    // o tu celular y PC en la misma red WIFI y usar la IP de tu PC (ej: 192.168.1.50)
+    const ticketUrl = `${this.apiService.BASE_URL}/pos/sales/${saleId}/ticket`;
+
+    if (this.isMobile()) {
+      this.printWithRawBT(ticketUrl);
+    } else {
+      // En PC seguimos abriendo el PDF en nueva pestaña
+      window.open(ticketUrl, '_blank');
+    }
+  }
+
+  private isMobile(): boolean {
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  }
+
+  private printWithRawBT(url: string) {
+    // Codificamos la URL de tu ticket
+    const encodedUrl = encodeURIComponent(url);
+
+    // Construimos el esquema 'rawbt:'
+    // Esto le dice a la app: "Descarga lo que hay en esta URL e imprímelo"
+    const rawbtUrl = `rawbt:url=${encodedUrl}`;
+
+    // Redirigimos al usuario (esto abrirá la app RawBT automáticamente)
+    window.location.href = rawbtUrl;
   }
 }
