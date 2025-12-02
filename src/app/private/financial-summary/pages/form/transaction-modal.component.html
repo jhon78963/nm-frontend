@@ -1,0 +1,76 @@
+<div
+  *ngIf="visible"
+  class="fixed top-0 left-0 w-full h-full z-5 flex align-items-center justify-content-center"
+  style="background-color: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px)">
+  <div
+    class="surface-card border-round-2xl shadow-8 p-5 w-full max-w-25rem m-3 slide-up relative"
+    (click)="$event.stopPropagation()">
+    <h3 class="text-xl font-bold mb-4 m-0" [ngClass]="titleColor">
+      Registrar {{ type === 'INGRESO' ? 'Ingreso' : 'Gasto' }}
+    </h3>
+
+    <form (ngSubmit)="save()">
+      <div class="mb-4">
+        <span class="text-xs font-bold text-500 block mb-2">Monto</span>
+        <div
+          class="flex align-items-center border-bottom-2 py-2 transition-colors duration-200"
+          [ngClass]="amount ? 'border-primary' : 'surface-border'">
+          <span class="text-2xl font-bold text-400 mr-2">S/</span>
+
+          <input
+            #amountInput
+            type="number"
+            [(ngModel)]="amount"
+            name="amount"
+            class="w-full text-3xl font-bold border-none outline-none text-900 bg-transparent"
+            placeholder="0.00" />
+        </div>
+      </div>
+
+      <div class="mb-5">
+        <span class="text-xs font-bold text-500 block mb-3">Categoría</span>
+        <div class="grid formgrid">
+          <div *ngFor="let cat of currentCategories" class="col-6 mb-3">
+            <div
+              (click)="selectedCategory = cat"
+              class="cursor-pointer border-1 border-round-xl p-3 flex align-items-center gap-3 transition-all transition-duration-200 hover:surface-50"
+              [ngClass]="
+                selectedCategory?.id === cat.id
+                  ? 'border-900 surface-50'
+                  : 'surface-border'
+              ">
+              <div
+                [className]="
+                  'w-2rem h-2rem border-round-circle flex align-items-center justify-content-center ' +
+                  cat.colorClass
+                ">
+                <i [class]="cat.icon + ' text-sm'"></i>
+              </div>
+
+              <span class="font-bold text-sm text-900">{{ cat.name }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button
+          type="button"
+          (click)="close()"
+          class="w-full surface-200 text-700 font-bold py-3 border-round-xl border-none cursor-pointer hover:surface-300 transition-colors">
+          Cancelar
+        </button>
+
+        <button
+          type="submit"
+          [disabled]="!isValid"
+          [ngClass]="{ 'btn-disabled opacity-50': !isValid }"
+          class="w-full bg-bluegray-900 text-white font-bold py-3 border-round-xl border-none cursor-pointer hover:bg-bluegray-800 transition-colors shadow-3">
+          Guardar
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="absolute inset-0 z-minus-1" (click)="close()"></div>
+</div>

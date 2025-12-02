@@ -89,6 +89,17 @@ export class AppMenuComponent implements OnInit {
             },
           ],
         },
+        {
+          label: 'Resumen Financiero',
+          icon: 'pi pi-users',
+          items: [
+            {
+              label: 'Resumen Financiero',
+              icon: 'pi pi-fw pi-user',
+              routerLink: ['/financial-summary'],
+            },
+          ],
+        },
       ];
     } else {
       this.model = [];

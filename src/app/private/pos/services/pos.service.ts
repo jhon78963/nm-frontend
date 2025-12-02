@@ -2,12 +2,10 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { CartItem, Customer, Product, ModalState } from '../models/pos.models';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../../services/api.service'; // Asegúrate que la ruta sea correcta
-import { BASE_WEB_URL } from '../../../utils/constants';
 
 @Injectable({ providedIn: 'root' })
 export class PosService {
   // 1. Inyectamos solo tu ApiService centralizado
-  BASE_URL = BASE_WEB_URL;
   private apiService = inject(ApiService);
 
   // --- STATE ---
@@ -197,32 +195,42 @@ export class PosService {
   }
 
   printTicket(saleId: number | string) {
-    // URL pública o local de tu API Laravel donde se ve el PDF/HTML
-    // NOTA: Para que el celular vea la URL, tu Laravel debe estar en un hosting real
-    // o tu celular y PC en la misma red WIFI y usar la IP de tu PC (ej: 192.168.1.50)
-    const ticketUrl = `${this.apiService.BASE_URL}/pos/sales/${saleId}/ticket`;
+    const ticketUrl = `${this.apiService.BASE_WEB_URL}/pos/sales/${saleId}/ticket/html`;
 
     if (this.isMobile()) {
       this.printWithRawBT(ticketUrl);
     } else {
-      // En PC seguimos abriendo el PDF en nueva pestaña
       window.open(ticketUrl, '_blank');
     }
+  }
+
+  private printWithRawBT(url: string) {
+    const encodedUrl = encodeURIComponent(url);
+
+    const rawbtUrl = `rawbt:url=${encodedUrl}&S.cut=1`;
+
+    window.location.href = rawbtUrl;
   }
 
   private isMobile(): boolean {
     return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   }
 
-  private printWithRawBT(url: string) {
-    // Codificamos la URL de tu ticket
-    const encodedUrl = encodeURIComponent(url);
+  // printTicket(saleId: number) {
+  //   // 1. URL de tu backend que devuelve el HTML o PDF
+  //   const ticketUrl = `${this.apiService.BASE_WEB_URL}/pos/sales/${saleId}/ticket`;
 
-    // Construimos el esquema 'rawbt:'
-    // Esto le dice a la app: "Descarga lo que hay en esta URL e imprímelo"
-    const rawbtUrl = `rawbt:url=${encodedUrl}`;
+  //   // 2. Codificamos la URL
+  //   const encodedUrl = encodeURIComponent(ticketUrl);
 
-    // Redirigimos al usuario (esto abrirá la app RawBT automáticamente)
-    window.location.href = rawbtUrl;
-  }
+  //   // 3. Construimos el esquema RawBT
+  //   // S.cut=1 -> Cortar papel
+  //   // S.editor=false -> No abrir editor
+  //   const rawbtUrl = `rawbt:url=${encodedUrl}&S.cut=1&S.editor=false`;
+
+  //   // 4. Ejecutamos.
+  //   // Al tener la versión PRO con "Imprimir inmediatamente",
+  //   // el celular hará un "flash" (abrirá y cerrará RawBT) en menos de 1 segundo.
+  //   window.location.href = rawbtUrl;
+  // }
 }

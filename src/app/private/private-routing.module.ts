@@ -45,6 +45,15 @@ const routes: Routes = [
     loadChildren: () => import('./pos/pos.module').then(m => m.PosModule),
   },
   {
+    path: 'financial-summary',
+    title: 'Resumen Financiero',
+    data: { breadcrumb: 'Resumen Financiero' },
+    loadChildren: () =>
+      import('./financial-summary/financial-summary.module').then(
+        m => m.FinancialSummaryModule,
+      ),
+  },
+  {
     path: '',
     pathMatch: 'full',
     redirectTo: 'home',
