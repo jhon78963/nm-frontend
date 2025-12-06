@@ -42,7 +42,7 @@ const routes: Routes = [
     path: 'pos',
     title: 'POS',
     data: { breadcrumb: 'POS' },
-    loadChildren: () => import('./pos/pos.module').then(m => m.PosModule),
+    loadChildren: () => import('./sales/pos/pos.module').then(m => m.PosModule),
   },
   {
     path: 'financial-summary',

@@ -4,12 +4,12 @@
     <!-- Opción: EFECTIVO -->
     <div
       class="flex-1 border-1 border-round-xl p-2 cursor-pointer transition-all flex flex-column align-items-center justify-content-center gap-1"
-      [class.border-indigo-600]="posService.paymentMethod() === 'CASH'"
-      [class.bg-indigo-50]="posService.paymentMethod() === 'CASH'"
-      [class.text-indigo-700]="posService.paymentMethod() === 'CASH'"
-      [class.border-gray-200]="posService.paymentMethod() !== 'CASH'"
-      [class.text-gray-500]="posService.paymentMethod() !== 'CASH'"
-      (click)="posService.setPaymentMethod('CASH')">
+      [class.border-indigo-600]="posService.paymentMethod() === 'EFECTIVO'"
+      [class.bg-indigo-50]="posService.paymentMethod() === 'EFECTIVO'"
+      [class.text-indigo-700]="posService.paymentMethod() === 'EFECTIVO'"
+      [class.border-gray-200]="posService.paymentMethod() !== 'EFECTIVO'"
+      [class.text-gray-500]="posService.paymentMethod() !== 'EFECTIVO'"
+      (click)="posService.setPaymentMethod('EFECTIVO')">
       <i class="pi pi-money-bill text-xl"></i>
       <span class="text-xs font-bold">Efectivo</span>
     </div>
@@ -17,12 +17,12 @@
     <!-- Opción: YAPE/PLIN -->
     <div
       class="flex-1 border-1 border-round-xl p-2 cursor-pointer transition-all flex flex-column align-items-center justify-content-center gap-1"
-      [class.border-pink-500]="posService.paymentMethod() === 'QR'"
-      [class.bg-pink-50]="posService.paymentMethod() === 'QR'"
-      [class.text-pink-600]="posService.paymentMethod() === 'QR'"
-      [class.border-gray-200]="posService.paymentMethod() !== 'QR'"
-      [class.text-gray-500]="posService.paymentMethod() !== 'QR'"
-      (click)="posService.setPaymentMethod('QR')">
+      [class.border-pink-500]="posService.paymentMethod() === 'YAPE/PLIN'"
+      [class.bg-pink-50]="posService.paymentMethod() === 'YAPE/PLIN'"
+      [class.text-pink-600]="posService.paymentMethod() === 'YAPE/PLIN'"
+      [class.border-gray-200]="posService.paymentMethod() !== 'YAPE/PLIN'"
+      [class.text-gray-500]="posService.paymentMethod() !== 'YAPE/PLIN'"
+      (click)="posService.setPaymentMethod('YAPE/PLIN')">
       <i class="pi pi-qrcode text-xl"></i>
       <span class="text-xs font-bold">Yape/Plin</span>
     </div>
@@ -30,12 +30,12 @@
     <!-- Opción: TARJETA/TRANSF -->
     <div
       class="flex-1 border-1 border-round-xl p-2 cursor-pointer transition-all flex flex-column align-items-center justify-content-center gap-1"
-      [class.border-indigo-600]="posService.paymentMethod() === 'TRANSFER'"
-      [class.bg-indigo-50]="posService.paymentMethod() === 'TRANSFER'"
-      [class.text-indigo-700]="posService.paymentMethod() === 'TRANSFER'"
-      [class.border-gray-200]="posService.paymentMethod() !== 'TRANSFER'"
-      [class.text-gray-500]="posService.paymentMethod() !== 'TRANSFER'"
-      (click)="posService.setPaymentMethod('TRANSFER')">
+      [class.border-indigo-600]="posService.paymentMethod() === 'TRANSFERENCIA'"
+      [class.bg-indigo-50]="posService.paymentMethod() === 'TRANSFERENCIA'"
+      [class.text-indigo-700]="posService.paymentMethod() === 'TRANSFERENCIA'"
+      [class.border-gray-200]="posService.paymentMethod() !== 'TRANSFERENCIA'"
+      [class.text-gray-500]="posService.paymentMethod() !== 'TRANSFERENCIA'"
+      (click)="posService.setPaymentMethod('TRANSFERENCIA')">
       <i class="pi pi-credit-card text-xl"></i>
       <span class="text-xs font-bold">Tarjeta</span>
     </div>

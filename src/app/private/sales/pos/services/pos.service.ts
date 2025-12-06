@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { CartItem, Customer, Product, ModalState } from '../models/pos.models';
 import { firstValueFrom } from 'rxjs';
-import { ApiService } from '../../../services/api.service'; // Asegúrate que la ruta sea correcta
+import { ApiService } from '../../../../services/api.service'; // Asegúrate que la ruta sea correcta
 
 @Injectable({ providedIn: 'root' })
 export class PosService {
@@ -17,7 +17,9 @@ export class PosService {
     isEditing: false,
   });
   toastMessage = signal<string | null>(null);
-  paymentMethod = signal<'CASH' | 'QR' | 'TRANSFER'>('CASH');
+  paymentMethod = signal<'EFECTIVO' | 'YAPE/PLIN' | 'TRANSFERENCIA'>(
+    'EFECTIVO',
+  );
   isLoading = signal<boolean>(false);
 
   // --- COMPUTEDS ---
@@ -33,8 +35,6 @@ export class PosService {
   async searchProductBySku(sku: string): Promise<Product | undefined> {
     this.isLoading.set(true);
     try {
-      // Cambio: Usamos apiService.get y pasamos el query param en la URL
-      // Asumiendo que tu BASE_URL termina antes de "api"
       const product = await firstValueFrom(
         this.apiService.get<Product>(`pos/products?sku=${sku}`),
       );
@@ -51,7 +51,6 @@ export class PosService {
   async searchCustomerByDni(dni: string): Promise<boolean> {
     this.isLoading.set(true);
     try {
-      // Cambio: Query param directo en el string
       const customer = await firstValueFrom(
         this.apiService.get<Customer>(`pos/customers?dni=${dni}`),
       );
@@ -79,7 +78,7 @@ export class PosService {
     this.isLoading.set(true);
 
     const payload = {
-      customer: { id: this.currentCustomer()?.id }, // Se maneja null en el backend con ??
+      customer: { id: this.currentCustomer()?.id },
       total: this.grandTotal(),
       payment_method: this.paymentMethod(),
       items: this.cart().map(item => ({
@@ -99,7 +98,6 @@ export class PosService {
     };
 
     try {
-      // Cambio: Usamos apiService.post
       const response: any = await firstValueFrom(
         this.apiService.post('pos/checkout', payload),
       );
@@ -142,7 +140,7 @@ export class PosService {
   clearCart() {
     this.cart.set([]);
     this.currentCustomer.set(null);
-    this.paymentMethod.set('CASH');
+    this.paymentMethod.set('EFECTIVO');
   }
 
   updateQuantity(cartId: number, delta: number) {
@@ -190,47 +188,26 @@ export class PosService {
     setTimeout(() => this.toastMessage.set(null), 2500);
   }
 
-  setPaymentMethod(method: 'CASH' | 'QR' | 'TRANSFER') {
+  setPaymentMethod(method: 'EFECTIVO' | 'YAPE/PLIN' | 'TRANSFERENCIA') {
     this.paymentMethod.set(method);
   }
 
-  printTicket(saleId: number | string) {
-    const ticketUrl = `${this.apiService.BASE_WEB_URL}/pos/sales/${saleId}/ticket/html`;
-
-    if (this.isMobile()) {
-      this.printWithRawBT(ticketUrl);
-    } else {
-      window.open(ticketUrl, '_blank');
-    }
+  printTicket(saleId: number) {
+    const baseUrl = this.apiService.BASE_URL.replace(/\/api\/?$/, '');
+    const ticketUrl = `${baseUrl}/pos/sales/${saleId}/ticket`;
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = ticketUrl;
+    document.body.appendChild(iframe);
+    iframe.onload = () => {
+      try {
+        iframe.contentWindow?.print();
+      } catch (e) {
+        console.error(e);
+      }
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 5000);
+    };
   }
-
-  private printWithRawBT(url: string) {
-    const encodedUrl = encodeURIComponent(url);
-
-    const rawbtUrl = `rawbt:url=${encodedUrl}&S.cut=1`;
-
-    window.location.href = rawbtUrl;
-  }
-
-  private isMobile(): boolean {
-    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  }
-
-  // printTicket(saleId: number) {
-  //   // 1. URL de tu backend que devuelve el HTML o PDF
-  //   const ticketUrl = `${this.apiService.BASE_WEB_URL}/pos/sales/${saleId}/ticket`;
-
-  //   // 2. Codificamos la URL
-  //   const encodedUrl = encodeURIComponent(ticketUrl);
-
-  //   // 3. Construimos el esquema RawBT
-  //   // S.cut=1 -> Cortar papel
-  //   // S.editor=false -> No abrir editor
-  //   const rawbtUrl = `rawbt:url=${encodedUrl}&S.cut=1&S.editor=false`;
-
-  //   // 4. Ejecutamos.
-  //   // Al tener la versión PRO con "Imprimir inmediatamente",
-  //   // el celular hará un "flash" (abrirá y cerrará RawBT) en menos de 1 segundo.
-  //   window.location.href = rawbtUrl;
-  // }
 }
