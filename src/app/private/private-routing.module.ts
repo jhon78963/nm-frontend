@@ -39,7 +39,14 @@ const routes: Routes = [
       import('./directory/directory.module').then(m => m.DirectoryModule),
   },
   {
-    path: 'pos',
+    path: 'sales',
+    title: 'Ventas',
+    data: { breadcrumb: 'Ventas' },
+    loadChildren: () =>
+      import('./sales/list/sales-list.module').then(m => m.SalesListModule),
+  },
+  {
+    path: 'sales/pos',
     title: 'POS',
     data: { breadcrumb: 'POS' },
     loadChildren: () => import('./sales/pos/pos.module').then(m => m.PosModule),

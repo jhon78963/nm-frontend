@@ -22,6 +22,8 @@ import { ProductsService } from '../../../services/products.service';
 
 import { Gender } from '../../../../../../models/gender.interface';
 import { Product, ProductSave } from '../../../models/products.model';
+import { Warehouse } from '../../../../../../models/warehouse.interface';
+import { WarehousesService } from '../../../../../../services/warehouse.service';
 
 @Component({
   selector: 'app-products-form',
@@ -42,13 +44,15 @@ import { Product, ProductSave } from '../../../models/products.model';
 export class ProductsFormComponent implements OnInit {
   productId: number = 0;
   genders: Gender[] = [];
+  warehouses: Warehouse[] = [];
 
   constructor(
-    private readonly router: Router,
     private readonly formBuilder: FormBuilder,
-    private readonly productsService: ProductsService,
     private readonly gendersService: GendersService,
+    private readonly productsService: ProductsService,
     private readonly route: ActivatedRoute,
+    private readonly router: Router,
+    private readonly warehousesService: WarehousesService,
   ) {
     if (this.route.snapshot.paramMap.get('id')) {
       this.productId = Number(this.route.snapshot.paramMap.get('id'));

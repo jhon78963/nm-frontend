@@ -4,7 +4,7 @@ import { PosComponent } from './pages/pos.component';
 
 const routes: Routes = [
   { path: '', component: PosComponent },
-  { path: '', pathMatch: 'full', redirectTo: 'pos' },
+  { path: '', pathMatch: 'full', redirectTo: 'sales/pos' },
 ];
 
 @NgModule({
