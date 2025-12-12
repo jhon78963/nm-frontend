@@ -1,9 +1,9 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { SalesListComponent } from './pages/list/list.component';
+import { SaleListComponent } from './pages/list/list.component';
 
 const routes: Routes = [
-  { path: '', component: SalesListComponent },
+  { path: '', component: SaleListComponent },
   { path: '', pathMatch: 'full', redirectTo: 'sales' },
 ];
 
