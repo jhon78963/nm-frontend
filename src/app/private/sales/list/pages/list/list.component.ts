@@ -12,10 +12,15 @@ import { LoadingService } from '../../../../../services/loading.service';
 import { SalesService } from '../../services/sales.service';
 import { debounceTime, Observable } from 'rxjs';
 import { PaginatorState } from 'primeng/paginator';
-import { showSuccess, showToastWarn } from '../../../../../utils/notifications';
+import {
+  showError,
+  showSuccess,
+  showToastWarn,
+} from '../../../../../utils/notifications';
 import { SharedModule } from '../../../../../shared/shared.module';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { SaleFormComponent } from '../form/form.component';
 
 @Component({
   selector: 'app-list',
@@ -26,22 +31,22 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
   providers: [ConfirmationService, MessageService, DialogService],
 })
 export class SaleListComponent implements OnInit, OnDestroy {
-  userModal: DynamicDialogRef | undefined;
+  saleModal: DynamicDialogRef | undefined;
   columns: Column[] = [];
   cellToAction: any;
   limit: number = 10;
   page: number = 1;
   search: string = '';
   callToAction: CallToAction<Sale>[] = [
-    // {
-    //   type: 'button',
-    //   size: 'small',
-    //   icon: 'pi pi-pencil',
-    //   outlined: true,
-    //   pTooltip: 'Editar',
-    //   tooltipPosition: 'bottom',
-    //   click: (rowData: Sale) => this.buttonEditSale(rowData.id),
-    // },
+    {
+      type: 'button',
+      size: 'small',
+      icon: 'pi pi-pencil',
+      outlined: true,
+      pTooltip: 'Editar',
+      tooltipPosition: 'bottom',
+      click: (rowData: Sale) => this.buttonEditSale(rowData.id),
+    },
     {
       type: 'button',
       size: 'small',
@@ -124,8 +129,8 @@ export class SaleListComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.userModal) {
-      this.userModal.close();
+    if (this.saleModal) {
+      this.saleModal.close();
     }
   }
 
@@ -161,13 +166,13 @@ export class SaleListComponent implements OnInit, OnDestroy {
   }
 
   // buttonAddUser(): void {
-  //   this.userModal = this.dialogService.open(UserFormComponent, {
+  //   this.saleModal = this.dialogService.open(UserFormComponent, {
   //     data: {},
   //     header: 'Crear usuario',
   //     styleClass: 'dialog-custom-form',
   //   });
 
-  //   this.userModal.onClose.subscribe({
+  //   this.saleModal.onClose.subscribe({
   //     next: value => {
   //       value && value?.success
   //         ? showSuccess(this.messageService, 'Usuario Creado.')
@@ -178,23 +183,23 @@ export class SaleListComponent implements OnInit, OnDestroy {
   //   });
   // }
 
-  // buttonEditUSer(id: number): void {
-  //   this.userModal = this.dialogService.open(UserFormComponent, {
-  //     data: { id },
-  //     header: 'Editar usuario',
-  //     styleClass: 'dialog-custom-form',
-  //   });
+  buttonEditSale(id: number): void {
+    this.saleModal = this.dialogService.open(SaleFormComponent, {
+      data: { id },
+      header: 'Detalle venta',
+      styleClass: 'dialog-custom-form',
+    });
 
-  //   this.userModal.onClose.subscribe({
-  //     next: value => {
-  //       value && value?.success
-  //         ? showSuccess(this.messageService, 'Usuario actualizado.')
-  //         : value?.error
-  //           ? showError(this.messageService, value?.error)
-  //           : null;
-  //     },
-  //   });
-  // }
+    this.saleModal.onClose.subscribe({
+      next: value => {
+        value && value?.success
+          ? showSuccess(this.messageService, 'Detalle actualizado.')
+          : value?.error
+            ? showError(this.messageService, value?.error)
+            : null;
+      },
+    });
+  }
 
   buttonDeleteSale(id: number, event: Event): void {
     this.confirmationService.confirm({

@@ -7,4 +7,4 @@ import { Component } from '@angular/core';
   templateUrl: './form.component.html',
   styleUrl: './form.component.scss',
 })
-export class FormComponent {}
+export class SaleFormComponent {}

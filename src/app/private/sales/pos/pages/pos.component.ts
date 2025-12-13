@@ -3,6 +3,8 @@ import {
   Component,
   ElementRef,
   inject,
+  OnDestroy,
+  OnInit,
   ViewChild,
 } from '@angular/core';
 import { PosHeaderComponent } from '../components/pos-header/pos-header.component';
@@ -11,6 +13,12 @@ import { PosService } from '../services/pos.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PosSelectorComponent } from '../components/pos-selector/pos-selector.component';
+import {
+  debounceTime,
+  distinctUntilChanged,
+  Subject,
+  Subscription,
+} from 'rxjs';
 
 @Component({
   selector: 'app-pos',
@@ -25,11 +33,29 @@ import { PosSelectorComponent } from '../components/pos-selector/pos-selector.co
   templateUrl: './pos.component.html',
   styleUrl: './pos.component.scss',
 })
-export class PosComponent implements AfterViewChecked {
+export class PosComponent implements AfterViewChecked, OnInit, OnDestroy {
   posService = inject(PosService);
 
   barcodeQuery = '';
   @ViewChild('barcodeInput') barcodeInput!: ElementRef;
+
+  private barcodeSubject = new Subject<string>();
+  private barcodeSubscription?: Subscription;
+
+  ngOnInit() {
+    // 2. Nos suscribimos con un retraso (debounce)
+    this.barcodeSubscription = this.barcodeSubject
+      .pipe(
+        debounceTime(300), // Espera 300ms después de la última tecla
+        distinctUntilChanged(), // Evita disparar si el valor es el mismo
+      )
+      .subscribe(valor => {
+        // Si el valor no está vacío, buscamos
+        if (valor) {
+          this.onScan();
+        }
+      });
+  }
 
   async onScan() {
     const code = this.barcodeQuery.trim();
@@ -43,9 +69,20 @@ export class PosComponent implements AfterViewChecked {
     }
   }
 
+  onQueryChange(valor: string) {
+    this.barcodeSubject.next(valor);
+  }
+
   ngAfterViewChecked() {
     if (!this.posService.modalState().isOpen && this.barcodeInput) {
       // this.barcodeInput.nativeElement.focus();
+    }
+  }
+
+  ngOnDestroy() {
+    // Importante desuscribirse para evitar fugas de memoria
+    if (this.barcodeSubscription) {
+      this.barcodeSubscription.unsubscribe();
     }
   }
 }
