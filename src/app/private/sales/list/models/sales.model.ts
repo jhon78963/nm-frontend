@@ -1,7 +1,7 @@
 export interface ISale {
   id: number;
   code: string;
-  date: string;
+  creationTime: string;
   total: number;
   status: string;
   paymentMethod: string;
@@ -11,7 +11,7 @@ export interface ISale {
 export class Sale {
   id: number;
   code: string;
-  date: string;
+  creationTime: string;
   total: number;
   status: string;
   paymentMethod: string;
@@ -20,7 +20,7 @@ export class Sale {
   constructor(sale: ISale) {
     this.id = sale.id;
     this.code = sale.code;
-    this.date = sale.date;
+    this.creationTime = sale.creationTime;
     this.total = sale.total;
     this.status = sale.status;
     this.paymentMethod = sale.paymentMethod;
