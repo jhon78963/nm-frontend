@@ -70,23 +70,27 @@ export class PosService {
     }
   }
 
-  async processCheckout() {
+  // --- NUEVO MÉTODO PARA PAGOS HÍBRIDOS (Integrado) ---
+  async processCheckoutWithPayments(payments: any[]) {
     if (this.cart().length === 0) {
       return this.showToast('El carrito está vacío');
     }
 
     this.isLoading.set(true);
 
+    // CORRECCIÓN: Estructura anidada para cumplir validación 'items.*.color.product_size_id'
     const payload = {
+      // Usamos objeto customer para compatibilidad si el backend espera 'customer.id'
       customer: { id: this.currentCustomer()?.id },
       total: this.grandTotal(),
-      payment_method: this.paymentMethod(),
+      payments: payments,
       items: this.cart().map(item => ({
         name: item.name,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         total: item.total,
         size: item.size,
+        // Volvemos a anidar los IDs dentro de 'color' como antes
         color: {
           product_size_id: item.color.product_size_id,
           color_id: item.color.color_id,
@@ -103,20 +107,41 @@ export class PosService {
       );
 
       if (response.success) {
-        this.showToast(
-          `Venta Registrada ID: ${response.sale_id}\nImprimiendo ticket...`,
-        );
+        this.showToast(`Venta ${response.sale_id} Exitosa!`);
         this.printTicket(response.sale_id);
         this.clearCart();
-      } else {
-        this.showToast('Error al procesar venta');
       }
     } catch (error: any) {
-      this.showToast('Error: Intente nuevamente!');
+      this.showToast('Error al procesar venta');
       console.error(error);
     } finally {
       this.isLoading.set(false);
     }
+  }
+
+  // Mantenemos el método antiguo por compatibilidad (o para llamadas simples)
+  async processCheckout() {
+    if (this.cart().length === 0) {
+      return this.showToast('El carrito está vacío');
+    }
+
+    // Si se llama a este método directamente (desde un botón antiguo),
+    // asumimos que el pago es 100% con el método seleccionado en el signal 'paymentMethod'.
+    const currentMethod = this.paymentMethod();
+    let backendMethod = 'CASH';
+    if (currentMethod === 'YAPE/PLIN') backendMethod = 'YAPE';
+    if (currentMethod === 'TRANSFERENCIA') backendMethod = 'CARD';
+
+    // Construimos el array de pagos único
+    const payments = [
+      {
+        method: backendMethod,
+        amount: this.grandTotal(),
+      },
+    ];
+
+    // Reutilizamos la lógica corregida
+    return this.processCheckoutWithPayments(payments);
   }
 
   // --- GESTIÓN LOCAL (Igual que antes) ---

@@ -31,6 +31,9 @@ export class SaleFormComponent implements OnInit {
     creationTime: [new Date(), Validators.required],
   });
 
+  // Variable para guardar los detalles completos (pagos, items, etc.)
+  saleDetails: any = null;
+
   constructor(
     private readonly formBuilder: FormBuilder,
     private readonly salesService: SalesService,
@@ -42,8 +45,19 @@ export class SaleFormComponent implements OnInit {
   ngOnInit(): void {
     if (this.dynamicDialogConfig.data.id) {
       const id = this.dynamicDialogConfig.data.id;
-      this.salesService.getOne(id).subscribe((response: Sale) => {
-        this.form.patchValue(response);
+      this.salesService.getOne(id).subscribe((response: any) => {
+        // 1. Guardamos toda la data para mostrarla en el HTML
+        this.saleDetails = response;
+
+        // 2. Llenamos el formulario (Fecha)
+        // Si el backend manda 'datetime_iso', lo convertimos a Date para el input
+        if (response.datetime_iso) {
+          this.form.patchValue({
+            creationTime: new Date(response.datetime_iso),
+          });
+        } else {
+          this.form.patchValue(response);
+        }
       });
     }
   }
@@ -66,7 +80,7 @@ export class SaleFormComponent implements OnInit {
       }
       const id = this.dynamicDialogConfig.data.id;
       this.salesService.edit(id, sale).subscribe({
-        next: () => this.dynamicDialogRef.close(),
+        next: () => this.dynamicDialogRef.close(true), // Devolvemos true para refrescar tabla padre si es necesario
         error: () => {},
       });
     }

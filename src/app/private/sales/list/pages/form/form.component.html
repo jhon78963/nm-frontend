@@ -1,20 +1,116 @@
 @if (form) {
   <form [formGroup]="form" (ngSubmit)="buttonSaveSale()">
     <div class="p-fluid p-formgrid grid">
-      <div class="col-12">
+      <!-- Campo Fecha (Editable) -->
+      <div class="col-12 mb-3">
         <app-input-date
-          label="Fecha"
+          label="Fecha de Venta"
           for="creationTime"
           type="text"
           id="creationTime"
           placeholder="Ingresa la fecha"
           controlName="creationTime"></app-input-date>
       </div>
+
+      <!-- SECCIÓN INFORMATIVA (Solo lectura) -->
+      @if (saleDetails) {
+        <!-- 1. Desglose de Pagos -->
+        <div class="col-12 mb-2">
+          <span class="block text-500 font-bold mb-2 text-sm uppercase"
+            >Métodos de Pago</span
+          >
+          <div class="flex flex-wrap gap-2">
+            @for (pay of saleDetails.payments; track pay.id) {
+              <div
+                class="border-1 border-round-lg p-2 px-3 surface-card flex align-items-center gap-2 shadow-1">
+                <i
+                  class="pi text-lg"
+                  [ngClass]="{
+                    'pi-money-bill text-green-600': pay.method === 'CASH',
+                    'pi-mobile text-purple-600':
+                      pay.method === 'YAPE' || pay.method === 'PLIN',
+                    'pi-credit-card text-orange-600': pay.method === 'CARD',
+                  }"></i>
+                <span class="font-bold text-700 text-sm"
+                  >{{ pay.method }}:</span
+                >
+                <span class="text-900 font-bold"
+                  >S/ {{ pay.amount | number: '1.2-2' }}</span
+                >
+              </div>
+            } @empty {
+              <!-- Fallback por si es venta antigua sin detalle -->
+              <div class="text-gray-500 text-sm font-italic">
+                Pago único: {{ saleDetails.paymentMethod }}
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- 2. Tabla de Productos -->
+        <div class="col-12 mt-2">
+          <span class="block text-500 font-bold mb-2 text-sm uppercase"
+            >Productos Vendidos</span
+          >
+          <div class="border-1 border-200 border-round-xl overflow-hidden">
+            <table class="w-full text-sm" style="border-collapse: collapse">
+              <thead class="surface-100 text-600 border-bottom-1 border-200">
+                <tr>
+                  <th class="p-2 text-left font-bold">Cant.</th>
+                  <th class="p-2 text-left font-bold">Descripción</th>
+                  <th class="p-2 text-right font-bold">P. Unit</th>
+                  <th class="p-2 text-right font-bold">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of saleDetails.items; track item.id) {
+                  <tr
+                    class="border-bottom-1 surface-border hover:surface-50 transition-colors">
+                    <td class="p-2 pl-3 font-bold text-900">
+                      {{ item.quantity }}
+                    </td>
+                    <td class="p-2">
+                      <div class="font-bold text-800">
+                        {{ item.product_name }}
+                      </div>
+                      <div class="text-xs text-500">
+                        {{ item.size }} • {{ item.color }}
+                      </div>
+                    </td>
+                    <td class="p-2 text-right text-700">
+                      S/ {{ item.unit_price | number: '1.2-2' }}
+                    </td>
+                    <td class="p-2 text-right font-bold text-900 pr-3">
+                      S/ {{ item.subtotal | number: '1.2-2' }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+              <!-- Footer Total -->
+              <tfoot class="surface-50">
+                <tr>
+                  <td
+                    colspan="3"
+                    class="p-2 text-right font-bold text-600 uppercase text-xs">
+                    Total Venta
+                  </td>
+                  <td
+                    class="p-2 text-right font-black text-lg text-indigo-700 pr-3">
+                    S/ {{ saleDetails.total | number: '1.2-2' }}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      }
+
+      <!-- Botón Guardar -->
       <button
         type="submit"
         pButton
-        label="Guardar"
-        class="mt-3"
+        label="Guardar Cambios"
+        class="mt-4 w-full p-button-primary font-bold"
         [disabled]="!isValid"></button>
     </div>
   </form>
