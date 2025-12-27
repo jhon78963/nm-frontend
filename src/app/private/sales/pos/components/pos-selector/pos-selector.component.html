@@ -2,129 +2,203 @@
   <div
     class="fixed top-0 left-0 w-full h-full z-6 flex align-items-end sm:align-items-center justify-content-center glass-overlay fadein-animation">
     <div
-      class="bg-white w-full sm:w-30rem border-round-top-2xl sm:border-round-2xl p-4 shadow-6 slide-up max-h-screen overflow-y-auto relative">
-      <button
-        class="absolute top-0 right-0 m-3 bg-transparent border-none text-gray-400 hover:text-gray-600 cursor-pointer p-2"
-        (click)="posService.closeModal()">
-        <i class="pi pi-times text-xl"></i>
-      </button>
-
-      <!-- Info Producto -->
-      <div class="mb-4 pr-5">
-        <h2 class="text-xl font-bold text-gray-900 m-0 line-height-2">
-          {{ posService.modalState().product?.name }}
-        </h2>
-        <p class="text-gray-500 text-sm font-mono m-0 mt-1">
-          SKU: {{ displaySku() }}
-        </p>
-      </div>
-
-      <!-- Precio Negociable -->
+      class="bg-white w-full sm:w-30rem border-round-top-2xl sm:border-round-2xl p-0 shadow-6 slide-up max-h-screen overflow-hidden relative flex flex-column h-[85vh] sm:h-auto">
+      <!-- HEADER (Sticky) -->
       <div
-        class="mb-4 bg-yellow-50 border-1 border-yellow-200 border-round-xl p-3 flex justify-content-between align-items-center">
-        <span class="text-xs font-bold text-yellow-800 uppercase"
-          >Precio Unitario:</span
-        >
-        <div class="relative">
-          <span
-            class="absolute text-gray-500 text-lg font-bold"
-            style="left: 0; top: 50%; transform: translateY(-50%)"
-            >S/</span
-          >
-          <input
-            type="number"
-            [(ngModel)]="tempPrice"
-            class="w-8rem text-right font-black text-2xl bg-transparent border-none outline-none text-gray-900 p-0"
-            (focus)="$any($event.target).select()" />
-        </div>
-      </div>
+        class="p-4 pb-2 bg-white z-20 border-bottom-1 border-gray-100 relative">
+        <button
+          class="absolute top-0 right-0 m-4 bg-transparent border-none text-gray-400 hover:text-gray-600 cursor-pointer p-2 z-30"
+          (click)="posService.closeModal()">
+          <i class="pi pi-times text-xl"></i>
+        </button>
 
-      <!-- Tallas -->
-      <div class="mb-4">
-        <span class="text-xs font-bold text-gray-400 uppercase block mb-2"
-          >1. Selecciona Talla</span
-        >
-        <div class="flex gap-2 flex-wrap">
-          @for (size of availableSizes(); track size) {
-            <div
-              class="px-4 py-3 border-1 border-round-xl cursor-pointer transition-all font-bold text-sm min-w-3rem text-center select-none shadow-1"
-              [class.border-indigo-600]="tempSize() === size"
-              [class.bg-indigo-600]="tempSize() === size"
-              [class.text-white]="tempSize() === size"
-              [class.border-gray-100]="tempSize() !== size"
-              [class.bg-white]="tempSize() !== size"
-              [class.text-gray-600]="tempSize() !== size"
-              (click)="selectSize(size)">
-              {{ size }}
-            </div>
-          }
+        <!-- Info Producto -->
+        <div class="pr-5 mb-3">
+          <h2 class="text-xl font-bold text-gray-900 m-0 line-height-2">
+            {{ posService.modalState().product?.name }}
+          </h2>
+          <p class="text-gray-500 text-sm font-mono m-0 mt-1">
+            SKU: {{ posService.modalState().product?.sku }}
+          </p>
         </div>
-      </div>
 
-      <!-- Colores -->
-      <div
-        class="mb-4"
-        [class.opacity-50]="!tempSize()"
-        [class.pointer-events-none]="!tempSize()">
-        <div class="flex justify-content-between mb-2">
-          <span class="text-xs font-bold text-gray-400 uppercase"
-            >2. Selecciona Color</span
+        <!-- Tallas (Tabs de navegación) -->
+        <div>
+          <span class="text-xs font-bold text-gray-400 uppercase block mb-2"
+            >1. Selecciona Talla</span
           >
-          @if (tempColor(); as color) {
-            <span
-              class="text-xs font-bold"
-              [class.text-green-600]="color.stock > 5"
-              [class.text-red-500]="color.stock <= 5">
-              Stock: {{ color.stock }}
-            </span>
-          }
-        </div>
-        <div class="flex gap-3 flex-wrap">
-          @for (v of availableColors(); track v.colorName) {
-            <div class="flex flex-column gap-2 align-items-center">
+          <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            @for (size of availableSizes(); track size) {
               <div
-                class="w-3rem h-3rem border-circle border-2 cursor-pointer relative shadow-1 transition-transform active:scale-90 flex align-items-center justify-content-center"
-                [class.border-indigo-500]="tempColor() === v"
-                [class.border-transparent]="
-                  tempColor() !== v && v.hex !== '#ffffff'
-                "
-                [class.border-gray-200]="v.hex === '#ffffff'"
-                [style.background-color]="v.hex"
-                (click)="v.stock > 0 ? selectColor(v) : null"
-                [class.opacity-40]="v.stock === 0">
-                @if (tempColor() === v) {
-                  <i
-                    class="pi pi-check text-white text-xl shadow-2 border-circle p-1 bg-black-alpha-10"></i>
+                class="px-4 py-3 border-1 border-round-xl cursor-pointer transition-all font-bold text-sm min-w-3rem text-center select-none shadow-1 flex-shrink-0 relative"
+                [class.border-indigo-600]="activeSize() === size"
+                [class.bg-indigo-600]="activeSize() === size"
+                [class.text-white]="activeSize() === size"
+                [class.border-gray-100]="activeSize() !== size"
+                [class.bg-white]="activeSize() !== size"
+                [class.text-gray-600]="activeSize() !== size"
+                (click)="selectTabSize(size)">
+                {{ size }}
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- BODY: COLORES (Scrollable) -->
+      <div class="flex-1 overflow-y-auto p-4 bg-gray-50">
+        @if (!activeSize()) {
+          <div
+            class="flex flex-column align-items-center justify-content-center h-full text-gray-400 opacity-60">
+            <i class="pi pi-arrow-up text-4xl mb-2"></i>
+            <span class="font-bold text-sm">Selecciona una talla arriba</span>
+          </div>
+        } @else {
+          <div class="flex justify-content-between mb-2 px-1">
+            <span class="text-xs font-bold text-gray-400 uppercase"
+              >2. Selecciona Variantes ({{ activeSize() }})</span
+            >
+          </div>
+
+          <div class="flex flex-column gap-3">
+            @for (v of currentSizeVariants(); track v.color_id) {
+              <!-- TARJETA DE COLOR -->
+              <div
+                class="bg-white p-3 border-round-2xl shadow-1 flex flex-column sm:flex-row sm:align-items-center gap-3 transition-all border-1"
+                [class.border-indigo-500]="getSelectionQty(v) > 0"
+                [class.bg-indigo-50]="getSelectionQty(v) > 0"
+                [class.border-white]="getSelectionQty(v) === 0"
+                [class.opacity-50]="v.stock <= 0"
+                (click)="
+                  v.stock > 0 && getSelectionQty(v) === 0
+                    ? toggleVariant(v)
+                    : null
+                ">
+                <!-- INFO IZQUIERDA -->
+                <div class="flex align-items-center gap-3 flex-1">
+                  <div
+                    class="w-3rem h-3rem border-circle border-1 shadow-1 relative flex align-items-center justify-content-center flex-shrink-0"
+                    [class.border-gray-200]="v.hex === '#ffffff'"
+                    [class.border-transparent]="v.hex !== '#ffffff'"
+                    [style.background-color]="v.hex">
+                    @if (getSelectionQty(v) > 0) {
+                      <i
+                        class="pi pi-check text-white text-xl shadow-2 border-circle p-1 bg-black-alpha-20"></i>
+                    }
+                  </div>
+                  <div class="flex flex-column">
+                    <span class="font-bold text-gray-800 text-sm capitalize">{{
+                      v.colorName
+                    }}</span>
+                    <span
+                      class="text-xs"
+                      [class.text-green-600]="v.stock > 5"
+                      [class.text-red-500]="v.stock <= 5">
+                      Stock: {{ v.stock }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- CONTROLES (Derecha) -->
+                @if (getSelectionQty(v) > 0) {
+                  <div
+                    class="flex align-items-center gap-3 justify-content-between sm:justify-content-end w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-top-1 sm:border-top-none border-gray-200 sm:border-none"
+                    (click)="$event.stopPropagation()">
+                    <!-- INPUT PRECIO (NUEVO) -->
+                    <div class="flex flex-column align-items-center">
+                      <span
+                        class="text-xs text-gray-500 font-bold uppercase mb-1"
+                        >Precio</span
+                      >
+                      <div class="relative w-5rem">
+                        <span
+                          class="absolute left-0 top-custom translate-y-50 ml-2 text-gray-500 text-xs font-bold"
+                          >S/</span
+                        >
+                        <input
+                          type="number"
+                          [ngModel]="getSelectionPrice(v)"
+                          (ngModelChange)="updatePrice(v, $event)"
+                          class="w-full border-1 border-gray-200 border-round-lg py-2 pl-4 pr-1 text-right font-bold text-indigo-700 bg-white focus:border-indigo-500 outline-none text-sm h-custom shadow-1"
+                          (focus)="$any($event.target).select()" />
+                      </div>
+                    </div>
+
+                    <!-- CONTADOR CANTIDAD -->
+                    <div class="flex flex-column align-items-center">
+                      <span
+                        class="text-xs text-gray-500 font-bold uppercase mb-1"
+                        >Cant.</span
+                      >
+                      <div
+                        class="flex align-items-center bg-white border-round-lg shadow-1 h-2.2rem border-1 border-gray-200">
+                        <button
+                          class="border-none bg-transparent w-2rem h-full text-indigo-600 font-bold hover:bg-gray-100 border-round-left-lg cursor-pointer text-lg"
+                          (click)="updateQty(activeSize()!, v, -1, $event)">
+                          -
+                        </button>
+                        <span
+                          class="font-bold text-base w-1.5rem text-center text-gray-900"
+                          >{{ getSelectionQty(v) }}</span
+                        >
+                        <button
+                          class="border-none bg-transparent w-2rem h-full text-indigo-600 font-bold hover:bg-gray-100 border-round-right-lg cursor-pointer text-lg"
+                          (click)="updateQty(activeSize()!, v, 1, $event)">
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                } @else {
+                  <div class="text-right hidden sm:block">
+                    <span class="font-bold text-gray-400 text-sm block"
+                      >S/ {{ v.price | number: '1.2-2' }}</span
+                    >
+                    <span class="text-xs text-indigo-500 font-bold"
+                      >Toca para agregar</span
+                    >
+                  </div>
                 }
               </div>
-              <span class="text-xs">{{ v.colorName }}</span>
-            </div>
-          }
-        </div>
+            }
+          </div>
+        }
       </div>
 
-      <!-- Footer: Cantidad y Botón -->
-      <div class="flex gap-3 pt-3 border-top-1 border-gray-300">
-        <div
-          class="flex align-items-center border-1 border-gray-200 border-round-xl w-10rem justify-content-between px-1 bg-white shadow-1">
-          <button
-            class="p-3 border-none bg-transparent text-gray-500 font-bold hover:text-black cursor-pointer text-xl"
-            (click)="adjustTempQty(-1)">
-            -
-          </button>
-          <span class="font-bold text-xl text-gray-800">{{ tempQty }}</span>
-          <button
-            class="p-3 border-none bg-transparent text-indigo-600 font-bold hover:text-indigo-800 cursor-pointer text-xl"
-            (click)="adjustTempQty(1)">
-            +
-          </button>
+      <!-- FOOTER -->
+      <div class="p-4 border-top-1 border-gray-200 bg-white z-20 shadow-up-2">
+        <div class="flex justify-content-between align-items-center mb-3">
+          <div class="flex flex-column">
+            <span class="text-xs font-bold text-gray-500 uppercase"
+              >Resumen</span
+            >
+            <span class="text-sm font-medium text-gray-900">
+              <strong class="text-indigo-600 text-lg">{{
+                totalModalItems()
+              }}</strong>
+              prendas
+            </span>
+          </div>
+          <div class="text-right">
+            <span class="text-xs font-bold text-gray-500 uppercase"
+              >Total Estimado</span
+            >
+            <div class="font-black text-xl text-gray-900">
+              S/ {{ totalModalPrice() | number: '1.2-2' }}
+            </div>
+          </div>
         </div>
 
         <button
-          class="flex-1 font-bold py-3 bg-gray-900 text-white border-round-xl shadow-3 border-none cursor-pointer hover:bg-black transition-all disabled:opacity-50 text-lg"
-          [disabled]="!tempSize() || !tempColor()"
+          class="w-full font-bold py-3 bg-gray-900 text-white border-round-xl shadow-3 border-none cursor-pointer hover:bg-black transition-all disabled:opacity-50 text-lg flex align-items-center justify-content-center gap-2"
+          [disabled]="totalModalItems() === 0"
           (click)="confirm()">
-          {{ posService.modalState().isEditing ? 'GUARDAR' : 'AGREGAR' }}
+          <i class="pi pi-check"></i>
+          <span>{{
+            posService.modalState().isEditing
+              ? 'GUARDAR CAMBIOS'
+              : 'AGREGAR AL CARRITO'
+          }}</span>
         </button>
       </div>
     </div>
