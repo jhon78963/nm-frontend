@@ -75,7 +75,6 @@
               [style.background-color]="item.color.hex"
               [class.border-1]="item.color.hex === '#ffffff'"
               [class.border-gray-200]="item.color.hex === '#ffffff'"></div>
-
             <div class="flex-1 min-w-0">
               <div class="flex justify-content-between align-items-start mb-1">
                 <span
@@ -86,7 +85,6 @@
                   class="pi pi-trash text-red-300 hover:text-red-500 cursor-pointer p-1"
                   (click)="posService.removeItem(item.cartId)"></i>
               </div>
-
               <div class="flex align-items-center flex-wrap gap-2">
                 <div
                   class="bg-gray-50 border-1 border-gray-200 border-round-lg px-2 py-1 flex align-items-center gap-1 cursor-pointer hover:bg-gray-100 transition-colors"

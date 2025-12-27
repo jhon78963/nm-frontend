@@ -13,12 +13,7 @@ import { PosService } from '../services/pos.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PosSelectorComponent } from '../components/pos-selector/pos-selector.component';
-import {
-  debounceTime,
-  distinctUntilChanged,
-  Subject,
-  Subscription,
-} from 'rxjs';
+import { debounceTime, Subject, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-pos',
@@ -47,7 +42,7 @@ export class PosComponent implements AfterViewChecked, OnInit, OnDestroy {
     this.barcodeSubscription = this.barcodeSubject
       .pipe(
         debounceTime(300), // Espera 300ms después de la última tecla
-        distinctUntilChanged(), // Evita disparar si el valor es el mismo
+        // distinctUntilChanged(), // Evita disparar si el valor es el mismo
       )
       .subscribe(valor => {
         // Si el valor no está vacío, buscamos

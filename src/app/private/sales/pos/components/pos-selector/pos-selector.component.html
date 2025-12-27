@@ -81,20 +81,23 @@
         </div>
         <div class="flex gap-3 flex-wrap">
           @for (v of availableColors(); track v.colorName) {
-            <div
-              class="w-3rem h-3rem border-circle border-2 cursor-pointer relative shadow-1 transition-transform active:scale-90 flex align-items-center justify-content-center"
-              [class.border-indigo-500]="tempColor() === v"
-              [class.border-transparent]="
-                tempColor() !== v && v.hex !== '#ffffff'
-              "
-              [class.border-gray-200]="v.hex === '#ffffff'"
-              [style.background-color]="v.hex"
-              (click)="v.stock > 0 ? selectColor(v) : null"
-              [class.opacity-40]="v.stock === 0">
-              @if (tempColor() === v) {
-                <i
-                  class="pi pi-check text-white text-xl shadow-2 border-circle p-1 bg-black-alpha-10"></i>
-              }
+            <div class="flex flex-column gap-2 align-items-center">
+              <div
+                class="w-3rem h-3rem border-circle border-2 cursor-pointer relative shadow-1 transition-transform active:scale-90 flex align-items-center justify-content-center"
+                [class.border-indigo-500]="tempColor() === v"
+                [class.border-transparent]="
+                  tempColor() !== v && v.hex !== '#ffffff'
+                "
+                [class.border-gray-200]="v.hex === '#ffffff'"
+                [style.background-color]="v.hex"
+                (click)="v.stock > 0 ? selectColor(v) : null"
+                [class.opacity-40]="v.stock === 0">
+                @if (tempColor() === v) {
+                  <i
+                    class="pi pi-check text-white text-xl shadow-2 border-circle p-1 bg-black-alpha-10"></i>
+                }
+              </div>
+              <span class="text-xs">{{ v.colorName }}</span>
             </div>
           }
         </div>
