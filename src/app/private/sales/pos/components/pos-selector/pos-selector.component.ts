@@ -38,9 +38,9 @@ export class PosSelectorComponent {
 
   currentSizeVariants = computed(() => {
     const prod = this.posService.modalState().product;
-    const size = this.activeSize();
-    if (!prod || !size) return [];
-    return prod.variants[size] || [];
+    const active = this.activeSize();
+    if (!prod || !active) return [];
+    return prod.variants[active] || [];
   });
 
   totalModalItems = computed(() => {
@@ -70,15 +70,12 @@ export class PosSelectorComponent {
             this.activeSize.set(null);
 
             // 2. SINCRONIZACIÓN INTELIGENTE (CARGAR DESDE CARRITO)
-            // Buscamos TODOS los items en el carrito que sean de ESTE producto.
-            // Así, si ya tenías un "Negro" y editas el "Verde", el "Negro" también aparecerá cargado.
             const currentCart = this.posService.cart();
             const productItemsInCart = currentCart.filter(
               i => i.productId === state.product!.id,
             );
 
             productItemsInCart.forEach(cartItem => {
-              // Buscamos la variante fresca en el producto para tener datos actualizados (stock)
               const variantsInSize =
                 state.product!.variants[cartItem.size] || [];
               const realVariant = variantsInSize.find(
@@ -100,20 +97,19 @@ export class PosSelectorComponent {
               }
             });
 
-            // Aplicamos lo cargado al estado
+            // Aplicamos lo cargado al estado (si había items en carrito, aparecerán seleccionados)
             this.selections.set(initialMap);
 
             // 3. DETERMINAR TALLA ACTIVA
             if (state.isEditing && state.editingCartItem) {
-              // Si venimos de editar uno específico, mostramos esa talla
+              // Si venimos de editar, mostramos esa talla
               this.activeSize.set(state.editingCartItem.size);
             } else {
-              // Si es nuevo escaneo, lógica de auto-selección
+              // Si es nuevo escaneo
               const scannedSku = state.product.sku;
               let foundSizeKey: string | null = null;
-              let foundVariant: Variant | null = null;
 
-              // Buscar SKU en variantes
+              // Buscar SKU en variantes para saber qué talla mostrar
               for (const sizeKey in state.product.variants) {
                 const variantsList = state.product.variants[sizeKey];
                 const match = variantsList.find(
@@ -121,41 +117,16 @@ export class PosSelectorComponent {
                 );
                 if (match) {
                   foundSizeKey = sizeKey;
-                  foundVariant = match;
                   break;
                 }
               }
 
-              // Si encontramos SKU específico
-              if (foundSizeKey && foundVariant) {
+              // CORRECCIÓN: Solo posicionamos la pestaña, NO seleccionamos nada.
+              if (foundSizeKey) {
                 this.activeSize.set(foundSizeKey);
-
-                // Lógica de "+1":
-                // Si ya existía en el carrito (y por tanto ya está en initialMap), le sumamos 1.
-                // Si no existía, lo creamos con 1.
-                const key = this.getItemKey(
-                  foundSizeKey,
-                  foundVariant.color_id,
-                );
-                if (initialMap.has(key)) {
-                  const existing = initialMap.get(key)!;
-                  // Solo sumamos si hay stock
-                  if (existing.qty < foundVariant.stock) {
-                    existing.qty++;
-                    initialMap.set(key, existing);
-                    this.selections.set(new Map(initialMap)); // Refrescar señal
-                  }
-                } else {
-                  // Nuevo
-                  this.addSelection(
-                    foundSizeKey,
-                    foundVariant,
-                    1,
-                    foundVariant.price,
-                  );
-                }
+                // Antes aquí hacíamos addSelection, ahora lo dejamos vacío.
+                // El usuario elegirá manualmente qué color quiere.
               } else {
-                // Si es producto genérico, mostramos primera talla disponible
                 const sizes = Object.keys(state.product.variants);
                 if (sizes.length > 0) this.activeSize.set(sizes[0]);
               }
@@ -255,14 +226,12 @@ export class PosSelectorComponent {
     return this.selections().get(key)?.price || variant.price;
   }
 
-  // --- LÓGICA DE CONFIRMACIÓN MAESTRA (UPSERT) ---
   confirm() {
     const state = this.posService.modalState();
     if (!state.product) return;
 
     const selections = this.selections();
 
-    // 1. Obtenemos TODOS los items que YA están en el carrito de este producto
     const currentCart = this.posService.cart();
     const existingItems = currentCart.filter(
       i => i.productId === state.product!.id,
@@ -270,9 +239,7 @@ export class PosSelectorComponent {
 
     const processedCartIds = new Set<number>();
 
-    // 2. Procesamos las selecciones del modal (Actualizar o Crear)
     for (const selection of selections.values()) {
-      // Buscamos si esta selección YA existe en el carrito
       const existingItem = existingItems.find(
         i =>
           i.size === selection.size &&
@@ -280,7 +247,6 @@ export class PosSelectorComponent {
       );
 
       if (existingItem) {
-        // A. EXISTE -> ACTUALIZAR (Update)
         const updatedItem: CartItem = {
           ...existingItem,
           quantity: selection.qty,
@@ -289,9 +255,8 @@ export class PosSelectorComponent {
           color: selection.variant,
         };
         this.posService.updateItem(updatedItem);
-        processedCartIds.add(existingItem.cartId); // Lo marcamos como "tocado"
+        processedCartIds.add(existingItem.cartId);
       } else {
-        // B. NO EXISTE -> CREAR NUEVO (Add)
         const newItem: CartItem = {
           cartId: Date.now() + Math.random(),
           productId: state.product.id,
@@ -307,8 +272,7 @@ export class PosSelectorComponent {
       }
     }
 
-    // 3. LIMPIEZA: Eliminar los que estaban en el carrito pero ya no están en la selección
-    // (Ej: Tenía rojo y verde, en el modal bajé el rojo a 0, debe borrarse)
+    // Limpieza
     for (const item of existingItems) {
       if (!processedCartIds.has(item.cartId)) {
         this.posService.removeItem(item.cartId);

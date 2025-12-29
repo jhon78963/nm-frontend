@@ -218,6 +218,7 @@ export class PosService {
   }
 
   printTicket(saleId: number) {
+    console.log('Imprimiendo ticket para venta ID:', saleId);
     const baseUrl = this.apiService.BASE_URL.replace(/\/api\/?$/, '');
     const ticketUrl = `${baseUrl}/pos/sales/${saleId}/ticket`;
     const iframe = document.createElement('iframe');
