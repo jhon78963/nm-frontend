@@ -1,7 +1,7 @@
 @if (form) {
   <form [formGroup]="form" (ngSubmit)="buttonSaveSale()">
     <div class="p-fluid p-formgrid grid">
-      <!-- Campo Fecha (Editable) -->
+      <!-- Campo Fecha -->
       <div class="col-12 mb-3">
         <app-input-date
           label="Fecha de Venta"
@@ -12,9 +12,9 @@
           controlName="creationTime"></app-input-date>
       </div>
 
-      <!-- SECCIÓN INFORMATIVA (Solo lectura) -->
+      <!-- SECCIÓN INFORMATIVA -->
       @if (saleDetails) {
-        <!-- 1. Desglose de Pagos -->
+        <!-- 1. Desglose de Pagos (Solo lectura, referencia visual) -->
         <div class="col-12 mb-2">
           <span class="block text-500 font-bold mb-2 text-sm uppercase"
             >Métodos de Pago</span
@@ -39,64 +39,103 @@
                 >
               </div>
             } @empty {
-              <!-- Fallback por si es venta antigua sin detalle -->
+              <!-- Fallback por si la venta no tiene pagos registrados -->
               <div class="text-gray-500 text-sm font-italic">
                 Pago único: {{ saleDetails.paymentMethod }}
               </div>
             }
           </div>
+
+          <!-- Alerta visual si el total recalculado difiere del pago registrado -->
+          @if (calculatedTotal !== saleDetails.total) {
+            <div
+              class="mt-2 text-xs text-orange-600 font-bold flex align-items-center gap-1 fadein-animation">
+              <i class="pi pi-exclamation-triangle"></i>
+              <span
+                >Atención: El nuevo total (S/
+                {{ calculatedTotal | number: '1.2-2' }}) difiere del monto
+                original pagado.</span
+              >
+            </div>
+          }
         </div>
 
-        <!-- 2. Tabla de Productos -->
+        <!-- 2. Tabla de Productos Editable -->
         <div class="col-12 mt-2">
           <span class="block text-500 font-bold mb-2 text-sm uppercase"
-            >Productos Vendidos</span
+            >Edición de Precios</span
           >
-          <div class="border-1 border-200 border-round-xl overflow-hidden">
+
+          <div
+            class="border-1 border-200 border-round-xl overflow-hidden"
+            formArrayName="items">
             <table class="w-full text-sm" style="border-collapse: collapse">
               <thead class="surface-100 text-600 border-bottom-1 border-200">
                 <tr>
-                  <th class="p-2 text-left font-bold">Cant.</th>
+                  <th class="p-2 pl-3 text-left font-bold w-3rem">Cant.</th>
                   <th class="p-2 text-left font-bold">Descripción</th>
-                  <th class="p-2 text-right font-bold">P. Unit</th>
-                  <th class="p-2 text-right font-bold">Total</th>
+                  <th class="p-2 text-right font-bold w-8rem">P. Unitario</th>
+                  <th class="p-2 text-right font-bold w-7rem">Subtotal</th>
                 </tr>
               </thead>
               <tbody>
-                @for (item of saleDetails.items; track item.id) {
+                <!-- Iteramos sobre los CONTROLES del formulario -->
+                <ng-container
+                  *ngFor="let itemGroup of itemsControls; let i = index">
                   <tr
+                    [formGroupName]="i"
                     class="border-bottom-1 surface-border hover:surface-50 transition-colors">
-                    <td class="p-2 pl-3 font-bold text-900">
-                      {{ item.quantity }}
+                    <!-- Cantidad (Solo lectura visual) -->
+                    <td
+                      class="p-2 pl-3 font-bold text-900 text-center vertical-align-middle">
+                      {{ itemGroup.get('quantity')?.value }}
                     </td>
-                    <td class="p-2">
+
+                    <!-- Descripción -->
+                    <td class="p-2 vertical-align-middle">
                       <div class="font-bold text-800">
-                        {{ item.product_name }}
+                        {{ itemGroup.get('product_name')?.value }}
                       </div>
                       <div class="text-xs text-500">
-                        {{ item.size }} • {{ item.color }}
+                        {{ itemGroup.get('size')?.value }} •
+                        {{ itemGroup.get('color')?.value }}
                       </div>
                     </td>
-                    <td class="p-2 text-right text-700">
-                      S/ {{ item.unit_price | number: '1.2-2' }}
+
+                    <!-- PRECIO EDITABLE -->
+                    <td class="p-2 text-right vertical-align-middle">
+                      <div
+                        class="flex align-items-center justify-content-end gap-1">
+                        <span class="text-xs text-500 font-bold">S/</span>
+                        <input
+                          type="number"
+                          pInputText
+                          formControlName="unit_price"
+                          class="w-full text-right font-bold p-1 h-2rem text-sm border-1 border-300 border-round hover:border-indigo-500 focus:border-indigo-500 outline-none transition-colors" />
+                      </div>
                     </td>
-                    <td class="p-2 text-right font-bold text-900 pr-3">
-                      S/ {{ item.subtotal | number: '1.2-2' }}
+
+                    <!-- Subtotal Calculado (Dinámico) -->
+                    <td
+                      class="p-2 text-right font-bold text-900 pr-3 vertical-align-middle">
+                      S/
+                      {{ itemGroup.get('subtotal')?.value | number: '1.2-2' }}
                     </td>
                   </tr>
-                }
+                </ng-container>
               </tbody>
-              <!-- Footer Total -->
-              <tfoot class="surface-50">
+
+              <!-- Footer Total Dinámico -->
+              <tfoot class="surface-50 border-top-2 border-200">
                 <tr>
                   <td
                     colspan="3"
-                    class="p-2 text-right font-bold text-600 uppercase text-xs">
-                    Total Venta
+                    class="p-2 text-right font-bold text-600 uppercase text-xs vertical-align-middle">
+                    Nuevo Total Venta
                   </td>
                   <td
-                    class="p-2 text-right font-black text-lg text-indigo-700 pr-3">
-                    S/ {{ saleDetails.total | number: '1.2-2' }}
+                    class="p-2 text-right font-black text-lg text-indigo-700 pr-3 vertical-align-middle">
+                    S/ {{ calculatedTotal | number: '1.2-2' }}
                   </td>
                 </tr>
               </tfoot>
@@ -105,12 +144,11 @@
         </div>
       }
 
-      <!-- Botón Guardar -->
       <button
         type="submit"
         pButton
         label="Guardar Cambios"
-        class="mt-4 w-full p-button-primary font-bold"
+        class="mt-4 w-full p-button-primary font-bold shadow-2 text-base py-3"
         [disabled]="!isValid"></button>
     </div>
   </form>
