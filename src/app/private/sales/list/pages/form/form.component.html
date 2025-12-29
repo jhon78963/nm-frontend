@@ -1,155 +1,157 @@
 @if (form) {
   <form [formGroup]="form" (ngSubmit)="buttonSaveSale()">
     <div class="p-fluid p-formgrid grid">
-      <!-- Campo Fecha -->
-      <div class="col-12 mb-3">
+      <!-- 1. FECHA -->
+      <div class="col-12">
         <app-input-date
-          label="Fecha de Venta"
+          label="Fecha"
           for="creationTime"
-          type="text"
-          id="creationTime"
-          placeholder="Ingresa la fecha"
           controlName="creationTime"></app-input-date>
       </div>
 
-      <!-- SECCIÓN INFORMATIVA -->
-      @if (saleDetails) {
-        <!-- 1. Desglose de Pagos (Solo lectura, referencia visual) -->
-        <div class="col-12 mb-2">
-          <span class="block text-500 font-bold mb-2 text-sm uppercase"
-            >Métodos de Pago</span
-          >
-          <div class="flex flex-wrap gap-2">
-            @for (pay of saleDetails.payments; track pay.id) {
-              <div
-                class="border-1 border-round-lg p-2 px-3 surface-card flex align-items-center gap-2 shadow-1">
-                <i
-                  class="pi text-lg"
-                  [ngClass]="{
-                    'pi-money-bill text-green-600': pay.method === 'CASH',
-                    'pi-mobile text-purple-600':
-                      pay.method === 'YAPE' || pay.method === 'PLIN',
-                    'pi-credit-card text-orange-600': pay.method === 'CARD',
-                  }"></i>
-                <span class="font-bold text-700 text-sm"
-                  >{{ pay.method }}:</span
-                >
-                <span class="text-900 font-bold"
-                  >S/ {{ pay.amount | number: '1.2-2' }}</span
-                >
-              </div>
-            } @empty {
-              <!-- Fallback por si la venta no tiene pagos registrados -->
-              <div class="text-gray-500 text-sm font-italic">
-                Pago único: {{ saleDetails.paymentMethod }}
-              </div>
-            }
-          </div>
+      <!-- 2. ITEMS (Edición de Precios) -->
+      <div class="col-12">
+        <span class="block text-500 font-bold mb-2 text-sm uppercase"
+          >Productos</span
+        >
+        <div
+          class="border-1 border-200 border-round-xl overflow-hidden"
+          formArrayName="items">
+          <table class="w-full text-sm">
+            <thead class="surface-100 border-bottom-1 border-200">
+              <tr>
+                <th class="p-2 text-left">Cant.</th>
+                <th class="p-2 text-left">Desc.</th>
+                <th class="p-2 text-right w-6rem">Precio</th>
+                <th class="p-2 text-right">Sub.</th>
+              </tr>
+            </thead>
+            <tbody>
+              <ng-container *ngFor="let item of itemsControls; let i = index">
+                <tr [formGroupName]="i" class="border-bottom-1 surface-border">
+                  <td class="p-2 text-center font-bold">
+                    {{ item.get('quantity')?.value }}
+                  </td>
+                  <td class="p-2">
+                    <div class="font-bold text-xs">
+                      {{ item.get('description_full')?.value }}
+                    </div>
+                  </td>
+                  <td class="p-2">
+                    <input
+                      type="number"
+                      pInputText
+                      formControlName="unit_price"
+                      class="w-full text-right p-1 h-2rem text-sm" />
+                  </td>
+                  <td class="p-2 text-right font-bold">
+                    {{ item.get('subtotal')?.value | number: '1.2-2' }}
+                  </td>
+                </tr>
+              </ng-container>
+            </tbody>
+            <tfoot class="surface-50">
+              <tr>
+                <td colspan="3" class="p-2 text-right font-bold">
+                  Total Venta
+                </td>
+                <td class="p-2 text-right font-black text-indigo-700">
+                  {{ calculatedTotal | number: '1.2-2' }}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
 
-          <!-- Alerta visual si el total recalculado difiere del pago registrado -->
-          @if (calculatedTotal !== saleDetails.total) {
-            <div
-              class="mt-2 text-xs text-orange-600 font-bold flex align-items-center gap-1 fadein-animation">
-              <i class="pi pi-exclamation-triangle"></i>
-              <span
-                >Atención: El nuevo total (S/
-                {{ calculatedTotal | number: '1.2-2' }}) difiere del monto
-                original pagado.</span
-              >
-            </div>
-          }
+      <!-- 3. PAGOS (Edición Mixta) -->
+      <div class="col-12 mb-3">
+        <div class="flex justify-content-between align-items-center mb-2">
+          <span class="text-500 font-bold text-sm uppercase">Pagos</span>
+          <button
+            type="button"
+            pButton
+            icon="pi pi-plus"
+            label="Agregar Pago"
+            class="p-button-text p-button-sm py-1"
+            (click)="addPaymentRow()"></button>
         </div>
 
-        <!-- 2. Tabla de Productos Editable -->
-        <div class="col-12 mt-2">
-          <span class="block text-500 font-bold mb-2 text-sm uppercase"
-            >Edición de Precios</span
-          >
-
+        <div formArrayName="payments" class="flex flex-column gap-2">
           <div
-            class="border-1 border-200 border-round-xl overflow-hidden"
-            formArrayName="items">
-            <table class="w-full text-sm" style="border-collapse: collapse">
-              <thead class="surface-100 text-600 border-bottom-1 border-200">
-                <tr>
-                  <th class="p-2 pl-3 text-left font-bold w-3rem">Cant.</th>
-                  <th class="p-2 text-left font-bold">Descripción</th>
-                  <th class="p-2 text-right font-bold w-8rem">P. Unitario</th>
-                  <th class="p-2 text-right font-bold w-7rem">Subtotal</th>
-                </tr>
-              </thead>
-              <tbody>
-                <!-- Iteramos sobre los CONTROLES del formulario -->
-                <ng-container
-                  *ngFor="let itemGroup of itemsControls; let i = index">
-                  <tr
-                    [formGroupName]="i"
-                    class="border-bottom-1 surface-border hover:surface-50 transition-colors">
-                    <!-- Cantidad (Solo lectura visual) -->
-                    <td
-                      class="p-2 pl-3 font-bold text-900 text-center vertical-align-middle">
-                      {{ itemGroup.get('quantity')?.value }}
-                    </td>
+            *ngFor="let pay of paymentsControls; let i = index"
+            [formGroupName]="i"
+            class="flex gap-2 align-items-center">
+            <!-- Selector Método -->
+            <p-dropdown
+              [options]="paymentMethodsList"
+              formControlName="method"
+              class="w-full"
+              styleClass="w-full text-sm"></p-dropdown>
 
-                    <!-- Descripción -->
-                    <td class="p-2 vertical-align-middle">
-                      <div class="font-bold text-800">
-                        {{ itemGroup.get('product_name')?.value }}
-                      </div>
-                      <div class="text-xs text-500">
-                        {{ itemGroup.get('size')?.value }} •
-                        {{ itemGroup.get('color')?.value }}
-                      </div>
-                    </td>
+            <!-- Monto -->
+            <div class="p-inputgroup w-8rem">
+              <span class="p-inputgroup-addon py-1 px-2 text-xs">S/</span>
+              <input
+                type="number"
+                pInputText
+                formControlName="amount"
+                class="text-right p-1 text-sm font-bold" />
+            </div>
 
-                    <!-- PRECIO EDITABLE -->
-                    <td class="p-2 text-right vertical-align-middle">
-                      <div
-                        class="flex align-items-center justify-content-end gap-1">
-                        <span class="text-xs text-500 font-bold">S/</span>
-                        <input
-                          type="number"
-                          pInputText
-                          formControlName="unit_price"
-                          class="w-full text-right font-bold p-1 h-2rem text-sm border-1 border-300 border-round hover:border-indigo-500 focus:border-indigo-500 outline-none transition-colors" />
-                      </div>
-                    </td>
-
-                    <!-- Subtotal Calculado (Dinámico) -->
-                    <td
-                      class="p-2 text-right font-bold text-900 pr-3 vertical-align-middle">
-                      S/
-                      {{ itemGroup.get('subtotal')?.value | number: '1.2-2' }}
-                    </td>
-                  </tr>
-                </ng-container>
-              </tbody>
-
-              <!-- Footer Total Dinámico -->
-              <tfoot class="surface-50 border-top-2 border-200">
-                <tr>
-                  <td
-                    colspan="3"
-                    class="p-2 text-right font-bold text-600 uppercase text-xs vertical-align-middle">
-                    Nuevo Total Venta
-                  </td>
-                  <td
-                    class="p-2 text-right font-black text-lg text-indigo-700 pr-3 vertical-align-middle">
-                    S/ {{ calculatedTotal | number: '1.2-2' }}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
+            <!-- Eliminar -->
+            <button
+              type="button"
+              pButton
+              icon="pi pi-trash"
+              class="p-button-danger p-button-text p-button-rounded"
+              (click)="removePayment(i)"
+              [disabled]="paymentsControls.length === 1"></button>
           </div>
         </div>
-      }
+
+        <!-- Resumen Pagos -->
+        <div
+          class="flex justify-content-between mt-2 p-2 border-round"
+          [ngClass]="
+            calculatedTotal - calculatedPayments > 0.1
+              ? 'bg-red-50 text-red-600'
+              : 'bg-green-50 text-green-700'
+          ">
+          <span class="text-xs font-bold uppercase"
+            >Total Pagado: S/ {{ calculatedPayments | number: '1.2-2' }}</span
+          >
+          <span
+            class="text-xs font-bold"
+            *ngIf="calculatedTotal - calculatedPayments > 0.1">
+            Falta: S/
+            {{ calculatedTotal - calculatedPayments | number: '1.2-2' }}
+          </span>
+          <span
+            class="text-xs font-bold"
+            *ngIf="calculatedTotal - calculatedPayments < -0.1">
+            Sobran: S/
+            {{ calculatedPayments - calculatedTotal | number: '1.2-2' }}
+          </span>
+          <!-- FIX: Reemplazamos Math.abs() por una comparación lógica directa -->
+          <span
+            class="text-xs font-bold flex align-items-center gap-1"
+            *ngIf="
+              calculatedTotal - calculatedPayments <= 0.1 &&
+              calculatedTotal - calculatedPayments >= -0.1
+            ">
+            <i class="pi pi-check-circle"></i> Correcto
+          </span>
+        </div>
+      </div>
 
       <button
         type="submit"
         pButton
-        label="Guardar Cambios"
-        class="mt-4 w-full p-button-primary font-bold shadow-2 text-base py-3"
-        [disabled]="!isValid"></button>
+        label="Guardar Todo"
+        class="mt-4 w-full p-button-primary font-bold shadow-2"
+        autofocus
+        [disabled]="!isFormValid"></button>
     </div>
   </form>
 }
