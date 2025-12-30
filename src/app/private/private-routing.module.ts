@@ -52,6 +52,13 @@ const routes: Routes = [
     loadChildren: () => import('./sales/pos/pos.module').then(m => m.PosModule),
   },
   {
+    path: 'finance',
+    title: 'Módulo Financiero',
+    data: { breadcrumb: 'Módulo Financiero' },
+    loadChildren: () =>
+      import('./finance/finance.module').then(m => m.FinanceModule),
+  },
+  {
     path: 'financial-summary',
     title: 'Resumen Financiero',
     data: { breadcrumb: 'Resumen Financiero' },
