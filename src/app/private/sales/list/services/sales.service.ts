@@ -69,6 +69,30 @@ export class SalesService {
     return this.apiService.get(`sales/${id}`);
   }
 
+  // --- NUEVAS FUNCIONES PARA CAMBIO DE MERCADERÍA ---
+
+  /**
+   * Busca una venta por código (string) sin alterar el estado de la lista principal.
+   * Útil para el modal de cambios donde escaneas el ticket.
+   */
+  searchByCode(code: string): Observable<SaleListResponse> {
+    return this.apiService.get<SaleListResponse>(
+      `sales?page=1&limit=1&search=${code}`,
+    );
+  }
+
+  /**
+   * Procesa el cambio de productos.
+   * Al finalizar, refresca la lista de ventas por si hubo cambios en los totales.
+   */
+  processExchange(payload: any): Observable<void> {
+    return this.apiService
+      .post('sales/exchange', payload)
+      .pipe(switchMap(() => this.callGetList()));
+  }
+
+  // --------------------------------------------------
+
   private updateSales(value: Sale[]): void {
     this.sales = value;
     this.sales$.next(this.sales);

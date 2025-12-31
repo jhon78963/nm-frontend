@@ -1,0 +1,217 @@
+<div class="flex flex-column h-full">
+  @if (loading) {
+    <div class="flex align-items-center justify-content-center p-5">
+      <i class="pi pi-spin pi-spinner text-3xl text-gray-400"></i>
+    </div>
+  } @else {
+    <!-- PASO 1: ELEGIR DEVOLUCIÓN -->
+    @if (step === 1 && saleFound) {
+      <div class="flex flex-column gap-3">
+        <div class="bg-blue-50 p-3 border-round border-1 border-blue-100">
+          <div class="flex justify-content-between">
+            <span class="font-bold text-blue-800">{{ saleFound.code }}</span>
+            <span class="text-sm text-blue-600">{{ saleFound.date }}</span>
+          </div>
+          <p class="text-xs text-blue-600 m-0 mt-1">
+            Cliente: {{ saleFound.customer?.name }}
+          </p>
+        </div>
+
+        <span class="text-sm font-bold text-gray-600 uppercase mt-2"
+          >Selecciona el producto a devolver:</span
+        >
+
+        <div class="border-1 border-gray-200 border-round overflow-hidden">
+          @for (item of saleFound.items; track item.id) {
+            <div
+              class="flex justify-content-between align-items-center p-3 hover:surface-100 cursor-pointer border-bottom-1 border-gray-100 transition-colors"
+              (click)="selectReturnItem(item)">
+              <div>
+                <span class="font-bold block text-gray-800 text-sm">{{
+                  item.product_name
+                }}</span>
+                <span class="text-xs text-500"
+                  >{{ item.size }} • {{ item.color }}</span
+                >
+              </div>
+              <span class="font-bold text-indigo-600"
+                >S/ {{ item.unit_price | number: '1.2-2' }}</span
+              >
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- PASO 2: ELEGIR NUEVO -->
+    @if (step === 2) {
+      <div class="flex flex-column gap-3 fadein-animation">
+        <div
+          class="flex justify-content-between align-items-center surface-100 p-2 border-round">
+          <span class="text-xs font-bold text-gray-500 uppercase"
+            >Devuelve:</span
+          >
+          <span class="font-bold text-sm"
+            >{{ selectedReturnItem.product_name }} (S/ {{ returnAmount }})</span
+          >
+        </div>
+
+        <span class="font-bold text-gray-600 text-sm"
+          >Buscar Nuevo Producto</span
+        >
+        <div class="p-inputgroup">
+          <input
+            type="text"
+            pInputText
+            [(ngModel)]="newProductSearch"
+            placeholder="SKU o Nombre"
+            (keydown.enter)="searchNewProduct()" />
+          <button
+            pButton
+            icon="pi pi-search"
+            (click)="searchNewProduct()"></button>
+        </div>
+
+        @if (newProductFound) {
+          <div
+            class="mt-2 border-1 border-gray-200 border-round p-3 surface-card">
+            <p class="font-bold m-0 text-sm mb-2 text-gray-800">
+              {{ newProductFound.name }}
+            </p>
+
+            <div class="flex flex-wrap gap-2">
+              @for (size of objectKeys(newProductFound.variants); track size) {
+                @for (v of newProductFound.variants[size]; track v.color_id) {
+                  <div
+                    class="cursor-pointer border-1 border-gray-300 border-round px-3 py-2 hover:bg-indigo-50 hover:border-indigo-500 transition-colors flex flex-column align-items-center gap-1 min-w-5rem"
+                    (click)="selectNewVariant(v, size)">
+                    <span class="font-bold text-xs">{{ size }}</span>
+                    <span class="text-xs text-500">{{ v.colorName }}</span>
+                    <span class="text-primary font-bold text-sm"
+                      >S/ {{ v.price }}</span
+                    >
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        }
+
+        <div class="mt-auto pt-3">
+          <button
+            pButton
+            label="Atrás"
+            class="p-button-text p-button-sm w-full"
+            (click)="step = 1"></button>
+        </div>
+      </div>
+    }
+
+    <!-- PASO 3: CONFIRMACIÓN (CON PRECIO EDITABLE) -->
+    @if (step === 3) {
+      <div class="flex flex-column h-full">
+        <h3 class="text-center text-900 mt-0">Confirmar Cambio</h3>
+
+        <div class="grid grid-nogutter gap-3">
+          <!-- Devolución -->
+          <div
+            class="col bg-red-50 p-3 border-round border-1 border-red-100 text-center">
+            <span class="block text-xs font-bold text-red-500 uppercase mb-1"
+              >Devuelve</span
+            >
+            <span class="block text-xl font-black text-red-700"
+              >S/ {{ returnAmount | number: '1.2-2' }}</span
+            >
+            <span class="text-xs text-red-400 block mt-1 line-clamp-1">{{
+              selectedReturnItem.product_name
+            }}</span>
+          </div>
+
+          <!-- Nuevo (EDITABLE) -->
+          <div
+            class="col bg-green-50 p-3 border-round border-1 border-green-100 text-center">
+            <span class="block text-xs font-bold text-green-500 uppercase mb-1"
+              >Lleva (Editar)</span
+            >
+
+            <!-- Input Editable -->
+            <div class="flex justify-content-center">
+              <p-inputNumber
+                [(ngModel)]="selectedNewVariant.negotiatedPrice"
+                mode="currency"
+                currency="PEN"
+                locale="es-PE"
+                inputStyleClass="text-center font-black text-xl text-green-700 bg-transparent border-none w-full p-0 shadow-none focus:shadow-none"
+                class="w-full block">
+              </p-inputNumber>
+            </div>
+
+            <span class="text-xs text-green-400 block mt-1 line-clamp-1">{{
+              newProductFound.name
+            }}</span>
+          </div>
+        </div>
+
+        <div class="flex-1 flex flex-column justify-content-center mt-3">
+          @if (difference > 0) {
+            <div
+              class="surface-card p-4 border-round-xl shadow-2 border-1 border-yellow-200 text-center mb-4">
+              <span
+                class="block text-yellow-600 font-bold uppercase text-xs mb-1"
+                >Diferencia a Pagar</span
+              >
+              <span class="block text-4xl font-black text-900"
+                >S/ {{ difference | number: '1.2-2' }}</span
+              >
+            </div>
+
+            <div class="field">
+              <span class="font-bold text-sm mb-2 block text-gray-700"
+                >Método de Pago</span
+              >
+              <p-dropdown
+                [options]="paymentMethods"
+                [(ngModel)]="paymentMethod"
+                optionLabel="label"
+                optionValue="value"
+                styleClass="w-full"></p-dropdown>
+            </div>
+          } @else if (difference < 0) {
+            <div
+              class="bg-blue-50 border-1 border-blue-200 p-3 border-round text-blue-700 flex align-items-center justify-content-center gap-2 mb-4">
+              <i class="pi pi-info-circle text-2xl"></i>
+              <div class="text-left">
+                <span class="font-bold block"
+                  >Saldo a favor: S/
+                  {{ difference * -1 | number: '1.2-2' }}</span
+                >
+                <span class="text-xs">No se devuelve dinero en efectivo.</span>
+              </div>
+            </div>
+          } @else {
+            <div
+              class="bg-blue-50 border-1 border-blue-200 p-3 border-round text-blue-700 flex align-items-center justify-content-center gap-2 mb-4">
+              <i class="pi pi-check-circle text-2xl"></i>
+              <span class="font-bold">Cambio directo (Sin cobro)</span>
+            </div>
+          }
+        </div>
+
+        <div class="flex flex-column gap-2">
+          <button
+            pButton
+            label="PROCESAR CAMBIO"
+            icon="pi pi-check"
+            class="p-button-lg font-bold shadow-2 w-full py-3"
+            (click)="confirmExchange()"></button>
+
+          <button
+            pButton
+            label="Cancelar"
+            class="p-button-text w-full text-500"
+            (click)="step = 2"></button>
+        </div>
+      </div>
+    }
+  }
+</div>

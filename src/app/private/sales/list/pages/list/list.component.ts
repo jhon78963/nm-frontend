@@ -21,6 +21,7 @@ import { SharedModule } from '../../../../../shared/shared.module';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { SaleFormComponent } from '../form/form.component';
+import { SaleExchangeComponent } from '../exchange/exchange.component';
 
 @Component({
   selector: 'app-list',
@@ -38,6 +39,15 @@ export class SaleListComponent implements OnInit, OnDestroy {
   page: number = 1;
   search: string = '';
   callToAction: CallToAction<Sale>[] = [
+    {
+      type: 'button',
+      size: 'small',
+      icon: 'pi pi-pencil',
+      outlined: true,
+      pTooltip: 'Cambio de producto',
+      tooltipPosition: 'bottom',
+      click: (rowData: Sale) => this.buttonExchangeSale(rowData.id),
+    },
     {
       type: 'button',
       size: 'small',
@@ -182,6 +192,24 @@ export class SaleListComponent implements OnInit, OnDestroy {
   //     },
   //   });
   // }
+
+  buttonExchangeSale(id: number): void {
+    this.saleModal = this.dialogService.open(SaleExchangeComponent, {
+      data: { id },
+      header: 'Cambio de mercadería',
+      styleClass: 'dialog-custom-form',
+    });
+
+    this.saleModal.onClose.subscribe({
+      next: value => {
+        value && value?.success
+          ? showSuccess(this.messageService, 'Detalle actualizado.')
+          : value?.error
+            ? showError(this.messageService, value?.error)
+            : null;
+      },
+    });
+  }
 
   buttonEditSale(id: number): void {
     this.saleModal = this.dialogService.open(SaleFormComponent, {
