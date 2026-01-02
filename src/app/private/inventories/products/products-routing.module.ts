@@ -80,6 +80,13 @@ const routes: Routes = [
         c => c.EcommerceFormComponent,
       ),
   },
+  {
+    path: 'history/:id',
+    loadComponent: () =>
+      import('./pages/form/products-history/products-history.component').then(
+        c => c.ProductHistoryComponent,
+      ),
+  },
   { path: '', pathMatch: 'full', redirectTo: 'products' },
 ];
 

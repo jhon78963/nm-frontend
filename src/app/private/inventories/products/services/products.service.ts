@@ -86,6 +86,10 @@ export class ProductsService {
     return this.apiService.get(`products/${id}`);
   }
 
+  getHistory(id: number): Observable<any> {
+    return this.apiService.get(`products/${id}/history`);
+  }
+
   private updateProducts(value: Product[]): void {
     this.products = value;
     this.products$.next(this.products);

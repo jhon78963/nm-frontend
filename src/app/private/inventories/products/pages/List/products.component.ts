@@ -123,6 +123,15 @@ export class ProductListComponent implements OnInit {
       click: (rowData: Product, event?: Event) =>
         this.deleteProductButton(rowData.id, event!),
     },
+    {
+      type: 'button',
+      size: 'small',
+      icon: 'pi pi-history',
+      outlined: true,
+      pTooltip: 'Historial',
+      tooltipPosition: 'bottom',
+      click: (rowData: Product) => this.historyProductButton(rowData.id),
+    },
   ];
 
   genders: Gender[] = [];
@@ -216,6 +225,9 @@ export class ProductListComponent implements OnInit {
 
   ecommerceProductButton(id: number) {
     this.router.navigate([`/inventories/products/ecommerce/${id}`]);
+  }
+  historyProductButton(id: number) {
+    this.router.navigate([`/inventories/products/history/${id}`]);
   }
 
   deleteProductButton(id: number, event: Event) {
