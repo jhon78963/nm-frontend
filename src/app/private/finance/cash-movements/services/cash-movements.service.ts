@@ -57,6 +57,13 @@ export class CashflowService {
       switchMap(() => this.loadDailyReport(currentDate)),
     );
   }
+  registerSummaryMovement(movement: {
+    type: string;
+    amount: number;
+    description: string;
+  }): Observable<void> {
+    return this.apiService.post(this.apiUrl, movement);
+  }
 
   // Helper para actualizar el BehaviorSubject
   private updateReport(data: any): void {

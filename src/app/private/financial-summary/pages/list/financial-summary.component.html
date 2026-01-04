@@ -1,147 +1,241 @@
-<div class="flex flex-column gap-4">
+<div class="flex flex-column gap-4 p-4 fadein-animation">
+  <!-- 1. GRID DE TARJETAS (KPIs) -->
   <div class="grid">
+    <!-- Caja Total (Tarjeta Oscura) -->
     <div class="col-12 md:col-3">
-      <div
-        class="bg-bluegray-900 border-round-2xl p-4 text-white shadow-4 relative overflow-hidden h-full">
-        <div class="absolute top-0 right-0 p-3 opacity-10">
-          <i class="fas fa-wallet text-6xl"></i>
-        </div>
-        <p
-          class="text-gray-400 text-xs font-bold uppercase mb-2"
-          style="letter-spacing: 1px">
-          Caja Total
-        </p>
-        <h3 class="text-3xl font-bold mb-3 m-0 text-white">S/ 1,850.00</h3>
-        <div class="flex gap-2 text-xs">
-          <span class="surface-800 p-2 border-round border-1 border-700"
-            >Efec: S/ 500</span
-          >
-          <span class="surface-800 p-2 border-round border-1 border-700"
-            >Dig: S/ 1,350</span
-          >
-        </div>
-      </div>
-    </div>
-
-    <div class="col-12 md:col-3">
-      <div
-        class="surface-card border-round-2xl p-4 border-1 surface-border shadow-2 h-full">
-        <div class="flex justify-content-between mb-3">
-          <div
-            class="w-3rem h-3rem bg-green-50 border-round-lg flex align-items-center justify-content-center text-green-600">
-            <i class="fas fa-arrow-down"></i>
+      @if (loading()) {
+        <p-skeleton height="10rem" borderRadius="16px"></p-skeleton>
+      } @else {
+        <div
+          class="bg-bluegray-900 border-round-2xl p-4 text-white shadow-4 relative overflow-hidden h-full flex flex-column justify-content-between">
+          <!-- Decoración fondo -->
+          <div class="absolute top-0 right-0 p-3 opacity-10">
+            <i class="pi pi-wallet text-6xl"></i>
           </div>
-          <span
-            class="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 border-round-2xl h-fit"
-            >+12%</span
-          >
-        </div>
-        <p class="text-500 text-xs font-bold uppercase m-0">Ingresos Ventas</p>
-        <h3 class="text-2xl font-bold text-900 mt-2 mb-0">S/ 4,250</h3>
-      </div>
-    </div>
 
-    <div class="col-12 md:col-3">
-      <div
-        class="surface-card border-round-2xl p-4 border-1 surface-border shadow-2 h-full">
-        <div class="flex justify-content-between mb-3">
-          <div
-            class="w-3rem h-3rem bg-red-50 border-round-lg flex align-items-center justify-content-center text-red-500">
-            <i class="fas fa-arrow-up"></i>
+          <div>
+            <p
+              class="text-gray-400 text-xs font-bold uppercase mb-2"
+              style="letter-spacing: 1px">
+              Caja Total
+            </p>
+            <h3 class="text-4xl font-bold m-0 text-white">
+              S/ {{ cards().cash_total.amount | number: '1.2-2' }}
+            </h3>
+          </div>
+
+          <div class="flex gap-2 text-xs mt-3">
+            <span
+              class="surface-800 p-2 border-round border-1 border-700 text-gray-300">
+              Efec:
+              <strong class="text-white"
+                >S/ {{ cards().cash_total.cash | number: '1.0-0' }}</strong
+              >
+            </span>
+            <span
+              class="surface-800 p-2 border-round border-1 border-700 text-gray-300">
+              Dig:
+              <strong class="text-white"
+                >S/ {{ cards().cash_total.digital | number: '1.0-0' }}</strong
+              >
+            </span>
           </div>
         </div>
-        <p class="text-500 text-xs font-bold uppercase m-0">
-          Gastos Operativos
-        </p>
-        <h3 class="text-2xl font-bold text-900 mt-2 mb-0">S/ 350</h3>
-        <p class="text-xs text-400 mt-1">Luz, Pasajes, Comida</p>
-      </div>
+      }
     </div>
 
+    <!-- Ingresos Ventas -->
     <div class="col-12 md:col-3">
-      <div
-        class="surface-card border-round-2xl p-4 border-1 surface-border shadow-2 h-full">
-        <div class="flex justify-content-between mb-3">
-          <div
-            class="w-3rem h-3rem bg-blue-50 border-round-lg flex align-items-center justify-content-center text-blue-600">
-            <i class="fas fa-shopping-bag"></i>
+      @if (loading()) {
+        <p-skeleton height="10rem" borderRadius="16px"></p-skeleton>
+      } @else {
+        <div
+          class="surface-card border-round-2xl p-4 border-1 surface-border shadow-2 h-full flex flex-column justify-content-between">
+          <div class="flex justify-content-between mb-3">
+            <div
+              class="w-3rem h-3rem bg-green-50 border-round-lg flex align-items-center justify-content-center text-green-600">
+              <i class="pi pi-arrow-down text-xl font-bold"></i>
+            </div>
+            <span
+              class="text-xs font-bold text-green-700 bg-green-100 px-2 py-1 border-round-2xl h-fit flex align-items-center gap-1">
+              <i class="pi pi-chart-line text-xs"></i>
+              {{ cards().sales_income.growth > 0 ? '+' : ''
+              }}{{ cards().sales_income.growth }}%
+            </span>
+          </div>
+          <div>
+            <p class="text-500 text-xs font-bold uppercase m-0">
+              Ingresos Ventas
+            </p>
+            <h3 class="text-3xl font-bold text-900 mt-2 mb-0">
+              S/ {{ cards().sales_income.amount | number: '1.2-2' }}
+            </h3>
           </div>
         </div>
-        <p class="text-500 text-xs font-bold uppercase m-0">Inversión Stock</p>
-        <h3 class="text-2xl font-bold text-900 mt-2 mb-0">S/ 2,100</h3>
-        <p class="text-xs text-400 mt-1">Compras recuperables</p>
-      </div>
+      }
+    </div>
+
+    <!-- Gastos Operativos -->
+    <div class="col-12 md:col-3">
+      @if (loading()) {
+        <p-skeleton height="10rem" borderRadius="16px"></p-skeleton>
+      } @else {
+        <div
+          class="surface-card border-round-2xl p-4 border-1 surface-border shadow-2 h-full flex flex-column justify-content-between">
+          <div class="flex justify-content-between mb-3">
+            <div
+              class="w-3rem h-3rem bg-red-50 border-round-lg flex align-items-center justify-content-center text-red-500">
+              <i class="pi pi-arrow-up text-xl font-bold"></i>
+            </div>
+          </div>
+          <div>
+            <p class="text-500 text-xs font-bold uppercase m-0">
+              Gastos Operativos
+            </p>
+            <h3 class="text-3xl font-bold text-900 mt-2 mb-0">
+              S/ {{ cards().expenses.amount | number: '1.2-2' }}
+            </h3>
+            <p class="text-xs text-400 mt-1 m-0">
+              {{ cards().expenses.description }}
+            </p>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Inversión Stock -->
+    <div class="col-12 md:col-3">
+      @if (loading()) {
+        <p-skeleton height="10rem" borderRadius="16px"></p-skeleton>
+      } @else {
+        <div
+          class="surface-card border-round-2xl p-4 border-1 surface-border shadow-2 h-full flex flex-column justify-content-between">
+          <div class="flex justify-content-between mb-3">
+            <div
+              class="w-3rem h-3rem bg-blue-50 border-round-lg flex align-items-center justify-content-center text-blue-600">
+              <i class="pi pi-shopping-bag text-xl font-bold"></i>
+            </div>
+          </div>
+          <div>
+            <p class="text-500 text-xs font-bold uppercase m-0">
+              Inversión Stock
+            </p>
+            <h3 class="text-3xl font-bold text-900 mt-2 mb-0">
+              S/ {{ cards().stock_investment.amount | number: '1.2-2' }}
+            </h3>
+            <p class="text-xs text-400 mt-1 m-0">
+              {{ cards().stock_investment.description }}
+            </p>
+          </div>
+        </div>
+      }
     </div>
   </div>
 
+  <!-- 2. TABLA DE MOVIMIENTOS RECIENTES -->
   <div
     class="surface-card border-round-2xl border-1 surface-border shadow-2 overflow-hidden">
+    <!-- Header Tabla -->
     <div
-      class="p-4 border-bottom-1 surface-border flex justify-content-between align-items-center">
-      <h3 class="font-bold text-800 m-0">Últimos Movimientos</h3>
+      class="p-4 border-bottom-1 surface-border flex flex-column sm:flex-row justify-content-between align-items-center gap-3">
+      <h3 class="font-bold text-800 m-0 text-xl">Últimos Movimientos</h3>
       <div class="flex gap-2">
         <button
-          (click)="openTransactionModal('INGRESO')"
-          class="cursor-pointer border-none bg-green-50 text-green-700 hover:bg-green-100 px-3 py-2 border-round-lg text-sm font-bold transition-colors transition-duration-200 flex align-items-center">
-          <i class="fas fa-plus mr-2"></i> Ingreso
-        </button>
+          pButton
+          label="Ingreso"
+          icon="pi pi-plus"
+          class="p-button-success p-button-outlined p-button-sm border-round-lg font-bold"
+          (click)="openTransactionModal('INGRESO')"></button>
         <button
-          (click)="openTransactionModal('GASTO')"
-          class="cursor-pointer border-none bg-red-50 text-red-700 hover:bg-red-100 px-3 py-2 border-round-lg text-sm font-bold transition-colors transition-duration-200 flex align-items-center">
-          <i class="fas fa-minus mr-2"></i> Gasto
-        </button>
+          pButton
+          label="Gasto"
+          icon="pi pi-minus"
+          class="p-button-danger p-button-outlined p-button-sm border-round-lg font-bold"
+          (click)="openTransactionModal('GASTO')"></button>
       </div>
     </div>
 
-    <table
-      class="w-full text-left text-sm text-600 border-collapse border-none">
-      <thead class="surface-50 text-xs uppercase font-bold text-500">
+    <!-- PrimeNG Table -->
+    <p-table
+      [value]="transactions()"
+      [loading]="loading()"
+      styleClass="p-datatable-sm"
+      [rowHover]="true">
+      <ng-template pTemplate="header">
+        <tr class="text-xs uppercase surface-50 text-500">
+          <th class="p-3 pl-4">Concepto</th>
+          <th class="p-3">Categoría</th>
+          <th class="p-3">Fecha</th>
+          <th class="p-3">Método</th>
+          <th class="p-3 pr-4 text-right">Monto</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-tx>
+        <tr
+          class="border-bottom-1 surface-border hover:surface-50 transition-colors">
+          <!-- Concepto -->
+          <td class="p-3 pl-4 font-medium text-900">{{ tx.concept }}</td>
+
+          <!-- Categoría (Badge) -->
+          <td class="p-3">
+            <span
+              class="px-2 py-1 border-round text-xs font-bold inline-block"
+              [ngClass]="{
+                'bg-green-100 text-green-700':
+                  tx.category === 'Venta' || tx.category === 'Ingreso',
+                'bg-red-100 text-red-700': tx.category === 'Gasto',
+              }">
+              {{ tx.category }}
+            </span>
+          </td>
+
+          <!-- Fecha -->
+          <td class="p-3 text-600 text-sm">{{ tx.date }}</td>
+
+          <!-- Método -->
+          <td class="p-3">
+            <div class="flex align-items-center gap-2 text-700 text-sm">
+              <i
+                class="pi"
+                [ngClass]="{
+                  'pi-money-bill text-green-500': tx.method === 'CASH',
+                  'pi-mobile text-purple-500': tx.method !== 'CASH',
+                }"></i>
+              {{ tx.method }}
+            </div>
+          </td>
+
+          <!-- Monto -->
+          <td class="p-3 pr-4 text-right">
+            <span
+              class="font-bold text-lg"
+              [ngClass]="
+                tx.type === 'income' ? 'text-green-600' : 'text-red-600'
+              ">
+              {{ tx.type === 'income' ? '+' : '-' }} S/
+              {{ tx.amount | number: '1.2-2' }}
+            </span>
+          </td>
+        </tr>
+      </ng-template>
+
+      <!-- Estado Vacío -->
+      <ng-template pTemplate="emptymessage">
         <tr>
-          <th class="p-4">Concepto</th>
-          <th class="p-4">Categoría</th>
-          <th class="p-4">Fecha</th>
-          <th class="p-4">Método</th>
-          <th class="p-4 text-right">Monto</th>
+          <td colspan="5" class="text-center p-5 text-500">
+            <i class="pi pi-inbox text-4xl mb-2 block text-300"></i>
+            No hay movimientos recientes registrados.
+          </td>
         </tr>
-      </thead>
-      <tbody class="">
-        <tr
-          class="hover:surface-hover transition-colors transition-duration-200 border-bottom-1 surface-border">
-          <td class="p-4 font-medium text-900">Venta POS #024</td>
-          <td class="p-4">
-            <span
-              class="bg-green-100 text-green-700 px-2 py-1 border-round text-xs font-bold"
-              >Venta</span
-            >
-          </td>
-          <td class="p-4">Hoy, 12:30 PM</td>
-          <td class="p-4">
-            <i class="fas fa-money-bill-wave text-green-500 mr-2"></i>Efectivo
-          </td>
-          <td class="p-4 text-right font-bold text-green-600">+ S/ 120.00</td>
-        </tr>
-        <tr
-          class="hover:surface-hover transition-colors transition-duration-200 border-bottom-1 surface-border">
-          <td class="p-4 font-medium text-900">Pasaje Lima Ida</td>
-          <td class="p-4">
-            <span
-              class="bg-red-100 text-red-700 px-2 py-1 border-round text-xs font-bold"
-              >Pasaje</span
-            >
-          </td>
-          <td class="p-4">Ayer, 08:00 PM</td>
-          <td class="p-4">
-            <i class="fas fa-wallet text-400 mr-2"></i>Caja Chica
-          </td>
-          <td class="p-4 text-right font-bold text-900">- S/ 60.00</td>
-        </tr>
-      </tbody>
-    </table>
+      </ng-template>
+    </p-table>
   </div>
 </div>
 
+<!-- COMPONENTE MODAL (Tu modal existente o uno nuevo) -->
 <app-transaction-modal
-  [(visible)]="modalVisible"
+  [(visible)]="showModal"
   [type]="modalType"
   (saved)="handleTransactionSave($event)">
 </app-transaction-modal>
