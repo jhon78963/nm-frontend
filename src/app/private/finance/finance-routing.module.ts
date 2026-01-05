@@ -11,12 +11,6 @@ const routes: Routes = [
         m => m.CashMovementsModule,
       ),
   },
-  // {
-  //   path: 'users',
-  //   title: 'Usuarios',
-  //   data: { breadcrumb: 'Usuarios' },
-  //   loadChildren: () => import('./users/users.module').then(m => m.UsersModule),
-  // },
   { path: '', pathMatch: 'full', redirectTo: 'roles' },
 ];
 
