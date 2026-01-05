@@ -1,4 +1,4 @@
-<div class="p-4 bg-blue-50 min-h-screen font-family fadein-animation">
+<div class="p-4 bg-blue-50 font-family fadein-animation">
   <!-- HEADER CON FILTRO DE FECHA -->
   <div
     class="flex flex-column md:flex-row justify-content-between align-items-center mb-4 gap-3">
@@ -129,7 +129,8 @@
             <p-chart
               type="line"
               [data]="chartData"
-              [options]="chartOptions"></p-chart>
+              [options]="chartOptions"
+              height="280px"></p-chart>
           </div>
         </div>
       </div>
@@ -143,7 +144,7 @@
           <p-table
             [value]="topProducts()"
             [scrollable]="true"
-            scrollHeight="400px"
+            scrollHeight="500px"
             styleClass="p-datatable-sm">
             <ng-template pTemplate="header">
               <tr>
