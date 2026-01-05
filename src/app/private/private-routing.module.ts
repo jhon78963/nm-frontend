@@ -71,6 +71,13 @@ const routes: Routes = [
       ),
   },
   {
+    path: 'reports',
+    title: 'Reportes',
+    data: { breadcrumb: 'Reportes' },
+    loadChildren: () =>
+      import('./reports/reports.module').then(m => m.ReportsModule),
+  },
+  {
     path: '',
     pathMatch: 'full',
     redirectTo: 'home',

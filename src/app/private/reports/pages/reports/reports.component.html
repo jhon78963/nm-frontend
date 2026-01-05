@@ -1,0 +1,153 @@
+<div class="p-4 bg-blue-50 min-h-screen font-family fadein-animation">
+  <div class="flex justify-content-between align-items-center mb-4">
+    <h1 class="text-2xl font-bold text-900 m-0">Reporte Gerencial</h1>
+    <button
+      pButton
+      icon="pi pi-refresh"
+      label="Actualizar"
+      class="p-button-outlined"
+      (click)="loadData()"></button>
+  </div>
+
+  @if (loading()) {
+    <div class="grid">
+      <div class="col-12 md:col-4"><p-skeleton height="8rem"></p-skeleton></div>
+      <div class="col-12 md:col-4"><p-skeleton height="8rem"></p-skeleton></div>
+      <div class="col-12 md:col-4"><p-skeleton height="8rem"></p-skeleton></div>
+    </div>
+  } @else {
+    <!-- 1. TOTALES DE VENTA -->
+    <div class="grid mb-4">
+      <div class="col-12 md:col-4">
+        <div
+          class="surface-card shadow-2 p-3 border-round-xl border-left-3 border-blue-500">
+          <span class="block text-500 font-medium mb-3">Venta Diaria</span>
+          <div class="text-900 font-bold text-2xl">
+            S/ {{ totals().daily | number: '1.2-2' }}
+          </div>
+        </div>
+      </div>
+      <div class="col-12 md:col-4">
+        <div
+          class="surface-card shadow-2 p-3 border-round-xl border-left-3 border-purple-500">
+          <span class="block text-500 font-medium mb-3">Venta Semanal</span>
+          <div class="text-900 font-bold text-2xl">
+            S/ {{ totals().weekly | number: '1.2-2' }}
+          </div>
+        </div>
+      </div>
+      <div class="col-12 md:col-4">
+        <div
+          class="surface-card shadow-2 p-3 border-round-xl border-left-3 border-green-500">
+          <span class="block text-500 font-medium mb-3">Venta Mensual</span>
+          <div class="text-900 font-bold text-2xl">
+            S/ {{ totals().monthly | number: '1.2-2' }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- 2. ANÁLISIS DE UTILIDAD (Izquierda) -->
+      <div class="col-12 lg:col-8">
+        <div class="surface-card shadow-2 border-round-xl p-4 h-full">
+          <h3 class="text-lg font-bold text-700 m-0 mb-4">
+            Estado de Resultados (Mes Actual)
+          </h3>
+
+          <div class="grid text-center mb-4">
+            <div class="col-4 border-right-1 border-100">
+              <span class="block text-sm text-500 mb-1">Ventas Brutas</span>
+              <span class="text-xl font-bold text-green-600"
+                >S/ {{ financials().sales_revenue | number: '1.2-2' }}</span
+              >
+            </div>
+            <div class="col-4 border-right-1 border-100">
+              <span class="block text-sm text-500 mb-1">Costo Mercadería</span>
+              <span class="text-xl font-bold text-orange-500"
+                >- S/ {{ financials().cost_of_goods | number: '1.2-2' }}</span
+              >
+            </div>
+            <div class="col-4">
+              <span class="block text-sm text-500 mb-1">Ganancia Bruta</span>
+              <span class="text-xl font-bold text-indigo-600"
+                >S/ {{ financials().gross_profit | number: '1.2-2' }}</span
+              >
+            </div>
+          </div>
+
+          <div class="surface-50 border-round p-3 mb-4">
+            <div class="flex justify-content-between mb-2">
+              <span class="font-medium text-700">Ganancia Bruta</span>
+              <span class="font-bold"
+                >S/ {{ financials().gross_profit | number: '1.2-2' }}</span
+              >
+            </div>
+            <div class="flex justify-content-between mb-2 text-red-500">
+              <span>(-) Gastos Operativos</span>
+              <span
+                >S/
+                {{ financials().operating_expenses | number: '1.2-2' }}</span
+              >
+            </div>
+            <div
+              class="border-top-1 border-300 my-2 pt-2 flex justify-content-between text-xl">
+              <span class="font-black text-900 uppercase">Utilidad Neta</span>
+              <span
+                class="font-black"
+                [ngClass]="
+                  financials().net_utility >= 0
+                    ? 'text-green-600'
+                    : 'text-red-600'
+                ">
+                S/ {{ financials().net_utility | number: '1.2-2' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- GRÁFICO -->
+          <div class="h-20rem">
+            <p-chart
+              type="line"
+              [data]="chartData"
+              [options]="chartOptions"></p-chart>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. TOP PRODUCTOS (Derecha) -->
+      <div class="col-12 lg:col-4">
+        <div class="surface-card shadow-2 border-round-xl p-4 h-full">
+          <h3 class="text-lg font-bold text-700 m-0 mb-3">
+            Top Productos (Ranking)
+          </h3>
+          <p-table
+            [value]="topProducts()"
+            [scrollable]="true"
+            scrollHeight="400px"
+            styleClass="p-datatable-sm">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Producto</th>
+                <th class="text-right">Cant.</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-prod>
+              <tr>
+                <td>
+                  <span class="font-bold block text-sm">{{ prod.name }}</span>
+                  <span class="text-xs text-500"
+                    >{{ prod.size }} • {{ prod.color }}</span
+                  >
+                </td>
+                <td class="text-right font-bold text-indigo-600">
+                  {{ prod.total_sold }}
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      </div>
+    </div>
+  }
+</div>
