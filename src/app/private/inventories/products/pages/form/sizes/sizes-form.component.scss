@@ -21,7 +21,9 @@
     background-color: #75787b;
     color: #fff;
   }
-  .p-datatable.p-datatable-hoverable-rows .p-datatable-tbody > tr:not(.p-highlight):hover {
+  .p-datatable.p-datatable-hoverable-rows
+    .p-datatable-tbody
+    > tr:not(.p-highlight):hover {
     background: rgb(0 0 0 / 20%);
     color: #475569;
   }
@@ -29,7 +31,7 @@
 
 .bg-input-text {
   input.input-text {
-    background-color: #F0F0F0;
+    background-color: #f0f0f0;
     border-radius: 62px;
     border: none;
     width: 100%;
@@ -55,13 +57,13 @@
 
   @media (max-width: 480px) {
     .dialog-custom-form {
-        width: 70% !important;
-        height: auto !important;
+      width: 70% !important;
+      height: auto !important;
     }
 
     .dialog-custom-assign {
-        width: 70% !important;
-        height: auto !important;
+      width: 70% !important;
+      height: auto !important;
     }
   }
 }

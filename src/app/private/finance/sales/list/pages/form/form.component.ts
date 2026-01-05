@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { SharedModule } from '../../../../../shared/shared.module';
+
 import { CommonModule, DatePipe } from '@angular/common';
 import {
   FormBuilder,
@@ -16,7 +16,8 @@ import {
 } from 'primeng/dynamicdialog';
 import { MessageService } from 'primeng/api';
 import { SalesService } from '../../services/sales.service';
-import { formatDateTime } from '../../../../../utils/dates';
+import { SharedModule } from '../../../../../../shared/shared.module';
+import { formatDateTime } from '../../../../../../utils/dates';
 
 @Component({
   selector: 'app-form',

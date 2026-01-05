@@ -7,8 +7,8 @@ import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import {
   CallToAction,
   Column,
-} from '../../../../../interfaces/table.interface';
-import { LoadingService } from '../../../../../services/loading.service';
+} from '../../../../../../interfaces/table.interface';
+import { LoadingService } from '../../../../../../services/loading.service';
 import { SalesService } from '../../services/sales.service';
 import { debounceTime, Observable } from 'rxjs';
 import { PaginatorState } from 'primeng/paginator';
@@ -16,8 +16,8 @@ import {
   showError,
   showSuccess,
   showToastWarn,
-} from '../../../../../utils/notifications';
-import { SharedModule } from '../../../../../shared/shared.module';
+} from '../../../../../../utils/notifications';
+import { SharedModule } from '../../../../../../shared/shared.module';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { SaleFormComponent } from '../form/form.component';

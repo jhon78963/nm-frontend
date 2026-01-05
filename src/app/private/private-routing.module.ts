@@ -43,13 +43,16 @@ const routes: Routes = [
     title: 'Ventas',
     data: { breadcrumb: 'Ventas' },
     loadChildren: () =>
-      import('./sales/list/sales-list.module').then(m => m.SalesListModule),
+      import('./finance/sales/list/sales-list.module').then(
+        m => m.SalesListModule,
+      ),
   },
   {
     path: 'sales/pos',
     title: 'POS',
     data: { breadcrumb: 'POS' },
-    loadChildren: () => import('./sales/pos/pos.module').then(m => m.PosModule),
+    loadChildren: () =>
+      import('./finance/sales/pos/pos.module').then(m => m.PosModule),
   },
   {
     path: 'finance',
@@ -63,7 +66,7 @@ const routes: Routes = [
     title: 'Resumen Financiero',
     data: { breadcrumb: 'Resumen Financiero' },
     loadChildren: () =>
-      import('./financial-summary/financial-summary.module').then(
+      import('./finance/financial-summary/financial-summary.module').then(
         m => m.FinancialSummaryModule,
       ),
   },

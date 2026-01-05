@@ -20,7 +20,6 @@
 //   src: url('./assets/fonts/poppins/Poppins-SemiBold.ttf');
 // }
 
-
 // /* [ RESTYLE TAG ]*/
 // * {
 //     margin: 0px;
@@ -74,7 +73,6 @@
 //     list-style-type: none;
 // }
 
-
 // /*---------------------------------------------*/
 // input {
 //     outline: none;
@@ -122,8 +120,6 @@
 // .bg2 {background-color: #1da1f2}
 // .bg3 {background-color: #ea4335}
 
-
-
 // /*//////////////////////////////////////////////////////////////////
 // [ login ]*/
 // .limiter {
@@ -155,7 +151,6 @@
 //   overflow: hidden;
 // }
 
-
 // /*------------------------------------------------------------------
 // [ Form ]*/
 
@@ -171,8 +166,6 @@
 //   line-height: 1.2;
 //   text-align: center;
 // }
-
-
 
 // /*------------------------------------------------------------------
 // [ Input ]*/
@@ -203,7 +196,6 @@
 //   background: transparent;
 //   padding: 0 7px 0 43px;
 // }
-
 
 // /*---------------------------------------------*/
 // .focus-input100 {
@@ -252,7 +244,6 @@
 //   transition: all 0.4s;
 // }
 
-
 // .input100:focus + .focus-input100::before {
 //   width: 100%;
 // }
@@ -268,7 +259,6 @@
 // .has-val.input100 + .focus-input100::after {
 //   color: #a64bf4;
 // }
-
 
 // /*------------------------------------------------------------------
 // [ Button ]*/
@@ -340,7 +330,6 @@
 // .login100-form-btn:disabled {
 //   background-color: grey;
 // }
-
 
 // /*[ PADDING ]
 // ///////////////////////////////////////////////////////////
@@ -2361,8 +2350,6 @@
 // .m-l-auto {margin-left: auto;}
 // .m-r-auto {margin-right: auto;}
 
-
-
 // /*[ TEXT ]
 // ///////////////////////////////////////////////////////////
 // */
@@ -2403,10 +2390,6 @@
 // .lh-2-8 {line-height: 2.8;}
 // .lh-2-9 {line-height: 2.9;}
 
-
-
-
-
 // /*[ SHAPE ]
 // ///////////////////////////////////////////////////////////
 // */
@@ -2439,7 +2422,6 @@
 // .float-l {float: left;}
 // .float-r {float: right;}
 
-
 // /*[ Width & Height ]
 // -----------------------------------------------------------
 // */
@@ -2467,7 +2449,6 @@
 // .left-auto {left: auto;}
 // .right-auto {right: auto;}
 
-
 // /*[ Opacity ]
 // -----------------------------------------------------------
 // */
@@ -2489,8 +2470,6 @@
 // .bgwhite {background-color: white;}
 // .bgblack {background-color: black;}
 
-
-
 // /*[ Wrap Picture ]
 // -----------------------------------------------------------
 // */
@@ -2509,8 +2488,6 @@
 // .wrap-pic-cir img {
 // width: 100%;
 // }
-
-
 
 // /*[ Hover ]
 // -----------------------------------------------------------
@@ -2537,8 +2514,6 @@
 // transform: scale(1.1);
 // }
 
-
-
 // /*[  ]
 // -----------------------------------------------------------
 // */
@@ -2548,9 +2523,6 @@
 
 // .visible-false {visibility: hidden;}
 // .visible-true {visibility: visible;}
-
-
-
 
 // /*[ Transition ]
 // -----------------------------------------------------------
@@ -2603,8 +2575,6 @@
 //   -moz-transition: all 1s;
 //   transition: all 1s;
 // }
-
-
 
 // /*[ Layout ]
 // ///////////////////////////////////////////////////////////
@@ -2902,26 +2872,25 @@
 // align-items: center;
 // }
 
-
 /* You can add global styles to this file, and also import other style files */
 $gutter: 1rem; //for primeflex grid system
 
 /* Layout */
-@import "assets/layout/styles/layout/layout.scss";
+@import 'assets/layout/styles/layout/layout.scss';
 
 /* PrimeNG */
-@import "../node_modules/primeng/resources/primeng.min.css";
-@import "../node_modules/primeflex/primeflex.scss";
-@import "../node_modules/primeicons/primeicons.css";
+@import '../node_modules/primeng/resources/primeng.min.css';
+@import '../node_modules/primeflex/primeflex.scss';
+@import '../node_modules/primeicons/primeicons.css';
 
 /* Quill Text Editor for p-editor */
-@import "../node_modules/quill/dist/quill.core.css";
-@import "../node_modules/quill/dist/quill.snow.css";
+@import '../node_modules/quill/dist/quill.core.css';
+@import '../node_modules/quill/dist/quill.snow.css';
 
 /* Demos */
-@import "assets/demo/styles/flags/flags.css";
-@import "assets/demo/styles/badges.scss";
-@import "assets/demo/styles/code.scss";
+@import 'assets/demo/styles/flags/flags.css';
+@import 'assets/demo/styles/badges.scss';
+@import 'assets/demo/styles/code.scss';
 
 // input {
 //   -webkit-box-shadow: 0 0 0 30px white inset !important;

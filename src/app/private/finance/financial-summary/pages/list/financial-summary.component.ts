@@ -8,7 +8,7 @@ import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TransactionModalComponent } from '../form/transaction-modal.component';
-import { CashflowService } from '../../../finance/cash-movements/services/cash-movements.service';
+import { CashflowService } from '../../../../finance/cash-movements/services/cash-movements.service';
 import { MessageService } from 'primeng/api';
 
 @Component({
@@ -96,7 +96,7 @@ export class FinancialSummaryListComponent implements OnInit {
           this.loadDashboardData();
         }
       },
-      error: err => {
+      error: (err: any) => {
         console.error(err);
         this.messageService.add({
           severity: 'error',

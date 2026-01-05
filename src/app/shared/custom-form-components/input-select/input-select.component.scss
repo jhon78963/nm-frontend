@@ -42,7 +42,8 @@
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
-  &:invalid, & option[value=""] {
+  &:invalid,
+  & option[value=''] {
     color: #9ca3af;
   }
 }
@@ -69,7 +70,9 @@
   width: 0;
   height: 2px;
   background-color: #f59e0b;
-  transition: width 0.3s ease, left 0.3s ease;
+  transition:
+    width 0.3s ease,
+    left 0.3s ease;
   pointer-events: none;
 }
 
