@@ -33,7 +33,50 @@ import { SaleExchangeComponent } from '../exchange/exchange.component';
 })
 export class SaleListComponent implements OnInit, OnDestroy {
   saleModal: DynamicDialogRef | undefined;
-  columns: Column[] = [];
+  columns: Column[] = [
+    {
+      header: 'Código',
+      field: 'code',
+      clickable: false,
+      image: false,
+      money: false,
+    },
+    {
+      header: 'Fecha',
+      field: 'date',
+      clickable: false,
+      image: false,
+      money: false,
+    },
+    {
+      header: 'Cliente',
+      field: 'customer',
+      clickable: false,
+      image: false,
+      money: false,
+    },
+    {
+      header: 'Total',
+      field: 'total',
+      clickable: false,
+      image: false,
+      money: false,
+    },
+    {
+      header: 'Estado',
+      field: 'status',
+      clickable: false,
+      image: false,
+      money: false,
+    },
+    {
+      header: 'Acción',
+      field: 'button',
+      clickable: false,
+      image: false,
+      money: false,
+    },
+  ];
   cellToAction: any;
   limit: number = 10;
   page: number = 1;
@@ -82,64 +125,14 @@ export class SaleListComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.columns = [
-      {
-        header: 'Código',
-        field: 'code',
-        clickable: false,
-        image: false,
-        money: false,
-      },
-      {
-        header: 'Fecha',
-        field: 'date',
-        clickable: false,
-        image: false,
-        money: false,
-      },
-      {
-        header: 'Cliente',
-        field: 'customer',
-        clickable: false,
-        image: false,
-        money: false,
-      },
-      {
-        header: 'Total',
-        field: 'total',
-        clickable: false,
-        image: false,
-        money: false,
-      },
-      {
-        header: 'Estado',
-        field: 'status',
-        clickable: false,
-        image: false,
-        money: false,
-      },
-      {
-        header: 'Acción',
-        field: 'button',
-        clickable: false,
-        image: false,
-        money: false,
-      },
-    ];
-
-    // 1. Restaurar Filtros
     this.restoreFilters();
-
-    // 2. Cargar datos
     this.getSales(this.limit, this.page, this.search);
-
     this.formGroup
       .get('search')
       ?.valueChanges.pipe(debounceTime(600))
       .subscribe((value: any) => {
         this.search = value ? value : '';
         this.loadingService.sendLoadingState(true);
-        // Reset a pagina 1 al buscar
         this.getSales(this.limit, 1, this.search);
       });
   }
@@ -150,7 +143,6 @@ export class SaleListComponent implements OnInit, OnDestroy {
     }
   }
 
-  // MÉTODO NUEVO
   restoreFilters() {
     const savedState = this.salesService.getFilterState();
     if (savedState) {
@@ -168,9 +160,9 @@ export class SaleListComponent implements OnInit, OnDestroy {
 
   clearFilter(): void {
     this.search = '';
+    this.limit = 10;
     this.loadingService.sendLoadingState(true);
     this.formGroup.get('search')?.setValue('');
-    // Limpiar estado y recargar
     this.salesService.clearFilterState();
     this.getSales(this.limit, 1, '');
   }

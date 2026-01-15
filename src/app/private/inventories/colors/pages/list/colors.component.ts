@@ -112,12 +112,8 @@ export class ColorListComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // 1. Restaurar filtros
     this.restoreFilters();
-
-    // 2. Cargar datos
     this.getColors(this.limit, this.page, this.search);
-
     this.formGroup
       .get('search')
       ?.valueChanges.pipe(debounceTime(600))
@@ -135,7 +131,6 @@ export class ColorListComponent implements OnInit, OnDestroy {
     }
   }
 
-  // MÉTODO NUEVO
   restoreFilters() {
     const savedState = this.colorsService.getFilterState();
     if (savedState) {
@@ -153,9 +148,9 @@ export class ColorListComponent implements OnInit, OnDestroy {
 
   clearFilter(): void {
     this.search = '';
+    this.limit = 10;
     this.loadingService.sendLoadingState(true);
     this.formGroup.get('search')?.setValue('');
-    // Limpiar storage y recargar
     this.colorsService.clearFilterState();
     this.getColors(this.limit, 1, '');
   }
@@ -178,7 +173,6 @@ export class ColorListComponent implements OnInit, OnDestroy {
     this.getColors(this.limit, this.page, this.search);
   }
 
-  // Corregido: de 'sizes' a 'colors' para que tenga sentido semántico
   get colors(): Observable<Color[]> {
     return this.colorsService.getList();
   }

@@ -151,18 +151,13 @@ export class ProductListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // 1. RECUPERAR ESTADO GUARDADO
     this.restoreFilters();
-
-    // 2. Cargar productos con los filtros (recuperados o default)
     this.getProducts(this.limit, this.page, this.name, this.selectedGenderIds);
-
     this.formGroup
       .get('search')
       ?.valueChanges.pipe(debounceTime(600))
       .subscribe((value: any) => {
         this.name = value ? value : '';
-        // Resetear a página 1 cuando se busca algo nuevo
         this.loadingService.sendLoadingState(true);
         this.getProducts(this.limit, 1, this.name, this.selectedGenderIds);
       });
@@ -172,7 +167,6 @@ export class ProductListComponent implements OnInit {
     });
   }
 
-  // NUEVO MÉTODO PARA RESTAURAR
   restoreFilters() {
     const savedState = this.productsService.getFilterState();
     if (savedState) {
@@ -181,7 +175,6 @@ export class ProductListComponent implements OnInit {
       this.name = savedState.name;
       this.selectedGenderIds = savedState.genderId || [];
 
-      // Actualizar el input del buscador sin emitir evento para evitar doble llamada
       if (this.name) {
         this.formGroup.get('search')?.setValue(this.name, { emitEvent: false });
       }
@@ -194,11 +187,10 @@ export class ProductListComponent implements OnInit {
 
   clearFilter(): void {
     this.name = '';
-    // Limpiar también el estado en el servicio
+    this.limit = 10;
     this.selectedGenderIds = [];
     this.loadingService.sendLoadingState(true);
     this.formGroup.get('search')?.setValue('');
-    // Al limpiar, forzamos la recarga con valores vacíos
     this.getProducts(this.limit, 1, '', []);
   }
 
@@ -215,7 +207,6 @@ export class ProductListComponent implements OnInit {
     gender = this.selectedGenderIds,
   ): Promise<void> {
     this.updatePage(page);
-    // El servicio ahora guarda el estado automáticamente dentro de callGetList
     this.productsService.callGetList(limit, page, name, gender).subscribe();
     setTimeout(() => {
       this.loadingService.sendLoadingState(false);
@@ -223,7 +214,7 @@ export class ProductListComponent implements OnInit {
   }
 
   async onPageSelected(paginate: PaginatorState): Promise<void> {
-    this.limit = paginate.rows ?? 10; // Actualizar limit local
+    this.limit = paginate.rows ?? 10;
     this.updatePage((paginate.page ?? 0) + 1);
     this.getProducts(this.limit, this.page, this.name, this.selectedGenderIds);
   }

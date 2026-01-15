@@ -19,7 +19,10 @@
       </app-input-filter>
     </div>
     <div
-      class="w-full md:w-4 flex justify-content-center md:justify-content-end flex-order-1 md:flex-order-3">
+      class="w-full md:w-4 flex justify-content-center md:justify-content-end flex-order-1 md:flex-order-3 gap-2">
+      <p-button [outlined]="true" severity="secondary" (click)="clearFilter()">
+        <i class="pi pi-filter-slash" style="font-size: 1rem"></i>
+      </p-button>
       <p-button
         [routerLink]="['step/general']"
         [outlined]="true"

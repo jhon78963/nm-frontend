@@ -139,7 +139,6 @@ export class SizeListComponent implements OnInit, OnDestroy {
     }
   }
 
-  // MÉTODO NUEVO
   restoreFilters() {
     const savedState = this.sizesService.getFilterState();
     if (savedState) {
@@ -158,16 +157,15 @@ export class SizeListComponent implements OnInit, OnDestroy {
 
   clearFilter(): void {
     this.search = '';
-    this.selectedSizeTypeIds = []; // Limpiar también filtros de tipo
+    this.limit = 10;
+    this.selectedSizeTypeIds = [];
     this.loadingService.sendLoadingState(true);
     this.formGroup.get('search')?.setValue('');
-    // Forzar limpieza y recarga página 1
     this.getSizes(this.limit, 1, '', []);
   }
 
   handleSizeTypeSelection(ids: number[]) {
     this.selectedSizeTypeIds = ids;
-    // Volver a pag 1 al filtrar
     this.getSizes(this.limit, 1, this.search, this.selectedSizeTypeIds);
   }
 
@@ -197,7 +195,7 @@ export class SizeListComponent implements OnInit, OnDestroy {
   }
 
   async onPageSelected(paginate: PaginatorState): Promise<void> {
-    this.limit = paginate.rows ?? 10; // Actualizar limit local
+    this.limit = paginate.rows ?? 10;
     this.updatePage((paginate.page ?? 0) + 1);
     this.getSizes(this.limit, this.page, this.search, this.selectedSizeTypeIds);
   }
