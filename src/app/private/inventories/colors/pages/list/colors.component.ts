@@ -112,14 +112,20 @@ export class ColorListComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    // 1. Restaurar filtros
+    this.restoreFilters();
+
+    // 2. Cargar datos
     this.getColors(this.limit, this.page, this.search);
+
     this.formGroup
       .get('search')
       ?.valueChanges.pipe(debounceTime(600))
       .subscribe((value: any) => {
         this.search = value ? value : '';
         this.loadingService.sendLoadingState(true);
-        this.getColors(this.limit, this.page, this.search);
+        // Reset a pagina 1 al buscar
+        this.getColors(this.limit, 1, this.search);
       });
   }
 
@@ -129,10 +135,29 @@ export class ColorListComponent implements OnInit, OnDestroy {
     }
   }
 
+  // MÉTODO NUEVO
+  restoreFilters() {
+    const savedState = this.colorsService.getFilterState();
+    if (savedState) {
+      this.limit = savedState.limit;
+      this.page = savedState.page;
+      this.search = savedState.search;
+
+      if (this.search) {
+        this.formGroup
+          .get('search')
+          ?.setValue(this.search, { emitEvent: false });
+      }
+    }
+  }
+
   clearFilter(): void {
     this.search = '';
     this.loadingService.sendLoadingState(true);
     this.formGroup.get('search')?.setValue('');
+    // Limpiar storage y recargar
+    this.colorsService.clearFilterState();
+    this.getColors(this.limit, 1, '');
   }
 
   async getColors(
@@ -148,11 +173,13 @@ export class ColorListComponent implements OnInit, OnDestroy {
   }
 
   async onPageSelected(paginate: PaginatorState): Promise<void> {
+    this.limit = paginate.rows ?? 10;
     this.updatePage((paginate.page ?? 0) + 1);
-    this.getColors(paginate.rows, this.page);
+    this.getColors(this.limit, this.page, this.search);
   }
 
-  get sizes(): Observable<Color[]> {
+  // Corregido: de 'sizes' a 'colors' para que tenga sentido semántico
+  get colors(): Observable<Color[]> {
     return this.colorsService.getList();
   }
 

@@ -17,15 +17,18 @@
       </p-button>
     </div>
   </div>
+
   <app-table-pagination
-    [data]="(sizes | async) ?? []"
+    [data]="(colors | async) ?? []"
     [columns]="columns"
     [callToAction]="callToAction"
     [cellToAction]="cellToAction"
     [total]="(total | async) ?? 0"
     [limit]="limit"
+    [page]="page"
     (paginateSelected)="onPageSelected($event)"
     [rowsPerPageOptions]="[10, 20, 50]"></app-table-pagination>
+
   <p-toast />
   <p-confirmDialog></p-confirmDialog>
 </div>

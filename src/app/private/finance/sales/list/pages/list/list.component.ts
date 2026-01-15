@@ -42,7 +42,7 @@ export class SaleListComponent implements OnInit, OnDestroy {
     {
       type: 'button',
       size: 'small',
-      icon: 'pi pi-pencil',
+      icon: 'pi pi-file-edit',
       outlined: true,
       pTooltip: 'Cambio de producto',
       tooltipPosition: 'bottom',
@@ -127,14 +127,20 @@ export class SaleListComponent implements OnInit, OnDestroy {
       },
     ];
 
+    // 1. Restaurar Filtros
+    this.restoreFilters();
+
+    // 2. Cargar datos
     this.getSales(this.limit, this.page, this.search);
+
     this.formGroup
       .get('search')
       ?.valueChanges.pipe(debounceTime(600))
       .subscribe((value: any) => {
         this.search = value ? value : '';
         this.loadingService.sendLoadingState(true);
-        this.getSales(this.limit, this.page, this.search);
+        // Reset a pagina 1 al buscar
+        this.getSales(this.limit, 1, this.search);
       });
   }
 
@@ -144,10 +150,29 @@ export class SaleListComponent implements OnInit, OnDestroy {
     }
   }
 
+  // MÉTODO NUEVO
+  restoreFilters() {
+    const savedState = this.salesService.getFilterState();
+    if (savedState) {
+      this.limit = savedState.limit;
+      this.page = savedState.page;
+      this.search = savedState.search;
+
+      if (this.search) {
+        this.formGroup
+          .get('search')
+          ?.setValue(this.search, { emitEvent: false });
+      }
+    }
+  }
+
   clearFilter(): void {
     this.search = '';
     this.loadingService.sendLoadingState(true);
     this.formGroup.get('search')?.setValue('');
+    // Limpiar estado y recargar
+    this.salesService.clearFilterState();
+    this.getSales(this.limit, 1, '');
   }
 
   async getSales(
@@ -163,8 +188,9 @@ export class SaleListComponent implements OnInit, OnDestroy {
   }
 
   async onPageSelected(paginate: PaginatorState): Promise<void> {
+    this.limit = paginate.rows ?? 10;
     this.updatePage((paginate.page ?? 0) + 1);
-    this.getSales(paginate.rows, this.page);
+    this.getSales(this.limit, this.page, this.search);
   }
 
   get sales(): Observable<Sale[]> {
@@ -174,24 +200,6 @@ export class SaleListComponent implements OnInit, OnDestroy {
   get total(): Observable<number> {
     return this.salesService.getTotal();
   }
-
-  // buttonAddUser(): void {
-  //   this.saleModal = this.dialogService.open(UserFormComponent, {
-  //     data: {},
-  //     header: 'Crear usuario',
-  //     styleClass: 'dialog-custom-form',
-  //   });
-
-  //   this.saleModal.onClose.subscribe({
-  //     next: value => {
-  //       value && value?.success
-  //         ? showSuccess(this.messageService, 'Usuario Creado.')
-  //         : value?.error
-  //           ? showError(this.messageService, value?.error)
-  //           : null;
-  //     },
-  //   });
-  // }
 
   buttonExchangeSale(id: number): void {
     this.saleModal = this.dialogService.open(SaleExchangeComponent, {

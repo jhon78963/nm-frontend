@@ -50,6 +50,9 @@ export class TablePaginationComponent implements OnInit {
   limit: number = 10;
 
   @Input()
+  page: number = 1;
+
+  @Input()
   rowsPerPageOptions: number[] = [10, 20, 50];
 
   @Output() paginateSelected = new EventEmitter<PaginatorState>();

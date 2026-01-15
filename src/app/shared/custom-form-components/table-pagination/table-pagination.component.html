@@ -70,6 +70,7 @@
 <div class="flex-auto">
   <p-paginator
     [rows]="limit"
+    [first]="(page - 1) * limit"
     [totalRecords]="total"
     [rowsPerPageOptions]="rowsPerPageOptions"
     (onPageChange)="selectPageNumber($event)"

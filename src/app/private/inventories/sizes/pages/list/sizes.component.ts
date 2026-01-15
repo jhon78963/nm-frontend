@@ -115,14 +115,20 @@ export class SizeListComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.getSizes(this.limit, this.page, this.search);
+    // 1. Restaurar Filtros
+    this.restoreFilters();
+
+    // 2. Cargar datos iniciales
+    this.getSizes(this.limit, this.page, this.search, this.selectedSizeTypeIds);
+
     this.formGroup
       .get('search')
       ?.valueChanges.pipe(debounceTime(600))
       .subscribe((value: any) => {
         this.search = value ? value : '';
         this.loadingService.sendLoadingState(true);
-        this.getSizes(this.limit, this.page, this.search);
+        // Reiniciar a pag 1 al buscar
+        this.getSizes(this.limit, 1, this.search, this.selectedSizeTypeIds);
       });
     this.getSizeTypes();
   }
@@ -133,15 +139,36 @@ export class SizeListComponent implements OnInit, OnDestroy {
     }
   }
 
+  // MÉTODO NUEVO
+  restoreFilters() {
+    const savedState = this.sizesService.getFilterState();
+    if (savedState) {
+      this.limit = savedState.limit;
+      this.page = savedState.page;
+      this.search = savedState.search;
+      this.selectedSizeTypeIds = savedState.sizeTypeIds || [];
+
+      if (this.search) {
+        this.formGroup
+          .get('search')
+          ?.setValue(this.search, { emitEvent: false });
+      }
+    }
+  }
+
   clearFilter(): void {
     this.search = '';
+    this.selectedSizeTypeIds = []; // Limpiar también filtros de tipo
     this.loadingService.sendLoadingState(true);
     this.formGroup.get('search')?.setValue('');
+    // Forzar limpieza y recarga página 1
+    this.getSizes(this.limit, 1, '', []);
   }
 
   handleSizeTypeSelection(ids: number[]) {
     this.selectedSizeTypeIds = ids;
-    this.getSizes(this.limit, this.page, this.search, this.selectedSizeTypeIds);
+    // Volver a pag 1 al filtrar
+    this.getSizes(this.limit, 1, this.search, this.selectedSizeTypeIds);
   }
 
   async getSizes(
@@ -170,8 +197,9 @@ export class SizeListComponent implements OnInit, OnDestroy {
   }
 
   async onPageSelected(paginate: PaginatorState): Promise<void> {
+    this.limit = paginate.rows ?? 10; // Actualizar limit local
     this.updatePage((paginate.page ?? 0) + 1);
-    this.getSizes(paginate.rows, this.page);
+    this.getSizes(this.limit, this.page, this.search, this.selectedSizeTypeIds);
   }
 
   get sizes(): Observable<Size[]> {

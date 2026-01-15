@@ -35,6 +35,7 @@
     [cellToAction]="cellToAction"
     [total]="(total | async) ?? 0"
     [limit]="limit"
+    [page]="page"
     (paginateSelected)="onPageSelected($event)"
     [rowsPerPageOptions]="[10, 20, 50]"></app-table-pagination>
   <p-toast />
