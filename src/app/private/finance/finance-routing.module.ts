@@ -11,7 +11,14 @@ const routes: Routes = [
         m => m.CashMovementsModule,
       ),
   },
-  { path: '', pathMatch: 'full', redirectTo: 'roles' },
+  {
+    path: 'expenses',
+    title: 'Gastos',
+    data: { breadcrumb: 'Gastos' },
+    loadChildren: () =>
+      import('./expenses/expenses.module').then(m => m.ExpensesModule),
+  },
+  { path: '', pathMatch: 'full', redirectTo: 'cash-movements' },
 ];
 
 @NgModule({

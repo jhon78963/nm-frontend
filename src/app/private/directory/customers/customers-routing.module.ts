@@ -4,7 +4,7 @@ import { CustomerListComponent } from './pages/list/customers.component';
 
 const routes: Routes = [
   { path: '', component: CustomerListComponent },
-  { path: '', pathMatch: 'full', redirectTo: 'users' },
+  { path: '', pathMatch: 'full', redirectTo: 'customers' },
 ];
 
 @NgModule({

@@ -4,7 +4,7 @@ import { TeamListComponent } from './pages/list/team.component';
 
 const routes: Routes = [
   { path: '', component: TeamListComponent },
-  { path: '', pathMatch: 'full', redirectTo: 'roles' },
+  { path: '', pathMatch: 'full', redirectTo: 'teams' },
 ];
 
 @NgModule({
