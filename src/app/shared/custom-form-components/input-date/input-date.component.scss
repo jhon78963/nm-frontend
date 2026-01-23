@@ -1,31 +1,51 @@
-::ng-deep p-calendar.float .p-inputtext {
-  border: none;
-  border-bottom: 1px solid #d4d6d9;
-  border-radius: 0;
-  width: 100%;
+/* Usamos :host ::ng-deep para afectar solo a este componente pero penetrar estilos de PrimeNG */
+:host ::ng-deep {
+
+  .custom-material-calendar {
+    width: 100%;
+
+    /* El contenedor interno de PrimeNG */
+    .p-calendar {
+      width: 100%;
+    }
+
+    /* El input de texto */
+    .p-inputtext {
+      width: 100%; /* Fuerza al input a llenar el espacio */
+      border: none;
+      border-bottom: 1px solid #d4d6d9;
+      border-radius: 0;
+      background-color: transparent;
+      padding-left: 0; /* Alineación material */
+
+      &:enabled:focus {
+        box-shadow: none;
+        border-color: var(--primary-color);
+      }
+    }
+
+    /* Ajuste del icono si usas showIcon */
+    // .p-datepicker-trigger {
+    //    background: transparent;
+    //    border: none;
+    //    color: #666;
+    // }
+  }
 }
 
-.p-calendar.float:enabled:focus {
-  box-shadow: none;
-  border-color: var(--primary-color);
+/* Ajuste del Label Flotante */
+.p-float-label {
+  display: block; /* Asegura que el span wrapper ocupe espacio */
+  margin-top: 5px; /* Un poco de aire arriba */
 }
 
+/* Cuando el label sube (focus o lleno) */
 .p-float-label input:focus ~ label,
 .p-float-label input.p-filled ~ label,
-.p-float-label textarea:focus ~ label,
-.p-float-label textarea.p-filled ~ label,
 .p-float-label .p-inputwrapper-focus ~ label,
 .p-float-label .p-inputwrapper-filled ~ label {
-  top: -0.7rem;
+  top: -0.5rem;
   left: 0;
   font-size: 12px;
-}
-
-::ng-deep.p-calendar.float:not(.p-calendar-disabled).p-focus > .p-inputtext {
-  box-shadow: none;
-  border-color: var(--primary-color);
-}
-
-::ng-deep .p-calendar.p-calendar-w-btn {
-  width: 100%;
+  color: var(--primary-color);
 }

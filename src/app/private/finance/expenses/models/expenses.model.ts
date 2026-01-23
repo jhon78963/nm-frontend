@@ -7,6 +7,7 @@ export interface IExpense {
   paymentMethod: string;
   referenceCode: string;
   user: string;
+  userId: number;
 }
 export class Expense {
   id: number;
@@ -17,6 +18,7 @@ export class Expense {
   paymentMethod: string;
   referenceCode: string;
   user: string;
+  userId: number;
 
   constructor(expense: IExpense) {
     this.id = expense.id;
@@ -26,6 +28,7 @@ export class Expense {
     this.amount = expense.amount;
     this.paymentMethod = expense.paymentMethod;
     this.referenceCode = expense.referenceCode;
+    this.userId = expense.userId;
     this.user = expense.user;
   }
 }

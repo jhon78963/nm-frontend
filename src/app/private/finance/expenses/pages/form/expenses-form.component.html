@@ -1,1 +1,68 @@
-<p>expenses-form works!</p>
+@if (form) {
+  <form [formGroup]="form" (ngSubmit)="buttonSaveSale()">
+    <div class="col-12">
+      <app-input-date
+        label="Fecha"
+        for="expenseDate"
+        controlName="expenseDate"></app-input-date>
+    </div>
+    <div class="col-12">
+      <app-input-select
+        placeholder="Seleccione categoría"
+        label="Categoría"
+        controlName="category"
+        for="category"
+        [options]="categories"
+        id="category"
+        optionLabel="name"
+        optionValue="id"></app-input-select>
+    </div>
+    <div class="col-12">
+      <app-input-textarea
+        placeholder="Ingrese descripción"
+        label="Descripción"
+        controlName="description"></app-input-textarea>
+    </div>
+    <div class="col-12">
+      <app-input-select
+        placeholder="Seleccione método de pago"
+        label="Método de Pago"
+        controlName="paymentMethod"
+        for="paymentMethod"
+        [options]="paymentMethods"
+        id="paymentMethod"
+        optionLabel="name"
+        optionValue="id"></app-input-select>
+    </div>
+    <div class="col-12">
+      <app-input-money
+        label="Monto"
+        controlName="amount"
+        currency="S/"></app-input-money>
+    </div>
+    <div class="col-12">
+      <app-input-text
+        placeholder="Ingrese código de referencia (opcional)"
+        label="Código de Referencia"
+        controlName="referenceCode"
+        autofocus></app-input-text>
+    </div>
+    <div class="col-12">
+      <app-input-select
+        placeholder="Seleccione usuario"
+        label="Usuario"
+        controlName="userId"
+        for="userId"
+        [options]="(users | async) ?? []"
+        id="userId"
+        optionLabel="username"
+        optionValue="id"></app-input-select>
+    </div>
+    <button
+      type="submit"
+      pButton
+      label="Guardar"
+      class="mt-4 w-full p-button-primary font-bold shadow-2"
+      [disabled]="!isFormValid"></button>
+  </form>
+}

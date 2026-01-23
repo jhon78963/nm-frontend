@@ -1,11 +1,12 @@
-<span class="p-float-label w-full">
+<span class="p-float-label w-full block">
   <p-calendar
-    class="float w-full"
+    class="w-full custom-material-calendar"
     [showIcon]="showIcon"
     [placeholder]="placeholder"
     [inputId]="id"
     [formControl]="formControl"
     dateFormat="dd/mm/yy"
-    pCalendar></p-calendar>
+    appendTo="body"
+    [touchUI]="isMobile"></p-calendar>
   <label [for]="id">{{ label }}</label>
 </span>

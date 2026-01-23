@@ -1,22 +1,74 @@
-::ng-deep p-inputNumber.float .p-inputtext {
-  border: none;
-  border-bottom: 1px solid #d4d6d9;
-  border-radius: 0;
+.custom-field {
+  position: relative;
   width: 100%;
+  margin-bottom: 1rem;
+  margin-top: 0.5rem;
 }
 
-::ng-deep p-inputNumber.float .p-inputtext.float:enabled:focus {
-  box-shadow: none;
-  border-color: var(--primary-color);
+/* Wrapper del componente PrimeNG */
+.custom-input-wrapper {
+  width: 100%;
+  display: block;
+
+  /* Estilizando el input interno de PrimeNG */
+  ::ng-deep .p-inputnumber {
+    width: 100%;
+  }
+
+  ::ng-deep .p-inputnumber-input {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid #d4d6d9; /* surface-border */
+    border-radius: 0;
+    padding: 0.5rem 0;
+    font-size: 1rem;
+    background: transparent;
+    color: #495057; /* text-color */
+    transition: border-color 0.2s;
+
+    &:enabled:focus {
+      box-shadow: none;
+      outline: none;
+      /* El color del borde lo manejamos con el span .focus-border,
+         así que aquí podemos dejarlo transparente o del color base */
+      border-color: #d4d6d9;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      border-bottom-style: dotted;
+    }
+  }
 }
 
-.p-float-label input:focus ~ label,
-.p-float-label input.p-filled ~ label,
-.p-float-label textarea:focus ~ label,
-.p-float-label textarea.p-filled ~ label,
-.p-float-label .p-inputwrapper-focus ~ label,
-.p-float-label .p-inputwrapper-filled ~ label {
-  top: -0.7rem;
+/* Etiqueta Flotante */
+.static-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+  transition: color 0.3s ease;
+  &.active {
+    color: #f59e0b;
+  }
+}
+
+/* Animación de la línea inferior */
+.focus-border {
+  position: absolute;
+  bottom: 0;
   left: 0;
-  font-size: 12px;
+  width: 0;
+  height: 2px;
+  background-color: var(--primary-color, #4f46e5);
+  transition: 0.3s;
+  z-index: 2;
+}
+
+/* Cuando el input interno tiene foco (usando la clase que PrimeNG añade o nuestro flag) */
+/* Nota: Como p-inputNumber no expone el estado focus al wrapper fácilmente en CSS puro,
+   confiamos en la clase .active del label o usamos el estado del componente */
+:host-context(.ng-dirty) .focus-border, /* Opcional si quieres que se quede pintado */
+.custom-field:focus-within .focus-border {
+  width: 100%;
 }

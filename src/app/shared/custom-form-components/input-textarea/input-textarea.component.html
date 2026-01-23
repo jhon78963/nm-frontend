@@ -1,11 +1,34 @@
-<span class="p-float-label">
+<div class="custom-field">
+  <label
+    [for]="controlName"
+    class="static-label"
+    [class.active]="formControl.value || isFocused">
+    {{ label }}
+  </label>
+
   <textarea
+    pInputTextarea
     class="float"
     [rows]="rows"
     [cols]="cols"
     [placeholder]="placeholder"
+    [id]="controlName"
+    [readonly]="readonly"
     [formControl]="formControl"
     [name]="controlName"
-    pInputTextarea></textarea>
-  <label for="float-input">{{ label }}</label>
-</span>
+    autocomplete="off"
+    (focus)="onFocus()"
+    (blur)="onBlur()"></textarea>
+  <span class="focus-border"></span>
+</div>
+
+<div
+  *ngIf="
+    formControl.invalid &&
+    (formControl.dirty || formControl.touched || submitted)
+  "
+  class="mt-1">
+  <small class="p-error block" *ngIf="formControl.errors?.['required']">
+    El campo {{ label }} es requerido
+  </small>
+</div>

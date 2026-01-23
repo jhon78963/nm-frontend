@@ -30,3 +30,17 @@ export function formatDateTimeLocal(date: Date, datePipe: DatePipe) {
 export function formatDate(date: Date, datePipe: DatePipe) {
   return datePipe.transform(date, 'yyyy-MM-dd');
 }
+
+export function formatDateForApi(dateValue: any, datePipe: DatePipe): string {
+  if (!dateValue) return '';
+
+  // Si ya es un string (caso raro de error), intentamos devolverlo tal cual o limpiarlo
+  if (typeof dateValue === 'string') return dateValue;
+
+  // Si es objeto Date, lo transformamos
+  try {
+    return datePipe.transform(dateValue, 'yyyy-MM-dd HH:mm:ss') || '';
+  } catch (e) {
+    return '';
+  }
+}

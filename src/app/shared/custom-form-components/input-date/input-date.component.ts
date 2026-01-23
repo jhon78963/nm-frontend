@@ -23,12 +23,15 @@ export class InputDateComponent implements OnInit {
   @Input() controlName: string = 'text';
   id: string = '';
 
+  isMobile: boolean = false;
+
   formControl!: FormControl;
   submitted!: boolean;
 
   constructor(private formGroupDirective: FormGroupDirective) {}
 
   ngOnInit(): void {
+    this.isMobile = window.innerWidth <= 768;
     this.formGroupDirective.ngSubmit.subscribe({
       next: (value: any) => {
         this.submitted = value.isTrusted;

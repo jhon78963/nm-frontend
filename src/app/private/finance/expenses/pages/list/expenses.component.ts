@@ -10,7 +10,12 @@ import { LoadingService } from '../../../../../services/loading.service';
 import { ExpensesService } from '../../services/expenses.service';
 import { FormControl, FormGroup } from '@angular/forms';
 import { PaginatorState } from 'primeng/paginator';
-import { debounceTime, Observable } from 'rxjs';
+import {
+  debounceTime,
+  distinctUntilChanged,
+  Observable,
+  startWith,
+} from 'rxjs';
 import {
   showError,
   showSuccess,
@@ -22,7 +27,6 @@ import { ExpenseFormComponent } from '../form/expenses-form.component';
   selector: 'app-expenses',
   templateUrl: './expenses.component.html',
   styleUrl: './expenses.component.scss',
-  providers: [ConfirmationService, MessageService],
 })
 export class ExpenseListComponent implements OnInit, OnDestroy {
   expenseModal: DynamicDialogRef | undefined;
@@ -117,14 +121,23 @@ export class ExpenseListComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.restoreFilters();
-    this.getExpenses(this.limit, this.page, this.search);
+    this.formGroup.get('search')?.setValue(this.search, { emitEvent: false });
     this.formGroup
       .get('search')
-      ?.valueChanges.pipe(debounceTime(600))
+      ?.valueChanges.pipe(
+        startWith(this.search),
+        debounceTime(600),
+        distinctUntilChanged(),
+      )
       .subscribe((value: any) => {
-        this.search = value ? value : '';
+        const searchTerm = value || '';
+        if (this.search !== searchTerm) {
+          this.page = 1;
+        }
+
+        this.search = searchTerm;
         this.loadingService.sendLoadingState(true);
-        this.getExpenses(this.limit, 1, this.search);
+        this.getExpenses(this.limit, this.page, this.search);
       });
   }
 
@@ -152,9 +165,10 @@ export class ExpenseListComponent implements OnInit, OnDestroy {
   clearFilter(): void {
     this.search = '';
     this.limit = 10;
-    this.loadingService.sendLoadingState(true);
-    this.formGroup.get('search')?.setValue('');
+    this.page = 1;
     this.expensesService.clearFilterState();
+    this.loadingService.sendLoadingState(true);
+    this.formGroup.get('search')?.setValue('', { emitEvent: false });
     this.getExpenses(this.limit, 1, '');
   }
 
@@ -186,8 +200,10 @@ export class ExpenseListComponent implements OnInit, OnDestroy {
 
   buttonAddExpense(): void {
     this.expenseModal = this.dialogService.open(ExpenseFormComponent, {
+      data: {},
       header: 'Nuevo gasto',
       styleClass: 'dialog-custom-form',
+      focusOnShow: false,
     });
 
     this.expenseModal.onClose.subscribe({
@@ -206,6 +222,7 @@ export class ExpenseListComponent implements OnInit, OnDestroy {
       data: { id },
       header: 'Detalle gasto',
       styleClass: 'dialog-custom-form',
+      focusOnShow: false,
     });
 
     this.expenseModal.onClose.subscribe({

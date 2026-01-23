@@ -1,11 +1,37 @@
-<span class="p-float-label">
+<div class="custom-field">
+  <label
+    [for]="controlName"
+    class="static-label"
+    [class.active]="formControl.value !== null || isFocused">
+    {{ label }}
+  </label>
+
+  <!-- p-inputNumber maneja el modelo como número (decimal) automáticamente -->
   <p-inputNumber
-    class="float"
-    placeholder="{{ currency }} "
+    class="custom-input-wrapper"
+    [formControl]="formControl"
+    [inputId]="controlName"
     mode="currency"
-    inputId="currency-germany"
     currency="PEN"
-    locale="es-PE">
+    locale="es-PE"
+    [minFractionDigits]="2"
+    [maxFractionDigits]="2"
+    [readonly]="readonly"
+    autocomplete="off"
+    (onFocus)="onFocus()"
+    (onBlur)="onBlur()">
   </p-inputNumber>
-  <label for="number-input">{{ label }}</label>
-</span>
+
+  <span class="focus-border"></span>
+</div>
+
+<div
+  *ngIf="
+    formControl.invalid &&
+    (formControl.dirty || formControl.touched || submitted)
+  "
+  class="mt-1">
+  <small class="p-error block" *ngIf="formControl.errors?.['required']">
+    El campo {{ label }} es requerido
+  </small>
+</div>

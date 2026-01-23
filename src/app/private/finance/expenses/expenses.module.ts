@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 
 import { ExpensesRoutingModule } from './expenses-routing.module';
 import { SharedModule } from '../../../shared/shared.module';
@@ -9,18 +9,19 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ExpenseListComponent } from './pages/list/expenses.component';
 import { ExpenseFormComponent } from './pages/form/expenses-form.component';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 @NgModule({
   declarations: [ExpenseListComponent, ExpenseFormComponent],
   imports: [
     CommonModule,
+    ConfirmDialogModule,
     ExpensesRoutingModule,
-    SharedModule,
     FormsModule,
     ReactiveFormsModule,
+    SharedModule,
     ToastModule,
-    ConfirmDialogModule,
   ],
-  providers: [DialogService],
+  providers: [ConfirmationService, DatePipe, DialogService, MessageService],
 })
 export class ExpensesModule {}
