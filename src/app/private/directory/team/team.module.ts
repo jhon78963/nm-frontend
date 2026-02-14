@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { TeamRoutingModule } from './team-routing.module';
 import { SharedModule } from '../../../shared/shared.module';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -27,6 +27,6 @@ import { TeamFormComponent } from './pages/form/team-form.component';
     TreeTableModule,
     TabMenuModule,
   ],
-  providers: [DialogService],
+  providers: [DialogService, DatePipe],
 })
 export class TeamModule {}

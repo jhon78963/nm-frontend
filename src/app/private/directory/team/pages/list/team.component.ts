@@ -21,6 +21,7 @@ import {
   FormsModule,
   ReactiveFormsModule,
 } from '@angular/forms';
+import { AttendanceFormComponent } from '../attendance-form/attendance-form.component';
 
 @Component({
   selector: 'app-team',
@@ -54,6 +55,15 @@ export class TeamListComponent implements OnInit, OnDestroy {
       pTooltip: 'Editar',
       tooltipPosition: 'bottom',
       click: (rowData: Team) => this.buttonEditTeam(rowData.id),
+    },
+    {
+      type: 'button',
+      size: 'small',
+      icon: 'pi pi-calendar',
+      outlined: true,
+      pTooltip: 'Asistencia',
+      tooltipPosition: 'bottom',
+      click: (rowData: Team) => this.buttonAttendanceTeam(rowData.id),
     },
     {
       type: 'button',
@@ -193,6 +203,25 @@ export class TeamListComponent implements OnInit, OnDestroy {
         id,
       },
       header: 'Editar',
+    });
+
+    this.teamModal.onClose.subscribe({
+      next: value => {
+        value && value?.success
+          ? this.showSuccess('Colaborador actualizado.')
+          : value?.error
+            ? this.showError(value?.error)
+            : null;
+      },
+    });
+  }
+
+  buttonAttendanceTeam(id: number): void {
+    this.teamModal = this.dialogService.open(AttendanceFormComponent, {
+      data: {
+        id,
+      },
+      header: 'Asistencia',
     });
 
     this.teamModal.onClose.subscribe({

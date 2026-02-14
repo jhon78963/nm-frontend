@@ -1,0 +1,36 @@
+<div class="grid p-fluid">
+  <div class="col-12 md:col-7">
+    <h3>Calendario de Asistencia</h3>
+    <p-calendar
+      [(ngModel)]="selectedDate"
+      [inline]="true"
+      (onSelect)="loadAttendance()"
+      class="custom-calendar">
+    </p-calendar>
+  </div>
+
+  <div class="col-12 md:col-5">
+    <h3>Detalles del Día</h3>
+    <div class="field">
+      <span>Fecha Seleccionada</span>
+      <input
+        type="text"
+        pInputText
+        [value]="selectedDate | date: 'dd/MM/yyyy'"
+        readonly />
+    </div>
+    <div class="field">
+      <span>Estado</span>
+      <p-dropdown
+        [options]="statusOptions"
+        [(ngModel)]="selectedStatus"
+        placeholder="Seleccionar Estado">
+      </p-dropdown>
+    </div>
+    <button
+      pButton
+      label="Guardar Asistencia"
+      icon="pi pi-check"
+      (click)="onSave()"></button>
+  </div>
+</div>
