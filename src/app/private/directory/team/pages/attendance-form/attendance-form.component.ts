@@ -39,10 +39,14 @@ export class AttendanceFormComponent implements OnInit {
   // Variables
   selectedDate: Date = new Date();
 
+  // Optimización: Caché local
+  private attendanceCache: { [key: string]: any } = {};
+  private loadedMonthYear: string = '';
+
   // Datos del Formulario
   selectedStatus: string = 'PUNTUAL';
 
-  // Getters/Setters para cálculo automático al cambiar hora
+  // Getters/Setters para cálculo automático
   private _checkInTime: Date | null = null;
   get checkInTime(): Date | null {
     return this._checkInTime;
@@ -62,7 +66,7 @@ export class AttendanceFormComponent implements OnInit {
   }
 
   delayMinutes: number = 0; // Tardanza administrativa (vs 8:00 AM)
-  owedMinutes: number = 0; // Deuda de tiempo (vs Jornada dinámica)
+  owedMinutes: number = 0; // Tiempo que debe (vs Jornada Real)
   note: string = '';
 
   // Texto auxiliar para mostrar la hora de salida esperada
@@ -80,50 +84,63 @@ export class AttendanceFormComponent implements OnInit {
     this.loadAttendance();
   }
 
+  /**
+   * Carga los datos de asistencia.
+   * OPTIMIZADO: Solo llama a la API si cambia el mes/año.
+   */
   loadAttendance() {
     if (this.config.data?.id) {
       const teamId = this.config.data.id;
       const month = this.selectedDate.getMonth() + 1;
       const year = this.selectedDate.getFullYear();
+      const currentKey = `${month}-${year}`;
 
+      // Si ya tenemos los datos de este mes en memoria, usamos la caché
+      if (this.loadedMonthYear === currentKey) {
+        this.updateFormFromCache();
+        return;
+      }
+
+      // Si es un mes diferente, llamamos a la API
       this.attendanceService.getAttendance(teamId, month, year).subscribe({
         next: (res: any) => {
-          const dateStr = this.datePipe.transform(
-            this.selectedDate,
-            'yyyy-MM-dd',
-          )!;
-
-          let record = res.data[dateStr];
-          // Fallback por si viene con timestamp
-          if (!record) {
-            record = res.data[dateStr + ' 00:00:00'];
-          }
-
-          if (record) {
-            this.selectedStatus = record.status;
-            this.note = record.notes || '';
-
-            // Asignamos horas (esto disparará calculateDelay, pero luego restauramos delayMinutes guardado)
-            this._checkInTime = record.check_in_time
-              ? this.parseTimeString(record.check_in_time)
-              : null;
-            this._checkOutTime = record.check_out_time
-              ? this.parseTimeString(record.check_out_time)
-              : null;
-
-            // Forzamos el recálculo inicial para ver si debe horas con la salida actual
-            this.calculateDelay();
-
-            // Si ya había tardanza guardada manualmente, la respetamos (opcional)
-            if (record.delay_minutes > 0) {
-              this.delayMinutes = record.delay_minutes;
-            }
-          } else {
-            this.resetForm();
-          }
+          this.attendanceCache = res.data || {};
+          this.loadedMonthYear = currentKey;
+          this.updateFormFromCache();
         },
         error: err => console.error('Error cargando asistencia', err),
       });
+    }
+  }
+
+  /**
+   * Actualiza el formulario con los datos de la caché local
+   */
+  updateFormFromCache() {
+    const dateStr = this.datePipe.transform(this.selectedDate, 'yyyy-MM-dd')!;
+
+    let record = this.attendanceCache[dateStr];
+    // Fallback por si viene con timestamp
+    if (!record) {
+      record = this.attendanceCache[dateStr + ' 00:00:00'];
+    }
+
+    if (record) {
+      this.selectedStatus = record.status;
+      this.note = record.notes || '';
+
+      this._checkInTime = record.check_in_time
+        ? this.parseTimeString(record.check_in_time)
+        : null;
+      this._checkOutTime = record.check_out_time
+        ? this.parseTimeString(record.check_out_time)
+        : null;
+
+      this.delayMinutes = record.delay_minutes || 0;
+
+      this.calculateDelay();
+    } else {
+      this.resetForm();
     }
   }
 
@@ -151,14 +168,11 @@ export class AttendanceFormComponent implements OnInit {
       this.delayMinutes = 0;
     }
 
-    // 2. Cálculo de Salida Dinámica (Entrada + 11h 30m)
+    // 2. Cálculo de Salida Dinámica
     const SHIFT_DURATION_MINUTES = 11 * 60 + 30; // 690 min
 
     if (this._checkInTime) {
       const entryTime = new Date(this._checkInTime);
-
-      // Calculamos la hora de salida OBJETIVO basada en la hora de entrada REAL
-      // Ejemplo: Entra 8:27 -> Salida Objetivo 19:57
       const targetExitTime = new Date(
         entryTime.getTime() + SHIFT_DURATION_MINUTES * 60000,
       );
@@ -168,23 +182,22 @@ export class AttendanceFormComponent implements OnInit {
 
       if (this._checkOutTime) {
         const actualExitTime = new Date(this._checkOutTime);
-
-        // Si salió antes de su hora objetivo personalizada
         if (actualExitTime < targetExitTime) {
           const diffMs = targetExitTime.getTime() - actualExitTime.getTime();
           this.owedMinutes = Math.floor(diffMs / 60000);
+        } else {
+          this.owedMinutes = 0;
         }
       }
     }
 
-    // Actualización automática de estado a TARDE si hay retraso en entrada
     if (this.delayMinutes > 0 && this.selectedStatus === 'PUNTUAL') {
       this.selectedStatus = 'TARDE';
     }
   }
 
   onSave() {
-    const dateStr = this.datePipe.transform(this.selectedDate, 'yyyy-MM-dd');
+    const dateStr = this.datePipe.transform(this.selectedDate, 'yyyy-MM-dd')!;
     const timeInStr = this.checkInTime
       ? this.datePipe.transform(this.checkInTime, 'HH:mm')
       : null;
@@ -192,11 +205,9 @@ export class AttendanceFormComponent implements OnInit {
       ? this.datePipe.transform(this.checkOutTime, 'HH:mm')
       : null;
 
-    // Concatenar deuda en notas automáticamente si existe
     let finalNote = this.note;
     if (this.owedMinutes > 0) {
       const debtInfo = ` [Debe: ${this.owedMinutes} min]`;
-      // Evitamos duplicar el texto si guardamos varias veces
       if (!finalNote.includes('[Debe:')) {
         finalNote = finalNote ? `${finalNote}${debtInfo}` : debtInfo.trim();
       }
@@ -208,13 +219,23 @@ export class AttendanceFormComponent implements OnInit {
       status: this.selectedStatus,
       check_in_time: timeInStr,
       check_out_time: timeOutStr,
-      delay_minutes: this.delayMinutes, // Solo guardamos la tardanza oficial en la columna numérica
+      delay_minutes: this.delayMinutes,
       notes: finalNote,
     };
 
     this.attendanceService.create(payload).subscribe({
-      next: () => {
-        this.loadAttendance();
+      next: (res: any) => {
+        // OPTIMIZACIÓN: Actualizar caché local en lugar de llamar a la API
+        if (res.data) {
+          // Actualizamos el registro en memoria con la respuesta del servidor
+          this.attendanceCache[dateStr] = res.data;
+          // Refrescamos el formulario visualmente
+          this.updateFormFromCache();
+        } else {
+          // Fallback por si la API no devuelve data
+          this.loadedMonthYear = ''; // Invalidar caché para forzar recarga
+          this.loadAttendance();
+        }
       },
       error: err => console.error('Error guardando', err),
     });
@@ -223,15 +244,11 @@ export class AttendanceFormComponent implements OnInit {
   resetForm() {
     this.selectedStatus = 'PUNTUAL';
 
-    // Por defecto sugerimos el horario ideal
     const defaultIn = new Date();
     defaultIn.setHours(8, 0, 0, 0);
     this._checkInTime = defaultIn;
 
-    const defaultOut = new Date();
-    defaultOut.setHours(19, 30, 0, 0);
-    this._checkOutTime = defaultOut;
-
+    this._checkOutTime = null;
     this.delayMinutes = 0;
     this.owedMinutes = 0;
     this.targetExitTimeStr = '7:30 PM';
