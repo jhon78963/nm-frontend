@@ -1,36 +1,132 @@
 <div class="grid p-fluid">
+  <!-- Columna Izquierda: Calendario -->
   <div class="col-12 md:col-7">
-    <h3>Calendario de Asistencia</h3>
-    <p-calendar
-      [(ngModel)]="selectedDate"
-      [inline]="true"
-      (onSelect)="loadAttendance()"
-      class="custom-calendar">
-    </p-calendar>
+    <div class="surface-card p-4 shadow-1 border-round">
+      <h3 class="mt-0 mb-3 text-900">Calendario de Asistencia</h3>
+      <p-calendar
+        [(ngModel)]="selectedDate"
+        [inline]="true"
+        [showWeek]="false"
+        (onSelect)="loadAttendance()"
+        styleClass="w-full custom-calendar border-none">
+      </p-calendar>
+    </div>
   </div>
 
+  <!-- Columna Derecha: Formulario -->
   <div class="col-12 md:col-5">
-    <h3>Detalles del Día</h3>
-    <div class="field">
-      <span>Fecha Seleccionada</span>
-      <input
-        type="text"
-        pInputText
-        [value]="selectedDate | date: 'dd/MM/yyyy'"
-        readonly />
+    <div
+      class="surface-card p-4 shadow-1 border-round h-full flex flex-column gap-3">
+      <div class="text-center border-bottom-1 surface-border pb-3">
+        <span class="text-500 font-medium text-sm">Gestionando:</span>
+        <h3 class="m-0 text-primary">
+          {{ selectedDate | date: 'fullDate' | titlecase }}
+        </h3>
+      </div>
+
+      <!-- Estado -->
+      <div class="field mb-0">
+        <span class="font-bold block mb-2">Estado</span>
+        <p-dropdown
+          [options]="statusOptions"
+          [(ngModel)]="selectedStatus"
+          placeholder="Seleccionar Estado"
+          styleClass="w-full">
+        </p-dropdown>
+      </div>
+
+      <!-- Horarios (Solo si vino a trabajar) -->
+      @if (selectedStatus === 'PUNTUAL' || selectedStatus === 'TARDE') {
+        <div class="formgrid grid">
+          <div class="field col-6 mb-0">
+            <span class="font-bold block mb-2 text-green-700"
+              >Entrada (08:00)</span
+            >
+            <p-calendar
+              [(ngModel)]="checkInTime"
+              [timeOnly]="true"
+              hourFormat="24"
+              [showIcon]="true"
+              icon="pi pi-clock"
+              placeholder="--:--"
+              appendTo="body">
+            </p-calendar>
+          </div>
+          <div class="field col-6 mb-0">
+            <span class="font-bold block mb-2 text-red-700">Salida</span>
+            <p-calendar
+              [(ngModel)]="checkOutTime"
+              [timeOnly]="true"
+              hourFormat="24"
+              [showIcon]="true"
+              icon="pi pi-clock"
+              placeholder="--:--"
+              appendTo="body">
+            </p-calendar>
+
+            <!-- Indicador visual de hora de salida esperada -->
+            <small
+              *ngIf="targetExitTimeStr"
+              class="text-xs text-600 block mt-1 bg-yellow-50 p-1 border-round">
+              Salida ideal: <strong>{{ targetExitTimeStr }}</strong>
+            </small>
+          </div>
+        </div>
+      }
+
+      <!-- Tardanza (Entrada) -->
+      @if (delayMinutes > 0) {
+        <div class="field mb-0 fadein-animation">
+          <span class="font-bold block mb-2 text-orange-600"
+            >Minutos Tardanza (Entrada)</span
+          >
+          <p-inputNumber
+            [(ngModel)]="delayMinutes"
+            suffix=" min"
+            [min]="0"
+            styleClass="w-full"
+            inputStyleClass="font-bold text-orange-600"></p-inputNumber>
+        </div>
+      }
+
+      <!-- Minutos que debe (Salida Anticipada) -->
+      @if (owedMinutes > 0) {
+        <div class="field mb-0 fadein-animation">
+          <span class="font-bold block mb-2 text-purple-600"
+            >Tiempo Debid (Salida Anticipada)</span
+          >
+          <p-inputNumber
+            [(ngModel)]="owedMinutes"
+            suffix=" min"
+            [min]="0"
+            styleClass="w-full"
+            inputStyleClass="font-bold text-purple-600"
+            [readonly]="true"></p-inputNumber>
+          <small class="text-purple-500 text-xs"
+            >Se agregará a las notas.</small
+          >
+        </div>
+      }
+
+      <!-- Nota -->
+      <div class="field mb-0">
+        <span class="font-bold block mb-2">Nota / Observación</span>
+        <textarea
+          pInputTextarea
+          [(ngModel)]="note"
+          rows="3"
+          class="w-full"
+          placeholder="Agregar una nota..."></textarea>
+      </div>
+
+      <div class="mt-auto pt-3">
+        <button
+          pButton
+          label="Guardar Cambios"
+          icon="pi pi-save"
+          class="w-full p-button-lg font-bold"
+          (click)="onSave()"></button>
+      </div>
     </div>
-    <div class="field">
-      <span>Estado</span>
-      <p-dropdown
-        [options]="statusOptions"
-        [(ngModel)]="selectedStatus"
-        placeholder="Seleccionar Estado">
-      </p-dropdown>
-    </div>
-    <button
-      pButton
-      label="Guardar Asistencia"
-      icon="pi pi-check"
-      (click)="onSave()"></button>
   </div>
 </div>
