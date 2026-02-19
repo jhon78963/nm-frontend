@@ -1,27 +1,27 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Sale } from '../../models/sales.model';
 import { CommonModule } from '@angular/common';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { PaginatorState } from 'primeng/paginator';
+import { ToastModule } from 'primeng/toast';
+import { debounceTime, Observable } from 'rxjs';
 import {
   CallToAction,
   Column,
 } from '../../../../../../interfaces/table.interface';
 import { LoadingService } from '../../../../../../services/loading.service';
-import { SalesService } from '../../services/sales.service';
-import { debounceTime, Observable } from 'rxjs';
-import { PaginatorState } from 'primeng/paginator';
+import { SharedModule } from '../../../../../../shared/shared.module';
 import {
   showError,
   showSuccess,
   showToastWarn,
 } from '../../../../../../utils/notifications';
-import { SharedModule } from '../../../../../../shared/shared.module';
-import { ToastModule } from 'primeng/toast';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { SaleFormComponent } from '../form/form.component';
+import { Sale } from '../../models/sales.model';
+import { SalesService } from '../../services/sales.service';
 import { SaleExchangeComponent } from '../exchange/exchange.component';
+import { SaleFormComponent } from '../form/form.component';
 
 @Component({
   selector: 'app-list',
@@ -233,7 +233,7 @@ export class SaleListComponent implements OnInit, OnDestroy {
     this.confirmationService.confirm({
       target: event.target as EventTarget,
       message: 'Deseas cancelar esta venta?',
-      header: 'Eliminar usuario',
+      header: 'Eliminar venta',
       icon: 'pi pi-info-circle',
       acceptButtonStyleClass: 'p-button-danger p-button-text',
       rejectButtonStyleClass: 'p-button-text p-button-text',

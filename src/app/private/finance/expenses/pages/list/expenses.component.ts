@@ -1,14 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { FormControl, FormGroup } from '@angular/forms';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
-import {
-  CallToAction,
-  Column,
-} from '../../../../../interfaces/table.interface';
-import { Expense } from '../../models/expenses.model';
-import { LoadingService } from '../../../../../services/loading.service';
-import { ExpensesService } from '../../services/expenses.service';
-import { FormControl, FormGroup } from '@angular/forms';
 import { PaginatorState } from 'primeng/paginator';
 import {
   debounceTime,
@@ -17,10 +10,17 @@ import {
   startWith,
 } from 'rxjs';
 import {
+  CallToAction,
+  Column,
+} from '../../../../../interfaces/table.interface';
+import { LoadingService } from '../../../../../services/loading.service';
+import {
   showError,
   showSuccess,
   showToastWarn,
 } from '../../../../../utils/notifications';
+import { Expense } from '../../models/expenses.model';
+import { ExpensesService } from '../../services/expenses.service';
 import { ExpenseFormComponent } from '../form/expenses-form.component';
 
 @Component({
@@ -240,7 +240,7 @@ export class ExpenseListComponent implements OnInit, OnDestroy {
     this.confirmationService.confirm({
       target: event.target as EventTarget,
       message: 'Deseas cancelar esta venta?',
-      header: 'Eliminar usuario',
+      header: 'Eliminar venta',
       icon: 'pi pi-info-circle',
       acceptButtonStyleClass: 'p-button-danger p-button-text',
       rejectButtonStyleClass: 'p-button-text p-button-text',
