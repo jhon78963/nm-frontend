@@ -198,8 +198,29 @@
                 </th>
               </tr>
             </ng-template>
-
-            <ng-template pTemplate="body" let-row> </ng-template>
+            <ng-template pTemplate="body" let-row>
+              <tr class="hover:surface-100 transition-duration-150">
+                <td class="font-bold text-700">
+                  {{ row.fecha }}
+                </td>
+                <td class="text-right">
+                  <span class="text-500 text-xs mr-1">S/</span
+                  >{{ row.efectivo | number: '1.2-2' }}
+                </td>
+                <td class="text-right">
+                  <span class="text-500 text-xs mr-1">S/</span
+                  >{{ row.yape | number: '1.2-2' }}
+                </td>
+                <td class="text-right">
+                  <span class="text-500 text-xs mr-1">S/</span
+                  >{{ row.tarjeta_transferencia | number: '1.2-2' }}
+                </td>
+                <td class="text-right font-bold text-indigo-700 bg-indigo-50">
+                  <span class="text-xs mr-1">S/</span
+                  >{{ row.total_mensual | number: '1.2-2' }}
+                </td>
+              </tr>
+            </ng-template>
 
             <ng-template pTemplate="footer">
               <tr class="font-bold">
@@ -219,7 +240,13 @@
               </tr>
             </ng-template>
 
-            <ng-template pTemplate="emptymessage"> </ng-template>
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="5" class="text-center p-4 text-500">
+                  No hay registros históricos disponibles.
+                </td>
+              </tr>
+            </ng-template>
           </p-table>
         </div>
       </div>
