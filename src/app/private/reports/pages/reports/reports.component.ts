@@ -1,5 +1,5 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 // PrimeNG
@@ -48,6 +48,31 @@ export class ReportsComponent implements OnInit {
   // Configuración Gráfico
   chartData: any;
   chartOptions: any;
+
+  totalEfectivo = computed(() =>
+    this.allTimeMonthlyReport().reduce(
+      (acc, row) => acc + (row.efectivo || 0),
+      0,
+    ),
+  );
+
+  totalYape = computed(() =>
+    this.allTimeMonthlyReport().reduce((acc, row) => acc + (row.yape || 0), 0),
+  );
+
+  totalTarjeta = computed(() =>
+    this.allTimeMonthlyReport().reduce(
+      (acc, row) => acc + (row.tarjeta_transferencia || 0),
+      0,
+    ),
+  );
+
+  totalGeneral = computed(() =>
+    this.allTimeMonthlyReport().reduce(
+      (acc, row) => acc + (row.total_mensual || 0),
+      0,
+    ),
+  );
 
   ngOnInit() {
     this.initChartOptions();
