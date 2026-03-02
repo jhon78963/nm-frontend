@@ -169,5 +169,69 @@
         </div>
       </div>
     </div>
+
+    <div class="grid mt-4">
+      <div class="col-12">
+        <div class="surface-card shadow-2 border-round-xl p-4">
+          <div class="flex align-items-center justify-content-between mb-4">
+            <h3 class="text-lg font-bold text-700 m-0">
+              <i class="pi pi-calendar-plus mr-2 text-blue-500"></i>
+              Ventas Mensuales por Método de Pago
+            </h3>
+            <span class="text-500 text-sm">Histórico acumulado</span>
+          </div>
+
+          <p-table
+            [value]="allTimeMonthlyReport()"
+            responsiveLayout="scroll"
+            styleClass="p-datatable-striped p-datatable-sm">
+            <ng-template pTemplate="header">
+              <tr>
+                <th class="bg-blue-50 text-blue-800">Fecha</th>
+                <th class="bg-blue-50 text-blue-800 text-right">Efectivo</th>
+                <th class="bg-blue-50 text-blue-800 text-right">Yape</th>
+                <th class="bg-blue-50 text-blue-800 text-right">
+                  Transf./Tarjeta
+                </th>
+                <th class="bg-indigo-600 text-white text-right font-bold">
+                  Total Mensual
+                </th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-row>
+              <tr class="hover:surface-100 transition-duration-150">
+                <td class="font-bold text-700">
+                  {{ row.fecha }}
+                </td>
+                <td class="text-right">
+                  <span class="text-500 text-xs mr-1">S/</span
+                  >{{ row.efectivo | number: '1.2-2' }}
+                </td>
+                <td class="text-right">
+                  <span class="text-500 text-xs mr-1">S/</span
+                  >{{ row.yape | number: '1.2-2' }}
+                </td>
+                <td class="text-right">
+                  <span class="text-500 text-xs mr-1">S/</span
+                  >{{ row.tarjeta_transferencia | number: '1.2-2' }}
+                </td>
+                <td class="text-right font-bold text-indigo-700 bg-indigo-50">
+                  <span class="text-xs mr-1">S/</span
+                  >{{ row.total_mensual | number: '1.2-2' }}
+                </td>
+              </tr>
+            </ng-template>
+
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="5" class="text-center p-4 text-500">
+                  No hay registros históricos disponibles.
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      </div>
+    </div>
   }
 </div>

@@ -1,14 +1,14 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 // PrimeNG
-import { CardModule } from 'primeng/card';
-import { TableModule } from 'primeng/table';
-import { ChartModule } from 'primeng/chart';
 import { ButtonModule } from 'primeng/button';
-import { SkeletonModule } from 'primeng/skeleton';
 import { CalendarModule } from 'primeng/calendar';
+import { CardModule } from 'primeng/card';
+import { ChartModule } from 'primeng/chart';
+import { SkeletonModule } from 'primeng/skeleton';
+import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 import { ReportsService } from '../../services/reports-service.service';
 
@@ -42,6 +42,8 @@ export class ReportsComponent implements OnInit {
   totals = signal<any>({});
   topProducts = signal<any[]>([]);
   financials = signal<any>({});
+  // --- NUEVO SIGNAL PARA EL REPORTE HISTÓRICO ---
+  allTimeMonthlyReport = signal<any[]>([]);
 
   // Configuración Gráfico
   chartData: any;
@@ -55,13 +57,10 @@ export class ReportsComponent implements OnInit {
   loadData() {
     this.loading.set(true);
 
-    // Calcular el rango del mes seleccionado
     const year = this.filterDate.getFullYear();
-    const month = this.filterDate.getMonth(); // 0-11
+    const month = this.filterDate.getMonth();
 
-    // Primer día del mes
     const start = new Date(year, month, 1);
-    // Último día del mes
     const end = new Date(year, month + 1, 0);
 
     const startDateStr = this.datePipe.transform(start, 'yyyy-MM-dd');
@@ -73,6 +72,9 @@ export class ReportsComponent implements OnInit {
           this.totals.set(res.data.totals);
           this.topProducts.set(res.data.top_products);
           this.financials.set(res.data.financials);
+
+          // --- CARGAMOS EL REPORTE HISTÓRICO AQUÍ ---
+          this.allTimeMonthlyReport.set(res.data.all_time_monthly_report || []);
 
           this.setupChart(res.data.financials.chart_data);
         }
@@ -88,18 +90,16 @@ export class ReportsComponent implements OnInit {
       datasets: [
         {
           label: 'Ventas',
-          // CORRECCIÓN: Convertimos los strings a números para que el gráfico funcione
           data: data.sales.map((val: any) => parseFloat(val) || 0),
           fill: false,
-          borderColor: '#4ade80', // green-400
+          borderColor: '#4ade80',
           tension: 0.4,
         },
         {
           label: 'Gastos',
-          // CORRECCIÓN: Convertimos los strings a números
           data: data.expenses.map((val: any) => parseFloat(val) || 0),
           fill: false,
-          borderColor: '#f87171', // red-400
+          borderColor: '#f87171',
           tension: 0.4,
         },
       ],
