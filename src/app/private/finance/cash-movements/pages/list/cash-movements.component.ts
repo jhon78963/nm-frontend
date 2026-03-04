@@ -1,20 +1,20 @@
+import { CommonModule, DatePipe } from '@angular/common';
 import {
   Component,
-  inject,
-  OnInit,
-  OnDestroy,
-  signal,
   computed,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
 } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 
 // PrimeNG imports
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { InputTextModule } from 'primeng/inputtext';
 import { CashflowService } from '../../services/cash-movements.service';
 
 @Component({
@@ -60,6 +60,32 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
       (s.total_sales || 0) + (s.total_incomes || 0) - (s.total_expenses || 0)
     );
   });
+
+  get filteredTotalIncomesAmount(): number {
+    const sales = this.filteredList('sales').reduce(
+      (sum: number, item: any) => sum + (Number(item.amount) || 0),
+      0,
+    );
+    const incomes = this.filteredList('incomes').reduce(
+      (sum: number, item: any) => sum + (Number(item.amount) || 0),
+      0,
+    );
+    return sales + incomes;
+  }
+
+  get filteredTotalExpensesAmount(): number {
+    return this.filteredList('expenses').reduce(
+      (sum: number, item: any) => sum + (Number(item.amount) || 0),
+      0,
+    );
+  }
+
+  get filteredFinalBalance(): number {
+    const base = Number(this.summary().opening_balance) || 0;
+    return (
+      base + this.filteredTotalIncomesAmount - this.filteredTotalExpensesAmount
+    );
+  }
 
   ngOnInit() {
     // 1. SUSCRIPCIÓN AL ESTADO DEL SERVICIO
