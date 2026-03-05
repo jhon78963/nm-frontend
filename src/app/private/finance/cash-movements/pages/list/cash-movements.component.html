@@ -1,18 +1,16 @@
 <div class="flex flex-column h-screen bg-blue-50 font-family relative">
-  <!-- 1. HEADER (Fijo arriba) -->
   <div class="surface-card shadow-2 p-3 z-2 relative">
     <div
-      class="flex flex-column md:flex-row justify-content-between align-items-center gap-3">
-      <!-- Título -->
-      <div>
+      class="flex flex-column md:flex-row justify-content-between align-items-center gap-2 md:gap-3">
+      <div class="text-center md:text-left w-full md:w-auto">
         <h1 class="text-xl font-bold text-900 m-0">Control de Caja</h1>
         <div class="text-sm text-500 mt-1">
           Estado: <span class="text-green-600 font-bold">ABIERTO</span>
         </div>
       </div>
 
-      <!-- Navegación Fecha -->
-      <div class="flex align-items-center surface-100 border-round-xl p-1">
+      <div
+        class="flex align-items-center surface-100 border-round-xl p-1 w-full md:w-auto justify-content-between md:justify-content-center mt-2 md:mt-0">
         <button
           pButton
           icon="pi pi-chevron-left"
@@ -20,9 +18,11 @@
           (click)="changeDate(-1)"></button>
 
         <div
-          class="flex flex-column align-items-center px-4 cursor-pointer w-12rem">
-          <span class="text-xs font-bold text-500 uppercase">Visualizando</span>
-          <span class="font-bold text-800">{{
+          class="flex flex-column align-items-center px-2 md:px-4 cursor-pointer">
+          <span class="text-[10px] md:text-xs font-bold text-500 uppercase"
+            >Visualizando</span
+          >
+          <span class="text-sm md:text-base font-bold text-800">{{
             currentDate | date: 'dd MMM, yyyy'
           }}</span>
         </div>
@@ -34,31 +34,28 @@
           (click)="changeDate(1)"></button>
       </div>
 
-      <!-- Botones Acción -->
-      <div class="flex gap-2">
+      <div class="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
         <button
           pButton
           label="Ingreso"
           icon="pi pi-plus-circle"
-          class="p-button-success p-button-outlined font-bold border-round-xl"
+          class="p-button-success p-button-outlined font-bold border-round-xl flex-1 md:flex-none justify-content-center"
           (click)="openModal('INCOME')"></button>
         <button
           pButton
           label="Gasto"
           icon="pi pi-minus-circle"
-          class="p-button-danger p-button-outlined font-bold border-round-xl"
+          class="p-button-danger p-button-outlined font-bold border-round-xl flex-1 md:flex-none justify-content-center"
           (click)="openModal('EXPENSE')"></button>
       </div>
     </div>
 
-    <!-- Filtros -->
     <div class="flex gap-2 mt-3 overflow-x-auto pb-1">
       <span class="text-xs font-bold text-400 uppercase mr-1 align-self-center"
         >Filtros:</span
       >
-
       <div
-        class="cursor-pointer border-1 border-round-lg px-3 py-1 text-xs font-bold flex align-items-center gap-2 transition-colors"
+        class="cursor-pointer border-1 border-round-lg px-3 py-1 text-xs font-bold flex align-items-center gap-2 transition-colors white-space-nowrap"
         [ngClass]="
           filters.cash
             ? 'bg-blue-50 border-blue-500 text-blue-700'
@@ -67,9 +64,8 @@
         (click)="filters.cash = !filters.cash">
         <i class="pi pi-money-bill"></i> CASH
       </div>
-
       <div
-        class="cursor-pointer border-1 border-round-lg px-3 py-1 text-xs font-bold flex align-items-center gap-2 transition-colors"
+        class="cursor-pointer border-1 border-round-lg px-3 py-1 text-xs font-bold flex align-items-center gap-2 transition-colors white-space-nowrap"
         [ngClass]="
           filters.yape
             ? 'bg-blue-50 border-blue-500 text-blue-700'
@@ -78,9 +74,8 @@
         (click)="filters.yape = !filters.yape">
         <i class="pi pi-mobile"></i> YAPE/PLIN
       </div>
-
       <div
-        class="cursor-pointer border-1 border-round-lg px-3 py-1 text-xs font-bold flex align-items-center gap-2 transition-colors"
+        class="cursor-pointer border-1 border-round-lg px-3 py-1 text-xs font-bold flex align-items-center gap-2 transition-colors white-space-nowrap"
         [ngClass]="
           filters.card
             ? 'bg-blue-50 border-blue-500 text-blue-700'
@@ -92,11 +87,13 @@
     </div>
   </div>
 
-  <!-- 2. TABLA MOVIMIENTOS (Scrollable) -->
-  <!-- Agregamos pb-8 (padding bottom) grande para que el contenido no quede oculto tras el footer fixed -->
-  <div class="flex-1 overflow-y-auto p-3 pb-8 mb-6">
-    <div class="surface-card border-round-xl shadow-1 overflow-hidden">
-      <table class="w-full text-sm" style="border-collapse: collapse">
+  <div
+    class="flex-1 overflow-y-auto p-2 md:p-3"
+    style="padding-bottom: 14rem !important">
+    <div class="surface-card border-round-xl shadow-1 overflow-x-auto">
+      <table
+        class="w-full text-sm"
+        style="border-collapse: collapse; min-width: 600px">
         <thead
           class="surface-100 text-500 border-bottom-1 border-200 uppercase text-xs font-bold sticky top-0 z-1">
           <tr>
@@ -108,7 +105,6 @@
           </tr>
         </thead>
         <tbody class="text-700">
-          <!-- SECCIÓN VENTAS -->
           <tr class="surface-50 border-bottom-1 border-100">
             <td
               colspan="5"
@@ -123,7 +119,6 @@
               <td class="p-3 text-center">
                 <i class="pi pi-arrow-down text-green-500"></i>
               </td>
-              <!-- Ajuste de estilo para descripción larga -->
               <td class="p-3">
                 <div class="font-bold text-800 text-xs line-height-3">
                   {{ item.description }}
@@ -147,7 +142,6 @@
             </tr>
           }
 
-          <!-- SECCIÓN INGRESOS -->
           <tr class="surface-50 border-bottom-1 border-100">
             <td
               colspan="5"
@@ -161,7 +155,9 @@
               <td class="p-3 text-center">
                 <i class="pi pi-plus text-green-500"></i>
               </td>
-              <td class="p-3 font-bold text-800">{{ item.description }}</td>
+              <td class="p-3 font-bold text-800 text-xs">
+                {{ item.description }}
+              </td>
               <td class="p-3 text-center">
                 <span
                   class="text-xs font-bold px-2 py-1 border-round surface-200 text-700"
@@ -180,7 +176,6 @@
             </tr>
           }
 
-          <!-- SECCIÓN GASTOS -->
           <tr class="surface-50 border-bottom-1 border-100">
             <td
               colspan="5"
@@ -194,7 +189,9 @@
               <td class="p-3 text-center">
                 <i class="pi pi-minus text-red-500"></i>
               </td>
-              <td class="p-3 font-bold text-800">{{ item.description }}</td>
+              <td class="p-3 font-bold text-800 text-xs">
+                {{ item.description }}
+              </td>
               <td class="p-3 text-center">
                 <span
                   class="text-xs font-bold px-2 py-1 border-round surface-200 text-700"
@@ -217,39 +214,43 @@
     </div>
   </div>
 
-  <!-- 3. FOOTER TOTALES (FIXED BOTTOM) -->
-  <!-- Usamos 'fixed bottom-0 left-0 w-full' para anclarlo visualmente -->
   <div
-    class="fixed bottom-0 left-0 w-full surface-900 text-0 p-3 z-5 shadow-top-2">
+    class="fixed bottom-0 left-0 w-full surface-900 text-0 p-2 md:p-3 z-5 shadow-top-2">
     <div
-      class="flex flex-column md:flex-row justify-content-between align-items-center gap-3 max-w-7xl mx-auto">
-      <div class="flex flex-wrap gap-4 md:gap-5 text-sm justify-content-center">
+      class="flex flex-column md:flex-row justify-content-between align-items-center gap-2 md:gap-3 max-w-7xl mx-auto">
+      <div class="flex flex-wrap gap-3 md:gap-5 text-sm justify-content-center">
         <div class="text-400">
-          <span class="block text-xs font-bold uppercase mb-1">Caja Base</span>
-          <span class="font-mono text-xl font-bold text-white"
+          <span class="block text-[10px] md:text-xs font-bold uppercase mb-1"
+            >Caja Base</span
+          >
+          <span class="font-mono text-lg md:text-xl font-bold text-white"
             >S/ {{ summary().opening_balance | number: '1.2-2' }}</span
           >
         </div>
 
         <div class="text-400 border-left-1 border-700 pl-3 md:pl-4">
-          <span class="block text-xs font-bold uppercase mb-1">Ingresos</span>
-          <span class="font-mono text-xl font-bold text-green-400">
-            + S/ {{ filteredTotalIncomesAmount | number: '1.2-2' }}
-          </span>
+          <span class="block text-[10px] md:text-xs font-bold uppercase mb-1"
+            >Ingresos</span
+          >
+          <span class="font-mono text-lg md:text-xl font-bold text-green-400"
+            >+ S/ {{ filteredTotalIncomesAmount | number: '1.2-2' }}</span
+          >
         </div>
 
         <div class="text-400 border-left-1 border-700 pl-3 md:pl-4">
-          <span class="block text-xs font-bold uppercase mb-1">Egresos</span>
-          <span class="font-mono text-xl font-bold text-red-400">
-            - S/ {{ filteredTotalExpensesAmount | number: '1.2-2' }}
-          </span>
+          <span class="block text-[10px] md:text-xs font-bold uppercase mb-1"
+            >Egresos</span
+          >
+          <span class="font-mono text-lg md:text-xl font-bold text-red-400"
+            >- S/ {{ filteredTotalExpensesAmount | number: '1.2-2' }}</span
+          >
         </div>
       </div>
 
       <div
-        class="flex align-items-center gap-3 surface-800 px-4 py-2 border-round-xl border-1 border-700 mt-2 md:mt-0 w-full md:w-auto justify-content-center">
+        class="flex align-items-center gap-2 md:gap-3 surface-800 px-3 md:px-4 py-2 border-round-xl border-1 border-700 mt-1 md:mt-0 w-full md:w-auto justify-content-center">
         <span class="text-xs font-bold text-400 uppercase">Total en Caja</span>
-        <span class="text-3xl font-black text-white"
+        <span class="text-2xl md:text-3xl font-black text-white"
           >S/ {{ filteredFinalBalance | number: '1.2-2' }}</span
         >
       </div>
@@ -257,17 +258,15 @@
   </div>
 </div>
 
-<!-- DIALOGOS / MODALES -->
 <p-dialog
   [(visible)]="showModal"
   [modal]="true"
   [draggable]="false"
   [resizable]="false"
   [header]="modalType === 'INCOME' ? 'Registrar Ingreso' : 'Registrar Gasto'"
-  [style]="{ width: '90%', maxWidth: '400px' }"
+  [style]="{ width: '95%', maxWidth: '400px' }"
   styleClass="p-fluid">
   <div class="flex flex-column gap-3 pt-2">
-    <!-- Botones Rápidos (Solo gastos) -->
     @if (modalType === 'EXPENSE') {
       <span class="text-xs font-bold text-500 uppercase"
         >Gastos Recurrentes</span
@@ -276,10 +275,9 @@
         <div class="col">
           <button
             pButton
-            class="p-button-outlined p-button-secondary text-sm flex flex-column py-2 h-full"
+            class="p-button-outlined p-button-secondary text-sm flex flex-column py-2 h-full w-full"
             (click)="setQuickExpense('Pasaje', 4)">
-            <i class="pi pi-car text-xl mb-1"></i>
-            <span>Pasaje</span>
+            <i class="pi pi-car text-xl mb-1"></i><span>Pasaje</span>
             <span class="text-xs font-bold surface-200 px-2 border-round mt-1"
               >S/ 4</span
             >
@@ -288,10 +286,9 @@
         <div class="col">
           <button
             pButton
-            class="p-button-outlined p-button-secondary text-sm flex flex-column py-2 h-full"
+            class="p-button-outlined p-button-secondary text-sm flex flex-column py-2 h-full w-full"
             (click)="setQuickExpense('Almuerzo', 10)">
-            <i class="pi pi-apple text-xl mb-1"></i>
-            <span>Almuerzo</span>
+            <i class="pi pi-apple text-xl mb-1"></i><span>Almuerzo</span>
             <span class="text-xs font-bold surface-200 px-2 border-round mt-1"
               >S/ 10</span
             >
@@ -300,10 +297,9 @@
         <div class="col">
           <button
             pButton
-            class="p-button-outlined p-button-secondary text-sm flex flex-column py-2 h-full"
+            class="p-button-outlined p-button-secondary text-sm flex flex-column py-2 h-full w-full"
             (click)="setQuickExpense('Vigilancia', 1)">
-            <i class="pi pi-shield text-xl mb-1"></i>
-            <span>Vigilancia</span>
+            <i class="pi pi-shield text-xl mb-1"></i><span>Vigilancia</span>
             <span class="text-xs font-bold surface-200 px-2 border-round mt-1"
               >S/ 1</span
             >
@@ -313,7 +309,6 @@
       <div class="border-top-1 border-200 my-1"></div>
     }
 
-    <!-- Inputs -->
     <div>
       <span class="block text-500 font-bold text-sm mb-1">Descripción</span>
       <input
