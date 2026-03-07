@@ -310,18 +310,20 @@
     }
 
     <!-- CAMPO DE FECHA AÑADIDO -->
-    <div>
-      <span class="block text-500 font-bold text-sm mb-1">Fecha y Hora</span>
-      <p-calendar
-        [(ngModel)]="movementForm.date"
-        [showTime]="true"
-        hourFormat="12"
-        dateFormat="dd/mm/yy"
-        appendTo="body"
-        styleClass="w-full"
-        [showIcon]="true">
-      </p-calendar>
-    </div>
+    @if (isAdmin) {
+      <div>
+        <span class="block text-500 font-bold text-sm mb-1">Fecha y Hora</span>
+        <p-calendar
+          [(ngModel)]="movementForm.date"
+          [showTime]="true"
+          hourFormat="12"
+          dateFormat="dd/mm/yy"
+          appendTo="body"
+          styleClass="w-full"
+          [showIcon]="true">
+        </p-calendar>
+      </div>
+    }
 
     <div>
       <span class="block text-500 font-bold text-sm mb-1">Descripción</span>

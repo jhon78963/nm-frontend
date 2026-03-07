@@ -59,6 +59,12 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
     date: new Date(),
   };
 
+  get isAdmin() {
+    const jsonData = localStorage.getItem('user');
+    const userData = jsonData ? JSON.parse(jsonData) : undefined;
+    return userData.role === 'Admin';
+  }
+
   private reportSubscription?: Subscription;
 
   // Computado: Operaciones Netas
