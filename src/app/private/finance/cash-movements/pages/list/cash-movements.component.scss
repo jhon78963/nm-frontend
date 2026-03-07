@@ -1,0 +1,22 @@
+::ng-deep {
+  p-dialog .flex.flex-column.gap-3.pt-2 {
+    .p-button {
+      color: #ffffff;
+      background: #689f38;
+      border: 1px solid #689f38;
+    }
+    .p-calendar:not(.p-calendar-disabled).p-focus > .p-inputtext {
+      outline: 0 none;
+      outline-offset: 0;
+      box-shadow: 0 0 0 0.2rem #689f3826;
+      border-color: #689f38;
+    }
+    .p-inputtext:enabled:hover {
+      border-color: #689f38;
+    }
+    .p-inputtext:enabled:focus {
+      box-shadow: 0 0 0 0.2rem #689f3826;
+      border-color: #689f38;
+    }
+  }
+}

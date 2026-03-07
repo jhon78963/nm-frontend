@@ -11,7 +11,9 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 
 // PrimeNG imports
+import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
+import { CalendarModule } from 'primeng/calendar'; // <-- Importado el Calendario
 import { DialogModule } from 'primeng/dialog';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
@@ -27,6 +29,8 @@ import { CashflowService } from '../../services/cash-movements.service';
     DialogModule,
     InputTextModule,
     InputNumberModule,
+    CalendarModule,
+    AutoCompleteModule,
   ],
   providers: [DatePipe],
   templateUrl: './cash-movements.component.html',
@@ -49,7 +53,11 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
   // Control del Modal
   showModal = false;
   modalType: 'INCOME' | 'EXPENSE' = 'INCOME';
-  movementForm = { description: '', amount: null as number | null };
+  movementForm = {
+    description: '',
+    amount: null as number | null,
+    date: new Date(),
+  };
 
   private reportSubscription?: Subscription;
 
@@ -89,8 +97,6 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     // 1. SUSCRIPCIÓN AL ESTADO DEL SERVICIO
-    // Cada vez que el servicio actualice los datos (por carga inicial o por un registro nuevo),
-    // nuestros signals se actualizarán automáticamente.
     this.reportSubscription = this.cashflowService
       .getReport()
       .subscribe(data => {
@@ -113,7 +119,6 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
   // Helper para formatear fecha y llamar al servicio
   refreshData() {
     const dateStr = this.datePipe.transform(this.currentDate, 'yyyy-MM-dd')!;
-    // Solo llamamos a cargar, la suscripción en ngOnInit se encarga de actualizar la vista
     this.cashflowService.loadDailyReport(dateStr).subscribe();
   }
 
@@ -123,7 +128,7 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
     this.refreshData();
   }
 
-  // Filtrado visual local (sin cambios)
+  // Filtrado visual local
   filteredList(type: 'sales' | 'incomes' | 'expenses') {
     const list = this.lists()[type] || [];
     return list.filter((item: any) => {
@@ -146,7 +151,13 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
   // Modal Actions
   openModal(type: 'INCOME' | 'EXPENSE') {
     this.modalType = type;
-    this.movementForm = { description: '', amount: null };
+
+    // LÓGICA DE FECHA: Toma la fecha visualizada + la hora actual
+    const defaultDate = new Date(this.currentDate);
+    const now = new Date();
+    defaultDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+
+    this.movementForm = { description: '', amount: null, date: defaultDate };
     this.showModal = true;
   }
 
@@ -156,9 +167,15 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
   }
 
   saveMovement() {
-    if (!this.movementForm.amount) return;
+    if (!this.movementForm.amount || !this.movementForm.date) return;
 
     const dateStr = this.datePipe.transform(this.currentDate, 'yyyy-MM-dd')!;
+
+    // Formatear la fecha y hora seleccionadas para mandarlas a la BD
+    const formattedDate = this.datePipe.transform(
+      this.movementForm.date,
+      'yyyy-MM-dd HH:mm:ss',
+    );
 
     // Usamos el servicio reactivo: Crea y recarga automáticamente
     this.cashflowService
@@ -167,13 +184,13 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
           type: this.modalType,
           amount: this.movementForm.amount,
           description: this.movementForm.description,
-        },
+          date: formattedDate, // <-- Enviamos la fecha y hora
+        } as any,
         dateStr,
       )
       .subscribe({
         next: () => {
           this.showModal = false;
-          // No necesitamos llamar a loadData() aquí, el servicio ya hizo el switchMap
         },
         error: err => console.error('Error guardando movimiento', err),
       });

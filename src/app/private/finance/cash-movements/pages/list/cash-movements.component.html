@@ -55,7 +55,7 @@
         >Filtros:</span
       >
       <div
-        class="cursor-pointer border-1 border-round-lg px-3 py-1 text-xs font-bold flex align-items-center gap-2 transition-colors white-space-nowrap"
+        class="cursor-pointer border-1 border-round-lg md:px-3 px-2 py-1 text-xs font-bold flex align-items-center md:gap-2 gap-1 transition-colors white-space-nowrap"
         [ngClass]="
           filters.cash
             ? 'bg-blue-50 border-blue-500 text-blue-700'
@@ -65,7 +65,7 @@
         <i class="pi pi-money-bill"></i> CASH
       </div>
       <div
-        class="cursor-pointer border-1 border-round-lg px-3 py-1 text-xs font-bold flex align-items-center gap-2 transition-colors white-space-nowrap"
+        class="cursor-pointer border-1 border-round-lg md:px-3 px-2 py-1 text-xs font-bold flex align-items-center md:gap-2 gap-1 transition-colors white-space-nowrap"
         [ngClass]="
           filters.yape
             ? 'bg-blue-50 border-blue-500 text-blue-700'
@@ -75,7 +75,7 @@
         <i class="pi pi-mobile"></i> YAPE/PLIN
       </div>
       <div
-        class="cursor-pointer border-1 border-round-lg px-3 py-1 text-xs font-bold flex align-items-center gap-2 transition-colors white-space-nowrap"
+        class="cursor-pointer border-1 border-round-lg md:px-3 px-2 py-1 text-xs font-bold flex align-items-center md:gap-2 gap-1 transition-colors white-space-nowrap"
         [ngClass]="
           filters.card
             ? 'bg-blue-50 border-blue-500 text-blue-700'
@@ -309,13 +309,29 @@
       <div class="border-top-1 border-200 my-1"></div>
     }
 
+    <!-- CAMPO DE FECHA AÑADIDO -->
+    <div>
+      <span class="block text-500 font-bold text-sm mb-1">Fecha y Hora</span>
+      <p-calendar
+        [(ngModel)]="movementForm.date"
+        [showTime]="true"
+        hourFormat="12"
+        dateFormat="dd/mm/yy"
+        appendTo="body"
+        styleClass="w-full"
+        [showIcon]="true">
+      </p-calendar>
+    </div>
+
     <div>
       <span class="block text-500 font-bold text-sm mb-1">Descripción</span>
       <input
         pInputText
         [(ngModel)]="movementForm.description"
-        placeholder="Ej: Pago de servicios" />
+        placeholder="Ej: Pago de servicios"
+        autofocus />
     </div>
+
     <div>
       <span class="block text-500 font-bold text-sm mb-1">Monto (S/)</span>
       <p-inputNumber
@@ -333,7 +349,7 @@
       [label]="modalType === 'INCOME' ? 'Guardar Ingreso' : 'Confirmar Gasto'"
       [class]="modalType === 'INCOME' ? 'p-button-success' : 'p-button-danger'"
       class="mt-2 font-bold py-3"
-      (click)="saveMovement()"
-      [disabled]="!movementForm.amount || !movementForm.description"></button>
+      [disabled]="!movementForm.amount || !movementForm.description"
+      (click)="saveMovement()"></button>
   </div>
 </p-dialog>
