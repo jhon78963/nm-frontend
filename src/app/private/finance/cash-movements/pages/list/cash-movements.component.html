@@ -326,6 +326,15 @@
     }
 
     <div>
+      <span class="block text-500 font-bold text-sm mb-1">Método de Pago</span>
+      <p-dropdown
+        [options]="paymentMethodsList"
+        [(ngModel)]="movementForm.payment_method"
+        class="w-full"
+        styleClass="w-full text-sm"></p-dropdown>
+    </div>
+
+    <div>
       <span class="block text-500 font-bold text-sm mb-1">Descripción</span>
       <input
         pInputText

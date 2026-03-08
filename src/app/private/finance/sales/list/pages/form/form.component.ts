@@ -1,22 +1,22 @@
-import { Component, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
 import {
+  FormArray,
   FormBuilder,
   FormGroup,
-  FormArray,
   FormsModule,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import { MessageService } from 'primeng/api';
 import {
   DialogService,
   DynamicDialogConfig,
   DynamicDialogRef,
 } from 'primeng/dynamicdialog';
-import { MessageService } from 'primeng/api';
-import { SalesService } from '../../services/sales.service';
 import { SharedModule } from '../../../../../../shared/shared.module';
 import { formatDateTime } from '../../../../../../utils/dates';
+import { SalesService } from '../../services/sales.service';
 
 @Component({
   selector: 'app-form',

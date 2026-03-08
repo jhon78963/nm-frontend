@@ -15,6 +15,7 @@ import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { CalendarModule } from 'primeng/calendar'; // <-- Importado el Calendario
 import { DialogModule } from 'primeng/dialog';
+import { DropdownModule } from 'primeng/dropdown';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { CashflowService } from '../../services/cash-movements.service';
@@ -31,6 +32,7 @@ import { CashflowService } from '../../services/cash-movements.service';
     InputNumberModule,
     CalendarModule,
     AutoCompleteModule,
+    DropdownModule,
   ],
   providers: [DatePipe],
   templateUrl: './cash-movements.component.html',
@@ -54,6 +56,7 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
   showModal = false;
   modalType: 'INCOME' | 'EXPENSE' = 'INCOME';
   movementForm = {
+    payment_method: 'CASH',
     description: '',
     amount: null as number | null,
     date: new Date(),
@@ -64,6 +67,8 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
     const userData = jsonData ? JSON.parse(jsonData) : undefined;
     return userData.role === 'Admin';
   }
+
+  paymentMethodsList = ['CASH', 'YAPE', 'CARD'];
 
   private reportSubscription?: Subscription;
 
@@ -163,7 +168,12 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
     const now = new Date();
     defaultDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
 
-    this.movementForm = { description: '', amount: null, date: defaultDate };
+    this.movementForm = {
+      description: '',
+      amount: null,
+      date: defaultDate,
+      payment_method: 'CASH',
+    };
     this.showModal = true;
   }
 
@@ -191,6 +201,7 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
           amount: this.movementForm.amount,
           description: this.movementForm.description,
           date: formattedDate, // <-- Enviamos la fecha y hora
+          payment_method: this.movementForm.payment_method,
         } as any,
         dateStr,
       )
