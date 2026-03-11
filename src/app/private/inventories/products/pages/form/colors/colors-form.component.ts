@@ -57,7 +57,7 @@ export class ColorsFormComponent implements OnInit {
   stepper: boolean = true;
 
   searchTerm = signal<string>('');
-  filterStatus = signal<'all' | 'active' | 'inactive'>('active');
+  filterStatus = signal<'all' | 'active' | 'inactive'>('all');
 
   totalAssignedStock = computed(() => {
     return this.colors().reduce(

@@ -120,9 +120,9 @@
         </div>
         <p-selectButton
           [options]="[
+            { label: 'Todos', value: 'all' },
             { label: 'Stock', value: 'active' },
             { label: 'Sin Stock', value: 'inactive' },
-            { label: 'Todos', value: 'all' },
           ]"
           [ngModel]="filterStatus()"
           (ngModelChange)="filterStatus.set($event)"
@@ -147,95 +147,98 @@
       }
 
       @if (colors().length > 0) {
-        <p-table
-          #dt
-          [value]="filteredColors()"
-          [(selection)]="selectedColors"
-          responsiveLayout="scroll"
-          dataKey="id"
-          [scrollable]="true"
-          scrollHeight="600px"
-          styleClass="p-datatable-md shadow-1 border-round-bottom-xl overflow-hidden">
-          <ng-template pTemplate="header">
-            <tr>
-              <th style="width: 3rem">
-                <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
-              </th>
-              <th style="width: 5rem">#</th>
-              <th>Color</th>
-              <th style="width: 12rem">Stock</th>
-              <th style="width: 8rem"></th>
-            </tr>
-          </ng-template>
+        <div class="surface-card border-round-xl shadow-1 overflow-hidden">
+          <p-table
+            #dt
+            [value]="filteredColors()"
+            [(selection)]="selectedColors"
+            responsiveLayout="scroll"
+            dataKey="id"
+            [scrollable]="true"
+            scrollHeight="550px"
+            styleClass="p-datatable-sm">
+            <ng-template pTemplate="header">
+              <tr>
+                <th style="width: 3rem"></th>
+                <th style="width: 4rem" class="hidden md:table-cell">#</th>
+                <th>Color</th>
+                <th style="width: 9rem">Stock</th>
+                <th style="width: 5rem"></th>
+              </tr>
+            </ng-template>
 
-          <ng-template pTemplate="body" let-color>
-            <tr
-              [ngClass]="{
-                'bg-blue-50/30': color.isExists,
-                'opacity-60': !color.isExists,
-              }">
-              <td><p-tableCheckbox [value]="color"></p-tableCheckbox></td>
-              <td class="text-xs text-500">{{ color.id }}</td>
-              <td>
-                <div class="flex align-items-center gap-3">
-                  <div
-                    [style]="{
-                      'background-color': color.hash,
-                      'border-radius': '8px',
-                      border: '2px solid white',
-                      'box-shadow': '0 0 0 1px #d4d6d9',
-                      width: '2.5rem',
-                      height: '2.5rem',
-                    }"></div>
-                  <div class="flex flex-column">
-                    <span class="font-bold text-900">{{
-                      color.description
-                    }}</span>
-                    <small class="text-500">{{ color.hash }}</small>
+            <ng-template pTemplate="body" let-color>
+              <tr
+                [ngClass]="{
+                  'bg-blue-50/30': color.isExists,
+                  'opacity-60': !color.isExists,
+                }">
+                <td><p-tableCheckbox [value]="color"></p-tableCheckbox></td>
+                <td class="hidden md:table-cell text-xs text-500">
+                  {{ color.id }}
+                </td>
+                <td>
+                  <div class="flex align-items-center gap-2">
+                    <div
+                      [style]="{
+                        'background-color': color.hash,
+                        'border-radius': '6px',
+                        border: '1px solid #ddd',
+                        width: '1.8rem',
+                        height: '1.8rem',
+                      }"></div>
+                    <div class="flex flex-column overflow-hidden">
+                      <span
+                        class="text-xs md:text-sm font-bold text-900 truncate"
+                        >{{ color.description }}</span
+                      >
+                      <small class="text-xs text-500">{{ color.hash }}</small>
+                    </div>
                   </div>
-                </div>
-              </td>
-              <td>
-                <div class="p-inputgroup">
-                  <input
-                    type="number"
-                    pInputText
-                    [(ngModel)]="color.stock"
-                    (ngModelChange)="onStockChange(color)"
-                    class="w-full font-bold"
-                    [ngClass]="{ 'text-green-600': color.stock > 0 }"
-                    placeholder="0"
-                    min="0" />
-                  <span class="p-inputgroup-addon">uds</span>
-                </div>
-              </td>
-              <td class="text-right">
-                <div class="flex justify-content-end gap-1">
-                  <button
-                    pButton
-                    icon="pi pi-save"
-                    [severity]="color.isExists ? 'secondary' : 'success'"
-                    class="p-button-rounded p-button-sm"
-                    [disabled]="!isStockBalanced()"
-                    (click)="
-                      color.isExists
-                        ? editColorSizeProductButton(color)
-                        : saveColorSizeProductButton(color)
-                    "></button>
-                  @if (color.isExists) {
+                </td>
+                <td>
+                  <div class="p-inputgroup">
+                    <input
+                      type="number"
+                      pInputText
+                      [(ngModel)]="color.stock"
+                      (ngModelChange)="onStockChange(color)"
+                      class="w-full text-center p-2 text-sm"
+                      placeholder="0"
+                      min="0" />
+                    <span class="p-inputgroup-addon px-2 text-xs">uds</span>
+                  </div>
+                </td>
+                <td class="px-1">
+                  <div class="flex justify-content-end">
                     <button
                       pButton
-                      icon="pi pi-trash"
-                      severity="danger"
-                      class="p-button-rounded p-button-sm"
+                      icon="pi pi-save"
+                      [severity]="color.isExists ? 'secondary' : 'success'"
+                      class="p-button-rounded p-button-text md:p-button-outlined p-0 w-6"
+                      size="small"
                       [disabled]="!isStockBalanced()"
-                      (click)="removeColorSizeProductButton(color)"></button>
-                  }
-                </div>
-              </td>
-            </tr>
-          </ng-template>
-        </p-table>
+                      (click)="
+                        color.isExists
+                          ? editColorSizeProductButton(color)
+                          : saveColorSizeProductButton(color)
+                      "></button>
+                    @if (color.isExists) {
+                      <button
+                        pButton
+                        icon="pi pi-trash"
+                        severity="danger"
+                        class="p-button-rounded p-button-text md:p-button-outlined p-0 w-6"
+                        size="small"
+                        [disabled]="!isStockBalanced()"
+                        (click)="removeColorSizeProductButton(color)"></button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
       }
     </div>
   </div>
