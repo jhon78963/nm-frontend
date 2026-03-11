@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, computed, OnInit, signal } from '@angular/core';
 import {
   FormControl,
   FormGroup,
@@ -14,7 +14,9 @@ import { DropdownModule } from 'primeng/dropdown';
 import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessagesModule } from 'primeng/messages';
+import { ProgressBarModule } from 'primeng/progressbar';
 import { RippleModule } from 'primeng/ripple';
+import { SelectButtonModule } from 'primeng/selectbutton';
 import { TableModule } from 'primeng/table';
 import { catchError, forkJoin, of } from 'rxjs';
 import { showError, showSuccess } from '../../../../../../utils/notifications';
@@ -38,6 +40,8 @@ import { ProductSizeColorsService } from '../../../services/productColors.servic
     ColorPickerModule,
     MessagesModule,
     RouterLink,
+    SelectButtonModule,
+    ProgressBarModule,
   ],
   templateUrl: './colors-form.component.html',
   styleUrl: './colors-form.component.scss',
@@ -46,11 +50,48 @@ import { ProductSizeColorsService } from '../../../services/productColors.servic
 export class ColorsFormComponent implements OnInit {
   productId: number = 0;
   sizes: Size[] = [];
-  colors: any[] = [];
+  colors = signal<any[]>([]);
   filterValue: any;
   selectedColors: any[] = [];
   selectedSize: any;
   stepper: boolean = true;
+
+  searchTerm = signal<string>('');
+  filterStatus = signal<'all' | 'active' | 'inactive'>('active');
+
+  totalAssignedStock = computed(() => {
+    return this.colors().reduce(
+      (acc, color) => acc + (Number(color.stock) || 0),
+      0,
+    );
+  });
+
+  remainingStock = computed(() => {
+    const limit = this.selectedSize?.stock || 0;
+    return limit - this.totalAssignedStock();
+  });
+
+  isStockBalanced = computed(() => {
+    return this.totalAssignedStock() === (this.selectedSize?.stock || 0);
+  });
+
+  filteredColors = computed(() => {
+    const term = this.searchTerm().toLowerCase();
+    const status = this.filterStatus();
+
+    return this.colors()
+      .filter(c => {
+        const matchesSearch = c.description.toLowerCase().includes(term);
+        const matchesStatus =
+          status === 'all'
+            ? true
+            : status === 'active'
+              ? c.isExists
+              : !c.isExists;
+        return matchesSearch && matchesStatus;
+      })
+      .sort((a, b) => (b.isExists ? 1 : 0) - (a.isExists ? 1 : 0)); // Activos primero
+  });
 
   constructor(
     private readonly router: Router,
@@ -103,7 +144,7 @@ export class ColorsFormComponent implements OnInit {
   getColors(sizeId: number) {
     this.productSizeColorsService.getColors(this.productId, sizeId).subscribe({
       next: (colors: any) => {
-        this.colors = colors;
+        this.colors.set(colors);
       },
     });
   }
@@ -115,7 +156,7 @@ export class ColorsFormComponent implements OnInit {
       this.getColors(event.value.id);
     } else {
       this.messageService.clear();
-      this.colors = [];
+      this.colors.set([]);
     }
   }
 
@@ -167,6 +208,22 @@ export class ColorsFormComponent implements OnInit {
           detail: `No se puede seleccionar más tallas: stock maximo ${this.selectedSize.stock}`,
         });
       }
+    }
+  }
+
+  onStockChange(color: any) {
+    // 1. FORZAMOS LA REACTIVIDAD:
+    // Actualizamos el signal con una copia del arreglo para que Angular detecte el cambio
+    this.colors.update(currentColors => [...currentColors]);
+
+    // 2. GESTIÓN DE SELECCIÓN AUTOMÁTICA:
+    // Si tiene stock, asegúrate de que esté en selectedColors para el guardado masivo
+    const isSelected = this.selectedColors.some(c => c.id === color.id);
+
+    if (color.stock > 0 && !isSelected) {
+      this.selectedColors = [...this.selectedColors, color];
+    } else if ((color.stock === 0 || !color.stock) && isSelected) {
+      this.selectedColors = this.selectedColors.filter(c => c.id !== color.id);
     }
   }
 
