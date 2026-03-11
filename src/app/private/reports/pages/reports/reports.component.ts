@@ -41,6 +41,7 @@ export class ReportsComponent implements OnInit {
   // Datos
   totals = signal<any>({});
   topProducts = signal<any[]>([]);
+  leastProducts = signal<any[]>([]);
   financials = signal<any>({});
   // --- NUEVO SIGNAL PARA EL REPORTE HISTÓRICO ---
   allTimeMonthlyReport = signal<any[]>([]);
@@ -96,6 +97,7 @@ export class ReportsComponent implements OnInit {
         if (res.success) {
           this.totals.set(res.data.totals);
           this.topProducts.set(res.data.top_products);
+          this.leastProducts.set(res.data.least_products || []);
           this.financials.set(res.data.financials);
 
           // --- CARGAMOS EL REPORTE HISTÓRICO AQUÍ ---

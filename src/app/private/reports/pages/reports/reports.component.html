@@ -67,7 +67,6 @@
     </div>
 
     <div class="grid">
-      <!-- 2. ANÁLISIS DE UTILIDAD (Izquierda) -->
       <div class="col-12 lg:col-8">
         <div class="surface-card shadow-2 border-round-xl p-4 h-full">
           <h3 class="text-lg font-bold text-700 m-0 mb-4">
@@ -124,7 +123,6 @@
             </div>
           </div>
 
-          <!-- GRÁFICO -->
           <div class="h-20rem">
             <p-chart
               type="line"
@@ -135,16 +133,15 @@
         </div>
       </div>
 
-      <!-- 3. TOP PRODUCTOS (Derecha) -->
-      <div class="col-12 lg:col-4">
-        <div class="surface-card shadow-2 border-round-xl p-4 h-full">
+      <div class="col-12 lg:col-4 flex flex-column gap-3">
+        <div class="surface-card shadow-2 border-round-xl p-4 flex-1">
           <h3 class="text-lg font-bold text-700 m-0 mb-3">
             Top Productos (Ranking)
           </h3>
           <p-table
             [value]="topProducts()"
             [scrollable]="true"
-            scrollHeight="500px"
+            scrollHeight="220px"
             styleClass="p-datatable-sm">
             <ng-template pTemplate="header">
               <tr>
@@ -162,6 +159,44 @@
                 </td>
                 <td class="text-right font-bold text-indigo-600">
                   {{ prod.total_sold }}
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+
+        <div class="surface-card shadow-2 border-round-xl p-4 flex-1">
+          <h3 class="text-lg font-bold text-orange-700 m-0 mb-3">
+            Bajo Rendimiento
+          </h3>
+          <p-table
+            [value]="leastProducts()"
+            [scrollable]="true"
+            scrollHeight="220px"
+            styleClass="p-datatable-sm">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Producto</th>
+                <th class="text-right">Cant.</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-prod>
+              <tr>
+                <td>
+                  <span class="font-bold block text-sm">{{ prod.name }}</span>
+                  <span class="text-xs text-500"
+                    >Reg: {{ prod.registration_date }}</span
+                  >
+                </td>
+                <td class="text-right font-bold text-orange-600">
+                  {{ prod.total_sold }}
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="2" class="text-center p-3 text-500 text-sm">
+                  Sin datos.
                 </td>
               </tr>
             </ng-template>
