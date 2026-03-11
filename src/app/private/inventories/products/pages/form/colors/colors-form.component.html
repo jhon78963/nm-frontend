@@ -1,245 +1,251 @@
 <div [class]="!stepper ? ' card' : ''">
+  <div
+    class="flex flex-wrap justify-content-center md:justify-content-end gap-2 col-12">
+    <button
+      pButton
+      pRipple
+      label="Nuevo"
+      icon="pi pi-plus"
+      severity="secondary"
+      class="btn-menu flex-grow-1 md:flex-grow-0 w-8rem md:w-9rem"
+      size="small"
+      (click)="createColor()"></button>
+    <button
+      pButton
+      pRipple
+      label="Guardar"
+      icon="pi pi-save"
+      severity="secondary"
+      class="btn-menu flex-grow-1 md:flex-grow-0 w-8rem md:w-9rem"
+      size="small"
+      (click)="saveAllSelectedColors()"
+      [disabled]="
+        !selectedColors || !selectedColors.length || !isStockBalanced()
+      "></button>
+    <button
+      pButton
+      pRipple
+      label="Remover"
+      icon="pi pi-trash"
+      severity="secondary"
+      class="btn-menu flex-grow-1 md:flex-grow-0 w-8rem md:w-9rem"
+      size="small"
+      (click)="deleteAllSelectedColors()"
+      [disabled]="
+        !selectedColors || !selectedColors.length || !isStockBalanced()
+      "></button>
+    <button
+      pButton
+      pRipple
+      label="Regresar"
+      icon="pi pi-arrow-left"
+      severity="help"
+      class="btn-menu-back flex-grow-1 md:flex-grow-0 w-8rem md:w-9rem"
+      size="small"
+      [routerLink]="['/inventories/products']"></button>
+  </div>
   <div class="col-12 mt-0 p-2 md:p-3">
-    <div class="w-full">
-      <div
-        class="flex flex-column lg:flex-row lg:justify-content-between lg:align-items-start gap-4 mb-4">
-        <div class="w-full lg:w-20rem">
-          <p-dropdown
-            [options]="sizes"
-            optionLabel="description"
-            [filter]="true"
-            filterBy="description"
-            [showClear]="true"
-            placeholder="Selecciona una talla"
-            styleClass="w-full"
-            [(ngModel)]="selectedSize"
-            (onChange)="getSelectedSize($event)">
-          </p-dropdown>
+    <div class="grid grid-nogutter">
+      <div class="col-12 lg:col-4 lg:pr-4">
+        <div class="flex flex-column gap-4">
+          <div
+            class="surface-card p-3 border-round-xl shadow-1 border-1 border-100">
+            <p-dropdown
+              [options]="sizes"
+              optionLabel="description"
+              [filter]="true"
+              filterBy="description"
+              [showClear]="true"
+              placeholder="Selecciona una talla"
+              styleClass="w-full"
+              [(ngModel)]="selectedSize"
+              (onChange)="getSelectedSize($event)">
+            </p-dropdown>
+          </div>
+
+          @if (selectedSize) {
+            <div
+              class="surface-card p-3 border-round-xl shadow-1 border-1 border-100">
+              <div class="flex align-items-center justify-content-between mb-2">
+                <span
+                  class="text-sm font-bold"
+                  [ngClass]="
+                    isStockBalanced() ? 'text-green-500' : 'text-orange-500'
+                  ">
+                  Asignado: {{ totalAssignedStock() }} /
+                  {{ selectedSize.stock }}
+                </span>
+                <i
+                  class="pi"
+                  [ngClass]="
+                    isStockBalanced()
+                      ? 'pi-check-circle text-green-500'
+                      : 'pi-exclamation-triangle text-orange-500'
+                  "></i>
+              </div>
+              <p-progressBar
+                [value]="(totalAssignedStock() / selectedSize.stock) * 100"
+                [showValue]="false"
+                styleClass="h-1rem shadow-1 mb-2"
+                [color]="isStockBalanced() ? '#22C55E' : '#f59e0b'">
+              </p-progressBar>
+              @if (remainingStock() !== 0) {
+                <div class="text-center p-2 border-round bg-gray-50">
+                  <small
+                    class="text-xs font-bold"
+                    [ngClass]="
+                      remainingStock() > 0 ? 'text-blue-500' : 'text-red-500'
+                    ">
+                    {{
+                      remainingStock() > 0
+                        ? 'Faltan: ' + remainingStock()
+                        : 'Sobran: ' + remainingStock() * -1
+                    }}
+                    unidades
+                  </small>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="col-12 lg:col-8 mt-4 lg:mt-0">
+        <div
+          class="flex flex-column md:flex-row gap-3 mb-3 p-3 bg-white border-round-xl shadow-1 border-1 border-100">
+          <div class="p-inputgroup flex-1">
+            <span class="p-inputgroup-addon"><i class="pi pi-search"></i></span>
+            <input
+              pInputText
+              placeholder="Buscar color..."
+              [ngModel]="searchTerm()"
+              (ngModelChange)="searchTerm.set($event)" />
+          </div>
+          <p-selectButton
+            [options]="[
+              { label: 'Todos', value: 'all' },
+              { label: 'Stock', value: 'active' },
+              { label: 'Sin Stock', value: 'inactive' },
+            ]"
+            [ngModel]="filterStatus()"
+            (ngModelChange)="filterStatus.set($event)"
+            optionLabel="label"
+            optionValue="value"
+            styleClass="white-space-nowrap text-center">
+          </p-selectButton>
         </div>
 
-        @if (selectedSize) {
+        @if (selectedSize && !isStockBalanced()) {
           <div
-            class="flex flex-column align-items-center gap-2 w-full lg:w-auto">
-            <div class="flex align-items-center gap-2">
-              <span
-                class="text-sm font-bold"
-                [ngClass]="
-                  isStockBalanced() ? 'text-green-500' : 'text-orange-500'
-                ">
-                Asignado: {{ totalAssignedStock() }} / {{ selectedSize.stock }}
+            class="bg-red-50 border-left-3 border-red-500 p-3 mb-3 border-round-right shadow-1">
+            <div class="flex align-items-center">
+              <i class="pi pi-info-circle text-red-500 mr-2 text-xl"></i>
+              <span class="text-red-700 font-medium">
+                El stock total asignado ({{ totalAssignedStock() }}) no coincide
+                con el stock de la talla ({{ selectedSize.stock }}). Ajusta los
+                valores para poder guardar.
               </span>
-              <i
-                class="pi"
-                [ngClass]="
-                  isStockBalanced()
-                    ? 'pi-check-circle text-green-500'
-                    : 'pi-exclamation-triangle text-orange-500'
-                "></i>
             </div>
-            <p-progressBar
-              [value]="(totalAssignedStock() / selectedSize.stock) * 100"
-              [showValue]="false"
-              styleClass="w-full md:w-15rem h-1rem shadow-1"
-              [color]="isStockBalanced() ? '#22C55E' : '#f59e0b'">
-            </p-progressBar>
-
-            @if (remainingStock() !== 0) {
-              <small
-                class="text-xs font-bold"
-                [ngClass]="
-                  remainingStock() > 0 ? 'text-blue-500' : 'text-red-500'
-                ">
-                {{
-                  remainingStock() > 0
-                    ? 'Faltan: ' + remainingStock()
-                    : 'Sobran: ' + remainingStock() * -1
-                }}
-              </small>
-            }
           </div>
         }
 
-        <div
-          class="flex flex-wrap justify-content-center md:justify-content-end gap-2">
-          <button
-            pButton
-            pRipple
-            label="Nuevo"
-            icon="pi pi-plus"
-            severity="secondary"
-            class="btn-menu flex-grow-1 md:flex-grow-0 w-8rem md:w-9rem"
-            size="small"
-            (click)="createColor()"></button>
-          <button
-            pButton
-            pRipple
-            label="Guardar"
-            icon="pi pi-save"
-            severity="secondary"
-            class="btn-menu flex-grow-1 md:flex-grow-0 w-8rem md:w-9rem"
-            size="small"
-            (click)="saveAllSelectedColors()"
-            [disabled]="
-              !selectedColors || !selectedColors.length || !isStockBalanced()
-            "></button>
-          <button
-            pButton
-            pRipple
-            label="Remover"
-            icon="pi pi-trash"
-            severity="secondary"
-            class="btn-menu flex-grow-1 md:flex-grow-0 w-8rem md:w-9rem"
-            size="small"
-            (click)="deleteAllSelectedColors()"
-            [disabled]="
-              !selectedColors || !selectedColors.length || !isStockBalanced()
-            "></button>
-          <button
-            pButton
-            pRipple
-            label="Regresar"
-            icon="pi pi-arrow-left"
-            severity="help"
-            class="btn-menu-back flex-grow-1 md:flex-grow-0 w-8rem md:w-9rem"
-            size="small"
-            [routerLink]="['/inventories/products']"></button>
-        </div>
-      </div>
+        @if (colors().length > 0) {
+          <div class="surface-card border-round-xl shadow-1 overflow-hidden">
+            <p-table
+              #dt
+              [value]="filteredColors()"
+              [(selection)]="selectedColors"
+              responsiveLayout="scroll"
+              dataKey="id"
+              [scrollable]="true"
+              scrollHeight="550px"
+              styleClass="p-datatable-sm">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th style="width: 3rem"></th>
+                  <th style="width: 4rem" class="hidden md:table-cell">#</th>
+                  <th>Color</th>
+                  <th style="width: 9rem">Stock</th>
+                  <th style="width: 5rem"></th>
+                </tr>
+              </ng-template>
 
-      <p-messages />
-
-      <div
-        class="flex flex-column md:flex-row gap-3 mb-3 p-3 bg-white border-round-xl shadow-1 border-1 border-100">
-        <div class="p-inputgroup flex-1">
-          <span class="p-inputgroup-addon"><i class="pi pi-search"></i></span>
-          <input
-            pInputText
-            placeholder="Buscar color..."
-            [ngModel]="searchTerm()"
-            (ngModelChange)="searchTerm.set($event)" />
-        </div>
-        <p-selectButton
-          [options]="[
-            { label: 'Todos', value: 'all' },
-            { label: 'Stock', value: 'active' },
-            { label: 'Sin Stock', value: 'inactive' },
-          ]"
-          [ngModel]="filterStatus()"
-          (ngModelChange)="filterStatus.set($event)"
-          optionLabel="label"
-          optionValue="value"
-          styleClass="white-space-nowrap text-center">
-        </p-selectButton>
-      </div>
-
-      @if (selectedSize && !isStockBalanced()) {
-        <div
-          class="bg-red-50 border-left-3 border-red-500 p-3 mb-3 border-round-right shadow-1">
-          <div class="flex align-items-center">
-            <i class="pi pi-info-circle text-red-500 mr-2 text-xl"></i>
-            <span class="text-red-700 font-medium">
-              El stock total asignado ({{ totalAssignedStock() }}) no coincide
-              con el stock de la talla ({{ selectedSize.stock }}). Ajusta los
-              valores para poder guardar.
-            </span>
-          </div>
-        </div>
-      }
-
-      @if (colors().length > 0) {
-        <div class="surface-card border-round-xl shadow-1 overflow-hidden">
-          <p-table
-            #dt
-            [value]="filteredColors()"
-            [(selection)]="selectedColors"
-            responsiveLayout="scroll"
-            dataKey="id"
-            [scrollable]="true"
-            scrollHeight="550px"
-            styleClass="p-datatable-sm">
-            <ng-template pTemplate="header">
-              <tr>
-                <th style="width: 3rem"></th>
-                <th style="width: 4rem" class="hidden md:table-cell">#</th>
-                <th>Color</th>
-                <th style="width: 9rem">Stock</th>
-                <th style="width: 5rem"></th>
-              </tr>
-            </ng-template>
-
-            <ng-template pTemplate="body" let-color>
-              <tr
-                [ngClass]="{
-                  'bg-blue-50/30': color.isExists,
-                  'opacity-60': !color.isExists,
-                }">
-                <td><p-tableCheckbox [value]="color"></p-tableCheckbox></td>
-                <td class="hidden md:table-cell text-xs text-500">
-                  {{ color.id }}
-                </td>
-                <td>
-                  <div class="flex align-items-center gap-2">
-                    <div
-                      [style]="{
-                        'background-color': color.hash,
-                        'border-radius': '6px',
-                        border: '1px solid #ddd',
-                        width: '1.8rem',
-                        height: '1.8rem',
-                      }"></div>
-                    <div class="flex flex-column overflow-hidden">
-                      <span
-                        class="text-xs md:text-sm font-bold text-900 truncate"
-                        >{{ color.description }}</span
-                      >
-                      <small class="text-xs text-500">{{ color.hash }}</small>
+              <ng-template pTemplate="body" let-color>
+                <tr
+                  [ngClass]="{
+                    'bg-blue-50/30': color.isExists,
+                    'opacity-60': !color.isExists,
+                  }">
+                  <td><p-tableCheckbox [value]="color"></p-tableCheckbox></td>
+                  <td class="hidden md:table-cell text-xs text-500">
+                    {{ color.id }}
+                  </td>
+                  <td>
+                    <div class="flex align-items-center gap-2">
+                      <div
+                        [style]="{
+                          'background-color': color.hash,
+                          'border-radius': '6px',
+                          border: '1px solid #ddd',
+                          width: '1.8rem',
+                          height: '1.8rem',
+                        }"></div>
+                      <div class="flex flex-column overflow-hidden">
+                        <span
+                          class="text-xs md:text-sm font-bold text-900 truncate"
+                          >{{ color.description }}</span
+                        >
+                        <small class="text-xs text-500">{{ color.hash }}</small>
+                      </div>
                     </div>
-                  </div>
-                </td>
-                <td>
-                  <div class="p-inputgroup">
-                    <input
-                      type="number"
-                      pInputText
-                      [(ngModel)]="color.stock"
-                      (ngModelChange)="onStockChange(color)"
-                      class="w-full text-center p-2 text-sm"
-                      placeholder="0"
-                      min="0" />
-                    <span class="p-inputgroup-addon px-2 text-xs">uds</span>
-                  </div>
-                </td>
-                <td class="px-1">
-                  <div class="flex justify-content-end">
-                    <button
-                      pButton
-                      icon="pi pi-save"
-                      [severity]="color.isExists ? 'secondary' : 'success'"
-                      class="p-button-rounded p-button-text md:p-button-outlined p-0 w-6"
-                      size="small"
-                      [disabled]="!isStockBalanced()"
-                      (click)="
-                        color.isExists
-                          ? editColorSizeProductButton(color)
-                          : saveColorSizeProductButton(color)
-                      "></button>
-                    @if (color.isExists) {
+                  </td>
+                  <td>
+                    <div class="p-inputgroup">
+                      <input
+                        type="number"
+                        pInputText
+                        [(ngModel)]="color.stock"
+                        (ngModelChange)="onStockChange(color)"
+                        class="w-full text-center p-2 text-sm"
+                        placeholder="0"
+                        min="0" />
+                      <span class="p-inputgroup-addon px-2 text-xs">uds</span>
+                    </div>
+                  </td>
+                  <td class="px-1">
+                    <div class="flex justify-content-end">
                       <button
                         pButton
-                        icon="pi pi-trash"
-                        severity="danger"
+                        icon="pi pi-save"
+                        [severity]="color.isExists ? 'secondary' : 'success'"
                         class="p-button-rounded p-button-text md:p-button-outlined p-0 w-6"
                         size="small"
                         [disabled]="!isStockBalanced()"
-                        (click)="removeColorSizeProductButton(color)"></button>
-                    }
-                  </div>
-                </td>
-              </tr>
-            </ng-template>
-          </p-table>
-        </div>
-      }
+                        (click)="
+                          color.isExists
+                            ? editColorSizeProductButton(color)
+                            : saveColorSizeProductButton(color)
+                        "></button>
+                      @if (color.isExists) {
+                        <button
+                          pButton
+                          icon="pi pi-trash"
+                          severity="danger"
+                          class="p-button-rounded p-button-text md:p-button-outlined p-0 w-6"
+                          size="small"
+                          [disabled]="!isStockBalanced()"
+                          (click)="
+                            removeColorSizeProductButton(color)
+                          "></button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
+        }
+      </div>
     </div>
   </div>
 </div>

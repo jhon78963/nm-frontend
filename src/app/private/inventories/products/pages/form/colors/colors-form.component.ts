@@ -12,6 +12,7 @@ import { ButtonModule } from 'primeng/button';
 import { ColorPickerModule } from 'primeng/colorpicker';
 import { DropdownModule } from 'primeng/dropdown';
 import { DialogService } from 'primeng/dynamicdialog';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessagesModule } from 'primeng/messages';
 import { ProgressBarModule } from 'primeng/progressbar';
@@ -42,6 +43,7 @@ import { ProductSizeColorsService } from '../../../services/productColors.servic
     RouterLink,
     SelectButtonModule,
     ProgressBarModule,
+    InputNumberModule,
   ],
   templateUrl: './colors-form.component.html',
   styleUrl: './colors-form.component.scss',
