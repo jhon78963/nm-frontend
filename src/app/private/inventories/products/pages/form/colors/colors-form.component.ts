@@ -1,27 +1,27 @@
-import { Component, OnInit } from '@angular/core';
-import { ButtonModule } from 'primeng/button';
-import { DropdownModule } from 'primeng/dropdown';
-import { Size } from '../../../../sizes/models/sizes.model';
-import { ProductSizeColorsService } from '../../../services/productColors.service';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
 import {
   FormControl,
   FormGroup,
   FormsModule,
   ReactiveFormsModule,
 } from '@angular/forms';
-import { TableModule } from 'primeng/table';
-import { InputTextModule } from 'primeng/inputtext';
-import { RippleModule } from 'primeng/ripple';
-import { ColorPickerModule } from 'primeng/colorpicker';
-import { ColorsCreateFormComponent } from '../../../../colors/pages/form/colors.component';
-import { DialogService } from 'primeng/dynamicdialog';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MessageService } from 'primeng/api';
-import { showError, showSuccess } from '../../../../../../utils/notifications';
+import { ButtonModule } from 'primeng/button';
+import { ColorPickerModule } from 'primeng/colorpicker';
+import { DropdownModule } from 'primeng/dropdown';
+import { DialogService } from 'primeng/dynamicdialog';
+import { InputTextModule } from 'primeng/inputtext';
 import { MessagesModule } from 'primeng/messages';
-import { ProductSizeColorSave } from '../../../models/colors.interface';
+import { RippleModule } from 'primeng/ripple';
+import { TableModule } from 'primeng/table';
 import { catchError, forkJoin, of } from 'rxjs';
+import { showError, showSuccess } from '../../../../../../utils/notifications';
+import { ColorsCreateFormComponent } from '../../../../colors/pages/form/colors.component';
+import { Size } from '../../../../sizes/models/sizes.model';
+import { ProductSizeColorSave } from '../../../models/colors.interface';
+import { ProductSizeColorsService } from '../../../services/productColors.service';
 
 @Component({
   selector: 'app-colors-form',
