@@ -1,53 +1,25 @@
 <div [class]="!stepper ? ' card' : ''">
-  <div class="col-12 mt-0">
+  <div class="col-12 mt-0 p-2 md:p-3">
     <div class="w-full">
       <div
-        class="flex flex-column lg:flex-row lg:justify-content-between gap-3 mb-4">
-        <p-dropdown
-          [options]="sizes"
-          optionLabel="description"
-          [filter]="true"
-          filterBy="description"
-          [showClear]="true"
-          placeholder="Selecciona una talla"
-          styleClass="w-20rem"
-          [(ngModel)]="selectedSize"
-          (onChange)="getSelectedSize($event)">
-          <ng-template pTemplate="filter" let-options="options">
-            <div class="flex gap-1">
-              <div
-                class="p-inputgroup"
-                (click)="$event.stopPropagation()"
-                [formGroup]="formGroup">
-                <span class="p-inputgroup-addon"
-                  ><i class="pi pi-search"></i
-                ></span>
-                <input
-                  type="text"
-                  pInputText
-                  placeholder="Buscar por talla"
-                  formControlName="size" />
-              </div>
-              <button
-                pButton
-                icon="pi pi-times"
-                (click)="resetFunction()"></button>
-            </div>
-          </ng-template>
-          <ng-template pTemplate="selectedItem" let-size>
-            <div class="flex align-items-center gap-2">
-              <div>{{ size.description }}</div>
-            </div>
-          </ng-template>
-          <ng-template let-size pTemplate="item">
-            <div class="flex align-items-center gap-2">
-              <div>{{ size.description }}</div>
-            </div>
-          </ng-template>
-        </p-dropdown>
+        class="flex flex-column lg:flex-row lg:justify-content-between lg:align-items-start gap-4 mb-4">
+        <div class="w-full lg:w-20rem">
+          <p-dropdown
+            [options]="sizes"
+            optionLabel="description"
+            [filter]="true"
+            filterBy="description"
+            [showClear]="true"
+            placeholder="Selecciona una talla"
+            styleClass="w-full"
+            [(ngModel)]="selectedSize"
+            (onChange)="getSelectedSize($event)">
+          </p-dropdown>
+        </div>
 
         @if (selectedSize) {
-          <div class="flex flex-column align-items-center gap-1">
+          <div
+            class="flex flex-column align-items-center gap-2 w-full lg:w-auto">
             <div class="flex align-items-center gap-2">
               <span
                 class="text-sm font-bold"
@@ -62,13 +34,12 @@
                   isStockBalanced()
                     ? 'pi-check-circle text-green-500'
                     : 'pi-exclamation-triangle text-orange-500'
-                ">
-              </i>
+                "></i>
             </div>
             <p-progressBar
               [value]="(totalAssignedStock() / selectedSize.stock) * 100"
               [showValue]="false"
-              styleClass="w-12rem h-1rem shadow-1"
+              styleClass="w-full md:w-15rem h-1rem shadow-1"
               [color]="isStockBalanced() ? '#22C55E' : '#f59e0b'">
             </p-progressBar>
 
@@ -89,14 +60,14 @@
         }
 
         <div
-          class="flex justify-content-center md:justify-content-end gap-2 mb-3">
+          class="flex flex-wrap justify-content-center md:justify-content-end gap-2">
           <button
             pButton
             pRipple
             label="Nuevo"
             icon="pi pi-plus"
             severity="secondary"
-            class="btn-menu w-9rem"
+            class="btn-menu flex-grow-1 md:flex-grow-0 w-8rem md:w-9rem"
             size="small"
             (click)="createColor()"></button>
           <button
@@ -105,7 +76,7 @@
             label="Guardar"
             icon="pi pi-save"
             severity="secondary"
-            class="btn-menu w-9rem"
+            class="btn-menu flex-grow-1 md:flex-grow-0 w-8rem md:w-9rem"
             size="small"
             (click)="saveAllSelectedColors()"
             [disabled]="
@@ -117,7 +88,7 @@
             label="Remover"
             icon="pi pi-trash"
             severity="secondary"
-            class="btn-menu w-9rem"
+            class="btn-menu flex-grow-1 md:flex-grow-0 w-8rem md:w-9rem"
             size="small"
             (click)="deleteAllSelectedColors()"
             [disabled]="
@@ -129,37 +100,35 @@
             label="Regresar"
             icon="pi pi-arrow-left"
             severity="help"
-            class="btn-menu-back w-9rem"
+            class="btn-menu-back flex-grow-1 md:flex-grow-0 w-8rem md:w-9rem"
             size="small"
             [routerLink]="['/inventories/products']"></button>
         </div>
       </div>
 
-      <div
-        class="flex justify-content-center md:justify-content-center gap-2 mb-3">
-        <p-messages />
-      </div>
+      <p-messages />
 
       <div
-        class="flex flex-column md:flex-row gap-2 mb-3 p-2 bg-white border-round-top-xl shadow-1 border-1 border-100">
+        class="flex flex-column md:flex-row gap-3 mb-3 p-3 bg-white border-round-xl shadow-1 border-1 border-100">
         <div class="p-inputgroup flex-1">
           <span class="p-inputgroup-addon"><i class="pi pi-search"></i></span>
           <input
             pInputText
-            placeholder="Buscar color por nombre..."
+            placeholder="Buscar color..."
             [ngModel]="searchTerm()"
             (ngModelChange)="searchTerm.set($event)" />
         </div>
         <p-selectButton
           [options]="[
-            { label: 'En Stock', value: 'active' },
+            { label: 'Stock', value: 'active' },
             { label: 'Sin Stock', value: 'inactive' },
             { label: 'Todos', value: 'all' },
           ]"
           [ngModel]="filterStatus()"
           (ngModelChange)="filterStatus.set($event)"
           optionLabel="label"
-          optionValue="value">
+          optionValue="value"
+          styleClass="white-space-nowrap text-center">
         </p-selectButton>
       </div>
 
