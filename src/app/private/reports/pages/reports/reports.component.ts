@@ -36,7 +36,8 @@ export class ReportsComponent implements OnInit {
   loading = signal(true);
 
   // Filtro de fecha (Por defecto mes actual)
-  filterDate: Date = new Date();
+  // filterDate: Date = new Date();
+  filterDate = signal<Date>(new Date());
 
   // Datos
   totals = signal<any>({});
@@ -75,6 +76,16 @@ export class ReportsComponent implements OnInit {
     ),
   );
 
+  isCurrentMonthSelected = computed(() => {
+    const selected = this.filterDate(); // Se registra como dependencia
+    const now = new Date();
+
+    return (
+      selected.getMonth() === now.getMonth() &&
+      selected.getFullYear() === now.getFullYear()
+    );
+  });
+
   ngOnInit() {
     this.initChartOptions();
     this.loadData();
@@ -83,8 +94,11 @@ export class ReportsComponent implements OnInit {
   loadData() {
     this.loading.set(true);
 
-    const year = this.filterDate.getFullYear();
-    const month = this.filterDate.getMonth();
+    // const year = this.filterDate.getFullYear();
+    // const month = this.filterDate.getMonth();
+    const selectedDate = this.filterDate();
+    const year = selectedDate.getFullYear();
+    const month = selectedDate.getMonth();
 
     const start = new Date(year, month, 1);
     const end = new Date(year, month + 1, 0);
