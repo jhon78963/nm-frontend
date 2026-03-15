@@ -1,6 +1,4 @@
 import { Injectable } from '@angular/core';
-import { ApiService } from '../../../../services/api.service';
-import { Customer, CustomerListResponse } from '../models/customers.model';
 import {
   BehaviorSubject,
   debounceTime,
@@ -8,6 +6,8 @@ import {
   Observable,
   switchMap,
 } from 'rxjs';
+import { ApiService } from '../../../../services/api.service';
+import { Customer, CustomerListResponse } from '../models/customers.model';
 
 @Injectable({ providedIn: 'root' })
 export class CustomersService {
