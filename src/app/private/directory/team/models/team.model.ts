@@ -4,6 +4,7 @@ export interface ITeam {
   name: string;
   surname: string;
   salary: string;
+  warehouseId: number;
 }
 
 export class Team {
@@ -12,6 +13,7 @@ export class Team {
   name: string;
   surname: string;
   salary: string;
+  warehouseId: number;
 
   constructor(team: ITeam) {
     this.id = team.id;
@@ -19,6 +21,7 @@ export class Team {
     this.name = team.name;
     this.surname = team.surname;
     this.salary = team.salary;
+    this.warehouseId = team.warehouseId;
   }
 }
 

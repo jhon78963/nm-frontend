@@ -26,7 +26,7 @@
         </div>
       </div>
       <div class="p-fluid grid">
-        <div class="field col-12 md:col-4">
+        <div class="field col-12 md:col-6">
           <app-input-select
             placeholder="Seleccione genero"
             label="Genero"
@@ -37,7 +37,18 @@
             optionLabel="description"
             optionValue="id"></app-input-select>
         </div>
-        <div class="field col-12 md:col-8">
+        <div class="field col-12 md:col-6">
+          <app-input-select
+            placeholder="Seleccione genero"
+            label="Genero"
+            controlName="warehouseId"
+            for="warehouse"
+            [options]="warehouses"
+            id="warehouse"
+            optionLabel="name"
+            optionValue="id"></app-input-select>
+        </div>
+        <div class="field col-12">
           <app-input-text
             placeholder="Ingrese nombre"
             label="Nombre"

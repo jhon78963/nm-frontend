@@ -15,6 +15,17 @@
         </div>
       }
       <div class="col-12">
+        <app-input-select
+          placeholder="Seleccione genero"
+          label="Genero"
+          controlName="warehouseId"
+          for="warehouse"
+          [options]="warehouses"
+          id="warehouse"
+          optionLabel="name"
+          optionValue="id"></app-input-select>
+      </div>
+      <div class="col-12">
         <app-input-text
           placeholder="Ingrese nombres"
           label="Nombre"

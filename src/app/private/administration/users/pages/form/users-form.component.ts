@@ -2,10 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Observable } from 'rxjs';
-import { UsersService } from '../../services/users.service';
-import { RolesService } from '../../../roles/services/roles.service';
+import { Warehouse } from '../../../../../models/warehouse.interface';
+import { WarehousesService } from '../../../../../services/warehouse.service';
 import { Role } from '../../../roles/models/roles.model';
+import { RolesService } from '../../../roles/services/roles.service';
 import { User } from '../../models/users.model';
+import { UsersService } from '../../services/users.service';
 
 @Component({
   selector: 'app-users-form',
@@ -14,11 +16,13 @@ import { User } from '../../models/users.model';
 })
 export class UserFormComponent implements OnInit {
   userId: number = 0;
+  warehouses: Warehouse[] = [];
 
   constructor(
     private readonly formBuilder: FormBuilder,
     private readonly usersService: UsersService,
     private readonly rolesService: RolesService,
+    private readonly warehousesService: WarehousesService,
     private readonly dynamicDialogRef: DynamicDialogRef,
     private readonly dynamicDialogConfig: DynamicDialogConfig,
   ) {}
@@ -29,10 +33,14 @@ export class UserFormComponent implements OnInit {
     name: ['', Validators.required],
     surname: ['', Validators.required],
     roleId: [1, Validators.required],
+    warehouseId: [{ value: 1, disabled: false }, Validators.required],
   });
 
   ngOnInit(): void {
     this.rolesService.callGetList().subscribe();
+    this.warehousesService.getAll().subscribe((warehouses: Warehouse[]) => {
+      this.warehouses = warehouses;
+    });
     if (this.dynamicDialogConfig.data.id) {
       const id = this.dynamicDialogConfig.data.id;
       this.userId = id;

@@ -7,6 +7,7 @@ export interface IUser {
   profilePicture: string;
   googleId?: number;
   roleId: number;
+  warehouseId: number;
 }
 
 export class User {
@@ -18,6 +19,7 @@ export class User {
   profilePicture: string;
   googleId?: number;
   roleId: number;
+  warehouseId: number;
 
   constructor(user: IUser) {
     this.id = user.id;
@@ -28,6 +30,7 @@ export class User {
     this.profilePicture = user.profilePicture;
     this.googleId = user.googleId;
     this.roleId = user.roleId;
+    this.warehouseId = user.warehouseId;
   }
 }
 

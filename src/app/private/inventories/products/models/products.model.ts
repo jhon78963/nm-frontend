@@ -37,6 +37,7 @@ export interface Product {
   sizeTypeId: number[];
   percentageDiscount: number;
   cashDiscount: number;
+  warehouseId: number;
 }
 
 export interface Paginate {
@@ -61,6 +62,7 @@ export class ProductSave {
   genderId: number;
   percentageDiscount: number;
   cashDiscount: number;
+  warehouseId: number;
   constructor(product: Product) {
     this.id = product.id;
     this.name = product.name;
@@ -73,5 +75,6 @@ export class ProductSave {
     this.genderId = product.genderId;
     this.percentageDiscount = product.percentageDiscount;
     this.cashDiscount = product.cashDiscount;
+    this.warehouseId = product.warehouseId;
   }
 }
