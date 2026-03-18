@@ -18,6 +18,13 @@ const routes: Routes = [
     loadChildren: () =>
       import('./expenses/expenses.module').then(m => m.ExpensesModule),
   },
+  {
+    path: 'orders',
+    title: 'Ordenes',
+    data: { breadcrumb: 'Ordenes' },
+    loadChildren: () =>
+      import('./orders/orders.module').then(m => m.OrdersModule),
+  },
   { path: '', pathMatch: 'full', redirectTo: 'cash-movements' },
 ];
 
