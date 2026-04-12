@@ -87,6 +87,38 @@ export class CashflowService {
     );
   }
 
+  updateMovement(
+    id: number,
+    data: any,
+    file: File | null,
+    currentDate: string,
+  ): Observable<void> {
+    const formData = new FormData();
+
+    // Spoofing de método para que Laravel acepte archivos en PUT
+    formData.append('_method', 'PUT');
+
+    formData.append('type', data.type);
+    formData.append('category', data.category);
+    formData.append('amount', data.amount.toString());
+    formData.append('description', data.description);
+    formData.append('date', data.date);
+    formData.append('payment_method', data.payment_method);
+
+    if (file) {
+      formData.append('image', file);
+    }
+
+    return this.apiService
+      .post(`${this.apiUrl}/${id}`, formData) // Laravel recibirá esto como PUT /{id}
+      .pipe(
+        switchMap(() => {
+          const month = currentDate.substring(0, 7);
+          return this.loadMonthlyAdminExpenses(month);
+        }),
+      );
+  }
+
   // Getters para los observables
   getReport() {
     return this.report$;

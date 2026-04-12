@@ -15,7 +15,7 @@
   <div class="col-12 lg:col-4">
     <div class="surface-card p-4 shadow-2 border-round-xl">
       <h2 class="text-xl font-bold mb-4 text-900">
-        Nuevo Gasto Administrativo
+        {{ isEditing() ? 'Editar Gasto' : 'Nuevo Gasto Administrativo' }}
       </h2>
 
       <div class="flex flex-column gap-3">
@@ -72,11 +72,20 @@
           }
         </div>
 
+        @if (isEditing()) {
+          <button
+            pButton
+            label="Cancelar"
+            icon="pi pi-times"
+            class="p-button-secondary py-3 font-bold"
+            (click)="resetForm()"></button>
+        }
         <button
           pButton
-          label="Registrar Gasto"
-          icon="pi pi-check"
-          class="p-button-help mt-3 py-3 font-bold"
+          [label]="isEditing() ? 'Actualizar Gasto' : 'Registrar Gasto'"
+          [icon]="isEditing() ? 'pi pi-refresh' : 'pi pi-check'"
+          [class]="isEditing() ? 'p-button-warning' : 'p-button-help'"
+          class="flex-1 py-3 font-bold"
           [loading]="loading()"
           (click)="saveExpense()"></button>
       </div>
@@ -111,15 +120,22 @@
               S/ {{ expense.amount | number: '1.2-2' }}
             </td>
             <td class="text-center">
-              @if (expense.voucher_path) {
+              <div class="flex justify-content-center gap-1">
                 <button
                   pButton
-                  icon="pi pi-eye"
-                  class="p-button-rounded p-button-text p-button-sm"
-                  (click)="showVoucher(expense.voucher_path)"></button>
-              } @else {
-                <span class="text-400 text-xs">Sin adjunto</span>
-              }
+                  icon="pi pi-pencil"
+                  class="p-button-rounded p-button-text p-button-sm p-button-warning"
+                  (click)="editExpense(expense)"></button>
+                @if (expense.voucher_path) {
+                  <button
+                    pButton
+                    icon="pi pi-eye"
+                    class="p-button-rounded p-button-text p-button-sm"
+                    (click)="showVoucher(expense.voucher_path)"></button>
+                } @else {
+                  <span class="text-400 text-xs">Sin adjunto</span>
+                }
+              </div>
             </td>
           </tr>
         </ng-template>

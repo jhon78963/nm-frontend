@@ -61,6 +61,9 @@ export class AdminExpensesComponent implements OnInit {
   previewUrl = signal('');
   isPdf = signal(false);
 
+  isEditing = signal(false);
+  editingId: number | null = null;
+
   // Formulario
   expenseForm = {
     description: '',
@@ -106,6 +109,23 @@ export class AdminExpensesComponent implements OnInit {
     this.selectedFile = event.files[0];
   }
 
+  editExpense(expense: any) {
+    this.isEditing.set(true);
+    this.editingId = expense.id;
+
+    this.expenseForm = {
+      description: expense.description,
+      amount: expense.amount,
+      date: new Date(expense.date), // Convertimos el string de la BD a Date
+      payment_method: expense.method,
+      category: 'ADMINISTRATIVE',
+      type: 'EXPENSE',
+    };
+
+    // El scroll hacia arriba para que el usuario vea el formulario
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   saveExpense() {
     if (!this.expenseForm.amount || !this.expenseForm.description) return;
 
@@ -114,46 +134,57 @@ export class AdminExpensesComponent implements OnInit {
       this.expenseForm.date,
       'yyyy-MM-dd HH:mm:ss',
     )!;
-    const currentDateStr = this.datePipe.transform(new Date(), 'yyyy-MM-dd')!;
+    const currentMonthStr = this.datePipe.transform(
+      this.selectedMonth,
+      'yyyy-MM',
+    )!;
 
-    this.cashService
-      .registerMovement(
-        { ...this.expenseForm, date: formattedDate },
-        this.selectedFile,
-        currentDateStr,
-      )
-      .subscribe({
-        next: () => {
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Éxito',
-            detail: 'Gasto registrado correctamente',
-          });
-          this.resetForm();
-          this.loadExpenses();
-        },
-        error: () => {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'No se pudo subir el archivo',
-          });
-          this.loading.set(false);
-        },
-      });
+    const request$ = this.isEditing()
+      ? this.cashService.updateMovement(
+          this.editingId!,
+          { ...this.expenseForm, date: formattedDate },
+          this.selectedFile,
+          currentMonthStr,
+        )
+      : this.cashService.registerMovement(
+          { ...this.expenseForm, date: formattedDate },
+          this.selectedFile,
+          currentMonthStr,
+        );
+
+    request$.subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Éxito',
+          detail: this.isEditing() ? 'Gasto actualizado' : 'Gasto registrado',
+        });
+        this.resetForm();
+        this.loadExpenses();
+      },
+      error: () => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Ocurrió un error',
+        });
+        this.loading.set(false);
+      },
+    });
   }
 
   resetForm() {
     this.expenseForm = {
-      ...this.expenseForm,
       description: '',
       amount: null,
       date: new Date(),
       payment_method: 'CASH',
+      category: 'ADMINISTRATIVE',
+      type: 'EXPENSE',
     };
     this.selectedFile = null;
-    if (this.fileUpload) {
-      this.fileUpload.clear();
-    }
+    this.isEditing.set(false);
+    this.editingId = null;
+    if (this.fileUpload) this.fileUpload.clear();
   }
 }
