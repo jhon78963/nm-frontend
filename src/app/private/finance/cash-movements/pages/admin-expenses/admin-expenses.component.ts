@@ -93,7 +93,7 @@ export class AdminExpensesComponent implements OnInit {
   }
 
   showVoucher(path: string) {
-    const fullUrl = `http://127.0.0.1:3050${path}`;
+    const fullUrl = `https://upload.novedadesmaritex.net.pe${path}`;
     this.previewUrl.set(fullUrl);
 
     // Detectamos si es PDF por la extensión
