@@ -16,6 +16,7 @@ import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 
 import { DialogModule } from 'primeng/dialog';
+import { BASE_UPLOAD_URL } from '../../../../../utils/constants';
 import { SafeUrlPipe } from '../../pipes/safe-url.pipe';
 import { CashflowService } from '../../services/cash-movements.service';
 
@@ -42,6 +43,8 @@ import { CashflowService } from '../../services/cash-movements.service';
 })
 export class AdminExpensesComponent implements OnInit {
   @ViewChild('fileUpload') fileUpload!: FileUpload;
+
+  baseUploadUrl = BASE_UPLOAD_URL;
 
   selectedMonth: Date = new Date();
 
@@ -96,7 +99,7 @@ export class AdminExpensesComponent implements OnInit {
   }
 
   showVoucher(path: string) {
-    const fullUrl = `https://upload.novedadesmaritex.net.pe${path}`;
+    const fullUrl = `${this.baseUploadUrl}${path}`;
     this.previewUrl.set(fullUrl);
 
     // Detectamos si es PDF por la extensión
