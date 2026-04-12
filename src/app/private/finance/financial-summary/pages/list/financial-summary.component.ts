@@ -1,15 +1,15 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { FinancialSummaryService } from '../../services/financial-summary.service';
-import { TableModule } from 'primeng/table';
 import { CommonModule, DatePipe } from '@angular/common';
+import { Component, inject, OnInit, signal } from '@angular/core';
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { SkeletonModule } from 'primeng/skeleton';
+import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
-import { SkeletonModule } from 'primeng/skeleton';
-import { TransactionModalComponent } from '../form/transaction-modal.component';
 import { CashflowService } from '../../../../finance/cash-movements/services/cash-movements.service';
-import { MessageService } from 'primeng/api';
+import { FinancialSummaryService } from '../../services/financial-summary.service';
+import { TransactionModalComponent } from '../form/transaction-modal.component';
 
 @Component({
   selector: 'app-financial-summary',

@@ -193,18 +193,19 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
       'yyyy-MM-dd HH:mm:ss',
     );
 
+    // Creamos el objeto con la categoría por defecto 'STORE'
+    const movementData = {
+      type: this.modalType,
+      category: 'STORE', // <--- Importante: Para que el Service sepa que es de tienda
+      amount: this.movementForm.amount,
+      description: this.movementForm.description,
+      date: formattedDate,
+      payment_method: this.movementForm.payment_method,
+    };
+
     // Usamos el servicio reactivo: Crea y recarga automáticamente
     this.cashflowService
-      .registerMovement(
-        {
-          type: this.modalType,
-          amount: this.movementForm.amount,
-          description: this.movementForm.description,
-          date: formattedDate, // <-- Enviamos la fecha y hora
-          payment_method: this.movementForm.payment_method,
-        } as any,
-        dateStr,
-      )
+      .registerMovement(movementData, null, dateStr)
       .subscribe({
         next: () => {
           this.showModal = false;

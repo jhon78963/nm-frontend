@@ -9,6 +9,13 @@ const routes: Routes = [
         c => c.CashMovementsListComponent,
       ),
   },
+  {
+    path: 'admin-expenses',
+    loadComponent: () =>
+      import('./pages/admin-expenses/admin-expenses.component').then(
+        c => c.AdminExpensesComponent,
+      ),
+  },
 ];
 
 @NgModule({

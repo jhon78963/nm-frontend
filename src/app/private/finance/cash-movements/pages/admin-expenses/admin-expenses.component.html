@@ -1,0 +1,154 @@
+<p-toast></p-toast>
+
+<div class="m-3 flex align-items-center justify-content-center gap-3">
+  <span class="block font-bold">Filtrar por Mes</span>
+  <p-calendar
+    class="text-center"
+    [(ngModel)]="selectedMonth"
+    view="month"
+    dateFormat="mm/yy"
+    [readonlyInput]="true"
+    (onSelect)="loadExpenses()">
+  </p-calendar>
+</div>
+<div class="grid p-fluid">
+  <div class="col-12 lg:col-4">
+    <div class="surface-card p-4 shadow-2 border-round-xl">
+      <h2 class="text-xl font-bold mb-4 text-900">
+        Nuevo Gasto Administrativo
+      </h2>
+
+      <div class="flex flex-column gap-3">
+        <div>
+          <span class="block font-bold mb-2">Descripción</span>
+          <input
+            pInputText
+            [(ngModel)]="expenseForm.description"
+            placeholder="Ej: Pago de Alquiler" />
+        </div>
+
+        <div class="grid">
+          <div class="col-6">
+            <span class="block font-bold mb-2">Monto (S/)</span>
+            <p-inputNumber
+              [(ngModel)]="expenseForm.amount"
+              mode="currency"
+              currency="PEN"
+              locale="es-PE"></p-inputNumber>
+          </div>
+          <div class="col-6">
+            <span class="block font-bold mb-2">Método</span>
+            <p-dropdown
+              [options]="paymentMethods"
+              [(ngModel)]="expenseForm.payment_method"></p-dropdown>
+          </div>
+        </div>
+
+        <div>
+          <span class="block font-bold mb-2">Fecha</span>
+          <p-calendar
+            [(ngModel)]="expenseForm.date"
+            [showTime]="true"
+            hourFormat="12"
+            dateFormat="dd/mm/yy"
+            [showIcon]="true"></p-calendar>
+        </div>
+
+        <div>
+          <span class="block font-bold mb-2">Voucher (PDF o Imagen)</span>
+          <p-fileUpload
+            #fileUpload
+            mode="basic"
+            chooseLabel="Subir Archivo"
+            accept="image/*,application/pdf"
+            maxFileSize="5000000"
+            (onSelect)="onFileSelect($event)"
+            styleClass="w-full">
+          </p-fileUpload>
+          @if (selectedFile) {
+            <small class="text-green-600 font-bold mt-1 block"
+              ><i class="pi pi-check"></i> {{ selectedFile.name }}</small
+            >
+          }
+        </div>
+
+        <button
+          pButton
+          label="Registrar Gasto"
+          icon="pi pi-check"
+          class="p-button-help mt-3 py-3 font-bold"
+          [loading]="loading()"
+          (click)="saveExpense()"></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 lg:col-8">
+    <div class="surface-card p-4 shadow-2 border-round-xl">
+      <h2 class="text-xl font-bold mb-4 text-900">Historial Administrativo</h2>
+
+      <p-table
+        [value]="adminExpenses()"
+        [rows]="5"
+        [paginator]="true"
+        responsiveLayout="scroll"
+        [loading]="loading()">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Fecha</th>
+            <th>Descripción</th>
+            <th>Método</th>
+            <th class="text-right">Monto</th>
+            <th class="text-center">Voucher</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-expense>
+          <tr>
+            <td class="text-sm">{{ expense.date | date: 'dd/MM HH:mm' }}</td>
+            <td class="font-bold">{{ expense.description }}</td>
+            <td><p-tag [value]="expense.method" severity="info"></p-tag></td>
+            <td class="text-right font-bold text-red-600">
+              S/ {{ expense.amount | number: '1.2-2' }}
+            </td>
+            <td class="text-center">
+              @if (expense.voucher_path) {
+                <button
+                  pButton
+                  icon="pi pi-eye"
+                  class="p-button-rounded p-button-text p-button-sm"
+                  (click)="showVoucher(expense.voucher_path)"></button>
+              } @else {
+                <span class="text-400 text-xs">Sin adjunto</span>
+              }
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+</div>
+
+<p-dialog
+  [(visible)]="displayPreview"
+  [modal]="true"
+  [header]="'Vista Previa del Voucher'"
+  [style]="{ width: '90vw', maxWidth: '800px' }"
+  [contentStyle]="{ height: '80vh' }"
+  [draggable]="false"
+  [resizable]="false">
+  <div class="w-full h-full flex justify-content-center align-items-center">
+    @if (isPdf()) {
+      <iframe
+        [src]="previewUrl() | safeUrl"
+        width="100%"
+        height="100%"
+        style="border: none">
+      </iframe>
+    } @else {
+      <img
+        [src]="previewUrl()"
+        alt="Voucher"
+        style="max-width: 100%; max-height: 100%; object-fit: contain" />
+    }
+  </div>
+</p-dialog>

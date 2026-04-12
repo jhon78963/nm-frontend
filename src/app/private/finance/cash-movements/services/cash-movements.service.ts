@@ -1,72 +1,97 @@
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
-import { ApiService } from '../../../../services/api.service'; // Ajusta la ruta a tu ApiService
+import { ApiService } from '../../../../services/api.service';
 
 @Injectable({ providedIn: 'root' })
 export class CashflowService {
   private apiService = inject(ApiService);
-  private apiUrl = 'cash-flow'; // Base URL del módulo
+  private apiUrl = 'cash-flow';
 
-  // --- STATE MANAGEMENT (Como ColorsService) ---
-  // Guardamos el estado del reporte actual en un BehaviorSubject
+  // --- STATE 1: Reporte Diario de Tienda ---
   private reportSubject = new BehaviorSubject<any>({
     lists: { sales: [], incomes: [], expenses: [] },
     summary: { opening_balance: 100, final_balance: 0 },
   });
-
-  // Exponemos el Observable para que el componente se suscriba
   report$ = this.reportSubject.asObservable();
+
+  // --- STATE 2: Gastos Administrativos Mensuales ---
+  private adminExpensesSubject = new BehaviorSubject<any[]>([]);
+  adminExpenses$ = this.adminExpensesSubject.asObservable();
 
   constructor() {}
 
-  /**
-   * Carga el reporte desde la API y actualiza el Subject local.
-   * El componente reaccionará automáticamente a este cambio.
-   */
+  // --- MÉTODOS DE TIENDA (DIARIO) ---
   loadDailyReport(date: string): Observable<void> {
     const url = `${this.apiUrl}/daily?date=${date}`;
+    return this.apiService.get<any>(url).pipe(
+      map(response => {
+        if (response.success) this.reportSubject.next(response.data);
+      }),
+    );
+  }
 
+  // --- MÉTODOS ADMINISTRATIVOS (MENSUAL) ---
+  loadMonthlyAdminExpenses(month: string): Observable<void> {
+    // URL: cash-flow/admin/monthly?month=2026-04
+    const url = `${this.apiUrl}/admin/monthly?month=${month}`;
     return this.apiService.get<any>(url).pipe(
       map(response => {
         if (response.success) {
-          // Actualizamos el estado interno
-          this.updateReport(response.data);
+          // Actualizamos solo el estado administrativo
+          this.adminExpensesSubject.next(response.data.expenses);
         }
       }),
     );
   }
 
-  /**
-   * Obtiene el Observable del reporte actual
-   */
-  getReport(): Observable<any> {
-    return this.report$;
-  }
-
-  /**
-   * Registra movimiento y REFRESCA automáticamente el reporte
-   * usando switchMap (Patrón Reactivo)
-   */
-  registerMovement(
-    movement: { type: string; amount: number; description: string },
-    currentDate: string,
-  ): Observable<void> {
-    return this.apiService.post(this.apiUrl, movement).pipe(
-      // Después de guardar con éxito, recargamos los datos inmediatamente
-      switchMap(() => this.loadDailyReport(currentDate)),
-    );
-  }
   registerSummaryMovement(movement: {
     type: string;
+
     amount: number;
+
     description: string;
   }): Observable<void> {
     return this.apiService.post(this.apiUrl, movement);
   }
 
-  // Helper para actualizar el BehaviorSubject
-  private updateReport(data: any): void {
-    this.reportSubject.next(data);
+  /**
+   * Registra movimiento y refresca la vista correspondiente
+   */
+  registerMovement(
+    data: any,
+    file: File | null,
+    currentDate: string, // 'yyyy-MM-dd' para tienda o 'yyyy-MM' para admin
+  ): Observable<void> {
+    const formData = new FormData();
+    formData.append('type', data.type);
+    formData.append('category', data.category);
+    formData.append('amount', data.amount.toString());
+    formData.append('description', data.description);
+    formData.append('date', data.date);
+    formData.append('payment_method', data.payment_method);
+
+    if (file) formData.append('image', file);
+
+    return this.apiService.post(this.apiUrl, formData).pipe(
+      switchMap(() => {
+        // REFRESCO INTELIGENTE:
+        // Si es administrativo, refresca la lista mensual, si no, la diaria.
+        if (data.category === 'ADMINISTRATIVE') {
+          const month = currentDate.substring(0, 7); // Extrae 'YYYY-MM'
+          return this.loadMonthlyAdminExpenses(month);
+        } else {
+          return this.loadDailyReport(currentDate);
+        }
+      }),
+    );
+  }
+
+  // Getters para los observables
+  getReport() {
+    return this.report$;
+  }
+  getAdminExpenses() {
+    return this.adminExpenses$;
   }
 }

@@ -96,8 +96,19 @@ export class AppMenuComponent implements OnInit {
               icon: 'pi pi-fw pi-calculator',
               routerLink: ['/finance/cash-movements'],
             },
+          ],
+        },
+        {
+          label: 'Gastos',
+          icon: 'pi pi-users',
+          items: [
             {
-              label: 'Gastos',
+              label: 'Gastos Administrativos',
+              icon: 'pi pi-fw pi-calculator',
+              routerLink: ['/finance/cash-movements/admin-expenses'],
+            },
+            {
+              label: 'Gastos Generales',
               icon: 'pi pi-fw pi-calculator',
               routerLink: ['/finance/expenses'],
             },
