@@ -22,11 +22,17 @@ export class CashflowService {
   constructor() {}
 
   // --- MÉTODOS DE TIENDA (DIARIO) ---
-  loadDailyReport(date: string): Observable<void> {
-    const url = `${this.apiUrl}/daily?date=${date}`;
+  loadDailyReport(date: string, filters: string[] = []): Observable<void> {
+    const activeFilters =
+      filters.length > 0 ? filters : ['CASH', 'YAPE', 'CARD'];
+    const filterParams = activeFilters.map(f => `filters[]=${f}`).join('&');
+    const url = `${this.apiUrl}/daily?date=${date}&${filterParams}`;
+
     return this.apiService.get<any>(url).pipe(
       map(response => {
-        if (response.success) this.reportSubject.next(response.data);
+        if (response && response.data) {
+          this.reportSubject.next(response.data);
+        }
       }),
     );
   }

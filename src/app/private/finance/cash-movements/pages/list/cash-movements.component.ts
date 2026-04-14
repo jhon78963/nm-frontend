@@ -100,11 +100,16 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
   }
 
   get filteredFinalBalance(): number {
-    const base = Number(this.summary().opening_balance) || 0;
-    return (
-      base + this.filteredTotalIncomesAmount - this.filteredTotalExpensesAmount
-    );
+    // Solo sumamos ingresos y restamos egresos del día. Ignoramos opening_balance.
+    return this.filteredTotalIncomesAmount - this.filteredTotalExpensesAmount;
   }
+
+  // get filteredFinalBalance(): number {
+  //   const base = Number(this.summary().opening_balance) || 0;
+  //   return (
+  //     base + this.filteredTotalIncomesAmount - this.filteredTotalExpensesAmount
+  //   );
+  // }
 
   ngOnInit() {
     // 1. SUSCRIPCIÓN AL ESTADO DEL SERVICIO
@@ -130,7 +135,23 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
   // Helper para formatear fecha y llamar al servicio
   refreshData() {
     const dateStr = this.datePipe.transform(this.currentDate, 'yyyy-MM-dd')!;
-    this.cashflowService.loadDailyReport(dateStr).subscribe();
+
+    // Convertimos el objeto filters {cash: true, yape: false...} en un array ['CASH']
+    const activeFilters: string[] = [];
+    if (this.filters.cash) activeFilters.push('CASH');
+    if (this.filters.yape) {
+      activeFilters.push('YAPE');
+      activeFilters.push('PLIN'); // Incluimos PLIN por si acaso
+    }
+    if (this.filters.card) activeFilters.push('CARD');
+
+    // Tu servicio debe aceptar estos filtros (puedes mandarlos como query params)
+    this.cashflowService.loadDailyReport(dateStr, activeFilters).subscribe();
+  }
+
+  toggleFilter(key: 'cash' | 'yape' | 'card') {
+    this.filters[key] = !this.filters[key];
+    this.refreshData(); // Recargamos del servidor para que el Mixto se recalcule
   }
 
   changeDate(days: number) {

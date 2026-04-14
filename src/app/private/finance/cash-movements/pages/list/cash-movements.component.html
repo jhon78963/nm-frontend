@@ -65,7 +65,7 @@
             ? 'bg-blue-50 border-blue-500 text-blue-700'
             : 'surface-card border-300 text-500'
         "
-        (click)="filters.cash = !filters.cash">
+        (click)="toggleFilter('cash')">
         <i class="pi pi-money-bill"></i> CASH
       </div>
       <div
@@ -75,7 +75,7 @@
             ? 'bg-blue-50 border-blue-500 text-blue-700'
             : 'surface-card border-300 text-500'
         "
-        (click)="filters.yape = !filters.yape">
+        (click)="toggleFilter('yape')">
         <i class="pi pi-mobile"></i> YAPE/PLIN
       </div>
       <div
@@ -85,7 +85,7 @@
             ? 'bg-blue-50 border-blue-500 text-blue-700'
             : 'surface-card border-300 text-500'
         "
-        (click)="filters.card = !filters.card">
+        (click)="toggleFilter('card')">
         <i class="pi pi-credit-card"></i> CARD
       </div>
     </div>
