@@ -1,13 +1,13 @@
-import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { SalesService } from '../../services/sales.service';
 import { InputNumberModule } from 'primeng/inputnumber'; // Importante para el input de precio
+import { InputTextModule } from 'primeng/inputtext';
 import { PosService } from '../../../pos/services/pos.service';
+import { SalesService } from '../../services/sales.service';
 
 @Component({
   selector: 'app-exchange',

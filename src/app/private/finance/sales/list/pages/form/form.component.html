@@ -29,12 +29,26 @@
             <tbody>
               <ng-container *ngFor="let item of itemsControls; let i = index">
                 <tr [formGroupName]="i" class="border-bottom-1 surface-border">
-                  <td class="p-2 text-center font-bold">
-                    {{ item.get('quantity')?.value }}
+                  <td class="p-2">
+                    <input
+                      type="number"
+                      pInputText
+                      formControlName="quantity"
+                      class="w-full text-center p-1 h-2rem text-sm font-bold"
+                      (wheel)="$event.preventDefault()" />
                   </td>
                   <td class="p-2">
-                    <div class="font-bold text-xs">
-                      {{ item.get('description_full')?.value }}
+                    <div class="flex align-items-center gap-2">
+                      <div class="font-bold text-xs">
+                        {{ item.get('description_full')?.value }}
+                      </div>
+                      <button
+                        type="button"
+                        pButton
+                        icon="pi pi-sync"
+                        class="p-button-text p-button-sm p-button-warning p-0 h-1rem w-1rem"
+                        (click)="openExchangeProduct(i)"
+                        pTooltip="Cambiar por otro producto"></button>
                     </div>
                   </td>
                   <td class="p-2">
@@ -126,12 +140,12 @@
             *ngIf="calculatedTotal - calculatedPayments > 0.1">
             Falta: S/
             {{ calculatedTotal - calculatedPayments | number: '1.2-2' }}
-          </span>
-          <span
-            class="text-xs font-bold"
-            *ngIf="calculatedTotal - calculatedPayments < -0.1">
-            Sobran: S/
-            {{ calculatedPayments - calculatedTotal | number: '1.2-2' }}
+            <button
+              type="button"
+              class="ml-2 p-1 text-xs p-button-secondary p-button-outlined"
+              (click)="fixOverpayment()">
+              Ajustar Pago
+            </button>
           </span>
           <!-- FIX: Reemplazamos Math.abs() por una comparación lógica directa -->
           <span

@@ -1,7 +1,7 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
-import { CartItem, Customer, Product, ModalState } from '../models/pos.models';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../../../../services/api.service'; // Asegúrate que la ruta sea correcta
+import { CartItem, Customer, ModalState, Product } from '../models/pos.models';
 
 @Injectable({ providedIn: 'root' })
 export class PosService {

@@ -1,0 +1,70 @@
+<div class="p-3">
+  <span class="p-input-icon-left w-full mb-3">
+    <i class="pi pi-search"></i>
+    <input
+      pInputText
+      type="text"
+      placeholder="Escanee o escriba el SKU y presione Enter..."
+      class="w-full"
+      (keyup.enter)="loadProducts($any($event.target).value)" />
+  </span>
+
+  <p-table
+    [value]="products()"
+    [rows]="5"
+    [paginator]="true"
+    [loading]="loading()"
+    responsiveLayout="scroll"
+    styleClass="p-datatable-sm">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Producto</th>
+        <th>Talla / Color</th>
+        <th class="text-center">Stock</th>
+        <th class="text-right">Precio</th>
+        <th></th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-prod>
+      <tr class="cursor-pointer" (click)="select(prod)">
+        <td class="text-xs">
+          <span class="font-bold">{{ prod.name }}</span>
+          <div class="text-500 text-xs">{{ prod.sku }}</div>
+        </td>
+        <td>
+          <div class="flex flex-column gap-1">
+            <p-tag
+              [value]="prod.size_name"
+              severity="warning"
+              styleClass="text-xs"></p-tag>
+            <span class="text-xs font-medium text-600">
+              <i class="pi pi-palette mr-1"></i>{{ prod.colorName }}
+            </span>
+          </div>
+        </td>
+        <td
+          class="text-center font-bold"
+          [ngClass]="prod.stock <= 0 ? 'text-red-500' : 'text-green-600'">
+          {{ prod.stock }}
+        </td>
+        <td class="text-right font-bold text-indigo-600">
+          S/ {{ prod.sale_price | number: '1.2-2' }}
+        </td>
+        <td class="text-center">
+          <button
+            pButton
+            icon="pi pi-check"
+            class="p-button-rounded p-button-text"
+            (click)="select(prod)"></button>
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="5" class="text-center p-4 text-500">
+          No se encontraron variantes disponibles.
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
