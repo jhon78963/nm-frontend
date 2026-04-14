@@ -1,5 +1,5 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import {
   FormArray,
   FormBuilder,
@@ -39,6 +39,8 @@ export class SaleFormComponent implements OnInit {
 
   paymentMethodsList = ['CASH', 'YAPE', 'CARD'];
 
+  isCanceled = signal<boolean>(false);
+
   constructor(
     private readonly datePipe: DatePipe,
     private readonly dialogService: DialogService,
@@ -53,7 +55,8 @@ export class SaleFormComponent implements OnInit {
     if (this.dynamicDialogConfig.data.id) {
       const id = this.dynamicDialogConfig.data.id;
       this.salesService.getOne(id).subscribe((response: any) => {
-        // 1. Fecha
+        this.isCanceled.set(response.status === 'CANCELED');
+
         if (response.datetime_iso) {
           this.form.patchValue({
             creationTime: new Date(response.datetime_iso),
@@ -67,6 +70,10 @@ export class SaleFormComponent implements OnInit {
         this.initPayments(response.payments);
 
         this.recalculateTotals();
+
+        if (this.isCanceled()) {
+          this.form.disable();
+        }
       });
     }
   }

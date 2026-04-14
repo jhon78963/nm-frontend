@@ -20,7 +20,6 @@ import {
 } from '../../../../../../utils/notifications';
 import { Sale } from '../../models/sales.model';
 import { SalesService } from '../../services/sales.service';
-import { SaleExchangeComponent } from '../exchange/exchange.component';
 import { SaleFormComponent } from '../form/form.component';
 
 @Component({
@@ -60,7 +59,7 @@ export class SaleListComponent implements OnInit, OnDestroy {
       field: 'total',
       clickable: false,
       image: false,
-      money: false,
+      money: true,
     },
     {
       header: 'Estado',
@@ -85,11 +84,12 @@ export class SaleListComponent implements OnInit, OnDestroy {
     {
       type: 'button',
       size: 'small',
-      icon: 'pi pi-file-edit',
+      icon: 'pi pi-eye',
       outlined: true,
-      pTooltip: 'Cambio de producto',
+      pTooltip: 'Ver detalle',
       tooltipPosition: 'bottom',
-      click: (rowData: Sale) => this.buttonExchangeSale(rowData.id),
+      visible: (rowData: Sale) => rowData.status === 'CANCELED',
+      click: (rowData: Sale) => this.buttonEditSale(rowData.id),
     },
     {
       type: 'button',
@@ -98,6 +98,7 @@ export class SaleListComponent implements OnInit, OnDestroy {
       outlined: true,
       pTooltip: 'Editar',
       tooltipPosition: 'bottom',
+      visible: (rowData: Sale) => rowData.status !== 'CANCELED',
       click: (rowData: Sale) => this.buttonEditSale(rowData.id),
     },
     {
@@ -107,6 +108,7 @@ export class SaleListComponent implements OnInit, OnDestroy {
       outlined: true,
       pTooltip: 'Eliminar',
       tooltipPosition: 'bottom',
+      visible: (rowData: Sale) => rowData.status !== 'CANCELED',
       click: (rowData: Sale, event?: Event) =>
         this.buttonDeleteSale(rowData.id, event!),
     },
@@ -170,10 +172,10 @@ export class SaleListComponent implements OnInit, OnDestroy {
   async getSales(
     limit = this.limit,
     page = this.page,
-    name = this.search,
+    search = this.search,
   ): Promise<void> {
     this.updatePage(page);
-    this.salesService.callGetList(limit, page, name).subscribe();
+    this.salesService.callGetList(limit, page, search).subscribe();
     setTimeout(() => {
       this.loadingService.sendLoadingState(false);
     }, 600);
@@ -191,24 +193,6 @@ export class SaleListComponent implements OnInit, OnDestroy {
 
   get total(): Observable<number> {
     return this.salesService.getTotal();
-  }
-
-  buttonExchangeSale(id: number): void {
-    this.saleModal = this.dialogService.open(SaleExchangeComponent, {
-      data: { id },
-      header: 'Cambio de mercadería',
-      styleClass: 'dialog-custom-form',
-    });
-
-    this.saleModal.onClose.subscribe({
-      next: value => {
-        value && value?.success
-          ? showSuccess(this.messageService, 'Detalle actualizado.')
-          : value?.error
-            ? showError(this.messageService, value?.error)
-            : null;
-      },
-    });
   }
 
   buttonEditSale(id: number): void {

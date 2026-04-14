@@ -48,6 +48,7 @@
                         icon="pi pi-sync"
                         class="p-button-text p-button-sm p-button-warning p-0 h-1rem w-1rem"
                         (click)="openExchangeProduct(i)"
+                        [disabled]="isCanceled()"
                         pTooltip="Cambiar por otro producto"></button>
                     </div>
                   </td>
@@ -88,7 +89,8 @@
             icon="pi pi-plus"
             label="Agregar Pago"
             class="p-button-text p-button-sm py-1"
-            (click)="addPaymentRow()"></button>
+            (click)="addPaymentRow()"
+            [disabled]="isCanceled()"></button>
         </div>
 
         <div formArrayName="payments" class="flex flex-column gap-2">

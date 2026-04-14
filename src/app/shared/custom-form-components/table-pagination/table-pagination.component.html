@@ -44,23 +44,17 @@
           >{{ getFieldValue(col.field, rowData) }}
         }
 
-        <span
-          *ngIf="
-            col.field === 'button' && callToAction && callToAction.length > 0
-          "
-          class="flex gap-2">
-          <p-button
-            *ngFor="let button of getButtonActions(callToAction)"
-            [size]="button.size"
-            icon="{{ button.icon }}"
-            [outlined]="button.outlined"
-            pTooltip="{{ button.pTooltip }}"
-            [tooltipPosition]="button.tooltipPosition"
-            (click)="
-              col.type === 'button'
-                ? button.click(rowData)
-                : button.click(rowData, $event)
-            "></p-button>
+        <span *ngIf="col.field === 'button' && callToAction" class="flex gap-2">
+          @for (button of getVisibleActions(rowData); track $index) {
+            <p-button
+              [size]="button.size"
+              [icon]="button.icon"
+              [outlined]="button.outlined"
+              [pTooltip]="button.pTooltip"
+              [tooltipPosition]="button.tooltipPosition"
+              (click)="button.click(rowData, $event)">
+            </p-button>
+          }
         </span>
       </td>
     </tr>

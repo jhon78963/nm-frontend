@@ -1,16 +1,16 @@
-import { MessageService } from 'primeng/api';
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { TableModule } from 'primeng/table';
-import { TooltipModule } from 'primeng/tooltip';
 import { ToastModule } from 'primeng/toast';
+import { TooltipModule } from 'primeng/tooltip';
 import { TreeTableModule } from 'primeng/treetable';
-import { LoadingService } from '../../../services/loading.service';
 import { CallToAction } from '../../../interfaces/table.interface';
+import { LoadingService } from '../../../services/loading.service';
 
 @Component({
   selector: 'app-table-pagination',
@@ -91,5 +91,12 @@ export class TablePaginationComponent implements OnInit {
       }
     }
     return value;
+  }
+
+  getVisibleActions(rowData: any): CallToAction<any>[] {
+    return this.callToAction.filter(action => {
+      if (!action.visible) return true;
+      return action.visible(rowData);
+    });
   }
 }

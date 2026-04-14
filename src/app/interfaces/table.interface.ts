@@ -6,6 +6,7 @@ export interface CallToAction<T> {
   pTooltip: string;
   tooltipPosition: 'top' | 'bottom' | 'left' | 'right';
   click: (rowData: T, event?: Event) => void;
+  visible?: (rowData: T) => boolean;
 }
 
 export interface Column {
