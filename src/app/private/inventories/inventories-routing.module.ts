@@ -22,6 +22,13 @@ const routes: Routes = [
     loadChildren: () =>
       import('./colors/colors.module').then(m => m.ColorsModule),
   },
+  {
+    path: 'purchase',
+    title: 'Compras',
+    data: { breadcrumb: 'Registro de compras' },
+    loadChildren: () =>
+      import('./purchase/purchase.module').then(m => m.PurchaseModule),
+  },
 ];
 
 @NgModule({

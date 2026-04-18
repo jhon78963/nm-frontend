@@ -1,0 +1,643 @@
+<p-toast />
+<div class="surface-ground p-3 md:p-4">
+  <div class="grid purchase-layout">
+    <div class="col-12 xl:col-4 flex flex-column gap-3">
+      <p-card header="1. Cabecera de compra">
+        <form [formGroup]="header" class="flex flex-column gap-3">
+          <div class="flex flex-column gap-2">
+            <label for="supplierName" class="font-medium text-sm"
+              >Proveedor</label
+            >
+            <p-autoComplete
+              inputId="supplierName"
+              formControlName="supplierName"
+              [suggestions]="filteredVendors"
+              (completeMethod)="searchVendors($event)"
+              field="name"
+              [forceSelection]="false"
+              [dropdown]="true"
+              placeholder="Buscar proveedor o escribir nombre libre"
+              styleClass="w-full"
+              inputStyleClass="w-full"
+              (onSelect)="onSupplierSelect($event)">
+              <ng-template let-v pTemplate="item">
+                <div class="flex flex-column">
+                  <span class="font-medium">{{ v.name }}</span>
+                  @if (v.phone) {
+                    <small class="text-600">{{ v.phone }}</small>
+                  }
+                </div>
+              </ng-template>
+            </p-autoComplete>
+            <small class="text-600">
+              Elegí de la lista o escribí el nombre: al
+              <strong>Registrar compra</strong> se enlaza un proveedor del
+              directorio (si ya existe por nombre se reutiliza; si no, se crea
+              solo con el nombre para que completes teléfono o dirección
+              después).
+            </small>
+          </div>
+          <div class="flex flex-column gap-2">
+            <label for="documentNote" class="font-medium text-sm"
+              >Nota de venta / boleta (opcional)</label
+            >
+            <input
+              pInputText
+              id="documentNote"
+              formControlName="documentNote"
+              class="w-full" />
+          </div>
+          <div class="flex flex-column gap-2">
+            <label for="registeredAt" class="font-medium text-sm"
+              >Fecha de registro</label
+            >
+            <p-calendar
+              id="registeredAt"
+              formControlName="registeredAt"
+              dateFormat="yy-mm-dd"
+              [showIcon]="true"
+              styleClass="w-full"
+              [style]="{ width: '100%' }"></p-calendar>
+          </div>
+          <div class="flex flex-column gap-2">
+            <label for="warehouseId" class="font-medium text-sm">Almacén</label>
+            <p-dropdown
+              inputId="warehouseId"
+              formControlName="warehouseId"
+              [options]="warehouses"
+              optionLabel="name"
+              optionValue="id"
+              placeholder="Selecciona almacén"
+              [showClear]="true"
+              styleClass="w-full"></p-dropdown>
+          </div>
+        </form>
+      </p-card>
+    </div>
+
+    <div class="col-12 xl:col-8 flex flex-column gap-3">
+      <p-card header="2. Constructor de ítem">
+        <div class="flex flex-column gap-3 mb-2">
+          @if (isEditingLine()) {
+            <div
+              class="border-round p-3 mb-2 surface-ground border-1 surface-border text-sm">
+              <i class="pi pi-pencil mr-2"></i>
+              Estás corrigiendo una fila quitada del detalle. Al pulsar
+              <strong>Agregar a la tabla</strong> se vuelve a incorporar con los
+              cambios.
+            </div>
+          }
+          <span class="font-medium text-sm">Origen del producto</span>
+          <p-selectButton
+            [options]="productSourceMode"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="useExistingProduct()"
+            (ngModelChange)="toggleProductSource($event)"></p-selectButton>
+
+          @if (useExistingProduct()) {
+            <span class="font-medium text-sm">Buscar producto</span>
+            <p-autoComplete
+              [(ngModel)]="selectedProduct"
+              [ngModelOptions]="{ standalone: true }"
+              [suggestions]="filteredProducts"
+              (completeMethod)="searchProducts($event)"
+              field="name"
+              [forceSelection]="true"
+              placeholder="Escribe al menos 2 caracteres…"
+              [dropdown]="true"
+              styleClass="w-full"
+              inputStyleClass="w-full"
+              (onSelect)="onProductPicked($event.value)">
+              <ng-template let-p pTemplate="item">
+                <div class="flex flex-column">
+                  <span class="font-medium">{{ p.name }}</span>
+                  <small class="text-600">ID {{ p.id }} · {{ p.gender }}</small>
+                </div>
+              </ng-template>
+            </p-autoComplete>
+            <button
+              pButton
+              type="button"
+              class="p-button-text p-button-sm align-self-start"
+              label="Limpiar producto"
+              icon="pi pi-times"
+              (click)="clearProductSelection()"></button>
+          }
+
+          @if (!useExistingProduct()) {
+            <p-divider align="left"
+              ><span class="text-sm font-medium"
+                >Crear producto rápido</span
+              ></p-divider
+            >
+            <div class="flex align-items-center gap-2 text-sm text-600">
+              <i class="pi pi-info-circle"></i>
+              <span>
+                Tallas nuevas van en <code>catalogUpserts</code>. Los colores:
+                elegí del <strong>catálogo global</strong> si ya existen en la
+                base; solo activá <strong>Color nuevo en el sistema</strong> si
+                vas a crear uno que todavía no está en la tabla de colores.
+              </span>
+            </div>
+            <button
+              pButton
+              type="button"
+              class="p-button-outlined p-button-sm"
+              label="Finalizar este producto nuevo (siguiente fila = otro producto)"
+              icon="pi pi-check"
+              (click)="finishNewProductBatch()"></button>
+          }
+
+          @if (useExistingProduct() && !selectedProduct) {
+            <div
+              class="border-round-md p-3 mt-2 surface-ground border-1 border-primary-200 text-sm line-height-3 text-800">
+              <i class="pi pi-info-circle mr-2 text-primary"></i>
+              <strong>Paso 1:</strong> buscá y elegí un
+              <strong>producto existente</strong> arriba. Hasta entonces no se
+              configuran tallas, colores ni precios (así no se mezclan datos de
+              otro producto).
+            </div>
+          } @else {
+            <p-divider />
+
+            <form [formGroup]="lineDraft" class="formgrid grid">
+              <div class="col-12 lg:col-6 flex flex-column gap-3">
+                @if (!useExistingProduct()) {
+                  <div class="flex flex-column gap-2">
+                    <span class="font-medium text-sm">Nombre</span>
+                    <input
+                      pInputText
+                      formControlName="newProductName"
+                      class="w-full" />
+                  </div>
+                  <div class="flex flex-column gap-2">
+                    <span class="font-medium text-sm">Género</span>
+                    <p-dropdown
+                      formControlName="newProductGenderId"
+                      [options]="genders"
+                      optionLabel="description"
+                      optionValue="id"
+                      placeholder="Selecciona"
+                      styleClass="w-full"></p-dropdown>
+                  </div>
+                }
+
+                <div class="flex flex-column gap-2">
+                  <span class="font-medium text-sm">Tipo de talla</span>
+                  <p-dropdown
+                    formControlName="selectedSizeTypeId"
+                    [options]="sizeTypes"
+                    optionLabel="description"
+                    optionValue="id"
+                    placeholder="Selecciona tipo (ej. Adulto letras…)"
+                    [showClear]="true"
+                    styleClass="w-full"
+                    (onChange)="onSizeTypeChosen()"></p-dropdown>
+                </div>
+
+                <div class="flex align-items-center gap-2">
+                  <p-checkbox
+                    formControlName="sizeNewToggle"
+                    inputId="sizeNew"
+                    [binary]="true"
+                    (onChange)="onSizeNewToggleChange()"></p-checkbox>
+                  <label for="sizeNew" class="m-0 cursor-pointer"
+                    >Talla no figura en el catálogo (texto libre)</label
+                  >
+                </div>
+
+                @if (!lineDraft.get('sizeNewToggle')?.value) {
+                  <div class="flex flex-column gap-2">
+                    <span class="font-medium text-sm">Talla del catálogo</span>
+                    <p-dropdown
+                      formControlName="selectedSizeId"
+                      [options]="catalogSizes()"
+                      optionLabel="description"
+                      optionValue="id"
+                      placeholder="Primero elige tipo de talla"
+                      [showClear]="true"
+                      styleClass="w-full"
+                      [filter]="true"
+                      filterBy="description"
+                      (onChange)="onCatalogSizeChosen()"></p-dropdown>
+                  </div>
+                }
+
+                @if (lineDraft.get('sizeNewToggle')?.value) {
+                  <div class="flex flex-column gap-2">
+                    <span class="font-medium text-sm"
+                      >Descripción de la talla nueva</span
+                    >
+                    <input
+                      pInputText
+                      formControlName="newSizeDescription"
+                      class="w-full"
+                      maxlength="25" />
+                    <small class="text-600 m-0"
+                      >Se usará el <strong>tipo de talla</strong> seleccionado
+                      arriba al crear la talla en el sistema.</small
+                    >
+                  </div>
+                }
+              </div>
+
+              <div class="col-12 lg:col-6 flex flex-column gap-3">
+                <p-panel
+                  header="Precios y código de barras (nivel talla)"
+                  [toggleable]="false"
+                  styleClass="surface-ground">
+                  <div class="flex flex-column gap-3">
+                    <small class="text-600 m-0"
+                      >Si la API devuelve datos en la talla seleccionada, se
+                      rellenan aquí; siempre puedes editarlos.</small
+                    >
+                    <div class="flex flex-column gap-2">
+                      <span class="font-medium text-sm"
+                        >Código de barras (EAN / SKU)</span
+                      >
+                      <input
+                        pInputText
+                        formControlName="barcode"
+                        class="w-full" />
+                    </div>
+                    <div class="grid">
+                      <div class="col-12 md:col-4 flex flex-column gap-2">
+                        <span class="font-medium text-sm">Precio compra</span>
+                        <p-inputNumber
+                          formControlName="purchasePrice"
+                          mode="decimal"
+                          [minFractionDigits]="2"
+                          [maxFractionDigits]="2"
+                          styleClass="w-full"></p-inputNumber>
+                      </div>
+                      <div class="col-12 md:col-4 flex flex-column gap-2">
+                        <span class="font-medium text-sm">Precio venta</span>
+                        <p-inputNumber
+                          formControlName="salePrice"
+                          mode="decimal"
+                          [minFractionDigits]="2"
+                          [maxFractionDigits]="2"
+                          styleClass="w-full"></p-inputNumber>
+                      </div>
+                      <div class="col-12 md:col-4 flex flex-column gap-2">
+                        <span class="font-medium text-sm"
+                          >Precio venta mín.</span
+                        >
+                        <p-inputNumber
+                          formControlName="minSalePrice"
+                          mode="decimal"
+                          [minFractionDigits]="2"
+                          [maxFractionDigits]="2"
+                          styleClass="w-full"></p-inputNumber>
+                      </div>
+                    </div>
+                  </div>
+                </p-panel>
+
+                <div class="flex align-items-center gap-2">
+                  <p-checkbox
+                    formControlName="useColorVariant"
+                    inputId="useColor"
+                    [binary]="true"
+                    (onChange)="onUseColorVariantChange()"></p-checkbox>
+                  <label for="useColor" class="m-0 cursor-pointer"
+                    >Variante por color (stock en
+                    <code>product_size_color</code>)</label
+                  >
+                </div>
+
+                @if (lineDraft.get('useColorVariant')?.value) {
+                  <p-panel
+                    header="Colores — solo cantidades por variante"
+                    [toggleable]="false"
+                    styleClass="border-1 border-round-md surface-border">
+                    @if (draftColorQueue.length > 0) {
+                      <p-table
+                        [value]="draftColorQueue.controls"
+                        styleClass="p-datatable-sm mb-3">
+                        <ng-template pTemplate="header">
+                          <tr>
+                            <th>Color</th>
+                            <th class="text-right">Cantidad</th>
+                            <th style="width: 3rem"></th>
+                          </tr>
+                        </ng-template>
+                        <ng-template pTemplate="body" let-g let-i="rowIndex">
+                          <tr>
+                            <td>{{ g.get('displayLabel')?.value }}</td>
+                            <td class="text-right">
+                              {{ g.get('quantity')?.value }}
+                            </td>
+                            <td>
+                              <button
+                                pButton
+                                type="button"
+                                icon="pi pi-times"
+                                class="p-button-rounded p-button-text p-button-danger"
+                                (click)="removeDraftVariant(i)"></button>
+                            </td>
+                          </tr>
+                        </ng-template>
+                      </p-table>
+                    } @else {
+                      <p class="text-600 text-sm mt-0 mb-3">
+                        Aún no hay variantes. Configura color y cantidad, luego
+                        “Añadir variante”.
+                      </p>
+                    }
+
+                    @if (canPickExistingColors()) {
+                      <div class="flex flex-column gap-2 mb-2">
+                        <div class="flex align-items-center gap-2 flex-wrap">
+                          <p-checkbox
+                            formControlName="colorNewToggle"
+                            inputId="colorNew"
+                            [binary]="true"></p-checkbox>
+                          <label for="colorNew" class="m-0 cursor-pointer"
+                            >Color nuevo en el sistema (nombre y hex)</label
+                          >
+                        </div>
+                        <small class="text-600 m-0">
+                          @if (useExistingProduct()) {
+                            El listado incluye todos los colores del catálogo.
+                            Si ya existe pero esta talla aún no lo tiene,
+                            elegilo aquí (no hace falta crearlo de nuevo).
+                          } @else {
+                            Si el color ya existe en la base, elegilo del
+                            listado. Activá la casilla solo para crear uno que
+                            no exista aún.
+                          }
+                        </small>
+                      </div>
+                    }
+                    @if (showColorCatalogPick()) {
+                      <p-dropdown
+                        formControlName="selectedColorId"
+                        [options]="colorOptions()"
+                        optionLabel="description"
+                        optionValue="id"
+                        placeholder="Color del catálogo (filtrá o desplazá la lista)"
+                        [showClear]="true"
+                        [filter]="true"
+                        filterBy="description"
+                        filterPlaceholder="Buscar por nombre…"
+                        [virtualScroll]="true"
+                        [virtualScrollItemSize]="40"
+                        scrollHeight="280px"
+                        styleClass="w-full mb-3">
+                        @if (useExistingProduct()) {
+                          <ng-template let-opt pTemplate="item">
+                            <div
+                              class="flex align-items-center justify-content-between gap-2 w-full">
+                              <span>{{ opt.description }}</span>
+                              @if (opt.isExists) {
+                                <span
+                                  class="text-xs text-600 white-space-nowrap"
+                                  >Ya en esta talla</span
+                                >
+                              } @else {
+                                <span
+                                  class="text-xs text-primary white-space-nowrap"
+                                  >Sin variante en esta talla</span
+                                >
+                              }
+                            </div>
+                          </ng-template>
+                        }
+                      </p-dropdown>
+                    }
+
+                    @if (showNewColorFields()) {
+                      <div class="flex flex-column gap-2 mb-2">
+                        <span class="font-medium text-sm"
+                          >Nombre del color (crear en catálogo)</span
+                        >
+                        <input
+                          pInputText
+                          formControlName="newColorDescription"
+                          class="w-full"
+                          maxlength="25" />
+                        <span class="font-medium text-sm"
+                          >Hash / hex (opcional)</span
+                        >
+                        <input
+                          pInputText
+                          formControlName="newColorHash"
+                          class="w-full"
+                          maxlength="25"
+                          placeholder="#RRGGBB" />
+                      </div>
+                    }
+
+                    <div
+                      class="flex flex-column sm:flex-row sm:align-items-end gap-2">
+                      <div class="flex flex-column gap-2 flex-1">
+                        <span class="font-medium text-sm"
+                          >Cantidad para esta variante</span
+                        >
+                        <p-inputNumber
+                          formControlName="variantQuantity"
+                          [min]="1"
+                          [useGrouping]="false"
+                          styleClass="w-full"></p-inputNumber>
+                      </div>
+                      <button
+                        pButton
+                        type="button"
+                        label="Añadir variante"
+                        icon="pi pi-plus"
+                        class="p-button-secondary"
+                        (click)="addDraftVariant()"></button>
+                    </div>
+                  </p-panel>
+                } @else {
+                  <p-panel
+                    header="Stock sin desglose por color (solo talla)"
+                    [toggleable]="false">
+                    <div
+                      class="flex flex-column gap-2"
+                      style="max-width: 16rem">
+                      <span class="font-medium text-sm">Cantidad</span>
+                      <p-inputNumber
+                        formControlName="sizeOnlyQuantity"
+                        [min]="1"
+                        [useGrouping]="false"
+                        styleClass="w-full"></p-inputNumber>
+                    </div>
+                  </p-panel>
+                }
+              </div>
+            </form>
+
+            <button
+              pButton
+              type="button"
+              label="Agregar a la tabla"
+              icon="pi pi-table"
+              class="p-button-success p-button-lg w-full font-semibold mt-2"
+              (click)="addLine()"></button>
+          }
+        </div>
+      </p-card>
+    </div>
+
+    <div class="col-12 flex flex-column gap-3">
+      <p-card header="3. Detalle de la compra">
+        <p-table
+          [value]="lines.controls"
+          styleClass="p-datatable-sm"
+          [tableStyle]="{ 'min-width': '42rem' }">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Producto</th>
+              <th>Talla</th>
+              <th>Barcode</th>
+              <th>Precios</th>
+              <th>Colores y cantidades</th>
+              <th class="text-right">Subtotal</th>
+              <th style="width: 3rem"></th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-row let-i="rowIndex">
+            <tr [formGroup]="row">
+              <td>{{ row.get('productName')?.value }}</td>
+              <td>{{ row.get('sizeLabel')?.value }}</td>
+              <td style="min-width: 8rem">
+                <input
+                  pInputText
+                  formControlName="barcode"
+                  class="w-full text-sm" />
+              </td>
+              <td style="min-width: 12rem">
+                <div class="flex flex-column gap-2 text-sm">
+                  <div class="flex align-items-center gap-2">
+                    <span class="text-600 white-space-nowrap">Compra</span>
+                    <p-inputNumber
+                      formControlName="purchasePrice"
+                      mode="decimal"
+                      [minFractionDigits]="2"
+                      [maxFractionDigits]="2"
+                      inputStyleClass="w-full"
+                      styleClass="flex-1"></p-inputNumber>
+                  </div>
+                  <div class="flex align-items-center gap-2">
+                    <span class="text-600 white-space-nowrap">Venta</span>
+                    <p-inputNumber
+                      formControlName="salePrice"
+                      mode="decimal"
+                      [minFractionDigits]="2"
+                      [maxFractionDigits]="2"
+                      inputStyleClass="w-full"
+                      styleClass="flex-1"></p-inputNumber>
+                  </div>
+                  <div class="flex align-items-center gap-2">
+                    <span class="text-600 white-space-nowrap">Mín.</span>
+                    <p-inputNumber
+                      formControlName="minSalePrice"
+                      mode="decimal"
+                      [minFractionDigits]="2"
+                      [maxFractionDigits]="2"
+                      inputStyleClass="w-full"
+                      styleClass="flex-1"></p-inputNumber>
+                  </div>
+                </div>
+              </td>
+              <td style="min-width: 14rem">
+                <ul class="list-none m-0 p-0 flex flex-column gap-2">
+                  @for (
+                    cg of lineColors(row).controls;
+                    track trackLineColorKey(cg);
+                    let ci = $index
+                  ) {
+                    <li
+                      [formGroup]="cg"
+                      class="flex align-items-center gap-2 flex-wrap border-1 border-round p-2 surface-ground">
+                      <span class="font-medium text-sm flex-1 min-w-0">{{
+                        cg.get('displayLabel')?.value
+                      }}</span>
+                      <p-inputNumber
+                        formControlName="quantity"
+                        [min]="1"
+                        [useGrouping]="false"
+                        inputStyleClass="w-5rem"></p-inputNumber>
+                      <button
+                        pButton
+                        pRipple
+                        type="button"
+                        icon="pi pi-times"
+                        class="p-button-rounded p-button-text p-button-danger p-button-sm"
+                        (click)="removeLineColorVariant(i, ci)"
+                        [disabled]="lineColors(row).length <= 1"></button>
+                    </li>
+                  }
+                </ul>
+                <div class="text-xs text-600 mt-2 line-height-2">
+                  {{ colorsSummaryText(row) }}
+                </div>
+              </td>
+              <td class="text-right font-medium align-top">
+                {{ row.get('subtotal')?.value | number: '1.2-2' }}
+              </td>
+              <td class="align-top">
+                <div class="flex gap-1">
+                  <button
+                    pButton
+                    pRipple
+                    type="button"
+                    icon="pi pi-pencil"
+                    class="p-button-rounded p-button-text"
+                    title="Editar en constructor"
+                    (click)="editLine(i)"></button>
+                  <button
+                    pButton
+                    pRipple
+                    type="button"
+                    icon="pi pi-trash"
+                    class="p-button-rounded p-button-text p-button-danger"
+                    (click)="removeLine(i)"></button>
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="7" class="text-center text-600 py-4">
+                Aún no hay filas. Arma talla + variantes y pulsa “Agregar a la
+                tabla”.
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-card>
+
+      <p-card header="4. Totales y registro">
+        <div
+          class="flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3">
+          <div class="text-xl">
+            Total estimado:
+            <span class="font-bold text-primary">{{
+              totalEstimated() | number: '1.2-2'
+            }}</span>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button
+              pButton
+              type="button"
+              label="Limpiar todo"
+              icon="pi pi-refresh"
+              class="p-button-secondary p-button-outlined"
+              (click)="resetAll()"></button>
+            <button
+              pButton
+              type="button"
+              label="Registrar ingreso de mercadería"
+              icon="pi pi-save"
+              [loading]="submitting()"
+              (click)="registerPurchase()"></button>
+          </div>
+        </div>
+      </p-card>
+    </div>
+  </div>
+</div>

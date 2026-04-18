@@ -1,6 +1,7 @@
 export interface IVendor {
   id: number;
   name: string;
+  /** Opcional al crear desde compras; se completa luego en directorio. */
   address?: string;
   local?: string;
   phone?: string;
@@ -16,7 +17,7 @@ export class Vendor {
   constructor(role: IVendor) {
     this.id = role.id;
     this.name = role.name;
-    this.address = role.name;
+    this.address = role.address ?? '';
     this.local = role.local;
     this.phone = role.phone;
   }

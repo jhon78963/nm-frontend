@@ -1,0 +1,13 @@
+.purchase-layout {
+  align-items: flex-start;
+}
+
+@media screen and (min-width: 1200px) {
+  .purchase-layout .p-card .p-card-body {
+    padding-top: 0.75rem;
+  }
+}
+
+.input-border {
+  border-color: var(--surface-border, #dee2e6);
+}
