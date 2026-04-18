@@ -1,5 +1,15 @@
 <p-toast />
-<div class="surface-ground p-3 md:p-4">
+<div class="flex justify-content-end px-2 pt-2 surface-ground">
+  <a
+    routerLink="/inventories/purchase"
+    pButton
+    type="button"
+    label="Listado de compras"
+    icon="pi pi-list"
+    class="p-button-text p-button-sm"
+  ></a>
+</div>
+<div class="surface-ground p-3 md:p-4 pt-0">
   <div class="grid purchase-layout">
     <div class="col-12 xl:col-4 flex flex-column gap-3">
       <p-card header="1. Cabecera de compra">

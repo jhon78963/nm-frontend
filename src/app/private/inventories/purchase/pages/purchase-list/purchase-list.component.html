@@ -1,0 +1,63 @@
+<div class="card">
+  <form [formGroup]="formGroup">
+    <div
+      class="flex flex-column md:flex-row align-items-center justify-content-between gap-3 mt-3 w-full">
+      <div
+        class="w-full md:w-4 flex justify-content-start flex-order-2 md:flex-order-1">
+        <app-input-search
+          class="w-full"
+          [formGroup]="formGroup"
+          controlName="search"
+          (clearFilter)="clearFilter()"></app-input-search>
+      </div>
+      <div
+        class="w-full md:flex-grow-1 flex flex-wrap justify-content-center gap-2 flex-order-3 md:flex-order-2 align-items-end">
+        <div class="flex flex-column gap-1" style="min-width: 10rem">
+          <span class="text-xs text-600">Almacén</span>
+          <p-dropdown
+            [options]="warehouses"
+            formControlName="warehouseId"
+            optionLabel="name"
+            optionValue="id"
+            placeholder="Todos"
+            [showClear]="true"
+            styleClass="w-full"
+            appendTo="body"></p-dropdown>
+        </div>
+        <div class="flex flex-column gap-1" style="min-width: 10rem">
+          <span class="text-xs text-600">Estado</span>
+          <p-dropdown
+            [options]="statusOptions"
+            formControlName="status"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Estado"
+            [showClear]="true"
+            styleClass="w-full"
+            appendTo="body"></p-dropdown>
+        </div>
+      </div>
+      <div
+        class="w-full md:w-4 flex justify-content-center md:justify-content-end flex-order-1 md:flex-order-3 gap-2">
+        <p-button
+          [outlined]="true"
+          severity="secondary"
+          (click)="clearFilter()">
+          <i class="pi pi-filter-slash" style="font-size: 1rem"></i>
+        </p-button>
+        <p-button icon="pi pi-plus" (click)="goRegister()"></p-button>
+      </div>
+    </div>
+  </form>
+  <app-table-pagination
+    [data]="purchases"
+    [columns]="columns"
+    [callToAction]="callToAction"
+    [total]="total"
+    [limit]="limit"
+    [page]="page"
+    (paginateSelected)="onPageSelected($event)"
+    [rowsPerPageOptions]="[10, 20, 50]"></app-table-pagination>
+  <p-toast />
+  <p-confirmDialog></p-confirmDialog>
+</div>

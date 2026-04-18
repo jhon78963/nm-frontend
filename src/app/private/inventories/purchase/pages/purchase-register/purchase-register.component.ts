@@ -15,6 +15,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import {
   AutoCompleteCompleteEvent,
@@ -70,6 +71,7 @@ import {
   PurchaseLineFormValue,
   SizeTypeOption,
 } from '../../models/purchase.models';
+import type { PurchaseRegisterBulkResponse } from '../../models/purchases-list.model';
 import { PurchaseCatalogService } from '../../services/purchase-catalog.service';
 import { PurchaseService } from '../../services/purchase.service';
 
@@ -107,6 +109,7 @@ interface PurchaseRegisterLocalDraftV1Legacy {
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
+    RouterLink,
     ToolbarModule,
     CardModule,
     ButtonModule,
@@ -215,6 +218,7 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
     private readonly warehousesService: WarehousesService,
     private readonly productsService: ProductsService,
     private readonly messageService: MessageService,
+    private readonly router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -1140,9 +1144,13 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$),
       )
       .subscribe({
-        next: () => {
+        next: (res: PurchaseRegisterBulkResponse) => {
           showSuccess(this.messageService, 'Ingreso registrado correctamente.');
           this.resetAll();
+          const pid = res?.purchaseId;
+          if (pid != null && Number(pid) > 0) {
+            void this.router.navigate(['/inventories/purchase', pid]);
+          }
         },
       });
   }

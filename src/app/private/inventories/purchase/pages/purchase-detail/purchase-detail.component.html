@@ -1,0 +1,125 @@
+<p-toast />
+<p-confirmDialog />
+
+@if (!loading && purchase) {
+  <p-toolbar styleClass="mb-3 border-round-md surface-card">
+    <div class="p-toolbar-group-start flex flex-column gap-1">
+      <span class="text-xl font-semibold">Compra #{{ purchase.id }}</span>
+      <span class="text-600 text-sm"
+        >{{ purchase.supplierName }} ·
+        {{ purchase.warehouseName || 'Almacén ' + purchase.warehouseId }}</span
+      >
+    </div>
+    <div class="p-toolbar-group-end flex flex-wrap gap-2">
+      @if (purchase.status === 'ACTIVE') {
+        <button
+          pButton
+          type="button"
+          label="Anular compra"
+          icon="pi pi-times-circle"
+          class="p-button-danger p-button-outlined"
+          (click)="confirmCancel($event)"></button>
+      }
+      <a
+        pButton
+        label="Volver al listado"
+        icon="pi pi-list"
+        class="p-button-text"
+        routerLink="/inventories/purchase"></a>
+    </div>
+  </p-toolbar>
+
+  <div class="grid">
+    <div class="col-12 lg:col-4">
+      <p-card header="Resumen">
+        <dl class="m-0 text-sm">
+          <dt class="text-600">Estado</dt>
+          <dd class="mt-0 mb-2 font-medium">{{ purchase.status }}</dd>
+          <dt class="text-600">Fecha documento</dt>
+          <dd class="mt-0 mb-2">{{ purchase.registeredAt }}</dd>
+          <dt class="text-600">Total</dt>
+          <dd class="mt-0 mb-2">
+            {{ purchase.totalSubtotal | number: '1.2-2' }}
+            {{ purchase.currency }}
+          </dd>
+          <dt class="text-600">Registro sistema</dt>
+          <dd class="mt-0 mb-2">{{ purchase.creationTime }}</dd>
+          @if (purchase.cancelledAt) {
+            <dt class="text-600">Anulada</dt>
+            <dd class="mt-0 mb-2">{{ purchase.cancelledAt }}</dd>
+          }
+          @if (purchase.cancellationReason) {
+            <dt class="text-600">Motivo anulación</dt>
+            <dd class="mt-0 mb-2">{{ purchase.cancellationReason }}</dd>
+          }
+        </dl>
+      </p-card>
+    </div>
+    <div class="col-12 lg:col-8">
+      <p-card header="Nota / fecha (solo compras activas)">
+        <form [formGroup]="headerForm" class="flex flex-column gap-3">
+          <div class="flex flex-column gap-2">
+            <label class="text-sm font-medium" for="docNote"
+              >Nota de documento</label
+            >
+            <input
+              pInputText
+              id="docNote"
+              formControlName="documentNote"
+              maxlength="500"
+              class="w-full" />
+          </div>
+          <div class="flex flex-column gap-2">
+            <label class="text-sm font-medium" for="regAt"
+              >Fecha registrada</label
+            >
+            <p-calendar
+              id="regAt"
+              formControlName="registeredAt"
+              dateFormat="yy-mm-dd"
+              [showIcon]="true"
+              styleClass="w-full"></p-calendar>
+          </div>
+          @if (purchase.status === 'ACTIVE') {
+            <button
+              pButton
+              type="button"
+              label="Guardar cambios"
+              icon="pi pi-save"
+              (click)="saveHeader()"></button>
+          }
+        </form>
+      </p-card>
+    </div>
+  </div>
+
+  <p-card header="Detalle de líneas" styleClass="mt-3">
+    <p-table
+      [value]="purchase.lines"
+      styleClass="p-datatable-sm"
+      [tableStyle]="{ 'min-width': '48rem' }">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Producto</th>
+          <th>Talla</th>
+          <th>Δ stock talla</th>
+          <th>Colores</th>
+          <th class="text-right">Subtotal</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-line>
+        <tr>
+          <td>{{ line.productName ?? line.productId }}</td>
+          <td>{{ line.sizeDescription ?? line.sizeId }}</td>
+          <td>{{ line.sizeStockDelta }}</td>
+          <td class="text-sm">{{ lineColorsSummary(line) }}</td>
+          <td class="text-right">{{ line.subtotal | number: '1.2-2' }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+}
+
+@if (loading) {
+  <p class="text-600 p-4">Cargando…</p>
+}

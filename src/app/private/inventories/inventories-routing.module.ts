@@ -25,7 +25,7 @@ const routes: Routes = [
   {
     path: 'purchase',
     title: 'Compras',
-    data: { breadcrumb: 'Registro de compras' },
+    data: { breadcrumb: 'Compras' },
     loadChildren: () =>
       import('./purchase/purchase.module').then(m => m.PurchaseModule),
   },
