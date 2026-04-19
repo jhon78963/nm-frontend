@@ -75,10 +75,21 @@ export class AppMenuComponent implements OnInit {
               icon: 'pi pi-fw pi-cog',
               routerLink: ['/inventories/colors'],
             },
+          ],
+        },
+        {
+          label: 'Compras',
+          icon: 'pi pi-users',
+          items: [
             {
-              label: 'Compras (listado y registro)',
+              label: 'Lista',
               icon: 'pi pi-fw pi-shopping-cart',
               routerLink: ['/inventories/purchase'],
+            },
+            {
+              label: 'Registro',
+              icon: 'pi pi-fw pi-calculator',
+              routerLink: ['/inventories/purchase/register'],
             },
           ],
         },
@@ -116,22 +127,6 @@ export class AppMenuComponent implements OnInit {
               label: 'Gastos Generales',
               icon: 'pi pi-fw pi-calculator',
               routerLink: ['/finance/expenses'],
-            },
-          ],
-        },
-        {
-          label: 'Ordenes',
-          icon: 'pi pi-users',
-          items: [
-            {
-              label: 'Lista',
-              icon: 'pi pi-fw pi-calculator',
-              routerLink: ['/finance/orders'],
-            },
-            {
-              label: 'Registro',
-              icon: 'pi pi-fw pi-calculator',
-              routerLink: ['/finance/orders/register'],
             },
           ],
         },

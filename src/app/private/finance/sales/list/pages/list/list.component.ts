@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { FormControl, FormGroup } from '@angular/forms';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -25,7 +26,13 @@ import { SaleFormComponent } from '../form/form.component';
 @Component({
   selector: 'app-list',
   standalone: true,
-  imports: [CommonModule, SharedModule, ToastModule, ConfirmDialogModule],
+  imports: [
+    CommonModule,
+    RouterLink,
+    SharedModule,
+    ToastModule,
+    ConfirmDialogModule,
+  ],
   templateUrl: './list.component.html',
   styleUrl: './list.component.scss',
   providers: [ConfirmationService, MessageService, DialogService],

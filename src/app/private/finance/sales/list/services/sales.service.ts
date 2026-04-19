@@ -1,12 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Sale, SaleListResponse } from '../models/sales.model';
-import {
-  BehaviorSubject,
-  debounceTime,
-  map,
-  Observable,
-  switchMap,
-} from 'rxjs';
+import { BehaviorSubject, map, Observable, switchMap } from 'rxjs';
 import { ApiService } from '../../../../../services/api.service';
 
 // 1. Interfaz del estado
@@ -71,7 +65,6 @@ export class SalesService {
       url += `&search=${name}`;
     }
     return this.apiService.get<SaleListResponse>(url).pipe(
-      debounceTime(600),
       map((response: SaleListResponse) => {
         this.updateSales(response.data);
         this.updateTotalSales(response.paginate.total);
