@@ -219,12 +219,6 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
   colorCatalogSearch = '';
   filteredColorsForPicker: ProductColorOption[] = [];
 
-  /**
-   * Solo la primera vez que se elige una talla del catálogo se rellenan precios/barcode desde el pivot;
-   * al cambiar de talla no se pisan los datos que el usuario ya cargó.
-   */
-  private sizeAutofillFromPivotDone = false;
-
   constructor(
     private readonly fb: FormBuilder,
     private readonly catalog: PurchaseCatalogService,
@@ -322,7 +316,6 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
   }
 
   onProductPicked(product: Product): void {
-    this.sizeAutofillFromPivotDone = false;
     this.colorOptions.set([]);
     this.colorCatalogSearch = '';
     this.filteredColorsForPicker = [];
@@ -391,7 +384,6 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
   }
 
   clearProductSelection(): void {
-    this.sizeAutofillFromPivotDone = false;
     this.selectedProduct = null;
     this.filteredProducts = [];
     this.productPivotBySizeId.set(new Map());
@@ -532,13 +524,19 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
   onCatalogSizeChosen(): void {
     const sizeId = this.lineDraft.get('selectedSizeId')?.value;
     if (sizeId == null) {
-      this.sizeAutofillFromPivotDone = false;
       this.refreshColorsAfterSizeChange();
       return;
     }
-    if (!this.sizeAutofillFromPivotDone) {
-      this.applyPricesFromSelectedSize();
-      this.sizeAutofillFromPivotDone = true;
+    const draft = this.lineDraft.getRawValue();
+    if (!draft.sizeNewToggle) {
+      const merged = this.getMergedSizeOption(Number(sizeId));
+      const hasRowInProduct =
+        merged != null &&
+        merged.productSizeId != null &&
+        merged.productSizeId > 0;
+      if (hasRowInProduct) {
+        this.applyPricesFromSelectedSize();
+      }
     }
     this.refreshColorsAfterSizeChange();
   }
@@ -616,7 +614,6 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
   toggleProductSource(isExisting: boolean): void {
     this.useExistingProduct.set(isExisting);
     this.activeNewProductTempId = null;
-    this.sizeAutofillFromPivotDone = false;
     this.clearDraftVariants();
     if (isExisting) {
       this.lineDraft.patchValue({
@@ -643,6 +640,15 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
   removeDraftVariant(index: number): void {
     this.draftColorQueue.removeAt(index);
     this.requestPersistDraft();
+  }
+
+  /** Suma de cantidades en la cola de variantes (panel Colores — Stock). */
+  draftColorsQuantitySum(): number {
+    let sum = 0;
+    for (const g of this.draftColorQueue.controls) {
+      sum += Number(g.get('quantity')?.value) || 0;
+    }
+    return sum;
   }
 
   onColorSearchComplete(ev: AutoCompleteCompleteEvent): void {
@@ -1252,8 +1258,6 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
               m.set(r.id, r);
             }
             this.productPivotBySizeId.set(m);
-            this.sizeAutofillFromPivotDone =
-              this.lineDraft.get('selectedSizeId')?.value != null;
             this.refreshColorsAfterSizeChange();
           },
           error: () => {
@@ -1277,8 +1281,6 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
       );
       this.activeNewProductTempId =
         (raw['productTempId'] as string | null) ?? null;
-      this.sizeAutofillFromPivotDone =
-        this.lineDraft.get('selectedSizeId')?.value != null;
       this.refreshColorsAfterSizeChange();
     }
   }
@@ -1765,8 +1767,6 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
 
         const draftType = this.lineDraft.get('selectedSizeTypeId')?.value;
         if (draftType != null && Number(draftType) > 0) {
-          this.sizeAutofillFromPivotDone =
-            this.lineDraft.get('selectedSizeId')?.value != null;
           this.refreshColorsAfterSizeChange();
           done();
           return;
@@ -1783,22 +1783,16 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
           this.catalog.getSizesBySizeType(firstType).subscribe({
             next: rows => {
               this.catalogSizes.set(rows ?? []);
-              this.sizeAutofillFromPivotDone =
-                this.lineDraft.get('selectedSizeId')?.value != null;
               this.refreshColorsAfterSizeChange();
               done();
             },
             error: () => {
               this.catalogSizes.set([]);
-              this.sizeAutofillFromPivotDone =
-                this.lineDraft.get('selectedSizeId')?.value != null;
               this.refreshColorsAfterSizeChange();
               done();
             },
           });
         } else {
-          this.sizeAutofillFromPivotDone =
-            this.lineDraft.get('selectedSizeId')?.value != null;
           this.refreshColorsAfterSizeChange();
           done();
         }
