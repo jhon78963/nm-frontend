@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { ApiService } from '../../../../services/api.service';
 import { Observable } from 'rxjs';
-import { ProductSizeSave } from '../models/sizes.interface';
+import { ApiService } from '../../../../services/api.service';
 import { Size } from '../../sizes/models/sizes.model';
 import { ProductSizeColorSave } from '../models/colors.interface';
+import { ProductSizeSave } from '../models/sizes.interface';
 
 @Injectable({
   providedIn: 'root',

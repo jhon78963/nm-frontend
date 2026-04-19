@@ -12,6 +12,12 @@
     </div>
     <div class="p-toolbar-group-end flex flex-wrap gap-2">
       @if (purchase.status === 'ACTIVE') {
+        <a
+          pButton
+          label="Registrar más mercadería"
+          icon="pi pi-plus"
+          class="p-button-success p-button-outlined"
+          routerLink="/inventories/purchase/register"></a>
         <button
           pButton
           type="button"
@@ -94,26 +100,127 @@
   </div>
 
   <p-card header="Detalle de líneas" styleClass="mt-3">
+    @if (purchase.status !== 'ACTIVE') {
+      <p class="text-600 text-sm mt-0 mb-3">
+        Compra no activa: el detalle es solo lectura.
+      </p>
+    } @else {
+      <p class="text-600 text-sm mt-0 mb-3">
+        Podés corregir precios, código de barras y cantidades por color, o
+        eliminar una sola fila sin anular toda la compra.
+      </p>
+    }
     <p-table
       [value]="purchase.lines"
       styleClass="p-datatable-sm"
-      [tableStyle]="{ 'min-width': '48rem' }">
+      [tableStyle]="{ 'min-width': '56rem' }">
       <ng-template pTemplate="header">
         <tr>
           <th>Producto</th>
           <th>Talla</th>
           <th>Δ stock talla</th>
-          <th>Colores</th>
+          <th>Colores / cantidades</th>
           <th class="text-right">Subtotal</th>
+          @if (purchase.status === 'ACTIVE') {
+            <th style="width: 10rem" class="text-center">Acciones</th>
+          }
         </tr>
       </ng-template>
-      <ng-template pTemplate="body" let-line>
-        <tr>
-          <td>{{ line.productName ?? line.productId }}</td>
-          <td>{{ line.sizeDescription ?? line.sizeId }}</td>
-          <td>{{ line.sizeStockDelta }}</td>
-          <td class="text-sm">{{ lineColorsSummary(line) }}</td>
-          <td class="text-right">{{ line.subtotal | number: '1.2-2' }}</td>
+      <ng-template pTemplate="body" let-line let-rowIndex="rowIndex">
+        <tr [formGroup]="lineEditAt(rowIndex)">
+          <td class="align-top">{{ line.productName ?? line.productId }}</td>
+          <td class="align-top">{{ line.sizeDescription ?? line.sizeId }}</td>
+          <td class="align-top">{{ line.sizeStockDelta }}</td>
+          <td class="text-sm align-top" style="min-width: 14rem">
+            @if (
+              line.hasColorBreakdown && colorDeltaControls(rowIndex).length
+            ) {
+              <ul class="list-none m-0 p-0 flex flex-column gap-2">
+                @for (cg of colorDeltaControls(rowIndex); track $index) {
+                  <li
+                    [formGroup]="cg"
+                    class="flex align-items-center gap-2 flex-wrap border-1 border-round p-2 surface-ground">
+                    <span class="flex-1 min-w-0 font-medium">{{
+                      line.colorDeltas?.[$index]?.colorDescription ??
+                        'Color #' + cg.get('colorId')?.value
+                    }}</span>
+                    <p-inputNumber
+                      formControlName="quantity"
+                      [min]="1"
+                      [useGrouping]="false"
+                      inputStyleClass="w-5rem"></p-inputNumber>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <div class="flex align-items-center gap-2 flex-wrap">
+                <span class="text-600 text-sm">Cantidad (solo talla)</span>
+                <p-inputNumber
+                  formControlName="sizeOnlyQuantity"
+                  [min]="1"
+                  [useGrouping]="false"
+                  inputStyleClass="w-5rem"></p-inputNumber>
+              </div>
+              <div class="text-xs text-600 mt-2">
+                {{ lineColorsSummary(line) }}
+              </div>
+            }
+          </td>
+          <td class="text-right font-medium align-top">
+            {{ line.subtotal | number: '1.2-2' }}
+          </td>
+          @if (purchase.status === 'ACTIVE') {
+            <td class="align-top text-center">
+              <div class="flex flex-column gap-2 align-items-stretch">
+                <input
+                  pInputText
+                  formControlName="barcode"
+                  class="w-full text-sm"
+                  placeholder="Barcode" />
+                <div class="flex flex-column gap-1 text-xs">
+                  <span class="text-600">Compra</span>
+                  <p-inputNumber
+                    formControlName="purchasePrice"
+                    mode="decimal"
+                    [minFractionDigits]="2"
+                    [maxFractionDigits]="2"
+                    styleClass="w-full"></p-inputNumber>
+                  <span class="text-600">Venta</span>
+                  <p-inputNumber
+                    formControlName="salePrice"
+                    mode="decimal"
+                    [minFractionDigits]="2"
+                    [maxFractionDigits]="2"
+                    styleClass="w-full"></p-inputNumber>
+                  <span class="text-600">Mín.</span>
+                  <p-inputNumber
+                    formControlName="minSalePrice"
+                    mode="decimal"
+                    [minFractionDigits]="2"
+                    [maxFractionDigits]="2"
+                    styleClass="w-full"></p-inputNumber>
+                </div>
+                <button
+                  pButton
+                  pRipple
+                  type="button"
+                  label="Guardar línea"
+                  icon="pi pi-check"
+                  class="p-button-sm"
+                  [loading]="isLineBusy(line.id)"
+                  (click)="saveLine(rowIndex)"></button>
+                <button
+                  pButton
+                  pRipple
+                  type="button"
+                  label="Eliminar"
+                  icon="pi pi-trash"
+                  class="p-button-sm p-button-danger p-button-outlined"
+                  [loading]="isLineBusy(line.id)"
+                  (click)="confirmDeleteLine(rowIndex, $event)"></button>
+              </div>
+            </td>
+          }
         </tr>
       </ng-template>
     </p-table>

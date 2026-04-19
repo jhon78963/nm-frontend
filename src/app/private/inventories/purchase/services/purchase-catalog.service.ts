@@ -1,9 +1,15 @@
 import { Injectable } from '@angular/core';
-import { ApiService } from '../../../../services/api.service';
 import { forkJoin, map, Observable, of, switchMap } from 'rxjs';
-import { Product, ProductListResponse } from '../../products/models/products.model';
+import { ApiService } from '../../../../services/api.service';
+import {
+  Vendor,
+  VendorListResponse,
+} from '../../../directory/vendors/models/vendors.model';
+import {
+  Product,
+  ProductListResponse,
+} from '../../products/models/products.model';
 import { Size, SizeListResponse } from '../../sizes/models/sizes.model';
-import { Vendor, VendorListResponse } from '../../../directory/vendors/models/vendors.model';
 import {
   ProductColorOption,
   ProductSizeOption,
@@ -16,20 +22,18 @@ import {
 export class PurchaseCatalogService {
   constructor(private readonly api: ApiService) {}
 
-  searchProducts(
-    term: string,
-    limit = 15,
-    page = 1,
-  ): Observable<Product[]> {
+  searchProducts(term: string, limit = 15, page = 1): Observable<Product[]> {
     const q = encodeURIComponent(term.trim());
     const url = `products?limit=${limit}&page=${page}&search=${q}`;
-    return this.api.get<ProductListResponse>(url).pipe(map(res => res.data ?? []));
+    return this.api
+      .get<ProductListResponse>(url)
+      .pipe(map(res => res.data ?? []));
   }
 
   getProductSizes(productId: number): Observable<ProductSizeOption[]> {
-    return this.api.get<unknown>(`colors/sizes?productId=${productId}`).pipe(
-      map(raw => this.normalizeProductSizeOptions(raw)),
-    );
+    return this.api
+      .get<unknown>(`colors/sizes?productId=${productId}`)
+      .pipe(map(raw => this.normalizeProductSizeOptions(raw)));
   }
 
   /**
@@ -39,10 +43,14 @@ export class PurchaseCatalogService {
     if (!Array.isArray(raw)) {
       return [];
     }
-    return raw.map(r => this.normalizeProductSizeOption(r as Record<string, unknown>));
+    return raw.map(r =>
+      this.normalizeProductSizeOption(r as Record<string, unknown>),
+    );
   }
 
-  private normalizeProductSizeOption(row: Record<string, unknown>): ProductSizeOption {
+  private normalizeProductSizeOption(
+    row: Record<string, unknown>,
+  ): ProductSizeOption {
     const num = (v: unknown): number | null =>
       v === null || v === undefined || v === '' ? null : Number(v);
     const str = (v: unknown): string | null =>
@@ -57,10 +65,12 @@ export class PurchaseCatalogService {
           : row['product_size_id'] != null
             ? Number(row['product_size_id'])
             : undefined,
-      stock: row['stock'] != null && row['stock'] !== '' ? Number(row['stock']) : undefined,
+      stock:
+        row['stock'] != null && row['stock'] !== ''
+          ? Number(row['stock'])
+          : undefined,
       barcode: str(row['barcode'] ?? row['bar_code']),
-      purchasePrice:
-        num(row['purchasePrice']) ?? num(row['purchase_price']),
+      purchasePrice: num(row['purchasePrice']) ?? num(row['purchase_price']),
       salePrice: num(row['salePrice']) ?? num(row['sale_price']),
       minSalePrice: num(row['minSalePrice']) ?? num(row['min_sale_price']),
     };
@@ -71,10 +81,17 @@ export class PurchaseCatalogService {
    * Usa `GET colors/selected` (no `selected-attached`) para poder elegir colores que ya existen en `colors`
    * pero aún no están vinculados a esta talla del producto.
    */
-  getColors(productId: number, sizeId: number): Observable<ProductColorOption[]> {
+  getColors(
+    productId: number,
+    sizeId: number,
+  ): Observable<ProductColorOption[]> {
     return this.api
       .get<unknown>(`colors/selected?productId=${productId}&sizeId=${sizeId}`)
-      .pipe(map(raw => this.normalizeColorOptions(this.unwrapColorsApiPayload(raw))));
+      .pipe(
+        map(raw =>
+          this.normalizeColorOptions(this.unwrapColorsApiPayload(raw)),
+        ),
+      );
   }
 
   /** Laravel suele devolver `{ data: [...] }` o el arreglo plano. */
@@ -82,7 +99,11 @@ export class PurchaseCatalogService {
     if (Array.isArray(raw)) {
       return raw;
     }
-    if (raw && typeof raw === 'object' && Array.isArray((raw as Record<string, unknown>)['data'])) {
+    if (
+      raw &&
+      typeof raw === 'object' &&
+      Array.isArray((raw as Record<string, unknown>)['data'])
+    ) {
       return (raw as Record<string, unknown>)['data'];
     }
     return [];
@@ -94,13 +115,17 @@ export class PurchaseCatalogService {
     }
     return raw.map(r => {
       const row = r as Record<string, unknown>;
-      const bool = (v: unknown): boolean => v === true || v === 1 || v === '1' || v === 'true';
+      const bool = (v: unknown): boolean =>
+        v === true || v === 1 || v === '1' || v === 'true';
       return {
         id: Number(row['id']) || 0,
         description: String(row['description'] ?? ''),
         hash: (row['hash'] as string | null) ?? null,
         isExists: bool(row['isExists'] ?? row['is_exists']),
-        stock: row['stock'] != null && row['stock'] !== '' ? Number(row['stock']) : null,
+        stock:
+          row['stock'] != null && row['stock'] !== ''
+            ? Number(row['stock'])
+            : null,
         productSizeId:
           row['productSizeId'] != null
             ? Number(row['productSizeId'])
@@ -118,7 +143,9 @@ export class PurchaseCatalogService {
   /** Catálogo global de tallas filtradas por tipo (independiente del producto). */
   getSizesBySizeType(sizeTypeId: number, limit = 500): Observable<Size[]> {
     return this.api
-      .get<SizeListResponse>(`sizes?limit=${limit}&page=1&sizeTypeId=${sizeTypeId}`)
+      .get<SizeListResponse>(
+        `sizes?limit=${limit}&page=1&sizeTypeId=${sizeTypeId}`,
+      )
       .pipe(map(res => res.data ?? []));
   }
 
@@ -137,14 +164,25 @@ export class PurchaseCatalogService {
   getColorsCatalogAll(pageSize = 80): Observable<ProductColorOption[]> {
     const url = (page: number) => `colors?limit=${pageSize}&page=${page}`;
     return this.api
-      .get<{ data?: unknown[]; paginate?: { total?: number; pages?: number } }>(url(1))
+      .get<{
+        data?: unknown[];
+        paginate?: { total?: number; pages?: number };
+      }>(url(1))
       .pipe(
         switchMap(first => {
           const rows = first.data ?? [];
           const total = Number(first.paginate?.total);
           const explicitPages = Number(first.paginate?.pages);
-          let pages = Number.isFinite(explicitPages) && explicitPages > 0 ? explicitPages : 0;
-          if (pages < 1 && Number.isFinite(total) && total > 0 && pageSize > 0) {
+          let pages =
+            Number.isFinite(explicitPages) && explicitPages > 0
+              ? explicitPages
+              : 0;
+          if (
+            pages < 1 &&
+            Number.isFinite(total) &&
+            total > 0 &&
+            pageSize > 0
+          ) {
             pages = Math.ceil(total / pageSize);
           }
           if (pages < 1) {
@@ -162,7 +200,9 @@ export class PurchaseCatalogService {
             map(restResponses => {
               const merged = [
                 ...this.normalizeCatalogColorRows(rows),
-                ...restResponses.flatMap(r => this.normalizeCatalogColorRows(r.data)),
+                ...restResponses.flatMap(r =>
+                  this.normalizeCatalogColorRows(r.data),
+                ),
               ];
               const byId = new Map<number, ProductColorOption>();
               for (const c of merged) {
@@ -171,7 +211,9 @@ export class PurchaseCatalogService {
                 }
               }
               return Array.from(byId.values()).sort((a, b) =>
-                a.description.localeCompare(b.description, 'es', { sensitivity: 'base' }),
+                a.description.localeCompare(b.description, 'es', {
+                  sensitivity: 'base',
+                }),
               );
             }),
           );
@@ -179,7 +221,9 @@ export class PurchaseCatalogService {
       );
   }
 
-  private normalizeCatalogColorRows(raw: unknown[] | undefined): ProductColorOption[] {
+  private normalizeCatalogColorRows(
+    raw: unknown[] | undefined,
+  ): ProductColorOption[] {
     if (!Array.isArray(raw)) {
       return [];
     }
@@ -199,7 +243,9 @@ export class PurchaseCatalogService {
   /** Crea proveedor solo con nombre (dirección/teléfono se completan después en directorio). */
   createVendorMinimal(name: string): Observable<Vendor> {
     const body = { name: name.trim() };
-    return this.api.post<Record<string, unknown>>('vendors', body).pipe(map(raw => this.normalizeVendorRow(raw)));
+    return this.api
+      .post<Record<string, unknown>>('vendors', body)
+      .pipe(map(raw => this.normalizeVendorRow(raw)));
   }
 
   /**

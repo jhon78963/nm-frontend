@@ -6,8 +6,7 @@
     type="button"
     label="Listado de compras"
     icon="pi pi-list"
-    class="p-button-text p-button-sm"
-  ></a>
+    class="p-button-text p-button-sm"></a>
 </div>
 <div class="surface-ground p-3 md:p-4 pt-0">
   <div class="grid purchase-layout">
@@ -150,13 +149,6 @@
                 vas a crear uno que todavía no está en la tabla de colores.
               </span>
             </div>
-            <button
-              pButton
-              type="button"
-              class="p-button-outlined p-button-sm"
-              label="Finalizar este producto nuevo (siguiente fila = otro producto)"
-              icon="pi pi-check"
-              (click)="finishNewProductBatch()"></button>
           }
 
           @if (useExistingProduct() && !selectedProduct) {
@@ -230,7 +222,14 @@
                       styleClass="w-full"
                       [filter]="true"
                       filterBy="description"
-                      (onChange)="onCatalogSizeChosen()"></p-dropdown>
+                      (onChange)="onCatalogSizeChosen()">
+                      <ng-template pTemplate="selectedItem" let-s>
+                        <span class="text-sm">{{ catalogSizeLabel(s) }}</span>
+                      </ng-template>
+                      <ng-template pTemplate="item" let-s>
+                        <span class="text-sm">{{ catalogSizeLabel(s) }}</span>
+                      </ng-template>
+                    </p-dropdown>
                   </div>
                 }
 
@@ -254,14 +253,10 @@
 
               <div class="col-12 lg:col-6 flex flex-column gap-3">
                 <p-panel
-                  header="Precios y código de barras (nivel talla)"
+                  header="Talla — Precios y código de barras"
                   [toggleable]="false"
                   styleClass="surface-ground">
                   <div class="flex flex-column gap-3">
-                    <small class="text-600 m-0"
-                      >Si la API devuelve datos en la talla seleccionada, se
-                      rellenan aquí; siempre puedes editarlos.</small
-                    >
                     <div class="flex flex-column gap-2">
                       <span class="font-medium text-sm"
                         >Código de barras (EAN / SKU)</span
@@ -271,7 +266,7 @@
                         formControlName="barcode"
                         class="w-full" />
                     </div>
-                    <div class="grid">
+                    <div class="grid mt-3">
                       <div class="col-12 md:col-4 flex flex-column gap-2">
                         <span class="font-medium text-sm">Precio compra</span>
                         <p-inputNumber
@@ -304,98 +299,97 @@
                     </div>
                   </div>
                 </p-panel>
+                <p-panel
+                  header="Colores — Stock"
+                  [toggleable]="false"
+                  styleClass="border-1 border-round-md surface-border">
+                  @if (draftColorQueue.length > 0) {
+                    <p-table
+                      [value]="draftColorQueue.controls"
+                      styleClass="p-datatable-sm mb-3">
+                      <ng-template pTemplate="header">
+                        <tr>
+                          <th>Color</th>
+                          <th class="text-right" style="width: 8rem">
+                            Cantidad
+                          </th>
+                          <th style="width: 3rem"></th>
+                        </tr>
+                      </ng-template>
+                      <ng-template pTemplate="body" let-g let-i="rowIndex">
+                        <tr [formGroup]="g">
+                          <td>{{ g.get('displayLabel')?.value }}</td>
+                          <td class="text-right">
+                            <p-inputNumber
+                              formControlName="quantity"
+                              [min]="1"
+                              [useGrouping]="false"
+                              inputStyleClass="w-full"
+                              styleClass="w-full max-w-full"></p-inputNumber>
+                          </td>
+                          <td>
+                            <button
+                              pButton
+                              type="button"
+                              icon="pi pi-times"
+                              class="p-button-rounded p-button-text p-button-danger"
+                              (click)="removeDraftVariant(i)"></button>
+                          </td>
+                        </tr>
+                      </ng-template>
+                    </p-table>
+                  } @else {
+                    <p class="text-600 text-sm mt-0 mb-3">
+                      Buscá un color abajo: al elegirlo se agrega con cantidad 1
+                      (editá la cifra en la tabla).
+                    </p>
+                  }
 
-                <div class="flex align-items-center gap-2">
-                  <p-checkbox
-                    formControlName="useColorVariant"
-                    inputId="useColor"
-                    [binary]="true"
-                    (onChange)="onUseColorVariantChange()"></p-checkbox>
-                  <label for="useColor" class="m-0 cursor-pointer"
-                    >Variante por color (stock en
-                    <code>product_size_color</code>)</label
-                  >
-                </div>
-
-                @if (lineDraft.get('useColorVariant')?.value) {
-                  <p-panel
-                    header="Colores — solo cantidades por variante"
-                    [toggleable]="false"
-                    styleClass="border-1 border-round-md surface-border">
-                    @if (draftColorQueue.length > 0) {
-                      <p-table
-                        [value]="draftColorQueue.controls"
-                        styleClass="p-datatable-sm mb-3">
-                        <ng-template pTemplate="header">
-                          <tr>
-                            <th>Color</th>
-                            <th class="text-right">Cantidad</th>
-                            <th style="width: 3rem"></th>
-                          </tr>
-                        </ng-template>
-                        <ng-template pTemplate="body" let-g let-i="rowIndex">
-                          <tr>
-                            <td>{{ g.get('displayLabel')?.value }}</td>
-                            <td class="text-right">
-                              {{ g.get('quantity')?.value }}
-                            </td>
-                            <td>
-                              <button
-                                pButton
-                                type="button"
-                                icon="pi pi-times"
-                                class="p-button-rounded p-button-text p-button-danger"
-                                (click)="removeDraftVariant(i)"></button>
-                            </td>
-                          </tr>
-                        </ng-template>
-                      </p-table>
-                    } @else {
-                      <p class="text-600 text-sm mt-0 mb-3">
-                        Aún no hay variantes. Configura color y cantidad, luego
-                        “Añadir variante”.
-                      </p>
-                    }
-
-                    @if (canPickExistingColors()) {
-                      <div class="flex flex-column gap-2 mb-2">
-                        <div class="flex align-items-center gap-2 flex-wrap">
-                          <p-checkbox
-                            formControlName="colorNewToggle"
-                            inputId="colorNew"
-                            [binary]="true"></p-checkbox>
-                          <label for="colorNew" class="m-0 cursor-pointer"
-                            >Color nuevo en el sistema (nombre y hex)</label
-                          >
-                        </div>
-                        <small class="text-600 m-0">
-                          @if (useExistingProduct()) {
-                            El listado incluye todos los colores del catálogo.
-                            Si ya existe pero esta talla aún no lo tiene,
-                            elegilo aquí (no hace falta crearlo de nuevo).
-                          } @else {
-                            Si el color ya existe en la base, elegilo del
-                            listado. Activá la casilla solo para crear uno que
-                            no exista aún.
-                          }
-                        </small>
+                  @if (canPickExistingColors()) {
+                    <div class="flex flex-column gap-2 mb-2">
+                      <div class="flex align-items-center gap-2 flex-wrap">
+                        <p-checkbox
+                          formControlName="colorNewToggle"
+                          inputId="colorNew"
+                          [binary]="true"></p-checkbox>
+                        <label for="colorNew" class="m-0 cursor-pointer"
+                          >Color nuevo en el sistema (nombre y hex)</label
+                        >
                       </div>
-                    }
-                    @if (showColorCatalogPick()) {
-                      <p-dropdown
-                        formControlName="selectedColorId"
-                        [options]="colorOptions()"
-                        optionLabel="description"
-                        optionValue="id"
-                        placeholder="Color del catálogo (filtrá o desplazá la lista)"
-                        [showClear]="true"
-                        [filter]="true"
-                        filterBy="description"
-                        filterPlaceholder="Buscar por nombre…"
-                        [virtualScroll]="true"
-                        [virtualScrollItemSize]="40"
-                        scrollHeight="280px"
-                        styleClass="w-full mb-3">
+                      <small class="text-600 m-0">
+                        @if (useExistingProduct()) {
+                          El listado incluye todos los colores del catálogo. Si
+                          ya existe pero esta talla aún no lo tiene, elegilo
+                          aquí (no hace falta crearlo de nuevo).
+                        } @else {
+                          Si el color ya existe en la base, buscalo abajo.
+                          Activá la casilla solo para crear uno que no exista
+                          aún.
+                        }
+                      </small>
+                    </div>
+                  }
+                  @if (showColorCatalogPick()) {
+                    <div class="flex flex-column gap-2 mb-3">
+                      <span class="font-medium text-sm"
+                        >Buscar color del catálogo</span
+                      >
+                      <p-autoComplete
+                        #colorSearchAc
+                        [(ngModel)]="colorCatalogSearch"
+                        [ngModelOptions]="{ standalone: true }"
+                        [suggestions]="filteredColorsForPicker"
+                        (completeMethod)="onColorSearchComplete($event)"
+                        (onSelect)="onCatalogColorAutoSelect($event)"
+                        (keydown)="onColorSearchKeydown($event)"
+                        field="description"
+                        [forceSelection]="false"
+                        [dropdown]="true"
+                        [minLength]="0"
+                        [completeOnFocus]="true"
+                        placeholder="Ej. Rojo — Enter o clic para agregar (cantidad 1)"
+                        styleClass="w-full"
+                        inputStyleClass="w-full">
                         @if (useExistingProduct()) {
                           <ng-template let-opt pTemplate="item">
                             <div
@@ -415,31 +409,37 @@
                             </div>
                           </ng-template>
                         }
-                      </p-dropdown>
-                    }
+                      </p-autoComplete>
+                      <small class="text-600 m-0"
+                        >El foco vuelve al buscador para seguir cargando colores
+                        sin usar el mouse.</small
+                      >
+                    </div>
+                  }
 
-                    @if (showNewColorFields()) {
-                      <div class="flex flex-column gap-2 mb-2">
-                        <span class="font-medium text-sm"
-                          >Nombre del color (crear en catálogo)</span
-                        >
-                        <input
-                          pInputText
-                          formControlName="newColorDescription"
-                          class="w-full"
-                          maxlength="25" />
-                        <span class="font-medium text-sm"
-                          >Hash / hex (opcional)</span
-                        >
-                        <input
-                          pInputText
-                          formControlName="newColorHash"
-                          class="w-full"
-                          maxlength="25"
-                          placeholder="#RRGGBB" />
-                      </div>
-                    }
+                  @if (showNewColorFields()) {
+                    <div class="flex flex-column gap-2 mb-2">
+                      <span class="font-medium text-sm"
+                        >Nombre del color (crear en catálogo)</span
+                      >
+                      <input
+                        pInputText
+                        formControlName="newColorDescription"
+                        class="w-full"
+                        maxlength="25" />
+                      <span class="font-medium text-sm"
+                        >Hash / hex (opcional)</span
+                      >
+                      <input
+                        pInputText
+                        formControlName="newColorHash"
+                        class="w-full"
+                        maxlength="25"
+                        placeholder="#RRGGBB" />
+                    </div>
+                  }
 
+                  @if (showNewColorFields()) {
                     <div
                       class="flex flex-column sm:flex-row sm:align-items-end gap-2">
                       <div class="flex flex-column gap-2 flex-1">
@@ -455,28 +455,13 @@
                       <button
                         pButton
                         type="button"
-                        label="Añadir variante"
+                        label="Agregar color nuevo"
                         icon="pi pi-plus"
                         class="p-button-secondary"
                         (click)="addDraftVariant()"></button>
                     </div>
-                  </p-panel>
-                } @else {
-                  <p-panel
-                    header="Stock sin desglose por color (solo talla)"
-                    [toggleable]="false">
-                    <div
-                      class="flex flex-column gap-2"
-                      style="max-width: 16rem">
-                      <span class="font-medium text-sm">Cantidad</span>
-                      <p-inputNumber
-                        formControlName="sizeOnlyQuantity"
-                        [min]="1"
-                        [useGrouping]="false"
-                        styleClass="w-full"></p-inputNumber>
-                    </div>
-                  </p-panel>
-                }
+                  }
+                </p-panel>
               </div>
             </form>
 

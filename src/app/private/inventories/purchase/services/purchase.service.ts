@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { ApiService } from '../../../../services/api.service';
 import { Observable } from 'rxjs';
+import { ApiService } from '../../../../services/api.service';
 import type { PurchaseBulkPayload } from '../models/purchase.models';
 import type {
   PurchaseDetail,
@@ -16,8 +16,13 @@ export class PurchaseService {
 
   constructor(private readonly api: ApiService) {}
 
-  registerBulk(payload: PurchaseBulkPayload): Observable<PurchaseRegisterBulkResponse> {
-    return this.api.post<PurchaseRegisterBulkResponse>(`${this.basePath}/bulk`, payload);
+  registerBulk(
+    payload: PurchaseBulkPayload,
+  ): Observable<PurchaseRegisterBulkResponse> {
+    return this.api.post<PurchaseRegisterBulkResponse>(
+      `${this.basePath}/bulk`,
+      payload,
+    );
   }
 
   getList(
@@ -55,5 +60,32 @@ export class PurchaseService {
     body: { documentNote?: string | null; registeredAt?: string | null },
   ): Observable<{ message: string }> {
     return this.api.patch<{ message: string }>(`${this.basePath}/${id}`, body);
+  }
+
+  updateLine(
+    purchaseId: number,
+    lineId: number,
+    body: {
+      barcode?: string | null;
+      purchasePrice: number;
+      salePrice?: number | null;
+      minSalePrice?: number | null;
+      colorDeltas?: { colorId: number; quantity: number }[];
+      sizeOnlyQuantity?: number;
+    },
+  ): Observable<{ message: string }> {
+    return this.api.patch<{ message: string }>(
+      `${this.basePath}/${purchaseId}/lines/${lineId}`,
+      body,
+    );
+  }
+
+  deleteLine(
+    purchaseId: number,
+    lineId: number,
+  ): Observable<{ message: string }> {
+    return this.api.delete<{ message: string }>(
+      `${this.basePath}/${purchaseId}/lines/${lineId}`,
+    );
   }
 }

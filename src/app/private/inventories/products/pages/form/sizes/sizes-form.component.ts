@@ -4,21 +4,21 @@ import { InputTextModule } from 'primeng/inputtext';
 import { RippleModule } from 'primeng/ripple';
 import { Table, TableModule } from 'primeng/table';
 
+import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { MessageService } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
+import { catchError, forkJoin, Observable, of } from 'rxjs';
+import { SharedModule } from '../../../../../../shared/shared.module';
+import { showError, showSuccess } from '../../../../../../utils/notifications';
+import { SizesCreateFormComponent } from '../../../../sizes/pages/form/sizes-form.component';
 import { SizesSelectedService } from '../../../../sizes/services/sizes-selected.service';
 import { Product, Size } from '../../../models/products.model';
-import { catchError, forkJoin, Observable, of } from 'rxjs';
-import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ProductsService } from '../../../services/products.service';
-import { DialogService } from 'primeng/dynamicdialog';
-import { SizesCreateFormComponent } from '../../../../sizes/pages/form/sizes-form.component';
-import { showError, showSuccess } from '../../../../../../utils/notifications';
-import { MessageService } from 'primeng/api';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { ProductSizesService } from '../../../services/productSizes.service';
 import { ProductSizeSave } from '../../../models/sizes.interface';
-import { SharedModule } from '../../../../../../shared/shared.module';
+import { ProductsService } from '../../../services/products.service';
+import { ProductSizesService } from '../../../services/productSizes.service';
 
 @Component({
   selector: 'app-sizes-form',

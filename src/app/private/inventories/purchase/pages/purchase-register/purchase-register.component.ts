@@ -5,6 +5,7 @@ import {
   OnDestroy,
   OnInit,
   signal,
+  ViewChild,
 } from '@angular/core';
 import {
   AbstractControl,
@@ -18,6 +19,7 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import {
+  AutoComplete,
   AutoCompleteCompleteEvent,
   AutoCompleteModule,
   AutoCompleteSelectEvent,
@@ -43,6 +45,7 @@ import {
   EMPTY,
   filter,
   finalize,
+  forkJoin,
   map,
   merge,
   of,
@@ -210,6 +213,18 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
   warehouses: Warehouse[] = [];
   filteredVendors: Vendor[] = [];
 
+  @ViewChild('colorSearchAc') colorSearchAc?: AutoComplete;
+
+  /** Buscador rápido de colores (ngModel standalone; el alta es con Enter o clic). */
+  colorCatalogSearch = '';
+  filteredColorsForPicker: ProductColorOption[] = [];
+
+  /**
+   * Solo la primera vez que se elige una talla del catálogo se rellenan precios/barcode desde el pivot;
+   * al cambiar de talla no se pisan los datos que el usuario ya cargó.
+   */
+  private sizeAutofillFromPivotDone = false;
+
   constructor(
     private readonly fb: FormBuilder,
     private readonly catalog: PurchaseCatalogService,
@@ -307,8 +322,10 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
   }
 
   onProductPicked(product: Product): void {
-    this.selectedProduct = product;
+    this.sizeAutofillFromPivotDone = false;
     this.colorOptions.set([]);
+    this.colorCatalogSearch = '';
+    this.filteredColorsForPicker = [];
     this.draftColorQueue.clear({ emitEvent: false });
     this.lineDraft.patchValue(
       {
@@ -319,25 +336,68 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
       },
       { emitEvent: false },
     );
-    this.catalog.getProductSizes(product.id).subscribe({
-      next: rows => {
+    forkJoin({
+      sizes: this.catalog.getProductSizes(product.id),
+      full: this.productsService
+        .getOne(product.id)
+        .pipe(catchError(() => of(product))),
+    }).subscribe({
+      next: ({ sizes, full }) => {
+        this.selectedProduct = full;
+        this.filteredProducts = [full];
         const m = new Map<number, ProductSizeOption>();
-        for (const r of rows ?? []) {
+        for (const r of sizes ?? []) {
           m.set(r.id, r);
         }
         this.productPivotBySizeId.set(m);
+
+        const types = full.sizeTypeId ?? [];
+        const firstType =
+          Array.isArray(types) && types.length > 0 ? Number(types[0]) : null;
+        if (firstType != null && Number.isFinite(firstType) && firstType > 0) {
+          this.lineDraft.patchValue(
+            { selectedSizeTypeId: firstType },
+            { emitEvent: false },
+          );
+          this.catalog.getSizesBySizeType(firstType).subscribe({
+            next: rows => {
+              this.catalogSizes.set(rows ?? []);
+              this.refreshColorsAfterSizeChange();
+              this.requestPersistDraft();
+            },
+            error: () => {
+              this.catalogSizes.set([]);
+              this.refreshColorsAfterSizeChange();
+              this.requestPersistDraft();
+            },
+          });
+        } else {
+          this.lineDraft.patchValue(
+            { selectedSizeTypeId: null },
+            { emitEvent: false },
+          );
+          this.catalogSizes.set([]);
+          this.refreshColorsAfterSizeChange();
+          this.requestPersistDraft();
+        }
+      },
+      error: () => {
+        this.selectedProduct = product;
+        this.filteredProducts = [product];
+        this.productPivotBySizeId.set(new Map());
         this.requestPersistDraft();
       },
-      error: () => this.requestPersistDraft(),
     });
-    this.refreshColorsAfterSizeChange();
   }
 
   clearProductSelection(): void {
+    this.sizeAutofillFromPivotDone = false;
     this.selectedProduct = null;
     this.filteredProducts = [];
     this.productPivotBySizeId.set(new Map());
     this.colorOptions.set([]);
+    this.colorCatalogSearch = '';
+    this.filteredColorsForPicker = [];
     this.draftColorQueue.clear({ emitEvent: false });
     this.lineDraft.patchValue(
       {
@@ -352,6 +412,8 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
 
   clearDraftVariants(): void {
     this.draftColorQueue.clear({ emitEvent: false });
+    this.colorCatalogSearch = '';
+    this.filteredColorsForPicker = [];
     this.requestPersistDraft();
   }
 
@@ -395,6 +457,25 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
       salePrice: pivot?.salePrice,
       minSalePrice: pivot?.minSalePrice,
     };
+  }
+
+  /** Texto en dropdown de tallas: stock y si la talla ya existe en el producto. */
+  catalogSizeLabel(size: Size): string {
+    const base = (size.description ?? '').trim() || `Talla #${size.id}`;
+    if (!this.useExistingProduct() || !this.selectedProduct?.id) {
+      return base;
+    }
+    const merged = this.getMergedSizeOption(size.id);
+    const parts: string[] = [base];
+    if (merged?.stock != null && Number.isFinite(Number(merged.stock))) {
+      parts.push(`stock ${merged.stock}`);
+    }
+    if (merged?.productSizeId != null && merged.productSizeId > 0) {
+      parts.push('en producto');
+    } else {
+      parts.push('sin fila en producto aún');
+    }
+    return parts.join(' · ');
   }
 
   /**
@@ -449,8 +530,16 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
   }
 
   onCatalogSizeChosen(): void {
-    this.clearDraftVariants();
-    this.applyPricesFromSelectedSize();
+    const sizeId = this.lineDraft.get('selectedSizeId')?.value;
+    if (sizeId == null) {
+      this.sizeAutofillFromPivotDone = false;
+      this.refreshColorsAfterSizeChange();
+      return;
+    }
+    if (!this.sizeAutofillFromPivotDone) {
+      this.applyPricesFromSelectedSize();
+      this.sizeAutofillFromPivotDone = true;
+    }
     this.refreshColorsAfterSizeChange();
   }
 
@@ -527,6 +616,7 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
   toggleProductSource(isExisting: boolean): void {
     this.useExistingProduct.set(isExisting);
     this.activeNewProductTempId = null;
+    this.sizeAutofillFromPivotDone = false;
     this.clearDraftVariants();
     if (isExisting) {
       this.lineDraft.patchValue({
@@ -550,17 +640,129 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
     }
   }
 
-  finishNewProductBatch(): void {
-    this.activeNewProductTempId = null;
-    showSuccess(
-      this.messageService,
-      'Listo: el siguiente ítem nuevo generará otro producto en el JSON.',
-    );
-  }
-
   removeDraftVariant(index: number): void {
     this.draftColorQueue.removeAt(index);
     this.requestPersistDraft();
+  }
+
+  onColorSearchComplete(ev: AutoCompleteCompleteEvent): void {
+    const q = (ev.query ?? '').trim().toLowerCase();
+    const opts = this.colorOptions();
+    if (!q) {
+      this.filteredColorsForPicker = opts.slice(0, 50);
+      return;
+    }
+    this.filteredColorsForPicker = opts
+      .filter(c => c.description.toLowerCase().includes(q))
+      .slice(0, 60);
+  }
+
+  onCatalogColorAutoSelect(ev: AutoCompleteSelectEvent): void {
+    const opt = ev.value as ProductColorOption | null;
+    if (!opt?.id) {
+      return;
+    }
+    this.addCatalogColorToQueue(opt, 1);
+    this.colorCatalogSearch = '';
+    this.filteredColorsForPicker = [];
+    this.scheduleFocusColorSearch();
+  }
+
+  onColorSearchKeydown(ev: KeyboardEvent): void {
+    if (ev.key !== 'Enter') {
+      return;
+    }
+    const q = this.colorCatalogSearch.trim().toLowerCase();
+    if (!q) {
+      return;
+    }
+    const opts = this.colorOptions();
+    const exact = opts.find(c => c.description.trim().toLowerCase() === q);
+    const single =
+      this.filteredColorsForPicker.length === 1
+        ? this.filteredColorsForPicker[0]
+        : null;
+    const pick = exact ?? single;
+    if (!pick?.id) {
+      return;
+    }
+    ev.preventDefault();
+    ev.stopPropagation();
+    this.addCatalogColorToQueue(pick, 1);
+    this.colorCatalogSearch = '';
+    this.filteredColorsForPicker = [];
+    this.scheduleFocusColorSearch();
+  }
+
+  private scheduleFocusColorSearch(): void {
+    queueMicrotask(() => {
+      const ac = this.colorSearchAc as unknown as {
+        focusInput?: () => void;
+        inputEL?: { nativeElement?: HTMLElement };
+      };
+      ac?.focusInput?.();
+      ac?.inputEL?.nativeElement?.focus();
+    });
+  }
+
+  private addCatalogColorToQueue(opt: ProductColorOption, qty: number): void {
+    if (
+      this.draftQueueRawRows().some(
+        r => r.colorMode === 'existing' && r.colorId === opt.id,
+      )
+    ) {
+      showError(this.messageService, 'Ese color ya está en la lista.');
+      this.scheduleFocusColorSearch();
+      return;
+    }
+    const safeQty = !Number.isFinite(qty) || qty < 1 ? 1 : Math.floor(qty);
+    const entry: PurchaseDraftColorVariant = {
+      id: genTempId('dv'),
+      displayLabel: opt.description,
+      colorMode: 'existing',
+      colorId: opt.id,
+      colorTempId: null,
+      colorHash: null,
+      quantity: safeQty,
+    };
+    this.draftColorQueue.push(
+      this.createDraftColorQueueGroup(
+        entry as unknown as Record<string, unknown>,
+      ),
+    );
+    this.requestPersistDraft();
+  }
+
+  private normalizeNewProductKey(
+    name: string,
+    genderId: number | null,
+  ): string {
+    return `${String(name).trim().toLowerCase()}|${genderId ?? ''}`;
+  }
+
+  /**
+   * Varias filas con el mismo nombre + género comparten un `productTempId`
+   * (un solo producto nuevo en `catalogUpserts`).
+   */
+  private resolveNewProductTempId(
+    name: string,
+    genderId: number | null,
+  ): string {
+    const key = this.normalizeNewProductKey(name, genderId);
+    for (const ctrl of this.lines.controls) {
+      const raw = ctrl.getRawValue() as Record<string, unknown>;
+      if (raw['productMode'] !== 'new') {
+        continue;
+      }
+      const rowKey = this.normalizeNewProductKey(
+        String(raw['productName'] ?? ''),
+        raw['productGenderId'] != null ? Number(raw['productGenderId']) : null,
+      );
+      if (rowKey === key && raw['productTempId']) {
+        return String(raw['productTempId']);
+      }
+    }
+    return genTempId('p');
   }
 
   addDraftVariant(): void {
@@ -606,13 +808,21 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
       if (draft.selectedColorId == null) {
         showError(
           this.messageService,
-          'Elegí un color del catálogo. Si no está en la lista, activá “Color nuevo en el sistema” y cargá nombre y hex.',
+          'Elegí un color del catálogo o usá el buscador arriba. Si no está en la lista, activá “Color nuevo en el sistema” y cargá nombre y hex.',
         );
         return;
       }
       const co = this.colorOptions().find(c => c.id === draft.selectedColorId);
       if (!co) {
         showError(this.messageService, 'Color no válido.');
+        return;
+      }
+      if (
+        this.draftQueueRawRows().some(
+          r => r.colorMode === 'existing' && r.colorId === co.id,
+        )
+      ) {
+        showError(this.messageService, 'Ese color ya está en la lista.');
         return;
       }
       colorMode = 'existing';
@@ -684,10 +894,11 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
     } else {
       productMode = 'new';
       productId = null;
-      if (!this.activeNewProductTempId) {
-        this.activeNewProductTempId = genTempId('p');
-      }
-      productTempId = this.activeNewProductTempId;
+      productTempId = this.resolveNewProductTempId(
+        (draft.newProductName ?? '').trim(),
+        draft.newProductGenderId,
+      );
+      this.activeNewProductTempId = productTempId;
       productName = (draft.newProductName ?? '').trim();
       productGenderId = draft.newProductGenderId;
     }
@@ -1041,7 +1252,8 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
               m.set(r.id, r);
             }
             this.productPivotBySizeId.set(m);
-            this.applyPricesFromSelectedSize();
+            this.sizeAutofillFromPivotDone =
+              this.lineDraft.get('selectedSizeId')?.value != null;
             this.refreshColorsAfterSizeChange();
           },
           error: () => {
@@ -1065,7 +1277,8 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
       );
       this.activeNewProductTempId =
         (raw['productTempId'] as string | null) ?? null;
-      this.applyPricesFromSelectedSize();
+      this.sizeAutofillFromPivotDone =
+        this.lineDraft.get('selectedSizeId')?.value != null;
       this.refreshColorsAfterSizeChange();
     }
   }
@@ -1218,6 +1431,13 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
         quantity: Number(c['quantity']) || 0,
         // _rowKey solo UI
       }));
+      const sumQty = colors.reduce((a, c) => a + (Number(c.quantity) || 0), 0);
+      const pr = Number(v.purchasePrice) || 0;
+      const rawSub = Number(v.subtotal);
+      const subtotal =
+        Number.isFinite(rawSub) && rawSub > 0.00001
+          ? rawSub
+          : Math.round(sumQty * pr * 100) / 100;
       return {
         lineId: v.lineId,
         productName: v.productName,
@@ -1235,7 +1455,7 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
         purchasePrice: Number(v.purchasePrice) || 0,
         salePrice: Number(v.salePrice) || 0,
         minSalePrice: Number(v.minSalePrice) || 0,
-        subtotal: Number(v.subtotal) || 0,
+        subtotal,
         colors,
       };
     });
@@ -1530,29 +1750,58 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
     productId: number,
     done: () => void,
   ): void {
-    this.productsService.getOne(productId).subscribe({
-      next: (p: Product) => {
-        this.selectedProduct = p;
-        this.filteredProducts = [p];
-        this.catalog.getProductSizes(p.id).subscribe({
-          next: rows => {
-            const m = new Map<number, ProductSizeOption>();
-            for (const r of rows ?? []) {
-              m.set(r.id, r);
-            }
-            this.productPivotBySizeId.set(m);
-            this.applyPricesFromSelectedSize();
-            this.refreshColorsAfterSizeChange();
-            done();
-          },
-          error: () => {
-            showError(
-              this.messageService,
-              'Borrador: no se pudieron cargar las tallas del producto.',
-            );
-            done();
-          },
-        });
+    forkJoin({
+      full: this.productsService.getOne(productId),
+      sizes: this.catalog.getProductSizes(productId),
+    }).subscribe({
+      next: ({ full, sizes }) => {
+        this.selectedProduct = full;
+        this.filteredProducts = [full];
+        const m = new Map<number, ProductSizeOption>();
+        for (const r of sizes ?? []) {
+          m.set(r.id, r);
+        }
+        this.productPivotBySizeId.set(m);
+
+        const draftType = this.lineDraft.get('selectedSizeTypeId')?.value;
+        if (draftType != null && Number(draftType) > 0) {
+          this.sizeAutofillFromPivotDone =
+            this.lineDraft.get('selectedSizeId')?.value != null;
+          this.refreshColorsAfterSizeChange();
+          done();
+          return;
+        }
+
+        const types = full.sizeTypeId ?? [];
+        const firstType =
+          Array.isArray(types) && types.length > 0 ? Number(types[0]) : null;
+        if (firstType != null && Number.isFinite(firstType) && firstType > 0) {
+          this.lineDraft.patchValue(
+            { selectedSizeTypeId: firstType },
+            { emitEvent: false },
+          );
+          this.catalog.getSizesBySizeType(firstType).subscribe({
+            next: rows => {
+              this.catalogSizes.set(rows ?? []);
+              this.sizeAutofillFromPivotDone =
+                this.lineDraft.get('selectedSizeId')?.value != null;
+              this.refreshColorsAfterSizeChange();
+              done();
+            },
+            error: () => {
+              this.catalogSizes.set([]);
+              this.sizeAutofillFromPivotDone =
+                this.lineDraft.get('selectedSizeId')?.value != null;
+              this.refreshColorsAfterSizeChange();
+              done();
+            },
+          });
+        } else {
+          this.sizeAutofillFromPivotDone =
+            this.lineDraft.get('selectedSizeId')?.value != null;
+          this.refreshColorsAfterSizeChange();
+          done();
+        }
       },
       error: () => {
         showError(
