@@ -271,18 +271,12 @@
                         <span class="font-medium text-sm">Precio compra</span>
                         <p-inputNumber
                           formControlName="purchasePrice"
-                          mode="decimal"
-                          [minFractionDigits]="2"
-                          [maxFractionDigits]="2"
                           styleClass="w-full"></p-inputNumber>
                       </div>
                       <div class="col-12 md:col-4 flex flex-column gap-2">
                         <span class="font-medium text-sm">Precio venta</span>
                         <p-inputNumber
                           formControlName="salePrice"
-                          mode="decimal"
-                          [minFractionDigits]="2"
-                          [maxFractionDigits]="2"
                           styleClass="w-full"></p-inputNumber>
                       </div>
                       <div class="col-12 md:col-4 flex flex-column gap-2">
@@ -291,9 +285,6 @@
                         >
                         <p-inputNumber
                           formControlName="minSalePrice"
-                          mode="decimal"
-                          [minFractionDigits]="2"
-                          [maxFractionDigits]="2"
                           styleClass="w-full"></p-inputNumber>
                       </div>
                     </div>
@@ -341,7 +332,9 @@
                     <div
                       class="flex justify-content-end align-items-baseline gap-2 mb-3 text-sm">
                       <span class="text-600">Suma de cantidades</span>
-                      <span class="font-semibold">{{ draftColorsQuantitySum() }} ud.</span>
+                      <span class="font-semibold"
+                        >{{ draftColorsQuantitySum() }} ud.</span
+                      >
                     </div>
                   } @else {
                     <p class="text-600 text-sm mt-0 mb-3">
@@ -511,33 +504,24 @@
               </td>
               <td style="min-width: 12rem">
                 <div class="flex flex-column gap-2 text-sm">
-                  <div class="flex align-items-center gap-2">
-                    <span class="text-600 white-space-nowrap">Compra</span>
+                  <div class="flex align-items-center gap-4">
+                    <span class="text-600 white-space-nowrap w-1">Compra</span>
                     <p-inputNumber
                       formControlName="purchasePrice"
-                      mode="decimal"
-                      [minFractionDigits]="2"
-                      [maxFractionDigits]="2"
                       inputStyleClass="w-full"
                       styleClass="flex-1"></p-inputNumber>
                   </div>
-                  <div class="flex align-items-center gap-2">
-                    <span class="text-600 white-space-nowrap">Venta</span>
+                  <div class="flex align-items-center gap-4">
+                    <span class="text-600 white-space-nowrap w-1">Venta</span>
                     <p-inputNumber
                       formControlName="salePrice"
-                      mode="decimal"
-                      [minFractionDigits]="2"
-                      [maxFractionDigits]="2"
                       inputStyleClass="w-full"
                       styleClass="flex-1"></p-inputNumber>
                   </div>
-                  <div class="flex align-items-center gap-2">
-                    <span class="text-600 white-space-nowrap">Mín.</span>
+                  <div class="flex align-items-center gap-4">
+                    <span class="text-600 white-space-nowrap w-1">Mín.</span>
                     <p-inputNumber
                       formControlName="minSalePrice"
-                      mode="decimal"
-                      [minFractionDigits]="2"
-                      [maxFractionDigits]="2"
                       inputStyleClass="w-full"
                       styleClass="flex-1"></p-inputNumber>
                   </div>
