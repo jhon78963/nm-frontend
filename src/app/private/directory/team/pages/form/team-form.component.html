@@ -3,32 +3,32 @@
     <div class="p-fluid p-formgrid grid">
       <div class="col-12">
         <app-input-text
-          placeholder="Ingrese nombres"
-          label="Dni"
+          placeholder="8 dígitos"
+          label="DNI"
           controlName="dni"></app-input-text>
       </div>
       <div class="col-12">
         <app-input-text
-          placeholder="Ingrese nombres"
+          placeholder="Nombres"
           label="Nombres"
           controlName="name"></app-input-text>
       </div>
       <div class="col-12">
         <app-input-text
-          placeholder="Ingrese apellidos"
+          placeholder="Apellidos"
           label="Apellidos"
           controlName="surname"></app-input-text>
       </div>
       <div class="col-12">
         <app-input-text
-          placeholder="Ingrese salario"
+          placeholder="Opcional"
           label="Salario"
           controlName="salary"></app-input-text>
       </div>
       <div class="col-12">
         <app-input-select
-          placeholder="Seleccione genero"
-          label="Genero"
+          placeholder="Seleccione tienda"
+          label="Tienda (sucursal)"
           controlName="warehouseId"
           for="warehouse"
           [options]="warehouses"
@@ -36,6 +36,10 @@
           optionLabel="name"
           optionValue="id"></app-input-select>
       </div>
+      <p *ngIf="!isEdit" class="col-12 text-600 text-sm m-0">
+        Al crear un colaborador se genera un usuario con rol <strong>Vendedora</strong>
+        para iniciar sesión; recibirás el correo y la contraseña temporal al guardar.
+      </p>
       <button
         type="submit"
         pButton

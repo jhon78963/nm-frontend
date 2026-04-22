@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { forkJoin } from 'rxjs';
 import { RolesService } from '../../services/roles.service';
-import { Role } from '../../models/roles.model';
+import { buildPermissionGroups } from '../../utils/permission-options';
 
 @Component({
   selector: 'app-roles-form',
@@ -12,7 +13,14 @@ import { Role } from '../../models/roles.model';
 export class RolesFormComponent implements OnInit {
   form: FormGroup = this.formBuilder.group({
     name: ['', Validators.required],
+    permissions: [[] as string[]],
   });
+
+  permissionGroups: {
+    label: string;
+    items: { label: string; value: string }[];
+  }[] = [];
+  loadingPermissions = true;
 
   constructor(
     private readonly formBuilder: FormBuilder,
@@ -22,10 +30,33 @@ export class RolesFormComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    if (this.dynamicDialogConfig.data.id) {
-      const id = this.dynamicDialogConfig.data.id;
-      this.rolesService.getOne(id).subscribe((response: Role) => {
-        this.form.patchValue(response);
+    const id = this.dynamicDialogConfig.data?.id as number | undefined;
+    if (id) {
+      forkJoin({
+        perms: this.rolesService.getPermissions(),
+        role: this.rolesService.getOne(id),
+      }).subscribe({
+        next: ({ perms, role }) => {
+          this.permissionGroups = buildPermissionGroups(perms);
+          this.form.patchValue({
+            name: role.name,
+            permissions: (role.permissions ?? []).map(p => p.name),
+          });
+          this.loadingPermissions = false;
+        },
+        error: () => {
+          this.loadingPermissions = false;
+        },
+      });
+    } else {
+      this.rolesService.getPermissions().subscribe({
+        next: perms => {
+          this.permissionGroups = buildPermissionGroups(perms);
+          this.loadingPermissions = false;
+        },
+        error: () => {
+          this.loadingPermissions = false;
+        },
       });
     }
   }
@@ -35,23 +66,32 @@ export class RolesFormComponent implements OnInit {
   }
 
   buttonSaveRole() {
-    if (this.form) {
-      const role = new Role(this.form.value);
-      if (this.dynamicDialogConfig.data.id) {
-        const id = this.dynamicDialogConfig.data.id;
-        this.rolesService.edit(id, role).subscribe({
-          next: () => this.dynamicDialogRef.close(),
-          error: () => {},
-        });
-      } else {
-        this.rolesService.create(role).subscribe({
-          next: () => {
-            this.dynamicDialogRef.close({ success: true });
-            this.form.reset();
-          },
-          error: () => {},
-        });
-      }
+    if (!this.form?.valid) {
+      return;
+    }
+    const id = this.dynamicDialogConfig.data?.id as number | undefined;
+    const name = this.form.value.name as string;
+    const permissions = (this.form.value.permissions ?? []) as string[];
+
+    if (id) {
+      this.rolesService.edit(id, { name, permissions }).subscribe({
+        next: () => this.dynamicDialogRef.close({ success: true }),
+        error: () =>
+          this.dynamicDialogRef.close({
+            error: 'No se pudo actualizar el rol.',
+          }),
+      });
+    } else {
+      this.rolesService.create({ name, permissions }).subscribe({
+        next: () => {
+          this.dynamicDialogRef.close({ success: true });
+          this.form.reset({ permissions: [] });
+        },
+        error: () =>
+          this.dynamicDialogRef.close({
+            error: 'No se pudo crear el rol.',
+          }),
+      });
     }
   }
 }

@@ -1,0 +1,22 @@
+<div class="flex flex-column gap-3 p-2" [formGroup]="form">
+  <div class="field">
+    <label for="tenantId">Cliente (tenant)</label>
+    <p-dropdown
+      inputId="tenantId"
+      formControlName="tenantId"
+      [options]="tenants"
+      optionLabel="name"
+      optionValue="id"
+      placeholder="Seleccione cliente"
+      [style]="{ width: '100%' }"
+      appendTo="body"></p-dropdown>
+  </div>
+  <div class="field">
+    <label for="name">Nombre de tienda</label>
+    <input id="name" type="text" pInputText class="w-full" formControlName="name" />
+  </div>
+  <div class="flex justify-content-end gap-2">
+    <p-button label="Cancelar" [text]="true" (click)="dynamicDialogRef.close()"></p-button>
+    <p-button label="Guardar" [disabled]="!isValid" (click)="save()"></p-button>
+  </div>
+</div>

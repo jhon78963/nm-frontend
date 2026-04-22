@@ -9,6 +9,7 @@ import { CommonModule } from '@angular/common';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { RolesFormComponent } from '../form/roles-form.component';
+import { RoleSyncComponent } from '../form/role-sync.component';
 import {
   CallToAction,
   Column,
@@ -54,6 +55,15 @@ export class RoleListComponent implements OnInit, OnDestroy {
       pTooltip: 'Editar',
       tooltipPosition: 'bottom',
       click: (rowData: Role) => this.buttonEditRole(rowData.id),
+    },
+    {
+      type: 'button',
+      size: 'small',
+      icon: 'pi pi-sync',
+      outlined: true,
+      pTooltip: 'Sincronizar permisos',
+      tooltipPosition: 'bottom',
+      click: (rowData: Role) => this.openSync(rowData.id),
     },
     {
       type: 'button',
@@ -188,6 +198,23 @@ export class RoleListComponent implements OnInit, OnDestroy {
           : value?.error
             ? this.showError(value?.error)
             : null;
+      },
+    });
+  }
+
+  openSync(id: number): void {
+    this.roleModal = this.dialogService.open(RoleSyncComponent, {
+      data: { id },
+      header: 'Sincronizar permisos',
+      width: '40rem',
+    });
+    this.roleModal.onClose.subscribe({
+      next: value => {
+        if (value?.success) {
+          this.showSuccess('Permisos sincronizados.');
+        } else if (value?.error) {
+          this.showError(value.error);
+        }
       },
     });
   }

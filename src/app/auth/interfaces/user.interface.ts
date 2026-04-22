@@ -6,4 +6,7 @@ export interface User {
   surname: string;
   password: string;
   role: string;
+  roles?: string[];
+  tenantId?: number | null;
+  warehouseId?: number | null;
 }

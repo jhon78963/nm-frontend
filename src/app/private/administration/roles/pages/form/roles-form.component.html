@@ -7,15 +7,50 @@
           for="role"
           type="text"
           id="role"
-          placeholder="Ingresa el rol"
+          placeholder="Ingresa el nombre del rol"
           controlName="name"></app-input-text>
       </div>
-      <button
-        type="submit"
-        pButton
-        label="Guardar"
-        class="mt-3"
-        [disabled]="!isValid"></button>
+      <div class="col-12" *ngIf="!loadingPermissions; else loadingPerms">
+        <label for="role-perms" class="block mb-2">Permisos (opcional)</label>
+        <p class="text-600 text-sm mt-0 mb-2">
+          Puedes asignar permisos al crear el rol; siempre podrás ajustarlos con
+          «Sincronizar permisos» en la lista.
+        </p>
+        <p-multiSelect
+          inputId="role-perms"
+          formControlName="permissions"
+          [options]="permissionGroups"
+          [group]="true"
+          optionLabel="label"
+          optionValue="value"
+          optionGroupLabel="label"
+          optionGroupChildren="items"
+          [filter]="true"
+          filterBy="label,value"
+          display="chip"
+          [style]="{ width: '100%' }"
+          placeholder="Selecciona permisos"
+          [showToggleAll]="true"
+          appendTo="body">
+          <ng-template let-opt pTemplate="item">
+            <div class="flex flex-column gap-1">
+              <span>{{ opt.label }}</span>
+              <small class="text-500">{{ opt.value }}</small>
+            </div>
+          </ng-template>
+        </p-multiSelect>
+      </div>
+      <ng-template #loadingPerms>
+        <div class="col-12 p-3">Cargando permisos…</div>
+      </ng-template>
+      <div class="col-12">
+        <button
+          type="submit"
+          pButton
+          label="Guardar"
+          class="mt-3"
+          [disabled]="!isValid || loadingPermissions"></button>
+      </div>
     </div>
   </form>
 }

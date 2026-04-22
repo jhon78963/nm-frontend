@@ -1,15 +1,15 @@
-export interface Paginate {
-  total: number;
-  pages: number;
-}
-
-export interface Warehouse {
+export interface WarehouseRow {
   id: number;
   name: string;
   tenantId?: number | null;
 }
 
+export interface Paginate {
+  total: number;
+  pages: number;
+}
+
 export interface WarehouseListResponse {
-  data: Warehouse[];
+  data: WarehouseRow[];
   paginate: Paginate;
 }

@@ -9,29 +9,52 @@ export class AppMenuComponent implements OnInit {
   model: any[] = [];
   lang: any = '';
 
-  getUserData() {
+  private isAdminUser(): boolean {
     const jsonData = localStorage.getItem('user');
     const userData = jsonData ? JSON.parse(jsonData) : undefined;
-    return userData.role;
+    const role = userData?.role as string | undefined;
+    const roles = userData?.roles as string[] | undefined;
+    if (role === 'Admin' || role === 'Super Admin') {
+      return true;
+    }
+    if (roles?.includes('Super Admin')) {
+      return true;
+    }
+    return false;
   }
 
   ngOnInit(): void {
-    const isAdmin = this.getUserData();
-    if (isAdmin == 'Admin') {
+    const isAdmin = this.isAdminUser();
+    if (isAdmin) {
       this.model = [
         {
           label: 'Administración',
           icon: 'pi pi-home',
           items: [
             {
-              label: 'Roles',
-              icon: 'pi pi-fw pi-cog',
+              label: 'Roles y permisos',
+              icon: 'pi pi-fw pi-shield',
               routerLink: ['/administration/roles'],
             },
             {
               label: 'Usuarios',
               icon: 'pi pi-fw pi-users',
               routerLink: ['/administration/users'],
+            },
+            {
+              label: 'Clientes (tenants)',
+              icon: 'pi pi-fw pi-building',
+              routerLink: ['/administration/tenants'],
+            },
+            {
+              label: 'Tiendas (warehouses)',
+              icon: 'pi pi-fw pi-shopping-bag',
+              routerLink: ['/administration/warehouses'],
+            },
+            {
+              label: 'Historial de acciones',
+              icon: 'pi pi-fw pi-history',
+              routerLink: ['/administration/action-logs'],
             },
           ],
         },

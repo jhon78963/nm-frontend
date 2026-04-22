@@ -188,11 +188,21 @@ export class TeamListComponent implements OnInit, OnDestroy {
 
     this.teamModal.onClose.subscribe({
       next: value => {
-        value && value?.success
-          ? this.showSuccess('Colaborador Creado.')
-          : value?.error
-            ? this.showError(value?.error)
-            : null;
+        if (value?.success && value?.login) {
+          const L = value.login as {
+            email: string;
+            username: string;
+            temporaryPassword: string;
+          };
+          this.showSuccess(
+            `Colaborador creado. Usuario vendedora: ${L.email} · contraseña temporal: ${L.temporaryPassword}`,
+            20000,
+          );
+        } else if (value?.success) {
+          this.showSuccess('Colaborador creado.');
+        } else if (value?.error) {
+          this.showError(value.error);
+        }
       },
     });
   }
@@ -249,19 +259,19 @@ export class TeamListComponent implements OnInit, OnDestroy {
       rejectLabel: 'No',
       accept: () => {
         this.teamService.delete(id).subscribe(() => {
-          this.showSuccess('El rol ha sido eliminado');
+          this.showSuccess('El colaborador ha sido eliminado');
         });
       },
       reject: () => {},
     });
   }
 
-  showSuccess(message: string): void {
+  showSuccess(message: string, life = 3000): void {
     this.messageService.add({
       severity: 'success',
       summary: 'Confirmado',
       detail: message,
-      life: 3000,
+      life,
     });
   }
 

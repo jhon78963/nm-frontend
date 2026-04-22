@@ -7,7 +7,11 @@ import {
   switchMap,
 } from 'rxjs';
 import { ApiService } from '../../../../services/api.service';
-import { Role, RoleListResponse } from '../models/roles.model';
+import {
+  Permission,
+  Role,
+  RoleListResponse,
+} from '../models/roles.model';
 
 @Injectable({
   providedIn: 'root',
@@ -27,7 +31,7 @@ export class RolesService {
   ): Observable<void> {
     let url = `roles?limit=${limit}&page=${page}`;
     if (name) {
-      url += `&search=${name}`;
+      url += `&search=${encodeURIComponent(name)}`;
     }
     return this.apiService.get<RoleListResponse>(url).pipe(
       debounceTime(600),
@@ -47,16 +51,26 @@ export class RolesService {
   }
 
   getOne(id: number): Observable<Role> {
-    return this.apiService.get(`roles/${id}`);
+    return this.apiService.get<Role>(`roles/${id}`);
   }
 
-  create(data: Role): Observable<void> {
+  getPermissions(): Observable<Permission[]> {
+    return this.apiService.get<Permission[]>('roles/permissions');
+  }
+
+  create(data: {
+    name: string;
+    permissions?: string[];
+  }): Observable<void> {
     return this.apiService
       .post('roles', data)
       .pipe(switchMap(() => this.callGetList()));
   }
 
-  edit(id: number, data: Role): Observable<void> {
+  edit(
+    id: number,
+    data: { name?: string; permissions?: string[] },
+  ): Observable<void> {
     return this.apiService
       .patch(`roles/${id}`, data)
       .pipe(switchMap(() => this.callGetList()));
@@ -65,6 +79,12 @@ export class RolesService {
   delete(id: number): Observable<void> {
     return this.apiService
       .delete(`roles/${id}`)
+      .pipe(switchMap(() => this.callGetList()));
+  }
+
+  syncPermissions(id: number, permissions: string[]): Observable<void> {
+    return this.apiService
+      .post(`roles/${id}/sync-permissions`, { permissions })
       .pipe(switchMap(() => this.callGetList()));
   }
 

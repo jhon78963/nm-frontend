@@ -9,6 +9,17 @@ import {
   switchMap,
 } from 'rxjs';
 
+export type UserPayload = {
+  username?: string;
+  email?: string;
+  name?: string;
+  surname?: string;
+  profilePicture?: string;
+  roleNames: string[];
+  tenantId: number;
+  warehouseId: number;
+};
+
 @Injectable({ providedIn: 'root' })
 export class UsersService {
   users: User[] = [];
@@ -26,12 +37,12 @@ export class UsersService {
   ): Observable<void> {
     let url = `users?limit=${limit}&page=${page}`;
     if (name) {
-      url += `&search=${name}`;
+      url += `&search=${encodeURIComponent(name)}`;
     }
     return this.apiService.get<UserListResponse>(url).pipe(
       debounceTime(600),
       map((response: UserListResponse) => {
-        this.updateUsers(response.data);
+        this.updateUsers(response.data.map(u => new User(u as any)));
         this.updateTotalUsers(response.paginate.total);
       }),
     );
@@ -45,7 +56,7 @@ export class UsersService {
     return this.total$.asObservable();
   }
 
-  create(data: User): Observable<void> {
+  create(data: UserPayload): Observable<void> {
     return this.apiService
       .post('users', data)
       .pipe(switchMap(() => this.callGetList()));
@@ -57,14 +68,16 @@ export class UsersService {
       .pipe(switchMap(() => this.callGetList()));
   }
 
-  edit(id: number, data: User): Observable<void> {
+  edit(id: number, data: Partial<UserPayload>): Observable<void> {
     return this.apiService
       .patch(`users/${id}`, data)
       .pipe(switchMap(() => this.callGetList()));
   }
 
   getOne(id: number): Observable<User> {
-    return this.apiService.get(`users/${id}`);
+    return this.apiService.get<User>(`users/${id}`).pipe(
+      map(u => new User(u as any)),
+    );
   }
 
   private updateUsers(value: User[]): void {

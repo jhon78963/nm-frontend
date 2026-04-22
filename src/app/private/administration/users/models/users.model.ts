@@ -6,7 +6,9 @@ export interface IUser {
   surname: string;
   profilePicture: string;
   googleId?: number;
-  roleId: number;
+  roles: string[];
+  role?: string;
+  tenantId: number;
   warehouseId: number;
 }
 
@@ -18,7 +20,9 @@ export class User {
   surname: string;
   profilePicture: string;
   googleId?: number;
-  roleId: number;
+  roles: string[];
+  role?: string;
+  tenantId: number;
   warehouseId: number;
 
   constructor(user: IUser) {
@@ -29,7 +33,9 @@ export class User {
     this.surname = user.surname;
     this.profilePicture = user.profilePicture;
     this.googleId = user.googleId;
-    this.roleId = user.roleId;
+    this.roles = user.roles ?? [];
+    this.role = user.role ?? user.roles?.[0];
+    this.tenantId = user.tenantId;
     this.warehouseId = user.warehouseId;
   }
 }

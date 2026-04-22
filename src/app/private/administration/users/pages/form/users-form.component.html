@@ -1,23 +1,32 @@
 @if (form) {
   <form [formGroup]="form" (ngSubmit)="buttonSaveUser()">
     <div class="p-fluid p-formgrid grid">
-      @if (userId === 0) {
-        <div class="col-12">
-          <app-input-select
-            placeholder="Seleccione role"
-            label="Rol"
-            controlName="roleId"
-            for="role"
-            [options]="(roles | async) ?? []"
-            id="role"
-            optionLabel="name"
-            optionValue="id"></app-input-select>
-        </div>
-      }
       <div class="col-12">
         <app-input-select
-          placeholder="Seleccione genero"
-          label="Genero"
+          placeholder="Cliente (tenant)"
+          label="Cliente"
+          controlName="tenantId"
+          for="tenant"
+          [options]="(tenantsList | async) ?? []"
+          id="tenant"
+          optionLabel="name"
+          optionValue="id"></app-input-select>
+      </div>
+      <div class="col-12">
+        <app-input-select
+          placeholder="Rol (Spatie)"
+          label="Rol"
+          controlName="roleName"
+          for="role"
+          [options]="(roles | async) ?? []"
+          id="role"
+          optionLabel="name"
+          optionValue="name"></app-input-select>
+      </div>
+      <div class="col-12">
+        <app-input-select
+          placeholder="Tienda (warehouse)"
+          label="Tienda"
           controlName="warehouseId"
           for="warehouse"
           [options]="warehouses"

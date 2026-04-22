@@ -96,6 +96,13 @@ export class UserListComponent implements OnInit, OnDestroy {
         money: false,
       },
       {
+        header: 'Rol',
+        field: 'role',
+        clickable: false,
+        image: false,
+        money: false,
+      },
+      {
         header: 'Acción',
         field: 'button',
         clickable: false,

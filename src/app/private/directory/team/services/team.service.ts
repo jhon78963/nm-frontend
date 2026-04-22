@@ -7,7 +7,12 @@ import {
   switchMap,
 } from 'rxjs';
 import { ApiService } from '../../../../services/api.service';
-import { Team, TeamListResponse } from '../models/team.model';
+import {
+  Team,
+  TeamCreateResponse,
+  TeamListResponse,
+  TeamPayload,
+} from '../models/team.model';
 
 @Injectable({
   providedIn: 'root',
@@ -50,13 +55,13 @@ export class TeamService {
     return this.apiService.get(`teams/${id}`);
   }
 
-  create(data: Team): Observable<void> {
-    return this.apiService
-      .post('teams', data)
-      .pipe(switchMap(() => this.callGetList()));
+  create(data: TeamPayload): Observable<TeamCreateResponse> {
+    return this.apiService.post<TeamCreateResponse>('teams', data).pipe(
+      switchMap(res => this.callGetList().pipe(map(() => res))),
+    );
   }
 
-  edit(id: number, data: Team): Observable<void> {
+  edit(id: number, data: TeamPayload): Observable<void> {
     return this.apiService
       .patch(`teams/${id}`, data)
       .pipe(switchMap(() => this.callGetList()));
