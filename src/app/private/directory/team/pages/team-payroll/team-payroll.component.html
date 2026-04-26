@@ -1,0 +1,315 @@
+<p-toast position="top-right" />
+<div class="payroll-page p-3 md:p-4">
+  <div
+    class="payroll-toolbar flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3 p-3 mb-4">
+    <div class="flex align-items-center gap-2 flex-wrap">
+      <button
+        pButton
+        type="button"
+        icon="pi pi-arrow-left"
+        class="p-button-text p-button-secondary"
+        label="Equipo"
+        (click)="goBack()"></button>
+      <span class="text-300 hidden md:inline">|</span>
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold text-900 m-0">Pagos al colaborador</h1>
+        <p class="text-600 m-0 mt-1 text-sm">
+          @if (team) {
+            <span class="font-semibold text-900">{{ team.name }} {{ team.surname }}</span>
+            <span class="mx-2">·</span>
+          }
+          Descuentos por faltas (incluye Valdeo), días recuperados, tardanzas y movimientos del mes.
+        </p>
+      </div>
+    </div>
+    <div class="flex align-items-center gap-2 flex-wrap">
+      <button
+        pButton
+        type="button"
+        icon="pi pi-calendar"
+        class="p-button-outlined"
+        label="Asistencia"
+        (click)="goAttendance()"
+        pTooltip="Ir al registro de asistencia del mismo mes"></button>
+      <button
+        pButton
+        type="button"
+        icon="pi pi-chevron-left"
+        class="p-button-outlined"
+        (click)="prevMonth()"
+        pTooltip="Mes anterior"></button>
+      <span class="font-bold text-900 min-w-max text-center px-2">{{ monthTitle }}</span>
+      <button
+        pButton
+        type="button"
+        icon="pi pi-chevron-right"
+        class="p-button-outlined"
+        (click)="nextMonth()"
+        pTooltip="Mes siguiente"></button>
+    </div>
+  </div>
+
+  <div
+    class="surface-card border-round p-3 mb-4 flex flex-column lg:flex-row lg:align-items-center gap-3">
+    <span class="font-semibold text-900 whitespace-nowrap">Ámbito del resumen</span>
+    <p-selectButton
+      [options]="periodOptions"
+      [(ngModel)]="period"
+      optionLabel="label"
+      optionValue="value"
+      (ngModelChange)="onPeriodChange()"
+      styleClass="flex-wrap" />
+    <small class="text-600 lg:ml-2">
+      Las <strong>tardanzas</strong> y el <strong>detalle de faltas</strong> cambian con el filtro. El
+      <strong>estimado a fin de mes</strong> usa siempre el mes completo para faltas y valdeos.
+    </small>
+  </div>
+
+  @if (loading) {
+    <div class="flex justify-content-center py-6">
+      <p-progressSpinner strokeWidth="4" styleClass="w-4rem h-4rem" />
+    </div>
+  } @else if (data) {
+    <div class="hero-estimate mb-4">
+      <div class="hero-label">Estimado a pagar a fin de mes</div>
+      <div class="hero-value">S/ {{ money(data.estimates.estimadoAPagarFinMes) }}</div>
+      <p class="m-0 mt-2 text-sm opacity-90" style="max-width: 42rem">
+        {{ data.estimates.nota }}
+      </p>
+    </div>
+
+    <div class="grid mb-3">
+      <div class="col-12 md:col-4">
+        <p-card styleClass="h-full shadow-1 border-round-xl">
+          <ng-template pTemplate="header">
+            <div class="px-3 pt-3 pb-0">
+              <span class="text-xs font-bold text-500 uppercase">Salario y tarifa</span>
+            </div>
+          </ng-template>
+          <ul class="list-none p-0 m-0 text-sm">
+            <li class="flex justify-content-between py-2 border-bottom-1 surface-border">
+              <span class="text-600">Salario mensual</span>
+              <span class="font-semibold">S/ {{ money(data.team.salary) }}</span>
+            </li>
+            <li class="flex justify-content-between py-2 border-bottom-1 surface-border">
+              <span class="text-600">Días del mes</span>
+              <span class="font-semibold">{{ data.calendar.daysInMonth }}</span>
+            </li>
+            <li class="flex justify-content-between py-2 border-bottom-1 surface-border">
+              <span class="text-600">Valor día (sueldo ÷ días)</span>
+              <span class="font-semibold">S/ {{ money(data.rates.dailyRate) }}</span>
+            </li>
+            <li class="flex justify-content-between py-2">
+              <span class="text-600">Referencia media quincena</span>
+              <span class="font-semibold">S/ {{ money(data.rates.halfMonthReference) }}</span>
+            </li>
+          </ul>
+        </p-card>
+      </div>
+      <div class="col-12 md:col-8">
+        <p-card styleClass="h-full shadow-1 border-round-xl">
+          <ng-template pTemplate="header">
+            <div class="px-3 pt-3 pb-0 flex align-items-center gap-2 flex-wrap">
+              <span class="text-xs font-bold text-500 uppercase">Asistencia</span>
+              <p-tag [value]="data.calendar.periodLabel" severity="info" styleClass="text-xs" />
+            </div>
+          </ng-template>
+          <p class="text-600 text-sm mt-0 mb-3">
+            Faltas + Valdeo cuentan como ausencias; cada día de recuperación resta una ausencia al
+            descuento (en el ámbito seleccionado).
+          </p>
+          <div class="grid">
+            <div class="col-6 sm:col-4 md:col-2">
+              <div class="metric-tile">
+                <div class="label">Faltas</div>
+                <div class="value text-red-600">{{ data.attendanceVista.falta }}</div>
+              </div>
+            </div>
+            <div class="col-6 sm:col-4 md:col-2">
+              <div class="metric-tile">
+                <div class="label">Valdeo</div>
+                <div class="value text-indigo-600">{{ data.attendanceVista.valdeo }}</div>
+              </div>
+            </div>
+            <div class="col-6 sm:col-4 md:col-2">
+              <div class="metric-tile">
+                <div class="label">Recuperación</div>
+                <div class="value text-green-600">{{ data.attendanceVista.recuperacion }}</div>
+              </div>
+            </div>
+            <div class="col-6 sm:col-4 md:col-2">
+              <div class="metric-tile">
+                <div class="label">Total equiv.</div>
+                <div class="value text-900">{{ data.attendanceVista.faltasEquivalentes }}</div>
+                <div class="hint">Faltas + Valdeo</div>
+              </div>
+            </div>
+            <div class="col-6 sm:col-4 md:col-2">
+              <div class="metric-tile">
+                <div class="label">A descontar</div>
+                <div class="value text-orange-700">{{ data.attendanceVista.faltasADescontar }}</div>
+                <div class="hint">Tras recuperar</div>
+              </div>
+            </div>
+            <div class="col-12 sm:col-4 md:col-2">
+              <div class="metric-tile">
+                <div class="label">Descuento</div>
+                <div class="value text-900">S/ {{ money(data.attendanceVista.descuentoPorFaltas) }}</div>
+                <div class="hint">En esta vista</div>
+              </div>
+            </div>
+          </div>
+          <p-divider />
+          <div class="slice-title mb-2">Tardanzas (minutos de retraso registrados)</div>
+          <p class="text-600 text-sm m-0 mb-1">
+            Suma de minutos en estados <strong>Tardanza</strong> y <strong>Tolerancia (8:00–8:15)</strong>
+            en <strong>{{ data.calendar.periodLabel }}</strong>.
+          </p>
+          <div class="flex align-items-baseline gap-2 flex-wrap">
+            <span class="text-2xl font-bold text-900">{{ tardanzaLabel(data.attendanceVista) }}</span>
+            <p-tag
+              severity="secondary"
+              [value]="data.attendanceVista.tardanzaTotalMinutes + ' min totales'"
+              styleClass="text-xs"></p-tag>
+          </div>
+        </p-card>
+      </div>
+    </div>
+
+    <div class="grid mb-3">
+      <div class="col-12">
+        <p-card header="Mes completo (cierre)" styleClass="shadow-1 border-round-xl">
+          <p class="text-600 text-sm mt-0 mb-3">
+            Estos valores sirven para el <strong>descuento por asistencia del mes</strong> y el cuadro de
+            cierre, independientemente del filtro de quincena de arriba.
+          </p>
+          <div class="grid">
+            <div class="col-6 md:col-3">
+              <div class="metric-tile">
+                <div class="label">Faltas a descontar (mes)</div>
+                <div class="value">{{ data.attendanceMesCompleto.faltasADescontar }}</div>
+              </div>
+            </div>
+            <div class="col-6 md:col-3">
+              <div class="metric-tile">
+                <div class="label">Descuento faltas (mes)</div>
+                <div class="value">S/ {{ money(data.attendanceMesCompleto.descuentoPorFaltas) }}</div>
+              </div>
+            </div>
+            <div class="col-12 md:col-6">
+              <div class="metric-tile">
+                <div class="label">Tardanzas (mes completo)</div>
+                <div class="value text-900">{{ tardanzaLabel(data.attendanceMesCompleto) }}</div>
+                <div class="hint">
+                  {{ data.attendanceMesCompleto.tardanzaTotalMinutes }} minutos en total
+                </div>
+              </div>
+            </div>
+          </div>
+        </p-card>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="col-12 lg:col-6">
+        <p-card header="Movimientos del mes (todos los días)" styleClass="shadow-1 border-round-xl h-full">
+          <p class="text-600 text-sm mt-0 mb-2">
+            <strong>Adelanto</strong> (ADVANCE), <strong>pago quincenal</strong> (PAYMENT) y
+            <strong>descuentos</strong> manuales (DEDUCTION) registrados con fecha en este mes.
+          </p>
+          <ul class="list-none p-0 m-0 text-sm">
+            <li class="flex justify-content-between py-2 border-bottom-1 surface-border">
+              <span class="text-600">Adelantos</span>
+              <span class="font-semibold text-orange-700"
+                >S/ {{ money(data.movementsMonth.advances) }}</span
+              >
+            </li>
+            <li class="flex justify-content-between py-2 border-bottom-1 surface-border">
+              <span class="text-600">Pagos (quincenales u otros)</span>
+              <span class="font-semibold text-blue-700"
+                >S/ {{ money(data.movementsMonth.payments) }}</span
+              >
+            </li>
+            <li class="flex justify-content-between py-2">
+              <span class="text-600">Descuentos manuales</span>
+              <span class="font-semibold text-red-700"
+                >S/ {{ money(data.movementsMonth.deductions) }}</span
+              >
+            </li>
+          </ul>
+        </p-card>
+      </div>
+      <div class="col-12 lg:col-6">
+        <p-card [header]="vistaMovimientosCardTitle" styleClass="shadow-1 border-round-xl h-full">
+          <p class="text-600 text-sm mt-0 mb-2">
+            Filtrado por <strong>fecha del movimiento</strong> dentro de
+            {{ data.calendar.periodLabel }}.
+          </p>
+          <ul class="list-none p-0 m-0 text-sm">
+            <li class="flex justify-content-between py-2 border-bottom-1 surface-border">
+              <span class="text-600">Adelantos</span>
+              <span class="font-semibold">S/ {{ money(data.movementsVistaPeriodo.advances) }}</span>
+            </li>
+            <li class="flex justify-content-between py-2 border-bottom-1 surface-border">
+              <span class="text-600">Pagos</span>
+              <span class="font-semibold">S/ {{ money(data.movementsVistaPeriodo.payments) }}</span>
+            </li>
+            <li class="flex justify-content-between py-2 border-bottom-1 surface-border">
+              <span class="text-600">Descuentos</span>
+              <span class="font-semibold">S/ {{ money(data.movementsVistaPeriodo.deductions) }}</span>
+            </li>
+          </ul>
+          <p-divider />
+          <div class="text-xs text-600">
+            <div class="mb-1">
+              <strong>1.ª quincena:</strong> adelantos S/
+              {{ money(data.movementsQuincena1.advances) }}, pagos S/
+              {{ money(data.movementsQuincena1.payments) }}
+            </div>
+            <div>
+              <strong>2.ª quincena:</strong> adelantos S/
+              {{ money(data.movementsQuincena2.advances) }}, pagos S/
+              {{ money(data.movementsQuincena2.payments) }}
+            </div>
+          </div>
+        </p-card>
+      </div>
+    </div>
+
+    <p-card header="Liquidación (referencia)" styleClass="shadow-1 border-round-xl mt-3">
+      <ul class="list-none p-0 m-0 text-sm">
+        <li class="flex justify-content-between py-2 border-bottom-1 surface-border">
+          <span class="text-600">Salario base</span>
+          <span>S/ {{ money(data.estimates.salarioBase) }}</span>
+        </li>
+        <li class="flex justify-content-between py-2 border-bottom-1 surface-border">
+          <span class="text-600">Menos descuento por faltas (mes completo)</span>
+          <span class="text-red-700 font-semibold"
+            >− S/ {{ money(data.estimates.descuentoAsistenciaMesCompleto) }}</span
+          >
+        </li>
+        <li class="flex justify-content-between py-2 border-bottom-1 surface-border">
+          <span class="text-600">Salario tras faltas</span>
+          <span class="font-semibold">S/ {{ money(data.estimates.salarioTrasDescuentoFaltas) }}</span>
+        </li>
+        <li class="flex justify-content-between py-2 border-bottom-1 surface-border">
+          <span class="text-600">Menos adelantos + pagos + descuentos (mes)</span>
+          <span class="text-600">
+            − S/
+            {{
+              money(
+                data.movementsMonth.advances +
+                  data.movementsMonth.payments +
+                  data.movementsMonth.deductions
+              )
+            }}
+          </span>
+        </li>
+        <li class="flex justify-content-between py-2">
+          <span class="font-bold text-900">Estimado a pagar fin de mes</span>
+          <span class="font-bold text-primary">S/ {{ money(data.estimates.estimadoAPagarFinMes) }}</span>
+        </li>
+      </ul>
+    </p-card>
+  }
+</div>

@@ -2,7 +2,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { TooltipModule } from 'primeng/tooltip';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { debounceTime, Observable } from 'rxjs';
 import { TeamService } from '../../services/team.service';
 import { LoadingService } from '../../../../../services/loading.service';
@@ -37,6 +37,7 @@ import {
     ToastModule,
     SharedModule,
     TooltipModule,
+    RouterLink,
   ],
   providers: [ConfirmationService, MessageService, DialogService],
 })
@@ -67,6 +68,15 @@ export class TeamListComponent implements OnInit, OnDestroy {
       pTooltip: 'Asistencia',
       tooltipPosition: 'bottom',
       click: (rowData: Team) => this.buttonAttendanceTeam(rowData),
+    },
+    {
+      type: 'button',
+      size: 'small',
+      icon: 'pi pi-wallet',
+      outlined: true,
+      pTooltip: 'Pagos y descuentos',
+      tooltipPosition: 'bottom',
+      click: (rowData: Team) => this.buttonPayrollTeam(rowData),
     },
     {
       type: 'button',
@@ -243,6 +253,10 @@ export class TeamListComponent implements OnInit, OnDestroy {
 
   buttonAttendanceTeam(rowData: Team): void {
     void this.router.navigate(['/directory/team/asistencia', rowData.id]);
+  }
+
+  buttonPayrollTeam(rowData: Team): void {
+    void this.router.navigate(['/directory/team/pagos', rowData.id]);
   }
 
   buttonDeleteTeam(id: number, event: Event) {
