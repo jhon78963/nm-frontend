@@ -10,6 +10,16 @@ export interface PayrollTardanza {
   minutes: number;
 }
 
+export interface PayrollDeudaDia {
+  date: string;
+  status: string;
+  checkIn: string | null;
+  checkOut: string | null;
+  deudaEntradaTardeMinutos: number;
+  deudaSalidaAnticipadaMinutos: number;
+  deudaTotalMinutos: number;
+}
+
 export interface PayrollAttendanceSlice {
   falta: number;
   valdeo: number;
@@ -17,8 +27,16 @@ export interface PayrollAttendanceSlice {
   faltasEquivalentes: number;
   faltasADescontar: number;
   descuentoPorFaltas: number;
-  tardanzaTotalMinutes: number;
-  tardanza: PayrollTardanza;
+  /** Retraso respecto a las 8:00 (incluye ventana de tolerancia como minutos después de 8:00). */
+  deudaEntradaTardeMinutos: number;
+  /** Tiempo no cumplido por salir antes de entrada + 11 h 30. */
+  deudaSalidaAnticipadaMinutos: number;
+  /** Entrada tarde + salida anticipada. */
+  deudaTiempoTotalMinutos: number;
+  deudaEntradaTarde: PayrollTardanza;
+  deudaSalidaAnticipada: PayrollTardanza;
+  deudaTiempo: PayrollTardanza;
+  deudaPorDia: PayrollDeudaDia[];
 }
 
 export interface PayrollMovements {

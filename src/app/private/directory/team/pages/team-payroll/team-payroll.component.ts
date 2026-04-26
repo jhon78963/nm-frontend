@@ -9,6 +9,7 @@ import { DividerModule } from 'primeng/divider';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TagModule } from 'primeng/tag';
+import { TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { Subscription, finalize } from 'rxjs';
@@ -16,6 +17,7 @@ import { ITeam, Team } from '../../models/team.model';
 import {
   PayrollData,
   PayrollPeriod,
+  PayrollTardanza,
   TeamPayrollService,
 } from '../../services/team-payroll.service';
 import { TeamService } from '../../services/team.service';
@@ -58,6 +60,7 @@ const MONTH_NAMES_ES = [
     ProgressSpinnerModule,
     SelectButtonModule,
     TagModule,
+    TableModule,
     ToastModule,
     TooltipModule,
   ],
@@ -174,11 +177,11 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
     }).format(x);
   }
 
-  tardanzaLabel(slice: { tardanza: { days: number; hours: number; minutes: number } } | null): string {
-    if (!slice) {
+  splitTimeLabel(block: PayrollTardanza | null | undefined): string {
+    if (!block) {
       return '—';
     }
-    const { days, hours, minutes } = slice.tardanza;
+    const { days, hours, minutes } = block;
     const parts: string[] = [];
     if (days > 0) {
       parts.push(`${days} día${days === 1 ? '' : 's'}`);
@@ -193,6 +196,39 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
       return '0 min';
     }
     return parts.join(' · ');
+  }
+
+  formatFechaCorta(ymd: string): string {
+    const p = ymd.split('-').map(Number);
+    if (p.length !== 3 || p.some(n => Number.isNaN(n))) {
+      return ymd;
+    }
+    const [y, m, d] = p;
+    const dt = new Date(y, m - 1, d);
+    return dt.toLocaleDateString('es-PE', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    });
+  }
+
+  minutosOGuion(n: number): string {
+    return n > 0 ? `${n} min` : '—';
+  }
+
+  statusTagSeverity(
+    status: string,
+  ): 'success' | 'info' | 'warning' | 'danger' | 'secondary' | 'contrast' {
+    const map: Record<
+      string,
+      'success' | 'info' | 'warning' | 'danger' | 'secondary'
+    > = {
+      PUNTUAL: 'success',
+      TARDE: 'warning',
+      TOLERANCIA: 'info',
+      RECUPERACION: 'secondary',
+    };
+    return map[status] ?? 'secondary';
   }
 
   private loadTeam(): void {

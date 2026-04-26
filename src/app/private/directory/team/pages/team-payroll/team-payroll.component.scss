@@ -70,3 +70,16 @@
   font-weight: 700;
   color: var(--text-color, #0f172a);
 }
+
+:host ::ng-deep .debt-table.p-datatable .p-datatable-thead > tr > th {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-color-secondary, #64748b);
+}
+
+:host ::ng-deep .debt-table.p-datatable .p-datatable-tbody > tr > td {
+  vertical-align: top;
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+}
