@@ -23,7 +23,7 @@
             <span class="mx-2">·</span>
           }
           Descuentos por faltas (incluye Valdeo), días recuperados, tiempo que
-          debe (entrada + jornada) y movimientos del mes.
+          debe (horario 8:00–19:30) y movimientos del mes.
         </p>
       </div>
     </div>
@@ -197,14 +197,12 @@
           <p-divider />
           <div class="slice-title mb-2">Balance de tiempo (transparente)</div>
           <p class="text-600 text-sm m-0 mb-2">
-            <strong>Debe:</strong> retraso después de las 8:00 y salida antes de
-            <strong>entrada + 11 h 30</strong>.
-            <strong>A favor:</strong> llegada antes de las 8:00 y salida después
-            de esa misma hora objetivo de fin de jornada.
+            <strong>Debe:</strong> retraso después de las <strong>8:00</strong> y salida antes de las
+            <strong>19:30</strong> (cierre oficial).
+            <strong>A favor:</strong> llegada antes de las 8:00 y salida después de las 19:30.
             <span class="block mt-1"
-              >Ej. 7:55 → 19:35: +5 min por llegar antes de las 8:00 y +10 min
-              por permanecer después de las 19:25 (saldo neto del día +15 min a
-              favor).</span
+              >Ej. 07:54 → 19:35: +6 min por llegar antes de las 8:00 y +5 min por salir después de las
+              19:30 (saldo neto del día +11 min a favor).</span
             >
             <span class="block mt-1"
               >Ámbito: <strong>{{ data.calendar.periodLabel }}</strong
@@ -253,7 +251,7 @@
                   }}
                 </div>
                 <div class="hint">
-                  {{ data.attendanceVista.deudaSalidaAnticipadaMinutos }} min
+                  {{ data.attendanceVista.deudaSalidaAnticipadaMinutos }} min (antes de 19:30)
                 </div>
               </div>
             </div>
@@ -294,8 +292,7 @@
                   {{ splitTimeLabel(data.attendanceVista.favorSalidaTarde) }}
                 </div>
                 <div class="hint">
-                  {{ data.attendanceVista.favorSalidaTardeTotalMinutos }} min
-                  (tras fin de jornada)
+                  {{ data.attendanceVista.favorSalidaTardeTotalMinutos }} min (después de 19:30)
                 </div>
               </div>
             </div>

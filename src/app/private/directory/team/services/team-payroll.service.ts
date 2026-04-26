@@ -34,11 +34,13 @@ export interface PayrollAttendanceSlice {
   descuentoPorFaltas: number;
   /** Retraso respecto a las 8:00 (incluye ventana de tolerancia como minutos después de 8:00). */
   deudaEntradaTardeMinutos: number;
-  /** Tiempo no cumplido por salir antes de entrada + 11 h 30. */
+  /** Tiempo no cumplido por salir antes de las 19:30 (cierre oficial). */
   deudaSalidaAnticipadaMinutos: number;
   /** Retraso entrada + salida anticipada (debe bruto). */
   deudaTiempoTotalMinutos: number;
+  /** Minutos de llegada antes de las 8:00. */
   favorLlegadaTempranaTotalMinutos: number;
+  /** Minutos de salida después de las 19:30. */
   favorSalidaTardeTotalMinutos: number;
   favorTiempoTotalMinutos: number;
   /** Positivo: a favor del colaborador; negativo: neto a deber. */
