@@ -22,8 +22,8 @@
             >
             <span class="mx-2">·</span>
           }
-          Descuentos por faltas (incluye Valdeo), días recuperados, tiempo que debe
-          (entrada + jornada) y movimientos del mes.
+          Descuentos por faltas (incluye Valdeo), días recuperados, tiempo que
+          debe (entrada + jornada) y movimientos del mes.
         </p>
       </div>
     </div>
@@ -195,12 +195,19 @@
             </div>
           </div>
           <p-divider />
-          <div class="slice-title mb-2">Tiempo que debe (entrada + jornada)</div>
+          <div class="slice-title mb-2">
+            Tiempo que debe (entrada + jornada)
+          </div>
           <p class="text-600 text-sm m-0 mb-3">
-            Se suma el <strong>retraso a la entrada</strong> (minutos después de las 8:00, igual que en
-            asistencia) y el tiempo <strong>no cumplido por salida anticipada</strong> (salida antes de
-            entrada + 11 h 30). Incluye días <strong>puntuales</strong> con salida temprana.
-            <span class="block mt-1">Ámbito: <strong>{{ data.calendar.periodLabel }}</strong>.</span>
+            Se suma el <strong>retraso a la entrada</strong> (minutos después de
+            las 8:00, igual que en asistencia) y el tiempo
+            <strong>no cumplido por salida anticipada</strong> (salida antes de
+            entrada + 11 h 30). Incluye días <strong>puntuales</strong> con
+            salida temprana.
+            <span class="block mt-1"
+              >Ámbito: <strong>{{ data.calendar.periodLabel }}</strong
+              >.</span
+            >
           </p>
           <div class="grid mb-3">
             <div class="col-12 sm:col-4">
@@ -210,7 +217,8 @@
                   {{ splitTimeLabel(data.attendanceVista.deudaEntradaTarde) }}
                 </div>
                 <div class="hint">
-                  {{ data.attendanceVista.deudaEntradaTardeMinutos }} min en total
+                  {{ data.attendanceVista.deudaEntradaTardeMinutos }} min en
+                  total
                 </div>
               </div>
             </div>
@@ -218,26 +226,36 @@
               <div class="metric-tile">
                 <div class="label">Salida anticipada</div>
                 <div class="value text-purple-700">
-                  {{ splitTimeLabel(data.attendanceVista.deudaSalidaAnticipada) }}
+                  {{
+                    splitTimeLabel(data.attendanceVista.deudaSalidaAnticipada)
+                  }}
                 </div>
                 <div class="hint">
-                  {{ data.attendanceVista.deudaSalidaAnticipadaMinutos }} min en total
+                  {{ data.attendanceVista.deudaSalidaAnticipadaMinutos }} min en
+                  total
                 </div>
               </div>
             </div>
             <div class="col-12 sm:col-4">
               <div class="metric-tile">
                 <div class="label">Total a compensar</div>
-                <div class="value text-900">{{ splitTimeLabel(data.attendanceVista.deudaTiempo) }}</div>
+                <div class="value text-900">
+                  {{ splitTimeLabel(data.attendanceVista.deudaTiempo) }}
+                </div>
                 <div class="hint">
-                  {{ data.attendanceVista.deudaTiempoTotalMinutos }} min en total
+                  {{ data.attendanceVista.deudaTiempoTotalMinutos }} min en
+                  total
                 </div>
               </div>
             </div>
           </div>
-          <div class="slice-title mb-2">Detalle por día (entrada y salida registradas)</div>
+          <div class="slice-title mb-2">
+            Detalle por día (entrada y salida registradas)
+          </div>
           @if (data.attendanceVista.deudaPorDia.length === 0) {
-            <p class="text-600 text-sm m-0">No hay registros con entrada y salida en este período.</p>
+            <p class="text-600 text-sm m-0">
+              No hay registros con entrada y salida en este período.
+            </p>
           } @else {
             <p-table
               [value]="data.attendanceVista.deudaPorDia"
@@ -260,7 +278,9 @@
               <ng-template pTemplate="body" let-row>
                 <tr>
                   <td>
-                    <span class="font-semibold">{{ formatFechaCorta(row.date) }}</span>
+                    <span class="font-semibold">{{
+                      formatFechaCorta(row.date)
+                    }}</span>
                     <span class="text-500 text-xs block">{{ row.date }}</span>
                   </td>
                   <td>
@@ -269,14 +289,24 @@
                       [severity]="statusTagSeverity(row.status)"
                       styleClass="text-xs"></p-tag>
                   </td>
-                  <td class="text-right font-mono text-sm">{{ row.checkIn }}</td>
-                  <td class="text-right font-mono text-sm">{{ row.checkOut }}</td>
-                  <td class="text-right text-sm">{{ minutosOGuion(row.deudaEntradaTardeMinutos) }}</td>
-                  <td class="text-right text-sm">{{
-                    minutosOGuion(row.deudaSalidaAnticipadaMinutos)
-                  }}</td>
+                  <td class="text-right font-mono text-sm">
+                    {{ row.checkIn }}
+                  </td>
+                  <td class="text-right font-mono text-sm">
+                    {{ row.checkOut }}
+                  </td>
+                  <td class="text-right text-sm">
+                    {{ minutosOGuion(row.deudaEntradaTardeMinutos) }}
+                  </td>
+                  <td class="text-right text-sm">
+                    {{ minutosOGuion(row.deudaSalidaAnticipadaMinutos) }}
+                  </td>
                   <td class="text-right font-semibold text-sm">
-                    {{ row.deudaTotalMinutos > 0 ? row.deudaTotalMinutos + ' min' : '—' }}
+                    {{
+                      row.deudaTotalMinutos > 0
+                        ? row.deudaTotalMinutos + ' min'
+                        : '—'
+                    }}
                   </td>
                 </tr>
               </ng-template>
@@ -320,10 +350,17 @@
                   {{ splitTimeLabel(data.attendanceMesCompleto.deudaTiempo) }}
                 </div>
                 <div class="hint">
-                  Entrada: {{ splitTimeLabel(data.attendanceMesCompleto.deudaEntradaTarde) }} · Salida:
-                  {{ splitTimeLabel(data.attendanceMesCompleto.deudaSalidaAnticipada) }} ({{
-                    data.attendanceMesCompleto.deudaTiempoTotalMinutos
+                  Entrada:
+                  {{
+                    splitTimeLabel(data.attendanceMesCompleto.deudaEntradaTarde)
                   }}
+                  · Salida:
+                  {{
+                    splitTimeLabel(
+                      data.attendanceMesCompleto.deudaSalidaAnticipada
+                    )
+                  }}
+                  ({{ data.attendanceMesCompleto.deudaTiempoTotalMinutos }}
                   min)
                 </div>
               </div>
