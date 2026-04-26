@@ -10,6 +10,8 @@ export interface PayrollTardanza {
   minutes: number;
 }
 
+export type SaldoSentido = 'favor' | 'debe' | 'cero';
+
 export interface PayrollDeudaDia {
   date: string;
   status: string;
@@ -17,7 +19,10 @@ export interface PayrollDeudaDia {
   checkOut: string | null;
   deudaEntradaTardeMinutos: number;
   deudaSalidaAnticipadaMinutos: number;
-  deudaTotalMinutos: number;
+  favorLlegadaTempranaMinutos: number;
+  favorSalidaTardeMinutos: number;
+  saldoNetoMinutos: number;
+  saldoNetoSentido: SaldoSentido;
 }
 
 export interface PayrollAttendanceSlice {
@@ -31,11 +36,20 @@ export interface PayrollAttendanceSlice {
   deudaEntradaTardeMinutos: number;
   /** Tiempo no cumplido por salir antes de entrada + 11 h 30. */
   deudaSalidaAnticipadaMinutos: number;
-  /** Entrada tarde + salida anticipada. */
+  /** Retraso entrada + salida anticipada (debe bruto). */
   deudaTiempoTotalMinutos: number;
+  favorLlegadaTempranaTotalMinutos: number;
+  favorSalidaTardeTotalMinutos: number;
+  favorTiempoTotalMinutos: number;
+  /** Positivo: a favor del colaborador; negativo: neto a deber. */
+  saldoTiempoNetoMinutos: number;
+  saldoTiempoNetoSentido: SaldoSentido;
+  saldoTiempoNetoMagnitud: PayrollTardanza;
   deudaEntradaTarde: PayrollTardanza;
   deudaSalidaAnticipada: PayrollTardanza;
   deudaTiempo: PayrollTardanza;
+  favorLlegadaTemprana: PayrollTardanza;
+  favorSalidaTarde: PayrollTardanza;
   deudaPorDia: PayrollDeudaDia[];
 }
 

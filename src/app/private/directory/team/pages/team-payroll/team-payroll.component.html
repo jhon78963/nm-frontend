@@ -195,20 +195,38 @@
             </div>
           </div>
           <p-divider />
-          <div class="slice-title mb-2">
-            Tiempo que debe (entrada + jornada)
-          </div>
-          <p class="text-600 text-sm m-0 mb-3">
-            Se suma el <strong>retraso a la entrada</strong> (minutos después de
-            las 8:00, igual que en asistencia) y el tiempo
-            <strong>no cumplido por salida anticipada</strong> (salida antes de
-            entrada + 11 h 30). Incluye días <strong>puntuales</strong> con
-            salida temprana.
+          <div class="slice-title mb-2">Balance de tiempo (transparente)</div>
+          <p class="text-600 text-sm m-0 mb-2">
+            <strong>Debe:</strong> retraso después de las 8:00 y salida antes de
+            <strong>entrada + 11 h 30</strong>.
+            <strong>A favor:</strong> llegada antes de las 8:00 y salida después de esa misma hora
+            objetivo de fin de jornada.
+            <span class="block mt-1"
+              >Ej. 7:55 → 19:35: +5 min por llegar antes de las 8:00 y +10 min por permanecer después
+              de las 19:25 (saldo neto del día +15 min a favor).</span
+            >
             <span class="block mt-1"
               >Ámbito: <strong>{{ data.calendar.periodLabel }}</strong
               >.</span
             >
           </p>
+          <div
+            class="surface-100 border-round p-3 mb-3 flex flex-column sm:flex-row sm:align-items-center sm:justify-content-between gap-2">
+            <span class="text-900 font-semibold text-sm">{{
+              saldoNetoResumen(data.attendanceVista)
+            }}</span>
+            <p-tag
+              [value]="
+                data.attendanceVista.saldoTiempoNetoSentido === 'favor'
+                  ? 'A favor'
+                  : data.attendanceVista.saldoTiempoNetoSentido === 'debe'
+                    ? 'A deber'
+                    : 'Equilibrado'
+              "
+              [severity]="saldoTagSeverity(data.attendanceVista.saldoTiempoNetoSentido)"
+              styleClass="text-xs font-bold"></p-tag>
+          </div>
+          <div class="text-xs font-bold text-500 uppercase mb-2">Debe (bruto)</div>
           <div class="grid mb-3">
             <div class="col-12 sm:col-4">
               <div class="metric-tile">
@@ -217,8 +235,7 @@
                   {{ splitTimeLabel(data.attendanceVista.deudaEntradaTarde) }}
                 </div>
                 <div class="hint">
-                  {{ data.attendanceVista.deudaEntradaTardeMinutos }} min en
-                  total
+                  {{ data.attendanceVista.deudaEntradaTardeMinutos }} min
                 </div>
               </div>
             </div>
@@ -231,21 +248,55 @@
                   }}
                 </div>
                 <div class="hint">
-                  {{ data.attendanceVista.deudaSalidaAnticipadaMinutos }} min en
-                  total
+                  {{ data.attendanceVista.deudaSalidaAnticipadaMinutos }} min
                 </div>
               </div>
             </div>
             <div class="col-12 sm:col-4">
               <div class="metric-tile">
-                <div class="label">Total a compensar</div>
+                <div class="label">Suma debe</div>
                 <div class="value text-900">
                   {{ splitTimeLabel(data.attendanceVista.deudaTiempo) }}
                 </div>
-                <div class="hint">
-                  {{ data.attendanceVista.deudaTiempoTotalMinutos }} min en
-                  total
+                <div class="hint">{{ data.attendanceVista.deudaTiempoTotalMinutos }} min</div>
+              </div>
+            </div>
+          </div>
+          <div class="text-xs font-bold text-500 uppercase mb-2">A favor (bruto)</div>
+          <div class="grid mb-3">
+            <div class="col-12 sm:col-4">
+              <div class="metric-tile">
+                <div class="label">Llegada temprana</div>
+                <div class="value text-green-700">
+                  {{ splitTimeLabel(data.attendanceVista.favorLlegadaTemprana) }}
                 </div>
+                <div class="hint">
+                  {{ data.attendanceVista.favorLlegadaTempranaTotalMinutos }} min (antes de 8:00)
+                </div>
+              </div>
+            </div>
+            <div class="col-12 sm:col-4">
+              <div class="metric-tile">
+                <div class="label">Salida tarde</div>
+                <div class="value text-teal-700">
+                  {{ splitTimeLabel(data.attendanceVista.favorSalidaTarde) }}
+                </div>
+                <div class="hint">
+                  {{ data.attendanceVista.favorSalidaTardeTotalMinutos }} min (tras fin de jornada)
+                </div>
+              </div>
+            </div>
+            <div class="col-12 sm:col-4">
+              <div class="metric-tile">
+                <div class="label">Suma a favor</div>
+                <div class="value text-green-800">
+                  {{
+                    splitTimeLabel(
+                      minutesToBlock(data.attendanceVista.favorTiempoTotalMinutos)
+                    )
+                  }}
+                </div>
+                <div class="hint">{{ data.attendanceVista.favorTiempoTotalMinutos }} min</div>
               </div>
             </div>
           </div>
@@ -271,8 +322,10 @@
                   <th class="text-right">Entrada</th>
                   <th class="text-right">Salida</th>
                   <th class="text-right">Retraso</th>
-                  <th class="text-right">Salida ant.</th>
-                  <th class="text-right">Total día</th>
+                  <th class="text-right">Sal. ant.</th>
+                  <th class="text-right">Lleg. tempr.</th>
+                  <th class="text-right">Sal. tarde</th>
+                  <th class="text-right">Saldo día</th>
                 </tr>
               </ng-template>
               <ng-template pTemplate="body" let-row>
@@ -301,12 +354,17 @@
                   <td class="text-right text-sm">
                     {{ minutosOGuion(row.deudaSalidaAnticipadaMinutos) }}
                   </td>
-                  <td class="text-right font-semibold text-sm">
-                    {{
-                      row.deudaTotalMinutos > 0
-                        ? row.deudaTotalMinutos + ' min'
-                        : '—'
-                    }}
+                  <td class="text-right text-sm">
+                    {{ minutosOGuion(row.favorLlegadaTempranaMinutos) }}
+                  </td>
+                  <td class="text-right text-sm">
+                    {{ minutosOGuion(row.favorSalidaTardeMinutos) }}
+                  </td>
+                  <td class="text-right text-sm">
+                    <p-tag
+                      [value]="formatoSaldoCelda(row)"
+                      [severity]="saldoTagSeverity(row.saldoNetoSentido)"
+                      styleClass="text-xs font-semibold"></p-tag>
                   </td>
                 </tr>
               </ng-template>
@@ -345,23 +403,16 @@
             </div>
             <div class="col-12 md:col-6">
               <div class="metric-tile">
-                <div class="label">Tiempo que debe (mes completo)</div>
-                <div class="value text-900">
-                  {{ splitTimeLabel(data.attendanceMesCompleto.deudaTiempo) }}
+                <div class="label">Balance tiempo (mes completo)</div>
+                <div class="value text-900 text-sm line-height-3">
+                  {{ saldoNetoResumen(data.attendanceMesCompleto) }}
                 </div>
                 <div class="hint">
-                  Entrada:
-                  {{
-                    splitTimeLabel(data.attendanceMesCompleto.deudaEntradaTarde)
-                  }}
-                  · Salida:
-                  {{
-                    splitTimeLabel(
-                      data.attendanceMesCompleto.deudaSalidaAnticipada
-                    )
-                  }}
-                  ({{ data.attendanceMesCompleto.deudaTiempoTotalMinutos }}
-                  min)
+                  Debe {{ data.attendanceMesCompleto.deudaTiempoTotalMinutos }} min · A favor
+                  {{ data.attendanceMesCompleto.favorTiempoTotalMinutos }} min · Neto
+                  {{ data.attendanceMesCompleto.saldoTiempoNetoMinutos }} min ({{
+                    data.attendanceMesCompleto.saldoTiempoNetoSentido
+                  }})
                 </div>
               </div>
             </div>

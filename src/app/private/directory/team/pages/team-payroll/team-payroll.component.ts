@@ -15,9 +15,12 @@ import { TooltipModule } from 'primeng/tooltip';
 import { Subscription, finalize } from 'rxjs';
 import { ITeam, Team } from '../../models/team.model';
 import {
+  PayrollAttendanceSlice,
   PayrollData,
+  PayrollDeudaDia,
   PayrollPeriod,
   PayrollTardanza,
+  SaldoSentido,
   TeamPayrollService,
 } from '../../services/team-payroll.service';
 import { TeamService } from '../../services/team.service';
@@ -177,6 +180,15 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
     }).format(x);
   }
 
+  minutesToBlock(total: number): PayrollTardanza {
+    const n = Math.max(0, Math.floor(total));
+    return {
+      days: Math.floor(n / 1440),
+      hours: Math.floor((n % 1440) / 60),
+      minutes: n % 60,
+    };
+  }
+
   splitTimeLabel(block: PayrollTardanza | null | undefined): string {
     if (!block) {
       return '—';
@@ -214,6 +226,38 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
 
   minutosOGuion(n: number): string {
     return n > 0 ? `${n} min` : '—';
+  }
+
+  saldoNetoResumen(slice: PayrollAttendanceSlice): string {
+    const n = slice.saldoTiempoNetoMinutos;
+    const mag = this.splitTimeLabel(slice.saldoTiempoNetoMagnitud);
+    if (n === 0) {
+      return 'Saldo neto del período: equilibrado (0).';
+    }
+    if (n > 0) {
+      return `Saldo neto del período: +${mag} a favor del colaborador (${n} min).`;
+    }
+    return `Saldo neto del período: −${mag} neto a deber (${Math.abs(n)} min).`;
+  }
+
+  saldoTagSeverity(
+    s: SaldoSentido,
+  ): 'success' | 'danger' | 'secondary' | 'info' {
+    if (s === 'favor') {
+      return 'success';
+    }
+    if (s === 'debe') {
+      return 'danger';
+    }
+    return 'secondary';
+  }
+
+  formatoSaldoCelda(row: PayrollDeudaDia): string {
+    if (row.saldoNetoMinutos === 0) {
+      return '0';
+    }
+    const sign = row.saldoNetoMinutos > 0 ? '+' : '−';
+    return `${sign}${Math.abs(row.saldoNetoMinutos)} min`;
   }
 
   statusTagSeverity(
