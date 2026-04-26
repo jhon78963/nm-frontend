@@ -6,9 +6,18 @@
       controlName="search"
       (clearFilter)="clearFilter()">
     </app-input-search>
-    <p-button [outlined]="true" (click)="buttonAddTeam()">
-      <i class="pi pi-plus" style="font-size: 1rem"></i>
-    </p-button>
+    <div class="flex align-items-center gap-2 flex-shrink-0">
+      <p-button
+        [outlined]="true"
+        type="button"
+        icon="pi pi-calendar-plus"
+        pTooltip="Resumen diario de todas las colaboradoras"
+        tooltipPosition="bottom"
+        (click)="openTeamDailySummary()"></p-button>
+      <p-button [outlined]="true" type="button" (click)="buttonAddTeam()">
+        <i class="pi pi-plus" style="font-size: 1rem"></i>
+      </p-button>
+    </div>
   </div>
   <app-table-pagination
     [data]="(team | async) ?? []"

@@ -1,6 +1,8 @@
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { TooltipModule } from 'primeng/tooltip';
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { debounceTime, Observable } from 'rxjs';
 import { TeamService } from '../../services/team.service';
 import { LoadingService } from '../../../../../services/loading.service';
@@ -9,6 +11,7 @@ import { CommonModule } from '@angular/common';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TeamFormComponent } from '../form/team-form.component';
+import { TeamDailyAttendanceDialogComponent } from '../team-daily-attendance-dialog/team-daily-attendance-dialog.component';
 import {
   CallToAction,
   Column,
@@ -21,8 +24,6 @@ import {
   FormsModule,
   ReactiveFormsModule,
 } from '@angular/forms';
-import { AttendanceFormComponent } from '../attendance-form/attendance-form.component';
-
 @Component({
   selector: 'app-team',
   templateUrl: './team.component.html',
@@ -35,11 +36,13 @@ import { AttendanceFormComponent } from '../attendance-form/attendance-form.comp
     ConfirmDialogModule,
     ToastModule,
     SharedModule,
+    TooltipModule,
   ],
-  providers: [ConfirmationService, MessageService],
+  providers: [ConfirmationService, MessageService, DialogService],
 })
 export class TeamListComponent implements OnInit, OnDestroy {
   teamModal: DynamicDialogRef | undefined;
+  dailySummaryDialog?: DynamicDialogRef;
   columns: Column[] = [];
   cellToAction: any;
   data: any[] = [];
@@ -63,7 +66,7 @@ export class TeamListComponent implements OnInit, OnDestroy {
       outlined: true,
       pTooltip: 'Asistencia',
       tooltipPosition: 'bottom',
-      click: (rowData: Team) => this.buttonAttendanceTeam(rowData.id),
+      click: (rowData: Team) => this.buttonAttendanceTeam(rowData),
     },
     {
       type: 'button',
@@ -82,6 +85,7 @@ export class TeamListComponent implements OnInit, OnDestroy {
   });
 
   constructor(
+    private readonly router: Router,
     private readonly dialogService: DialogService,
     private readonly teamService: TeamService,
     public messageService: MessageService,
@@ -140,9 +144,20 @@ export class TeamListComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.teamModal) {
-      this.teamModal.close();
-    }
+    this.teamModal?.close();
+    this.dailySummaryDialog?.close();
+  }
+
+  openTeamDailySummary(): void {
+    this.dailySummaryDialog = this.dialogService.open(
+      TeamDailyAttendanceDialogComponent,
+      {
+        header: 'Asistencia del equipo por día',
+        width: 'min(960px, 98vw)',
+        maximizable: true,
+        contentStyle: { overflow: 'auto' },
+      },
+    );
   }
 
   clearFilter(): void {
@@ -226,23 +241,8 @@ export class TeamListComponent implements OnInit, OnDestroy {
     });
   }
 
-  buttonAttendanceTeam(id: number): void {
-    this.teamModal = this.dialogService.open(AttendanceFormComponent, {
-      data: {
-        id,
-      },
-      header: 'Asistencia',
-    });
-
-    this.teamModal.onClose.subscribe({
-      next: value => {
-        value && value?.success
-          ? this.showSuccess('Colaborador actualizado.')
-          : value?.error
-            ? this.showError(value?.error)
-            : null;
-      },
-    });
+  buttonAttendanceTeam(rowData: Team): void {
+    void this.router.navigate(['/directory/team/asistencia', rowData.id]);
   }
 
   buttonDeleteTeam(id: number, event: Event) {

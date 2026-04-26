@@ -1,0 +1,123 @@
+.attendance-page {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.attendance-toolbar {
+  border-radius: 12px;
+  background: var(--surface-card, #fff);
+  border: 1px solid var(--surface-border, #e5e7eb);
+}
+
+.stat-card {
+  border-radius: 12px;
+  border: 1px solid var(--surface-border, #e5e7eb);
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.stat-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--text-color-secondary, #64748b);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.month-table-wrap {
+  border-radius: 12px;
+  border: 1px solid var(--surface-border, #e5e7eb);
+  overflow: hidden;
+  background: var(--surface-card, #fff);
+}
+
+.month-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.month-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface-100, #f1f5f9);
+  padding: 0.75rem 0.5rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-color-secondary, #475569);
+  border-bottom: 2px solid var(--surface-border, #e2e8f0);
+}
+
+.month-table tbody tr {
+  border-bottom: 1px solid var(--surface-border, #f1f5f9);
+  transition: background 0.15s ease;
+}
+
+.month-table tbody tr:hover {
+  background: var(--surface-50, #f8fafc);
+}
+
+.month-table tbody tr.row-sunday {
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.06), transparent);
+}
+
+.month-table tbody tr.row-valdeo {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.08), transparent);
+}
+
+.month-table td {
+  padding: 0.5rem 0.4rem;
+  vertical-align: middle;
+}
+
+.day-num {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text-color, #0f172a);
+}
+
+.badge-pill {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.45rem;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  font-size: 0.75rem;
+  color: var(--text-color-secondary, #64748b);
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 0.35rem;
+  vertical-align: middle;
+}
+
+@media (max-width: 960px) {
+  .month-table-wrap {
+    overflow-x: auto;
+  }
+
+  .month-table {
+    min-width: 720px;
+  }
+}

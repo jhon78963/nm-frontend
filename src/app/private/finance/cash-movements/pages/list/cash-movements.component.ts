@@ -65,7 +65,7 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
   get isAdmin() {
     const jsonData = localStorage.getItem('user');
     const userData = jsonData ? JSON.parse(jsonData) : undefined;
-    return userData.role === 'Admin';
+    return userData.role === 'Super Admin' || userData.role === 'Admin';
   }
 
   paymentMethodsList = ['CASH', 'YAPE', 'CARD'];

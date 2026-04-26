@@ -1,125 +1,312 @@
-<div class="grid p-fluid">
-  <!-- Columna Izquierda: Calendario -->
-  <div class="col-12 md:col-7">
-    <div class="surface-card p-4 shadow-1 border-round">
-      <h3 class="mt-0 mb-3 text-900">Calendario de Asistencia</h3>
-      <p-calendar
-        [(ngModel)]="selectedDate"
-        [inline]="true"
-        [showWeek]="false"
-        (onSelect)="loadAttendance()"
-        styleClass="w-full custom-calendar border-none">
-      </p-calendar>
+<p-toast position="top-right" />
+<div class="attendance-page p-3 md:p-4">
+  <!-- Barra superior -->
+  <div
+    class="attendance-toolbar flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3 p-3 mb-4">
+    <div class="flex align-items-center gap-2 flex-wrap">
+      <button
+        pButton
+        type="button"
+        icon="pi pi-arrow-left"
+        class="p-button-text p-button-secondary"
+        label="Equipo"
+        (click)="goBack()"></button>
+      <span class="text-300 hidden md:inline">|</span>
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold text-900 m-0">
+          Asistencia mensual
+        </h1>
+        <p class="text-600 m-0 mt-1 text-sm">
+          @if (team) {
+            <span class="font-semibold text-900"
+              >{{ team.name }} {{ team.surname }}</span
+            >
+            <span class="mx-2">·</span>
+          }
+          <span
+            >Vista completa del mes: registra y revisa sin abrir el calendario
+            día a día.</span
+          >
+        </p>
+      </div>
+    </div>
+    <div class="flex align-items-center gap-2">
+      <button
+        pButton
+        type="button"
+        icon="pi pi-chevron-left"
+        class="p-button-outlined"
+        (click)="prevMonth()"
+        pTooltip="Mes anterior"></button>
+      <span class="font-bold text-900 min-w-max text-center px-2">{{
+        monthTitle
+      }}</span>
+      <button
+        pButton
+        type="button"
+        icon="pi pi-chevron-right"
+        class="p-button-outlined"
+        (click)="nextMonth()"
+        pTooltip="Mes siguiente"></button>
     </div>
   </div>
 
-  <!-- Columna Derecha: Formulario -->
-  <div class="col-12 md:col-5">
-    <div
-      class="surface-card p-4 shadow-1 border-round h-full flex flex-column gap-3">
-      <!-- Estado -->
-      <div class="field mb-0">
-        <span class="font-bold block mb-2">Estado</span>
-        <p-dropdown
-          [options]="statusOptions"
-          [(ngModel)]="selectedStatus"
-          placeholder="Seleccionar Estado"
-          styleClass="w-full">
-        </p-dropdown>
-      </div>
+  <div
+    class="surface-card border-round p-3 mb-4 flex flex-column md:flex-row md:align-items-center gap-3">
+    <span class="font-semibold text-900 whitespace-nowrap"
+      >Valdeo (miércoles del mes)</span
+    >
+    <p-dropdown
+      [options]="valdeoNthOptions"
+      [(ngModel)]="valdeoWednesdayNth"
+      optionLabel="label"
+      optionValue="value"
+      (ngModelChange)="onValdeoNthChange()"
+      [style]="{ minWidth: '16rem' }"
+      appendTo="body"
+      placeholder="Cuál miércoles es Valdeo"></p-dropdown>
+    <small class="text-600 md:ml-2"
+      >Se resalta la fila sugerida; puedes anotar en “Marcación” si ese mes fue
+      el otro miércoles.</small
+    >
+  </div>
 
-      <!-- Horarios (Solo si vino a trabajar) -->
-      @if (selectedStatus === 'PUNTUAL' || selectedStatus === 'TARDE') {
-        <div class="formgrid grid">
-          <div class="field col-6 mb-0">
-            <span class="font-bold block mb-2 text-green-700"
-              >Entrada (08:00)</span
-            >
-            <p-calendar
-              [(ngModel)]="checkInTime"
-              [timeOnly]="true"
-              hourFormat="24"
-              [showIcon]="true"
-              icon="pi pi-clock"
-              placeholder="--:--"
-              appendTo="body">
-            </p-calendar>
+  <!-- Métricas (registros guardados en servidor) -->
+  <p class="text-xs text-600 mb-2 m-0">
+    Resumen según registros guardados. Entrada
+    <strong>hasta las 8:00</strong> = puntual; entre
+    <strong>8:01 y 8:15</strong> = presente con tolerancia (no puntual); desde
+    <strong>8:16</strong> = tardanza según hora. Domingos: descanso habitual.
+  </p>
+  <div class="grid mb-4">
+    <div class="col-6 md:col-2">
+      <div class="stat-card surface-card p-3 h-full">
+        <div class="stat-label">Puntuales</div>
+        <div class="stat-value text-green-600">{{ stats.puntual }}</div>
+      </div>
+    </div>
+    <div class="col-6 md:col-2">
+      <div class="stat-card surface-card p-3 h-full">
+        <div class="stat-label">Tolerancia (8:00–8:15)</div>
+        <div class="stat-value text-cyan-600">{{ stats.tolerancia }}</div>
+      </div>
+    </div>
+    <div class="col-6 md:col-2">
+      <div class="stat-card surface-card p-3 h-full">
+        <div class="stat-label">Tardanzas</div>
+        <div class="stat-value text-orange-600">{{ stats.tarde }}</div>
+      </div>
+    </div>
+    <div class="col-6 md:col-2">
+      <div class="stat-card surface-card p-3 h-full">
+        <div class="stat-label">Faltas</div>
+        <div class="stat-value text-red-600">{{ stats.falta }}</div>
+      </div>
+    </div>
+    <div class="col-6 md:col-2">
+      <div class="stat-card surface-card p-3 h-full">
+        <div class="stat-label">Descansos</div>
+        <div class="stat-value text-blue-600">{{ stats.descanso }}</div>
+      </div>
+    </div>
+    <div class="col-6 md:col-2">
+      <div class="stat-card surface-card p-3 h-full">
+        <div class="stat-label">Recuperados</div>
+        <div class="stat-value text-teal-600">{{ stats.recuperacion }}</div>
+      </div>
+    </div>
+    <div class="col-6 md:col-2">
+      <div class="stat-card surface-card p-3 h-full">
+        <div class="stat-label">Valdeo</div>
+        <div class="stat-value text-indigo-600">{{ stats.valdeo }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="grid mb-4">
+    <div class="col-12 md:col-4">
+      <div
+        class="stat-card surface-card p-3 flex align-items-center gap-3 h-full">
+        <i class="pi pi-calendar text-3xl text-blue-500"></i>
+        <div>
+          <div class="stat-label">Domingos del mes</div>
+          <div class="stat-value text-blue-500 m-0">
+            {{ stats.domingosMes }}
           </div>
-          <div class="field col-6 mb-0">
-            <span class="font-bold block mb-2 text-red-700">Salida</span>
-            <p-calendar
-              [(ngModel)]="checkOutTime"
-              [timeOnly]="true"
-              hourFormat="24"
-              [showIcon]="true"
-              icon="pi pi-clock"
-              placeholder="--:--"
-              appendTo="body">
-            </p-calendar>
-
-            <!-- Indicador visual de hora de salida esperada -->
-            <small
-              *ngIf="targetExitTimeStr"
-              class="text-xs text-600 block mt-1 bg-yellow-50 p-1 border-round">
-              Salida ideal: <strong>{{ targetExitTimeStr }}</strong>
-            </small>
-          </div>
+          <small class="text-600">Descanso habitual no laborable</small>
         </div>
-      }
-
-      <!-- Tardanza (Entrada) -->
-      @if (delayMinutes > 0) {
-        <div class="field mb-0 fadein-animation">
-          <span class="font-bold block mb-2 text-orange-600"
-            >Minutos Tardanza (Entrada)</span
-          >
-          <p-inputNumber
-            [(ngModel)]="delayMinutes"
-            suffix=" min"
-            [min]="0"
-            styleClass="w-full"
-            inputStyleClass="font-bold text-orange-600"></p-inputNumber>
-        </div>
-      }
-
-      <!-- Minutos que debe (Salida Anticipada) -->
-      @if (owedMinutes > 0) {
-        <div class="field mb-0 fadein-animation">
-          <span class="font-bold block mb-2 text-purple-600"
-            >Tiempo Debid (Salida Anticipada)</span
-          >
-          <p-inputNumber
-            [(ngModel)]="owedMinutes"
-            suffix=" min"
-            [min]="0"
-            styleClass="w-full"
-            inputStyleClass="font-bold text-purple-600"
-            [readonly]="true"></p-inputNumber>
-          <small class="text-purple-500 text-xs"
-            >Se agregará a las notas.</small
-          >
-        </div>
-      }
-
-      <!-- Nota -->
-      <div class="field mb-0">
-        <span class="font-bold block mb-2">Nota / Observación</span>
-        <textarea
-          pInputTextarea
-          [(ngModel)]="note"
-          rows="3"
-          class="w-full"
-          placeholder="Agregar una nota..."></textarea>
       </div>
-
-      <div class="mt-auto pt-3">
-        <button
-          pButton
-          label="Guardar Cambios"
-          icon="pi pi-save"
-          class="w-full p-button-lg font-bold"
-          (click)="onSave()"></button>
+    </div>
+    <div class="col-12 md:col-4">
+      <div
+        class="stat-card surface-card p-3 flex align-items-center gap-3 h-full">
+        <i class="pi pi-sun text-3xl text-400"></i>
+        <div>
+          <div class="stat-label">Vacaciones</div>
+          <div class="stat-value text-600 m-0">{{ stats.vacaciones }}</div>
+        </div>
       </div>
+    </div>
+    <div class="col-12 md:col-4">
+      <div class="legend surface-card p-3 h-full flex align-items-center">
+        <span><span class="legend-dot bg-green-500"></span> Puntual</span>
+        <span><span class="legend-dot bg-cyan-500"></span> Tolerancia</span>
+        <span><span class="legend-dot bg-orange-400"></span> Tarde</span>
+        <span><span class="legend-dot bg-red-500"></span> Falta</span>
+        <span><span class="legend-dot bg-blue-400"></span> Descanso</span>
+        <span><span class="legend-dot bg-teal-500"></span> Recuperado</span>
+        <span><span class="legend-dot bg-indigo-500"></span> Valdeo</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla del mes -->
+  <div class="month-table-wrap shadow-1">
+    <div class="overflow-auto" style="max-height: min(70vh, 720px)">
+      <table class="month-table">
+        <thead>
+          <tr>
+            <th style="width: 4.5rem">Día</th>
+            <th style="width: 3rem">Sem.</th>
+            <!-- <th style="min-width: 11rem">Marcación / etiqueta</th> -->
+            <th style="min-width: 12rem">Estado</th>
+            <th style="min-width: 7rem">Entrada</th>
+            <th style="min-width: 7rem">Salida</th>
+            <th style="min-width: 5rem">Tarde (min)</th>
+            <th style="min-width: 10rem">Nota</th>
+            <th style="width: 6rem">Servidor</th>
+            <th style="width: 7rem"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of monthRows; track row.dateStr) {
+            <tr
+              [class.row-sunday]="row.isSunday"
+              [class.row-valdeo]="row.isValdeo">
+              <td>
+                <span class="day-num">{{ row.day }}</span>
+              </td>
+              <td>
+                <span class="text-600 font-medium">{{ row.weekdayLabel }}</span>
+              </td>
+              <!-- <td>
+                <input
+                  pInputText
+                  [(ngModel)]="row.customMarcacionLabel"
+                  (blur)="persistMarcacionLabels()"
+                  class="w-full text-sm"
+                  placeholder="Etiqueta libre (motivo, permiso…)" />
+                <small class="text-600 block mt-1 line-height-2">{{
+                  marcacionHint(row)
+                }}</small>
+                @if (!row.customMarcacionLabel.trim()) {
+                  <div class="flex flex-wrap gap-1 mt-2">
+                    @if (row.isSunday) {
+                      <p-tag
+                        severity="info"
+                        value="Domingo"
+                        [rounded]="true"
+                        styleClass="text-xs" />
+                    }
+                    @if (row.isValdeo) {
+                      <p-tag
+                        severity="info"
+                        [value]="
+                          valdeoWednesdayNth === 2
+                            ? 'Valdeo (2.º mié.)'
+                            : 'Valdeo (1.er mié.)'
+                        "
+                        [rounded]="true"
+                        styleClass="text-xs" />
+                    }
+                  </div>
+                }
+              </td> -->
+              <td>
+                <p-dropdown
+                  [options]="statusOptions"
+                  [(ngModel)]="row.status"
+                  optionLabel="label"
+                  optionValue="value"
+                  (onChange)="onStatusChange(row)"
+                  [style]="{ width: '100%', minWidth: '11rem' }"
+                  appendTo="body"
+                  placeholder="Estado"></p-dropdown>
+              </td>
+              <td>
+                @if (showTimesFor(row)) {
+                  <p-calendar
+                    [(ngModel)]="row.checkInTime"
+                    [timeOnly]="true"
+                    hourFormat="24"
+                    [showIcon]="true"
+                    icon="pi pi-clock"
+                    appendTo="body"
+                    (ngModelChange)="onTimeChange(row)"
+                    [inputStyle]="{ width: '4.5rem' }" />
+                } @else {
+                  <span class="text-400 text-sm">—</span>
+                }
+              </td>
+              <td>
+                @if (showTimesFor(row)) {
+                  <p-calendar
+                    [(ngModel)]="row.checkOutTime"
+                    [timeOnly]="true"
+                    hourFormat="24"
+                    [showIcon]="true"
+                    icon="pi pi-clock"
+                    appendTo="body"
+                    (ngModelChange)="onTimeChange(row)"
+                    [inputStyle]="{ width: '4.5rem' }" />
+                  @if (row.targetExitTimeStr) {
+                    <small class="block text-600 mt-1"
+                      >Ideal salida: {{ row.targetExitTimeStr }}</small
+                    >
+                  }
+                } @else {
+                  <span class="text-400 text-sm">—</span>
+                }
+              </td>
+              <td>
+                @if (row.delayMinutes > 0) {
+                  <span class="font-bold text-orange-600">{{
+                    row.delayMinutes
+                  }}</span>
+                } @else {
+                  <span class="text-500">0</span>
+                }
+              </td>
+              <td>
+                <textarea
+                  pInputTextarea
+                  [(ngModel)]="row.note"
+                  rows="2"
+                  class="w-full text-sm"
+                  placeholder="Observación…"></textarea>
+              </td>
+              <td class="text-center">
+                @if (row.hasRecord) {
+                  <p-tag severity="success" value="Sí" [rounded]="true" />
+                } @else {
+                  <p-tag severity="secondary" value="No" [rounded]="true" />
+                }
+              </td>
+              <td>
+                <button
+                  pButton
+                  type="button"
+                  icon="pi pi-save"
+                  class="p-button-sm w-full"
+                  [loading]="row.saving"
+                  [label]="row.saving ? '' : 'Guardar'"
+                  (click)="saveRow(row)"
+                  pTooltip="Guardar este día"
+                  tooltipPosition="left"></button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
     </div>
   </div>
 </div>

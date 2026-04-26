@@ -14,7 +14,13 @@ export class AttendanceService {
     );
   }
 
-  create(data: any): Observable<void> {
-    return this.apiService.post('attendance', data);
+  getDailySummary(dateYmd: string): Observable<any> {
+    return this.apiService.get(
+      `attendance/daily-summary?date=${encodeURIComponent(dateYmd)}`,
+    );
+  }
+
+  create(data: any): Observable<any> {
+    return this.apiService.post<any>('attendance', data);
   }
 }
