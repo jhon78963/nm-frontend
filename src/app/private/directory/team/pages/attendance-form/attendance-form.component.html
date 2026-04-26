@@ -66,17 +66,38 @@
       appendTo="body"
       placeholder="Cuál miércoles es Valdeo"></p-dropdown>
     <small class="text-600 md:ml-2"
-      >Se resalta la fila sugerida; puedes anotar en “Marcación” si ese mes fue
-      el otro miércoles.</small
+      >La fila del miércoles elegido se resalta en la tabla.</small
+    >
+  </div>
+
+  <div
+    class="surface-card border-round p-3 mb-4 flex flex-column lg:flex-row lg:align-items-center gap-3">
+    <span class="font-semibold text-900 whitespace-nowrap"
+      >Pago quincenal (indicadores)</span
+    >
+    <p-selectButton
+      [options]="quincenaOptions"
+      [(ngModel)]="quincenaView"
+      optionLabel="label"
+      optionValue="value"
+      (ngModelChange)="onQuincenaViewChange()"
+      styleClass="flex-wrap" />
+    <small class="text-600"
+      >La tabla y las cifras de arriba corresponden a:
+      <strong>{{ quincenaLabel }}</strong
+      >. La preferencia se guarda en este navegador por colaboradora y mes.</small
     >
   </div>
 
   <!-- Métricas (registros guardados en servidor) -->
   <p class="text-xs text-600 mb-2 m-0">
-    Resumen según registros guardados. Entrada
-    <strong>hasta las 8:00</strong> = puntual; entre
-    <strong>8:01 y 8:15</strong> = presente con tolerancia (no puntual); desde
-    <strong>8:16</strong> = tardanza según hora. Domingos: descanso habitual.
+    Resumen según registros guardados en
+    <strong>{{ quincenaLabel }}</strong
+    >. Entrada <strong>hasta las 8:00</strong> = puntual; entre
+    <strong>8:01 y 8:15</strong> = tolerancia; desde <strong>8:16</strong> =
+    tardanza. En <strong>Día recuperado</strong> puedes registrar entrada y
+    salida; el texto <strong>[Debe: X h Y min]</strong> en observación se
+    actualiza al cambiar las horas.
   </p>
   <div class="grid mb-4">
     <div class="col-6 md:col-2">
@@ -128,11 +149,26 @@
         class="stat-card surface-card p-3 flex align-items-center gap-3 h-full">
         <i class="pi pi-calendar text-3xl text-blue-500"></i>
         <div>
-          <div class="stat-label">Domingos del mes</div>
+          <div class="stat-label">Domingos en periodo</div>
           <div class="stat-value text-blue-500 m-0">
-            {{ stats.domingosMes }}
+            {{ stats.domingosEnPeriodo }}
           </div>
-          <small class="text-600">Descanso habitual no laborable</small>
+          <small class="text-600">Días domingo calendario en el rango</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 md:col-4">
+      <div
+        class="stat-card surface-card p-3 flex align-items-center gap-3 h-full">
+        <i class="pi pi-replay text-3xl text-purple-500"></i>
+        <div>
+          <div class="stat-label">Domingo trabajado (recup.)</div>
+          <div class="stat-value text-purple-600 m-0">
+            {{ stats.domingoTrabajoRecuperacion }}
+          </div>
+          <small class="text-600"
+            >Casilla en la columna Día o asistencia laboral en domingo</small
+          >
         </div>
       </div>
     </div>
@@ -146,7 +182,7 @@
         </div>
       </div>
     </div>
-    <div class="col-12 md:col-4">
+    <div class="col-12">
       <div class="legend surface-card p-3 h-full flex align-items-center">
         <span><span class="legend-dot bg-green-500"></span> Puntual</span>
         <span><span class="legend-dot bg-cyan-500"></span> Tolerancia</span>
@@ -155,6 +191,10 @@
         <span><span class="legend-dot bg-blue-400"></span> Descanso</span>
         <span><span class="legend-dot bg-teal-500"></span> Recuperado</span>
         <span><span class="legend-dot bg-indigo-500"></span> Valdeo</span>
+        <span
+          ><span class="legend-dot bg-purple-500"></span> Domingo
+          recuperación</span
+        >
       </div>
     </div>
   </div>
@@ -165,62 +205,68 @@
       <table class="month-table">
         <thead>
           <tr>
-            <th style="width: 4.5rem">Día</th>
+            <th style="min-width: 7.5rem">Día</th>
             <th style="width: 3rem">Sem.</th>
-            <!-- <th style="min-width: 11rem">Marcación / etiqueta</th> -->
             <th style="min-width: 12rem">Estado</th>
             <th style="min-width: 7rem">Entrada</th>
             <th style="min-width: 7rem">Salida</th>
             <th style="min-width: 5rem">Tarde (min)</th>
-            <th style="min-width: 10rem">Nota</th>
+            <th style="min-width: 12rem">Observación</th>
             <th style="width: 6rem">Servidor</th>
             <th style="width: 7rem"></th>
           </tr>
         </thead>
         <tbody>
-          @for (row of monthRows; track row.dateStr) {
+          @for (row of visibleMonthRows; track row.dateStr) {
             <tr
               [class.row-sunday]="row.isSunday"
-              [class.row-valdeo]="row.isValdeo">
+              [class.row-valdeo]="row.isValdeo"
+              [class.row-domingo-recupera]="
+                row.isSunday &&
+                (row.domingoTrabajoRecuperacion || showTimesFor(row))
+              ">
               <td>
                 <span class="day-num">{{ row.day }}</span>
+                @if (row.isValdeo) {
+                  <p-tag
+                    severity="info"
+                    [value]="
+                      valdeoWednesdayNth === 2
+                        ? 'Valdeo 2.º mié.'
+                        : 'Valdeo 1.er mié.'
+                    "
+                    [rounded]="true"
+                    styleClass="text-xs block mt-1 w-fit" />
+                }
+                @if (row.isSunday) {
+                  <div
+                    class="flex align-items-center gap-2 mt-2 flex-wrap surface-100 border-round p-2">
+                    <p-checkbox
+                      [(ngModel)]="row.domingoTrabajoRecuperacion"
+                      [binary]="true"
+                      [inputId]="'dom-rec-' + row.dateStr"
+                      (ngModelChange)="onDomingoRecuperaChange(row)" />
+                    <label
+                      [for]="'dom-rec-' + row.dateStr"
+                      class="text-xs cursor-pointer m-0 line-height-2"
+                      >Domingo trabajado (recup.)</label
+                    >
+                  </div>
+                }
+                @if (
+                  row.isSunday &&
+                  (row.domingoTrabajoRecuperacion || showTimesFor(row))
+                ) {
+                  <p-tag
+                    severity="success"
+                    value="Recuperación"
+                    [rounded]="true"
+                    styleClass="text-xs mt-1 block w-fit" />
+                }
               </td>
               <td>
                 <span class="text-600 font-medium">{{ row.weekdayLabel }}</span>
               </td>
-              <!-- <td>
-                <input
-                  pInputText
-                  [(ngModel)]="row.customMarcacionLabel"
-                  (blur)="persistMarcacionLabels()"
-                  class="w-full text-sm"
-                  placeholder="Etiqueta libre (motivo, permiso…)" />
-                <small class="text-600 block mt-1 line-height-2">{{
-                  marcacionHint(row)
-                }}</small>
-                @if (!row.customMarcacionLabel.trim()) {
-                  <div class="flex flex-wrap gap-1 mt-2">
-                    @if (row.isSunday) {
-                      <p-tag
-                        severity="info"
-                        value="Domingo"
-                        [rounded]="true"
-                        styleClass="text-xs" />
-                    }
-                    @if (row.isValdeo) {
-                      <p-tag
-                        severity="info"
-                        [value]="
-                          valdeoWednesdayNth === 2
-                            ? 'Valdeo (2.º mié.)'
-                            : 'Valdeo (1.er mié.)'
-                        "
-                        [rounded]="true"
-                        styleClass="text-xs" />
-                    }
-                  </div>
-                }
-              </td> -->
               <td>
                 <p-dropdown
                   [options]="statusOptions"

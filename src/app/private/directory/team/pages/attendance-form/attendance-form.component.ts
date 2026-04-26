@@ -9,6 +9,8 @@ import { DropdownModule } from 'primeng/dropdown';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
+import { CheckboxModule } from 'primeng/checkbox';
+import { SelectButtonModule } from 'primeng/selectbutton';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
@@ -24,8 +26,8 @@ export interface AttendanceDayRow {
   weekday: number;
   isSunday: boolean;
   isValdeo: boolean;
-  /** Etiqueta libre (ej. falta entre semana); se guarda en el navegador por mes. */
-  customMarcacionLabel: string;
+  /** Domingo que trabajó para recuperar (solo UI + localStorage). */
+  domingoTrabajoRecuperacion: boolean;
   status: string;
   checkInTime: Date | null;
   checkOutTime: Date | null;
@@ -63,9 +65,10 @@ const WEEKDAY_SHORT_ES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     CalendarModule,
     DropdownModule,
     InputTextareaModule,
-    InputTextModule,
     InputNumberModule,
     ButtonModule,
+    CheckboxModule,
+    SelectButtonModule,
     TagModule,
     ToastModule,
     TooltipModule,
@@ -93,6 +96,8 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
   monthRows: AttendanceDayRow[] = [];
   private attendanceCache: Record<string, any> = {};
   private loadedMonthKey = '';
+  /** Mapa fecha → marcó domingo recuperación (localStorage). */
+  private domingoRecuperaMap: Record<string, boolean> = {};
 
   stats = {
     puntual: 0,
@@ -103,8 +108,18 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
     vacaciones: 0,
     recuperacion: 0,
     valdeo: 0,
-    domingosMes: 0,
+    domingosEnPeriodo: 0,
+    domingoTrabajoRecuperacion: 0,
   };
+
+  /** Pago quincenal: filtra tabla e indicadores. */
+  quincenaView: 'full' | 'q1' | 'q2' = 'full';
+
+  quincenaOptions = [
+    { label: 'Mes completo', value: 'full' },
+    { label: '1ª quincena (1–15)', value: 'q1' },
+    { label: '2ª quincena (16–fin)', value: 'q2' },
+  ];
 
   /** 1 = primer miércoles Valdeo, 2 = segundo miércoles (persistido por mes). */
   valdeoWednesdayNth: 1 | 2 = 1;
@@ -126,6 +141,9 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
   ];
 
   readonly SHIFT_DURATION_MINUTES = 11 * 60 + 30;
+
+  /** Borra cualquier sufijo [Debe: …] (minutos solo o h + min). */
+  private readonly debtNotePattern = /\s*\[Debe:[^\]]+\]/g;
 
   ngOnInit(): void {
     this.routeSub = this.route.paramMap.subscribe(params => {
@@ -157,6 +175,56 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
 
   get monthTitle(): string {
     return `${MONTH_NAMES_ES[this.viewMonth]} ${this.viewYear}`;
+  }
+
+  get visibleMonthRows(): AttendanceDayRow[] {
+    const { start, end } = this.quincenaDayRange();
+    return this.monthRows.filter(r => r.day >= start && r.day <= end);
+  }
+
+  get quincenaLabel(): string {
+    if (this.quincenaView === 'q1') {
+      return '1ª quincena (días 1–15)';
+    }
+    if (this.quincenaView === 'q2') {
+      const last = new Date(this.viewYear, this.viewMonth + 1, 0).getDate();
+      return `2ª quincena (días 16–${last})`;
+    }
+    return 'Mes completo';
+  }
+
+  quincenaDayRange(): { start: number; end: number } {
+    const last = new Date(this.viewYear, this.viewMonth + 1, 0).getDate();
+    if (this.quincenaView === 'q1') {
+      return { start: 1, end: 15 };
+    }
+    if (this.quincenaView === 'q2') {
+      return { start: 16, end: last };
+    }
+    return { start: 1, end: last };
+  }
+
+  onQuincenaViewChange(): void {
+    const raw = this.quincenaView as string;
+    this.quincenaView =
+      raw === 'q1' || raw === 'q2' || raw === 'full' ? (raw as 'q1' | 'q2' | 'full') : 'full';
+    this.saveQuincenaViewForMonth();
+    this.recalcStatsFromCache();
+  }
+
+  onDomingoRecuperaChange(row: AttendanceDayRow): void {
+    const map = { ...this.domingoRecuperaMap };
+    if (row.domingoTrabajoRecuperacion) {
+      map[row.dateStr] = true;
+    } else {
+      delete map[row.dateStr];
+    }
+    this.domingoRecuperaMap = map;
+    localStorage.setItem(
+      this.domingoRecuperaStorageKey(),
+      JSON.stringify(this.domingoRecuperaMap),
+    );
+    this.recalcStatsFromCache();
   }
 
   goBack(): void {
@@ -191,35 +259,6 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
     this.buildMonthRows();
   }
 
-  marcacionHint(row: AttendanceDayRow): string {
-    const parts: string[] = [];
-    if (row.isSunday) {
-      parts.push('Domingo · descanso habitual (editable si hubo excepción)');
-    }
-    if (row.isValdeo) {
-      parts.push(
-        this.valdeoWednesdayNth === 2
-          ? '2.º miércoles Valdeo (sugerido)'
-          : '1.er miércoles Valdeo (sugerido)',
-      );
-    }
-    if (parts.length === 0) {
-      parts.push('Opcional: falta entre semana, permiso, etc.');
-    }
-    return parts.join(' · ');
-  }
-
-  persistMarcacionLabels(): void {
-    const map: Record<string, string> = {};
-    for (const r of this.monthRows) {
-      const v = (r.customMarcacionLabel || '').trim();
-      if (v) {
-        map[r.dateStr] = v;
-      }
-    }
-    localStorage.setItem(this.marcacionLabelsStorageKey(), JSON.stringify(map));
-  }
-
   onStatusChange(row: AttendanceDayRow): void {
     if (row.isSunday && row.status !== 'DESCANSO' && row.status !== 'VACACIONES') {
       this.messageService.add({
@@ -245,14 +284,6 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
       ? this.datePipe.transform(row.checkOutTime, 'HH:mm')
       : null;
 
-    let finalNote = row.note;
-    if (row.owedMinutes > 0) {
-      const debtInfo = ` [Debe: ${row.owedMinutes} min]`;
-      if (!finalNote.includes('[Debe:')) {
-        finalNote = finalNote ? `${finalNote}${debtInfo}` : debtInfo.trim();
-      }
-    }
-
     const payload = {
       team_id: this.teamId,
       date: row.dateStr,
@@ -260,7 +291,7 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
       check_in_time: timeInStr,
       check_out_time: timeOutStr,
       delay_minutes: row.delayMinutes,
-      notes: finalNote,
+      notes: row.note,
     };
 
     row.saving = true;
@@ -298,7 +329,8 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
     return (
       row.status === 'PUNTUAL' ||
       row.status === 'TARDE' ||
-      row.status === 'TOLERANCIA'
+      row.status === 'TOLERANCIA' ||
+      row.status === 'RECUPERACION'
     );
   }
 
@@ -323,6 +355,8 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
 
   private loadAttendanceMonth(): void {
     this.loadValdeoNthForMonth();
+    this.loadQuincenaViewForMonth();
+    this.domingoRecuperaMap = this.readDomingoRecuperaMap();
     const key = `${this.viewYear}-${this.viewMonth}`;
     if (this.loadedMonthKey === key) {
       this.buildMonthRows();
@@ -358,7 +392,8 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
       this.valdeoWednesdayNth,
     );
     const valdeoStr = this.datePipe.transform(valdeoDate, 'yyyy-MM-dd');
-    const labels = this.readMarcacionLabelsMap();
+    const domingoMap = this.readDomingoRecuperaMap();
+    this.domingoRecuperaMap = domingoMap;
 
     const rows: AttendanceDayRow[] = [];
     for (let d = 1; d <= lastDay; d++) {
@@ -380,7 +415,7 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
         weekday: wd,
         isSunday,
         isValdeo,
-        customMarcacionLabel: labels[dateStr] ?? '',
+        domingoTrabajoRecuperacion: !!domingoMap[dateStr],
         status: 'PUNTUAL',
         checkInTime: null,
         checkOutTime: null,
@@ -433,6 +468,8 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
   }
 
   private recalcStatsFromCache(): void {
+    const { start, end } = this.quincenaDayRange();
+
     this.stats = {
       puntual: 0,
       tolerancia: 0,
@@ -442,12 +479,24 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
       vacaciones: 0,
       recuperacion: 0,
       valdeo: 0,
-      domingosMes: this.countSundaysInMonth(this.viewYear, this.viewMonth),
+      domingosEnPeriodo: 0,
+      domingoTrabajoRecuperacion: 0,
     };
+
+    for (let d = start; d <= end; d++) {
+      const dt = new Date(this.viewYear, this.viewMonth, d);
+      if (dt.getDay() === 0) {
+        this.stats.domingosEnPeriodo++;
+      }
+    }
 
     for (const key of Object.keys(this.attendanceCache)) {
       const dayKey = key.includes(' ') ? key.slice(0, 10) : key;
       if (!this.dateStrInVisibleMonth(dayKey)) {
+        continue;
+      }
+      const dom = this.dayOfMonthFromDateStr(dayKey);
+      if (dom < start || dom > end) {
         continue;
       }
       const rec = this.attendanceCache[key];
@@ -470,6 +519,31 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
         this.stats.valdeo++;
       }
     }
+
+    for (let d = start; d <= end; d++) {
+      const dt = new Date(this.viewYear, this.viewMonth, d);
+      if (dt.getDay() !== 0) {
+        continue;
+      }
+      const ds = this.datePipe.transform(dt, 'yyyy-MM-dd')!;
+      const flagged = !!this.domingoRecuperaMap[ds];
+      let rec = this.attendanceCache[ds];
+      if (!rec) {
+        rec = this.attendanceCache[ds + ' 00:00:00'];
+      }
+      const worked =
+        rec &&
+        ['PUNTUAL', 'TARDE', 'TOLERANCIA', 'RECUPERACION'].includes(
+          rec.status as string,
+        );
+      if (flagged || worked) {
+        this.stats.domingoTrabajoRecuperacion++;
+      }
+    }
+  }
+
+  private dayOfMonthFromDateStr(dateStr: string): number {
+    return Number(dateStr.slice(8, 10));
   }
 
   private dateStrInVisibleMonth(dateStr: string): boolean {
@@ -480,17 +554,6 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
     const y = Number(parts[0]);
     const m = Number(parts[1]);
     return y === this.viewYear && m === this.viewMonth + 1;
-  }
-
-  private countSundaysInMonth(year: number, month: number): number {
-    const last = new Date(year, month + 1, 0).getDate();
-    let n = 0;
-    for (let d = 1; d <= last; d++) {
-      if (new Date(year, month, d).getDay() === 0) {
-        n++;
-      }
-    }
-    return n;
   }
 
   private nthWednesdayOfMonth(
@@ -518,10 +581,6 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
     return `nm-valdeo-nth-${this.viewYear}-${String(this.viewMonth + 1).padStart(2, '0')}`;
   }
 
-  private marcacionLabelsStorageKey(): string {
-    return `nm-marcacion-${this.teamId}-${this.viewYear}-${String(this.viewMonth + 1).padStart(2, '0')}`;
-  }
-
   private loadValdeoNthForMonth(): void {
     const raw = localStorage.getItem(this.valdeoNthStorageKey());
     this.valdeoWednesdayNth = raw === '2' ? 2 : 1;
@@ -531,13 +590,31 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
     localStorage.setItem(this.valdeoNthStorageKey(), String(this.valdeoWednesdayNth));
   }
 
-  private readMarcacionLabelsMap(): Record<string, string> {
+  private domingoRecuperaStorageKey(): string {
+    return `nm-domingo-recupera-${this.teamId}-${this.viewYear}-${String(this.viewMonth + 1).padStart(2, '0')}`;
+  }
+
+  private readDomingoRecuperaMap(): Record<string, boolean> {
     try {
-      const raw = localStorage.getItem(this.marcacionLabelsStorageKey());
-      return raw ? (JSON.parse(raw) as Record<string, string>) : {};
+      const raw = localStorage.getItem(this.domingoRecuperaStorageKey());
+      return raw ? (JSON.parse(raw) as Record<string, boolean>) : {};
     } catch {
       return {};
     }
+  }
+
+  private quincenaViewStorageKey(): string {
+    return `nm-quincena-view-${this.teamId}-${this.viewYear}-${String(this.viewMonth + 1).padStart(2, '0')}`;
+  }
+
+  private loadQuincenaViewForMonth(): void {
+    const raw = localStorage.getItem(this.quincenaViewStorageKey());
+    this.quincenaView =
+      raw === 'q1' || raw === 'q2' || raw === 'full' ? raw : 'full';
+  }
+
+  private saveQuincenaViewForMonth(): void {
+    localStorage.setItem(this.quincenaViewStorageKey(), this.quincenaView);
   }
 
   private defaultMorning(): Date {
@@ -594,7 +671,13 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
       row.delayMinutes = 0;
     }
 
-    if (row.checkInTime && usesEntryRules) {
+    const usesShiftExit =
+      row.status === 'PUNTUAL' ||
+      row.status === 'TARDE' ||
+      row.status === 'TOLERANCIA' ||
+      row.status === 'RECUPERACION';
+
+    if (row.checkInTime && usesShiftExit) {
       const entryTime = new Date(row.checkInTime);
       const targetExitTime = new Date(
         entryTime.getTime() + this.SHIFT_DURATION_MINUTES * 60000,
@@ -609,6 +692,36 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
           row.owedMinutes = Math.floor(diffMs / 60000);
         }
       }
+    }
+
+    this.syncOwedMinutesNote(row);
+  }
+
+  /** Convierte minutos totales a texto legible (ej. 257 → «4 h 17 min»). */
+  formatOwedHuman(totalMinutes: number): string {
+    const n = Math.max(0, Math.floor(totalMinutes));
+    if (n === 0) {
+      return '';
+    }
+    const h = Math.floor(n / 60);
+    const m = n % 60;
+    if (h === 0) {
+      return `${m} min`;
+    }
+    if (m === 0) {
+      return `${h} h`;
+    }
+    return `${h} h ${m} min`;
+  }
+
+  /** Quita y vuelve a escribir el sufijo [Debe: …] según horas actuales. */
+  private syncOwedMinutesNote(row: AttendanceDayRow): void {
+    const base = (row.note || '').replace(this.debtNotePattern, '').trimEnd();
+    if (row.owedMinutes > 0) {
+      const debt = this.formatOwedHuman(row.owedMinutes);
+      row.note = base ? `${base} [Debe: ${debt}]` : `[Debe: ${debt}]`;
+    } else {
+      row.note = base;
     }
   }
 

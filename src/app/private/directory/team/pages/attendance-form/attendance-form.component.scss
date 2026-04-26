@@ -76,6 +76,14 @@
   background: linear-gradient(90deg, rgba(99, 102, 241, 0.08), transparent);
 }
 
+.month-table tbody tr.row-domingo-recupera {
+  background: linear-gradient(
+    90deg,
+    rgba(168, 85, 247, 0.09),
+    transparent
+  );
+}
+
 .month-table td {
   padding: 0.5rem 0.4rem;
   vertical-align: middle;
