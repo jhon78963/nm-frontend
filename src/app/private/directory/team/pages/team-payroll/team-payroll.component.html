@@ -298,9 +298,8 @@
             generan minutos de deuda sobre una jornada de referencia de
             <strong>11 h 30 min</strong> (8:00–19:30). En vista
             <strong>quincenal</strong>, el monto por esos minutos es
-            <strong
-              >(minutos ÷ (15 × 690)) × (50 % del salario)</strong
-            >, coherente con la media quincena; en <strong>mes completo</strong>,
+            <strong>(minutos ÷ (15 × 690)) × (50 % del salario)</strong>,
+            coherente con la media quincena; en <strong>mes completo</strong>,
             se usa <strong>(minutos ÷ 690) × valor día</strong>. La recuperación
             resta ausencias, no minutos.
           </p>
@@ -358,7 +357,12 @@
             </div>
             <div class="col-12 sm:col-6 md:col-4">
               <div class="metric-tile">
-                <div class="label">Descuento asistencia</div>
+                <div class="label">
+                  Descuento asistencia
+                  <span class="text-500 font-normal"
+                    >({{ data.calendar.periodLabel }})</span
+                  >
+                </div>
                 <div class="value text-900">
                   S/ {{ money(data.attendanceVista.descuentoPorFaltas) }}
                 </div>
