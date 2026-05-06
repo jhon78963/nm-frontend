@@ -5,11 +5,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CalendarModule } from 'primeng/calendar';
+import { CheckboxModule } from 'primeng/checkbox';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputNumberModule } from 'primeng/inputnumber';
-import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
-import { CheckboxModule } from 'primeng/checkbox';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
@@ -207,7 +206,9 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
   onQuincenaViewChange(): void {
     const raw = this.quincenaView as string;
     this.quincenaView =
-      raw === 'q1' || raw === 'q2' || raw === 'full' ? (raw as 'q1' | 'q2' | 'full') : 'full';
+      raw === 'q1' || raw === 'q2' || raw === 'full'
+        ? (raw as 'q1' | 'q2' | 'full')
+        : 'full';
     this.saveQuincenaViewForMonth();
     this.recalcStatsFromCache();
   }
@@ -260,7 +261,11 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
   }
 
   onStatusChange(row: AttendanceDayRow): void {
-    if (row.isSunday && row.status !== 'DESCANSO' && row.status !== 'VACACIONES') {
+    if (
+      row.isSunday &&
+      row.status !== 'DESCANSO' &&
+      row.status !== 'VACACIONES'
+    ) {
       this.messageService.add({
         severity: 'info',
         summary: 'Domingo',
@@ -434,7 +439,10 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
     this.monthRows = rows;
   }
 
-  private applyRecordToRow(row: AttendanceDayRow, record: any | undefined): void {
+  private applyRecordToRow(
+    row: AttendanceDayRow,
+    record: any | undefined,
+  ): void {
     if (!record) {
       row.hasRecord = false;
       if (row.isSunday) {
@@ -556,11 +564,7 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
     return y === this.viewYear && m === this.viewMonth + 1;
   }
 
-  private nthWednesdayOfMonth(
-    year: number,
-    month: number,
-    nth: 1 | 2,
-  ): Date {
+  private nthWednesdayOfMonth(year: number, month: number, nth: 1 | 2): Date {
     let count = 0;
     for (let d = 1; d <= 31; d++) {
       const dt = new Date(year, month, d);
@@ -587,7 +591,10 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
   }
 
   private saveValdeoNthForMonth(): void {
-    localStorage.setItem(this.valdeoNthStorageKey(), String(this.valdeoWednesdayNth));
+    localStorage.setItem(
+      this.valdeoNthStorageKey(),
+      String(this.valdeoWednesdayNth),
+    );
   }
 
   private domingoRecuperaStorageKey(): string {
@@ -712,6 +719,10 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
       return `${h} h`;
     }
     return `${h} h ${m} min`;
+  }
+
+  goPayments(): void {
+    void this.router.navigate(['/directory/team/pagos', this.teamId]);
   }
 
   /** Quita y vuelve a escribir el sufijo [Debe: …] según horas actuales. */

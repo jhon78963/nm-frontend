@@ -34,6 +34,14 @@
       <button
         pButton
         type="button"
+        icon="pi pi-wallet"
+        class="p-button-outlined"
+        label="Pagos"
+        (click)="goPayments()"
+        pTooltip="Ir al registro de pagos del mismo mes"></button>
+      <button
+        pButton
+        type="button"
         icon="pi pi-chevron-left"
         class="p-button-outlined"
         (click)="prevMonth()"

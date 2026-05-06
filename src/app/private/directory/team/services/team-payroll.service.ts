@@ -31,7 +31,14 @@ export interface PayrollAttendanceSlice {
   recuperacion: number;
   faltasEquivalentes: number;
   faltasADescontar: number;
+  /** Solo Falta/Valdeo netos (días × valor día). */
+  descuentoPorAusencias: number;
+  /** Prorrateo (min. de deuda tiempo ÷ 690 min de jornada) × valor día. */
+  descuentoPorTiempoNoCumplido: number;
+  /** Ausencias + tiempo no cumplido (total que resta del pago). */
   descuentoPorFaltas: number;
+  /** Días con retraso a entrada después de la tolerancia. */
+  diasConRetraso: number;
   /** Retraso respecto a las 8:11 (tras 10 min de tolerancia desde las 8:00). */
   deudaEntradaTardeMinutos: number;
   /** Tiempo no cumplido por salir antes de las 19:30 (cierre oficial). */
@@ -74,6 +81,8 @@ export interface PayrollLiquidacionPeriodo {
   diasEnPeriodo: number;
   proporcionSalarioPeriodo: number;
   descuentoAsistenciaEnAmbito: number;
+  descuentoPorAusenciasEnAmbito?: number;
+  descuentoPorTiempoNoCumplidoEnAmbito?: number;
   netoTrasFaltasPeriodo: number;
   adelantosPeriodo: number;
   pagosRegistradosPeriodo: number;

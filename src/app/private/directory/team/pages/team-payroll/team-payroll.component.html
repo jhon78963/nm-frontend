@@ -22,9 +22,9 @@
             >
             <span class="mx-2">·</span>
           }
-          Descuentos por faltas (incluye Valdeo), días recuperados, balance de
-          tiempo (tolerancia entrada 8:01–8:10, cierre 19:30) y movimientos del
-          mes.
+          Descuentos por ausencias (Falta/Valdeo) y por
+          <strong>tiempo no cumplido</strong> (retraso tras tolerancia, salida
+          anticipada), balance de tiempo informativo y movimientos del mes.
         </p>
       </div>
     </div>
@@ -216,8 +216,9 @@
           <div class="hero-label">{{ heroTitle }}</div>
           <div class="hero-value">S/ {{ money(heroAmount) }}</div>
           <p class="m-0 mt-2 text-sm opacity-95 font-semibold">
-            Restante orientativo al cierre del ámbito seleccionado (quincenal:
-            fines de quincena; mes completo: fin de mes).
+            Este es el único total de referencia: incluye asistencia (ausencias
+            y tiempo no cumplido) y los movimientos del ámbito. Detalle línea a
+            línea debajo.
           </p>
           @for (line of heroBreakdownLines; track line) {
             <p
@@ -227,15 +228,7 @@
             </p>
           }
           <p
-            class="m-0 mt-3 text-xs opacity-85 line-height-3"
-            style="max-width: 42rem">
-            Diferencia
-            <strong>adelanto</strong> (antes del cierre) vs
-            <strong>pago quincenal</strong> (cierre). Los descuentos manuales
-            suelen no generar egreso de caja: desactiva «caja» si no aplica.
-          </p>
-          <p
-            class="m-0 mt-2 text-xs opacity-75 line-height-3"
+            class="m-0 mt-3 text-xs opacity-75 line-height-3"
             style="max-width: 42rem">
             {{ data.estimates.nota }}
           </p>
@@ -294,8 +287,11 @@
             </div>
           </ng-template>
           <p class="text-600 text-sm mt-0 mb-3">
-            Faltas + Valdeo cuentan como ausencias; cada día de recuperación
-            resta una ausencia al descuento (en el ámbito seleccionado).
+            <strong>Falta</strong> y <strong>Valdeo</strong> descuentan un día
+            cada uno; la <strong>tardanza</strong> (después de 8:10) y salir
+            antes de 19:30 descuentan en dinero según los minutos frente a una
+            jornada de referencia de <strong>11 h 30 min</strong> (8:00–19:30).
+            La recuperación resta ausencias, no minutos.
           </p>
           <div class="grid">
             <div class="col-6 sm:col-4 md:col-2">
@@ -333,20 +329,38 @@
             </div>
             <div class="col-6 sm:col-4 md:col-2">
               <div class="metric-tile">
-                <div class="label">A descontar</div>
+                <div class="label">A descontar (días)</div>
                 <div class="value text-orange-700">
                   {{ data.attendanceVista.faltasADescontar }}
                 </div>
                 <div class="hint">Tras recuperar</div>
               </div>
             </div>
-            <div class="col-12 sm:col-4 md:col-2">
+            <div class="col-6 sm:col-4 md:col-2">
               <div class="metric-tile">
-                <div class="label">Descuento</div>
+                <div class="label">Días c/ retraso</div>
+                <div class="value text-amber-700">
+                  {{ data.attendanceVista.diasConRetraso || 0 }}
+                </div>
+                <div class="hint">Entrada después 8:10</div>
+              </div>
+            </div>
+            <div class="col-12 sm:col-6 md:col-4">
+              <div class="metric-tile">
+                <div class="label">Descuento asistencia</div>
                 <div class="value text-900">
                   S/ {{ money(data.attendanceVista.descuentoPorFaltas) }}
                 </div>
-                <div class="hint">En esta vista</div>
+                <div class="hint">
+                  Aus. S/
+                  {{ money(data.attendanceVista.descuentoPorAusencias || 0) }}
+                  · Tiempo S/
+                  {{
+                    money(
+                      data.attendanceVista.descuentoPorTiempoNoCumplido || 0
+                    )
+                  }}
+                </div>
               </div>
             </div>
           </div>
@@ -570,9 +584,22 @@
             </div>
             <div class="col-6 md:col-3">
               <div class="metric-tile">
-                <div class="label">Descuento faltas (mes)</div>
+                <div class="label">Descuento asistencia (mes)</div>
                 <div class="value">
                   S/ {{ money(data.attendanceMesCompleto.descuentoPorFaltas) }}
+                </div>
+                <div class="hint text-xs">
+                  Aus. S/
+                  {{
+                    money(data.attendanceMesCompleto.descuentoPorAusencias || 0)
+                  }}
+                  · Tiempo S/
+                  {{
+                    money(
+                      data.attendanceMesCompleto.descuentoPorTiempoNoCumplido ||
+                        0
+                    )
+                  }}
                 </div>
               </div>
             </div>
@@ -680,144 +707,5 @@
         </p-card>
       </div>
     </div>
-
-    <p-card
-      [header]="liquidacionCardHeader"
-      styleClass="shadow-1 border-round-xl mt-3">
-      @if (data.liquidacionPeriodo) {
-        <ul class="list-none p-0 m-0 text-sm">
-          <li
-            class="flex justify-content-between py-2 border-bottom-1 surface-border gap-2">
-            <span class="text-600"
-              >Proporción del salario ({{ data.calendar.periodLabel }})</span
-            >
-            <span class="text-right"
-              >S/
-              {{
-                money(data.liquidacionPeriodo.proporcionSalarioPeriodo)
-              }}</span
-            >
-          </li>
-          <li
-            class="flex justify-content-between py-2 border-bottom-1 surface-border gap-2">
-            <span class="text-600"
-              >Menos descuento por faltas (mismo ámbito)</span
-            >
-            <span class="text-red-700 font-semibold text-right"
-              >− S/
-              {{
-                money(data.liquidacionPeriodo.descuentoAsistenciaEnAmbito)
-              }}</span
-            >
-          </li>
-          <li
-            class="flex justify-content-between py-2 border-bottom-1 surface-border gap-2">
-            <span class="text-600">Neto tras faltas</span>
-            <span class="font-semibold text-right"
-              >S/
-              {{ money(data.liquidacionPeriodo.netoTrasFaltasPeriodo) }}</span
-            >
-          </li>
-          <li
-            class="flex justify-content-between align-items-start py-2 border-bottom-1 surface-border gap-2">
-            <span class="text-600"
-              >Menos movimientos (adelantos, pagos y descuentos en este
-              ámbito)</span
-            >
-            <span class="text-600 text-right whitespace-nowrap">
-              − S/
-              {{ money(data.liquidacionPeriodo.totalMovimientosSalida) }}
-            </span>
-          </li>
-          <li
-            class="flex justify-content-between py-2 border-bottom-1 surface-border gap-2 text-xs text-600">
-            <span>Desglose: adelantos</span>
-            <span
-              >S/ {{ money(data.liquidacionPeriodo.adelantosPeriodo) }}</span
-            >
-          </li>
-          <li
-            class="flex justify-content-between py-2 border-bottom-1 surface-border gap-2 text-xs text-600">
-            <span>Pagos quincenales registrados</span>
-            <span
-              >S/
-              {{ money(data.liquidacionPeriodo.pagosRegistradosPeriodo) }}</span
-            >
-          </li>
-          <li
-            class="flex justify-content-between py-2 border-bottom-1 surface-border gap-2 text-xs text-600 mb-0">
-            <span>Descuentos manuales</span>
-            <span
-              >S/
-              {{
-                money(data.liquidacionPeriodo.descuentosManualesPeriodo)
-              }}</span
-            >
-          </li>
-          <li class="flex justify-content-between py-2 align-items-center">
-            <span class="font-bold text-900">{{
-              liquidacionImporteFinalLabel
-            }}</span>
-            <span class="font-bold text-primary text-lg"
-              >S/
-              {{
-                money(data.liquidacionPeriodo.restanteEstimadoAlCierre)
-              }}</span
-            >
-          </li>
-        </ul>
-        <p class="text-600 text-xs m-0 mt-2 line-height-3">
-          Los importes siguen el mismo período que elegiste arriba (1.ª
-          quincena, 2.ª o mes completo), no el cierre mensual por separado.
-        </p>
-      } @else {
-        <ul class="list-none p-0 m-0 text-sm">
-          <li
-            class="flex justify-content-between py-2 border-bottom-1 surface-border">
-            <span class="text-600">Salario base</span>
-            <span>S/ {{ money(data.estimates.salarioBase) }}</span>
-          </li>
-          <li
-            class="flex justify-content-between py-2 border-bottom-1 surface-border">
-            <span class="text-600"
-              >Menos descuento por faltas (mes completo)</span
-            >
-            <span class="text-red-700 font-semibold"
-              >− S/
-              {{ money(data.estimates.descuentoAsistenciaMesCompleto) }}</span
-            >
-          </li>
-          <li
-            class="flex justify-content-between py-2 border-bottom-1 surface-border">
-            <span class="text-600">Salario tras faltas</span>
-            <span class="font-semibold"
-              >S/ {{ money(data.estimates.salarioTrasDescuentoFaltas) }}</span
-            >
-          </li>
-          <li
-            class="flex justify-content-between py-2 border-bottom-1 surface-border">
-            <span class="text-600"
-              >Menos adelantos + pagos + descuentos (mes)</span
-            >
-            <span class="text-600">
-              − S/
-              {{
-                money(
-                  data.movementsMonth.advances +
-                    data.movementsMonth.payments +
-                    data.movementsMonth.deductions
-                )
-              }}
-            </span>
-          </li>
-          <li class="flex justify-content-between py-2">
-            <span class="font-bold text-900">Estimado a pagar fin de mes</span>
-            <span class="font-bold text-primary"
-              >S/ {{ money(data.estimates.estimadoAPagarFinMes) }}</span
-            >
-          </li>
-        </ul>
-      }
-    </p-card>
   }
 </div>

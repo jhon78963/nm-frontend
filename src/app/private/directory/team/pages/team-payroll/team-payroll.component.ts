@@ -15,8 +15,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { SelectButtonModule } from 'primeng/selectbutton';
-import { TagModule } from 'primeng/tag';
 import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { Subscription, finalize } from 'rxjs';
@@ -25,7 +25,6 @@ import {
   PayrollAttendanceSlice,
   PayrollData,
   PayrollDeudaDia,
-  PayrollLiquidacionPeriodo,
   PayrollPeriod,
   PayrollTardanza,
   SaldoSentido,
@@ -237,34 +236,31 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
 
   get heroBreakdownLines(): string[] {
     const liq = this.data?.liquidacionPeriodo;
-    if (!liq) {
+    const att = this.data?.attendanceVista;
+    if (!liq || !att) {
       return [];
     }
+    const descAus =
+      liq.descuentoPorAusenciasEnAmbito ?? att.descuentoPorAusencias ?? 0;
+    const descTiempo =
+      liq.descuentoPorTiempoNoCumplidoEnAmbito ??
+      att.descuentoPorTiempoNoCumplido ??
+      0;
     return [
-      `Proporción del salario en el ámbito (${liq.diasEnPeriodo} día(s)): S/ ${this.money(liq.proporcionSalarioPeriodo)}`,
-      `Menos descuento por faltas en el ámbito: S/ ${this.money(liq.descuentoAsistenciaEnAmbito)}`,
-      `Neto tras faltas: S/ ${this.money(liq.netoTrasFaltasPeriodo)}`,
-      `Adelantos registrados: S/ ${this.money(liq.adelantosPeriodo)} · Pagos quincenales registrados: S/ ${this.money(liq.pagosRegistradosPeriodo)} · Otros descuentos: S/ ${this.money(liq.descuentosManualesPeriodo)}`,
+      `Proporción del salario en el ámbito (${liq.diasEnPeriodo} día(s)): S/ ${this.money(
+        liq.proporcionSalarioPeriodo,
+      )}`,
+      `Descuento por ausencias (Falta/Valdeo): − S/ ${this.money(descAus)}`,
+      `Descuento por tiempo no cumplido (retraso/salida ant., prorrateo 11 h 30 min): − S/ ${this.money(
+        descTiempo,
+      )}`,
+      `Tras descuentos de asistencia: S/ ${this.money(liq.netoTrasFaltasPeriodo)}`,
+      `Movimientos del período (adelantos · pagos · desc. manual): − S/ ${this.money(
+        liq.adelantosPeriodo +
+          liq.pagosRegistradosPeriodo +
+          liq.descuentosManualesPeriodo,
+      )}`,
     ];
-  }
-
-  get liquidacionCardHeader(): string {
-    const label = this.data?.calendar?.periodLabel;
-    return label
-      ? `Liquidación (referencia) · ${label}`
-      : 'Liquidación (referencia)';
-  }
-
-  /** Etiqueta del importe final en la tarjeta Liquidación (alineada al período). */
-  get liquidacionImporteFinalLabel(): string {
-    const liq = this.data?.liquidacionPeriodo;
-    if (!liq) {
-      return 'Restante estimado al cierre';
-    }
-    if (liq.period === 'full') {
-      return 'Restante estimado al cierre del mes';
-    }
-    return `A pagar en esta quincena (cierre ${liq.fechaCierreLegible})`;
   }
 
   onPaymentTypeChange(): void {
@@ -285,7 +281,11 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
   }
 
   submitPayment(voucherUpload: { clear: () => void }): void {
-    if (!this.teamId || !this.paymentForm.amount || this.paymentForm.amount <= 0) {
+    if (
+      !this.teamId ||
+      !this.paymentForm.amount ||
+      this.paymentForm.amount <= 0
+    ) {
       this.messageService.add({
         severity: 'warn',
         summary: 'Datos incompletos',
@@ -476,7 +476,10 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
       salary: (o['salary'] as string | number | null) ?? null,
       warehouseId: Number(o['warehouseId'] ?? o['warehouse_id'] ?? 0),
       userId: (o['userId'] ?? o['user_id']) as number | null | undefined,
-      userEmail: (o['userEmail'] ?? o['user_email']) as string | null | undefined,
+      userEmail: (o['userEmail'] ?? o['user_email']) as
+        | string
+        | null
+        | undefined,
     };
   }
 
