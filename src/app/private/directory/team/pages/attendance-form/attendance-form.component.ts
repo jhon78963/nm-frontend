@@ -131,7 +131,7 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
 
   statusOptions = [
     { label: 'Presente (puntual)', value: 'PUNTUAL' },
-    { label: 'Presente (tolerancia 8:00–8:15)', value: 'TOLERANCIA' },
+    { label: 'Presente (tolerancia 8:00–8:10)', value: 'TOLERANCIA' },
     { label: 'Tardanza', value: 'TARDE' },
     { label: 'Falta', value: 'FALTA' },
     { label: 'Descanso', value: 'DESCANSO' },
@@ -624,7 +624,7 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * @param autoStatusFromTime si es true, ajusta PUNTUAL / TOLERANCIA / TARDE según 8:00 y ventana de 15 min (al cambiar hora o al guardar).
+   * @param autoStatusFromTime si es true, ajusta PUNTUAL / TOLERANCIA / TARDE según 8:00 y ventana de 10 min (al cambiar hora o al guardar).
    */
   private calculateDelayForRow(
     row: AttendanceDayRow,
@@ -643,7 +643,7 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
       const limit = new Date(entryTime);
       limit.setHours(8, 0, 0, 0);
       const toleranceEnd = new Date(limit);
-      toleranceEnd.setMinutes(toleranceEnd.getMinutes() + 15);
+      toleranceEnd.setMinutes(toleranceEnd.getMinutes() + 10);
 
       if (entryTime <= limit) {
         row.delayMinutes = 0;

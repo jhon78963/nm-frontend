@@ -1,11 +1,18 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { CalendarModule } from 'primeng/calendar';
 import { CardModule } from 'primeng/card';
+import { CheckboxModule } from 'primeng/checkbox';
 import { DividerModule } from 'primeng/divider';
+import { DropdownModule } from 'primeng/dropdown';
+import { FileUploadModule } from 'primeng/fileupload';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { InputTextModule } from 'primeng/inputtext';
+import { InputTextareaModule } from 'primeng/inputtextarea';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TagModule } from 'primeng/tag';
@@ -18,6 +25,7 @@ import {
   PayrollAttendanceSlice,
   PayrollData,
   PayrollDeudaDia,
+  PayrollLiquidacionPeriodo,
   PayrollPeriod,
   PayrollTardanza,
   SaldoSentido,
@@ -58,8 +66,15 @@ const MONTH_NAMES_ES = [
     CommonModule,
     FormsModule,
     ButtonModule,
+    CalendarModule,
     CardModule,
+    CheckboxModule,
     DividerModule,
+    DropdownModule,
+    FileUploadModule,
+    InputNumberModule,
+    InputTextModule,
+    InputTextareaModule,
     ProgressSpinnerModule,
     SelectButtonModule,
     TagModule,
@@ -67,7 +82,7 @@ const MONTH_NAMES_ES = [
     ToastModule,
     TooltipModule,
   ],
-  providers: [MessageService],
+  providers: [MessageService, DatePipe],
   templateUrl: './team-payroll.component.html',
   styleUrl: './team-payroll.component.scss',
 })
@@ -77,6 +92,7 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
   private readonly teamService = inject(TeamService);
   private readonly payrollService = inject(TeamPayrollService);
   private readonly messageService = inject(MessageService);
+  private readonly datePipe = inject(DatePipe);
 
   private routeSub?: Subscription;
 
@@ -92,6 +108,34 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
     { label: 'Mes completo', value: 'full' as PayrollPeriod },
     { label: '1.ª quincena (1–15)', value: 'q1' as PayrollPeriod },
     { label: '2.ª quincena (16–fin)', value: 'q2' as PayrollPeriod },
+  ];
+
+  /** Registro de movimiento de nómina (team_payments + opcional caja admin). */
+  savingPayment = false;
+  paymentForm = {
+    type: 'PAYMENT' as 'PAYMENT' | 'ADVANCE' | 'DEDUCTION',
+    amount: null as number | null,
+    date: new Date(),
+    description: '',
+    payment_method: 'CASH',
+    sync_cash_movement: true,
+  };
+  paymentVoucherFile: File | null = null;
+
+  paymentTypeOptions = [
+    {
+      label: 'Pago quincenal (cierre)',
+      value: 'PAYMENT' as const,
+    },
+    { label: 'Adelanto', value: 'ADVANCE' as const },
+    { label: 'Descuento manual', value: 'DEDUCTION' as const },
+  ];
+
+  paymentMethodOptions = [
+    { label: 'Efectivo', value: 'CASH' },
+    { label: 'Yape/Plin', value: 'YAPE' },
+    { label: 'Tarjeta', value: 'CARD' },
+    { label: 'Transferencia', value: 'TRANSFER' },
   ];
 
   ngOnInit(): void {
@@ -170,6 +214,138 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
     this.period =
       v === 'q1' || v === 'q2' || v === 'full' ? (v as PayrollPeriod) : 'full';
     this.loadPayroll();
+  }
+
+  get heroTitle(): string {
+    const liq = this.data?.liquidacionPeriodo;
+    if (!liq) {
+      return 'Restante estimado · fin de mes';
+    }
+    if (liq.period === 'full') {
+      return 'Restante estimado · cierre de mes';
+    }
+    return `Restante estimado · cierre ${liq.fechaCierreLegible}`;
+  }
+
+  get heroAmount(): number {
+    const liq = this.data?.liquidacionPeriodo?.restanteEstimadoAlCierre;
+    if (liq !== undefined && liq !== null) {
+      return liq;
+    }
+    return this.data?.estimates.estimadoAPagarFinMes ?? 0;
+  }
+
+  get heroBreakdownLines(): string[] {
+    const liq = this.data?.liquidacionPeriodo;
+    if (!liq) {
+      return [];
+    }
+    return [
+      `Proporción del salario en el ámbito (${liq.diasEnPeriodo} día(s)): S/ ${this.money(liq.proporcionSalarioPeriodo)}`,
+      `Menos descuento por faltas en el ámbito: S/ ${this.money(liq.descuentoAsistenciaEnAmbito)}`,
+      `Neto tras faltas: S/ ${this.money(liq.netoTrasFaltasPeriodo)}`,
+      `Adelantos registrados: S/ ${this.money(liq.adelantosPeriodo)} · Pagos quincenales registrados: S/ ${this.money(liq.pagosRegistradosPeriodo)} · Otros descuentos: S/ ${this.money(liq.descuentosManualesPeriodo)}`,
+    ];
+  }
+
+  get liquidacionCardHeader(): string {
+    const label = this.data?.calendar?.periodLabel;
+    return label
+      ? `Liquidación (referencia) · ${label}`
+      : 'Liquidación (referencia)';
+  }
+
+  /** Etiqueta del importe final en la tarjeta Liquidación (alineada al período). */
+  get liquidacionImporteFinalLabel(): string {
+    const liq = this.data?.liquidacionPeriodo;
+    if (!liq) {
+      return 'Restante estimado al cierre';
+    }
+    if (liq.period === 'full') {
+      return 'Restante estimado al cierre del mes';
+    }
+    return `A pagar en esta quincena (cierre ${liq.fechaCierreLegible})`;
+  }
+
+  onPaymentTypeChange(): void {
+    if (this.paymentForm.type === 'DEDUCTION') {
+      this.paymentForm.sync_cash_movement = false;
+    } else {
+      this.paymentForm.sync_cash_movement = true;
+    }
+  }
+
+  onVoucherSelect(event: { files: File[] }): void {
+    this.paymentVoucherFile = event.files?.[0] ?? null;
+  }
+
+  clearVoucher(upload: { clear: () => void }): void {
+    this.paymentVoucherFile = null;
+    upload.clear();
+  }
+
+  submitPayment(voucherUpload: { clear: () => void }): void {
+    if (!this.teamId || !this.paymentForm.amount || this.paymentForm.amount <= 0) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Datos incompletos',
+        detail: 'Indica un monto válido.',
+      });
+      return;
+    }
+    const dateStr = this.datePipe.transform(
+      this.paymentForm.date,
+      'yyyy-MM-dd HH:mm:ss',
+    )!;
+    this.savingPayment = true;
+    this.payrollService
+      .registerPayment({
+        teamId: this.teamId,
+        type: this.paymentForm.type,
+        amount: this.paymentForm.amount,
+        date: dateStr,
+        description: this.paymentForm.description,
+        payment_method: this.paymentForm.payment_method,
+        sync_cash_movement: this.paymentForm.sync_cash_movement,
+        image: this.paymentVoucherFile,
+      })
+      .pipe(finalize(() => (this.savingPayment = false)))
+      .subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Registrado',
+            detail:
+              'Movimiento de nómina guardado' +
+              (this.paymentForm.sync_cash_movement
+                ? ' y reflejado en gastos administrativos.'
+                : '.'),
+          });
+          this.resetPaymentForm(voucherUpload);
+          this.loadPayroll();
+        },
+        error: err => {
+          console.error(err);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'No se pudo registrar el movimiento.',
+          });
+        },
+      });
+  }
+
+  private resetPaymentForm(voucherUpload: { clear: () => void }): void {
+    this.paymentForm = {
+      type: 'PAYMENT',
+      amount: null,
+      date: new Date(),
+      description: '',
+      payment_method: 'CASH',
+      sync_cash_movement: true,
+    };
+    this.paymentVoucherFile = null;
+    voucherUpload.clear();
   }
 
   money(n: number | null | undefined): string {

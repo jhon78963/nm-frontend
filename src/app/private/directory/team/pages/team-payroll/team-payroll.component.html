@@ -22,8 +22,9 @@
             >
             <span class="mx-2">·</span>
           }
-          Descuentos por faltas (incluye Valdeo), días recuperados, tiempo que
-          debe (horario 8:00–19:30) y movimientos del mes.
+          Descuentos por faltas (incluye Valdeo), días recuperados, balance de
+          tiempo (tolerancia entrada 8:01–8:10, cierre 19:30) y movimientos del
+          mes.
         </p>
       </div>
     </div>
@@ -75,19 +76,171 @@
       <p-progressSpinner strokeWidth="4" styleClass="w-4rem h-4rem" />
     </div>
   } @else if (data) {
-    <div class="hero-estimate mb-4">
-      <div class="hero-label">Estimado a pagar a fin de mes</div>
-      <div class="hero-value">
-        S/ {{ money(data.estimates.estimadoAPagarFinMes) }}
+    <div class="grid mb-4">
+      <div class="col-12 xl:col-5">
+        <p-card
+          styleClass="shadow-1 border-round-xl h-full payment-register-card">
+          <ng-template pTemplate="header">
+            <div class="px-3 pt-3 pb-0 flex align-items-start gap-2">
+              <span
+                class="inline-flex align-items-center justify-content-center border-circle bg-primary text-white text-lg"
+                style="width: 2.5rem; height: 2.5rem"
+                ><i class="pi pi-wallet"></i
+              ></span>
+              <div>
+                <span class="text-xs font-bold text-500 uppercase block"
+                  >Registrar movimiento</span
+                >
+                <span class="text-lg font-bold text-900"
+                  >Adelanto o pago quincenal</span
+                >
+              </div>
+            </div>
+          </ng-template>
+          <p class="text-600 text-sm mt-0 mb-3">
+            Queda en la nómina del colaborador. Marca
+            <strong>«En caja administrativa»</strong> para que también aparezca
+            en Finanzas → Caja → Gastos administrativos (voucher opcional, mismo
+            servicio de archivos que en gastos).
+          </p>
+          <div class="flex flex-column gap-3">
+            <div>
+              <span class="block font-semibold text-900 mb-2">Tipo</span>
+              <p-dropdown
+                [options]="paymentTypeOptions"
+                [(ngModel)]="paymentForm.type"
+                optionLabel="label"
+                optionValue="value"
+                styleClass="w-full"
+                appendTo="body"
+                placeholder="Tipo de movimiento"
+                (ngModelChange)="onPaymentTypeChange()"></p-dropdown>
+            </div>
+            <div class="grid">
+              <div class="col-12 sm:col-6">
+                <span class="block font-semibold text-900 mb-2"
+                  >Monto (S/)</span
+                >
+                <p-inputNumber
+                  [(ngModel)]="paymentForm.amount"
+                  mode="currency"
+                  currency="PEN"
+                  locale="es-PE"
+                  styleClass="w-full"></p-inputNumber>
+              </div>
+              <div class="col-12 sm:col-6">
+                <span class="block font-semibold text-900 mb-2"
+                  >Medio de pago</span
+                >
+                <p-dropdown
+                  [options]="paymentMethodOptions"
+                  [(ngModel)]="paymentForm.payment_method"
+                  optionLabel="label"
+                  optionValue="value"
+                  styleClass="w-full"
+                  appendTo="body"></p-dropdown>
+              </div>
+            </div>
+            <div>
+              <span class="block font-semibold text-900 mb-2">Fecha</span>
+              <p-calendar
+                [(ngModel)]="paymentForm.date"
+                [showTime]="true"
+                hourFormat="12"
+                dateFormat="dd/mm/yy"
+                [showIcon]="true"
+                appendTo="body"
+                styleClass="w-full"></p-calendar>
+            </div>
+            <div>
+              <span class="block font-semibold text-900 mb-2"
+                >Nota (opcional)</span
+              >
+              <textarea
+                pInputTextarea
+                [(ngModel)]="paymentForm.description"
+                rows="2"
+                class="w-full"
+                placeholder="Ej. pago 2.ª quincena mayo"></textarea>
+            </div>
+            <div class="flex align-items-center gap-2">
+              <p-checkbox
+                [(ngModel)]="paymentForm.sync_cash_movement"
+                [binary]="true"
+                inputId="syncCash"
+                [disabled]="paymentForm.type === 'DEDUCTION'"></p-checkbox>
+              <label for="syncCash" class="m-0 text-sm cursor-pointer"
+                >Registrar también como gasto administrativo (caja)</label
+              >
+            </div>
+            <div>
+              <span class="block font-semibold text-900 mb-2"
+                >Voucher (opcional)</span
+              >
+              <p-fileUpload
+                #payVoucher
+                mode="basic"
+                chooseLabel="Adjuntar comprobante"
+                accept="image/*,application/pdf"
+                maxFileSize="5000000"
+                (onSelect)="onVoucherSelect($event)"
+                styleClass="w-full"></p-fileUpload>
+              @if (paymentVoucherFile) {
+                <div class="flex align-items-center gap-2 mt-2">
+                  <small class="text-green-700 font-semibold"
+                    ><i class="pi pi-check"></i>
+                    {{ paymentVoucherFile.name }}</small
+                  >
+                  <button
+                    pButton
+                    type="button"
+                    class="p-button-text p-button-sm p-0"
+                    label="Quitar"
+                    (click)="clearVoucher(payVoucher)"></button>
+                </div>
+              }
+            </div>
+            <button
+              pButton
+              type="button"
+              label="Guardar movimiento"
+              icon="pi pi-check"
+              class="w-full font-bold"
+              [loading]="savingPayment"
+              (click)="submitPayment(payVoucher)"></button>
+          </div>
+        </p-card>
       </div>
-      <p class="m-0 mt-2 text-sm opacity-90" style="max-width: 42rem">
-        {{ data.estimates.nota }}
-      </p>
-    </div>
-
-    <div class="grid mb-3">
-      <div class="col-12 md:col-4">
-        <p-card styleClass="h-full shadow-1 border-round-xl">
+      <div class="col-12 xl:col-7">
+        <div class="hero-estimate flex flex-column justify-content-center">
+          <div class="hero-label">{{ heroTitle }}</div>
+          <div class="hero-value">S/ {{ money(heroAmount) }}</div>
+          <p class="m-0 mt-2 text-sm opacity-95 font-semibold">
+            Restante orientativo al cierre del ámbito seleccionado (quincenal:
+            fines de quincena; mes completo: fin de mes).
+          </p>
+          @for (line of heroBreakdownLines; track line) {
+            <p
+              class="m-0 mt-2 text-sm opacity-90 line-height-3"
+              style="max-width: 44rem">
+              {{ line }}
+            </p>
+          }
+          <p
+            class="m-0 mt-3 text-xs opacity-85 line-height-3"
+            style="max-width: 42rem">
+            Diferencia
+            <strong>adelanto</strong> (antes del cierre) vs
+            <strong>pago quincenal</strong> (cierre). Los descuentos manuales
+            suelen no generar egreso de caja: desactiva «caja» si no aplica.
+          </p>
+          <p
+            class="m-0 mt-2 text-xs opacity-75 line-height-3"
+            style="max-width: 42rem">
+            {{ data.estimates.nota }}
+          </p>
+        </div>
+        <p-card>
           <ng-template pTemplate="header">
             <div class="px-3 pt-3 pb-0">
               <span class="text-xs font-bold text-500 uppercase"
@@ -124,7 +277,10 @@
           </ul>
         </p-card>
       </div>
-      <div class="col-12 md:col-8">
+    </div>
+
+    <div class="grid mb-3">
+      <div class="col-12">
         <p-card styleClass="h-full shadow-1 border-round-xl">
           <ng-template pTemplate="header">
             <div class="px-3 pt-3 pb-0 flex align-items-center gap-2 flex-wrap">
@@ -198,8 +354,8 @@
           <div class="slice-title mb-2">Balance de tiempo (transparente)</div>
           <p class="text-600 text-sm m-0 mb-2">
             <strong>Debe:</strong> retraso después de las
-            <strong>8:00</strong> y salida antes de las
-            <strong>19:30</strong> (cierre oficial).
+            <strong>8:11</strong> (10 min de tolerancia tras las 8:00) y salida
+            antes de las <strong>19:30</strong> (cierre oficial).
             <strong>A favor:</strong> llegada antes de las 8:00 y salida después
             de las 19:30.
             <span class="block mt-1"
@@ -526,54 +682,142 @@
     </div>
 
     <p-card
-      header="Liquidación (referencia)"
+      [header]="liquidacionCardHeader"
       styleClass="shadow-1 border-round-xl mt-3">
-      <ul class="list-none p-0 m-0 text-sm">
-        <li
-          class="flex justify-content-between py-2 border-bottom-1 surface-border">
-          <span class="text-600">Salario base</span>
-          <span>S/ {{ money(data.estimates.salarioBase) }}</span>
-        </li>
-        <li
-          class="flex justify-content-between py-2 border-bottom-1 surface-border">
-          <span class="text-600"
-            >Menos descuento por faltas (mes completo)</span
-          >
-          <span class="text-red-700 font-semibold"
-            >− S/
-            {{ money(data.estimates.descuentoAsistenciaMesCompleto) }}</span
-          >
-        </li>
-        <li
-          class="flex justify-content-between py-2 border-bottom-1 surface-border">
-          <span class="text-600">Salario tras faltas</span>
-          <span class="font-semibold"
-            >S/ {{ money(data.estimates.salarioTrasDescuentoFaltas) }}</span
-          >
-        </li>
-        <li
-          class="flex justify-content-between py-2 border-bottom-1 surface-border">
-          <span class="text-600"
-            >Menos adelantos + pagos + descuentos (mes)</span
-          >
-          <span class="text-600">
-            − S/
-            {{
-              money(
-                data.movementsMonth.advances +
-                  data.movementsMonth.payments +
-                  data.movementsMonth.deductions
-              )
-            }}
-          </span>
-        </li>
-        <li class="flex justify-content-between py-2">
-          <span class="font-bold text-900">Estimado a pagar fin de mes</span>
-          <span class="font-bold text-primary"
-            >S/ {{ money(data.estimates.estimadoAPagarFinMes) }}</span
-          >
-        </li>
-      </ul>
+      @if (data.liquidacionPeriodo) {
+        <ul class="list-none p-0 m-0 text-sm">
+          <li
+            class="flex justify-content-between py-2 border-bottom-1 surface-border gap-2">
+            <span class="text-600"
+              >Proporción del salario ({{ data.calendar.periodLabel }})</span
+            >
+            <span class="text-right"
+              >S/
+              {{
+                money(data.liquidacionPeriodo.proporcionSalarioPeriodo)
+              }}</span
+            >
+          </li>
+          <li
+            class="flex justify-content-between py-2 border-bottom-1 surface-border gap-2">
+            <span class="text-600"
+              >Menos descuento por faltas (mismo ámbito)</span
+            >
+            <span class="text-red-700 font-semibold text-right"
+              >− S/
+              {{
+                money(data.liquidacionPeriodo.descuentoAsistenciaEnAmbito)
+              }}</span
+            >
+          </li>
+          <li
+            class="flex justify-content-between py-2 border-bottom-1 surface-border gap-2">
+            <span class="text-600">Neto tras faltas</span>
+            <span class="font-semibold text-right"
+              >S/
+              {{ money(data.liquidacionPeriodo.netoTrasFaltasPeriodo) }}</span
+            >
+          </li>
+          <li
+            class="flex justify-content-between align-items-start py-2 border-bottom-1 surface-border gap-2">
+            <span class="text-600"
+              >Menos movimientos (adelantos, pagos y descuentos en este
+              ámbito)</span
+            >
+            <span class="text-600 text-right whitespace-nowrap">
+              − S/
+              {{ money(data.liquidacionPeriodo.totalMovimientosSalida) }}
+            </span>
+          </li>
+          <li
+            class="flex justify-content-between py-2 border-bottom-1 surface-border gap-2 text-xs text-600">
+            <span>Desglose: adelantos</span>
+            <span
+              >S/ {{ money(data.liquidacionPeriodo.adelantosPeriodo) }}</span
+            >
+          </li>
+          <li
+            class="flex justify-content-between py-2 border-bottom-1 surface-border gap-2 text-xs text-600">
+            <span>Pagos quincenales registrados</span>
+            <span
+              >S/
+              {{ money(data.liquidacionPeriodo.pagosRegistradosPeriodo) }}</span
+            >
+          </li>
+          <li
+            class="flex justify-content-between py-2 border-bottom-1 surface-border gap-2 text-xs text-600 mb-0">
+            <span>Descuentos manuales</span>
+            <span
+              >S/
+              {{
+                money(data.liquidacionPeriodo.descuentosManualesPeriodo)
+              }}</span
+            >
+          </li>
+          <li class="flex justify-content-between py-2 align-items-center">
+            <span class="font-bold text-900">{{
+              liquidacionImporteFinalLabel
+            }}</span>
+            <span class="font-bold text-primary text-lg"
+              >S/
+              {{
+                money(data.liquidacionPeriodo.restanteEstimadoAlCierre)
+              }}</span
+            >
+          </li>
+        </ul>
+        <p class="text-600 text-xs m-0 mt-2 line-height-3">
+          Los importes siguen el mismo período que elegiste arriba (1.ª
+          quincena, 2.ª o mes completo), no el cierre mensual por separado.
+        </p>
+      } @else {
+        <ul class="list-none p-0 m-0 text-sm">
+          <li
+            class="flex justify-content-between py-2 border-bottom-1 surface-border">
+            <span class="text-600">Salario base</span>
+            <span>S/ {{ money(data.estimates.salarioBase) }}</span>
+          </li>
+          <li
+            class="flex justify-content-between py-2 border-bottom-1 surface-border">
+            <span class="text-600"
+              >Menos descuento por faltas (mes completo)</span
+            >
+            <span class="text-red-700 font-semibold"
+              >− S/
+              {{ money(data.estimates.descuentoAsistenciaMesCompleto) }}</span
+            >
+          </li>
+          <li
+            class="flex justify-content-between py-2 border-bottom-1 surface-border">
+            <span class="text-600">Salario tras faltas</span>
+            <span class="font-semibold"
+              >S/ {{ money(data.estimates.salarioTrasDescuentoFaltas) }}</span
+            >
+          </li>
+          <li
+            class="flex justify-content-between py-2 border-bottom-1 surface-border">
+            <span class="text-600"
+              >Menos adelantos + pagos + descuentos (mes)</span
+            >
+            <span class="text-600">
+              − S/
+              {{
+                money(
+                  data.movementsMonth.advances +
+                    data.movementsMonth.payments +
+                    data.movementsMonth.deductions
+                )
+              }}
+            </span>
+          </li>
+          <li class="flex justify-content-between py-2">
+            <span class="font-bold text-900">Estimado a pagar fin de mes</span>
+            <span class="font-bold text-primary"
+              >S/ {{ money(data.estimates.estimadoAPagarFinMes) }}</span
+            >
+          </li>
+        </ul>
+      }
     </p-card>
   }
 </div>

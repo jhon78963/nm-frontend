@@ -32,7 +32,7 @@ export interface PayrollAttendanceSlice {
   faltasEquivalentes: number;
   faltasADescontar: number;
   descuentoPorFaltas: number;
-  /** Retraso respecto a las 8:00 (incluye ventana de tolerancia como minutos después de 8:00). */
+  /** Retraso respecto a las 8:11 (tras 10 min de tolerancia desde las 8:00). */
   deudaEntradaTardeMinutos: number;
   /** Tiempo no cumplido por salir antes de las 19:30 (cierre oficial). */
   deudaSalidaAnticipadaMinutos: number;
@@ -69,6 +69,20 @@ export interface PayrollEstimates {
   nota: string;
 }
 
+export interface PayrollLiquidacionPeriodo {
+  period: PayrollPeriod;
+  diasEnPeriodo: number;
+  proporcionSalarioPeriodo: number;
+  descuentoAsistenciaEnAmbito: number;
+  netoTrasFaltasPeriodo: number;
+  adelantosPeriodo: number;
+  pagosRegistradosPeriodo: number;
+  descuentosManualesPeriodo: number;
+  totalMovimientosSalida: number;
+  restanteEstimadoAlCierre: number;
+  fechaCierreLegible: string;
+}
+
 export interface PayrollData {
   team: {
     id: number;
@@ -95,6 +109,7 @@ export interface PayrollData {
   movementsQuincena2: PayrollMovements;
   movementsVistaPeriodo: PayrollMovements;
   estimates: PayrollEstimates;
+  liquidacionPeriodo?: PayrollLiquidacionPeriodo;
 }
 
 export interface PayrollApiResponse {
@@ -120,6 +135,34 @@ export class TeamPayrollService {
     });
     return this.apiService.get<PayrollApiResponse>(
       `payments/payroll?${q.toString()}`,
+    );
+  }
+
+  registerPayment(payload: {
+    teamId: number;
+    type: 'PAYMENT' | 'ADVANCE' | 'DEDUCTION';
+    amount: number;
+    /** ISO date string for Laravel */
+    date: string;
+    description: string;
+    payment_method: string;
+    sync_cash_movement: boolean;
+    image: File | null;
+  }): Observable<{ message: string; data: unknown }> {
+    const formData = new FormData();
+    formData.append('team_id', String(payload.teamId));
+    formData.append('type', payload.type);
+    formData.append('amount', String(payload.amount));
+    formData.append('date', payload.date);
+    formData.append('description', payload.description ?? '');
+    formData.append('payment_method', payload.payment_method);
+    formData.append('sync_cash_movement', payload.sync_cash_movement ? '1' : '0');
+    if (payload.image) {
+      formData.append('image', payload.image);
+    }
+    return this.apiService.post<{ message: string; data: unknown }>(
+      'payments',
+      formData,
     );
   }
 }
