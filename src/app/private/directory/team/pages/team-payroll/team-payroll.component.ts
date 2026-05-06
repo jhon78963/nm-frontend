@@ -251,14 +251,9 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
       p === 'q1' || p === 'q2'
         ? `Base quincenal fija (50 % del salario): S/ ${this.money(liq.proporcionSalarioPeriodo)}`
         : `Base mes completo (100 % del salario): S/ ${this.money(liq.proporcionSalarioPeriodo)}`;
-    const tiempoLine =
-      p === 'q1' || p === 'q2'
-        ? `Descuento por tiempo no cumplido ((min. de deuda ÷ (15×690)) × 50 % salario): − S/ ${this.money(
-            descTiempo,
-          )}`
-        : `Descuento por tiempo no cumplido ((min. de deuda ÷ 690) × valor día): − S/ ${this.money(
-            descTiempo,
-          )}`;
+    const tiempoLine = `Descuento por tiempo no cumplido ((min. de deuda ÷ 690) × valor día): − S/ ${this.money(
+      descTiempo,
+    )}`;
     return [
       baseLine,
       `Descuento por ausencias (Falta/Valdeo): − S/ ${this.money(descAus)}`,
