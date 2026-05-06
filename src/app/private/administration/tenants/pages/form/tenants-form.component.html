@@ -1,10 +1,18 @@
 <div class="flex flex-column gap-3 p-2" [formGroup]="form">
   <div class="field">
     <label for="name">Nombre sucursal / tenant</label>
-    <input id="name" type="text" pInputText class="w-full" formControlName="name" />
+    <input
+      id="name"
+      type="text"
+      pInputText
+      class="w-full"
+      formControlName="name" />
   </div>
   <div class="flex justify-content-end gap-2">
-    <p-button label="Cancelar" [text]="true" (click)="dynamicDialogRef.close()"></p-button>
+    <p-button
+      label="Cancelar"
+      [text]="true"
+      (click)="dynamicDialogRef.close()"></p-button>
     <p-button label="Guardar" [disabled]="!isValid" (click)="save()"></p-button>
   </div>
 </div>

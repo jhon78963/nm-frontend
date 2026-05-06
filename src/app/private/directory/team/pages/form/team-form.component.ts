@@ -36,9 +36,11 @@ export class TeamFormComponent implements OnInit {
 
   ngOnInit(): void {
     const tenantId = this.tenantIdFromSession();
-    this.warehousesService.getAll(tenantId).subscribe((warehouses: Warehouse[]) => {
-      this.warehouses = warehouses;
-    });
+    this.warehousesService
+      .getAll(tenantId)
+      .subscribe((warehouses: Warehouse[]) => {
+        this.warehouses = warehouses;
+      });
     if (this.dynamicDialogConfig.data?.id) {
       const id = this.dynamicDialogConfig.data.id as number;
       this.teamService.getOne(id).subscribe((response: ITeam) => {

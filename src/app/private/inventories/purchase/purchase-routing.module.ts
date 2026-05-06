@@ -12,7 +12,9 @@ const routes: Routes = [
     title: 'Listado de compras',
     data: { breadcrumb: 'Compras' },
     loadComponent: () =>
-      import('./pages/purchase-list/purchase-list.component').then(m => m.PurchaseListComponent),
+      import('./pages/purchase-list/purchase-list.component').then(
+        m => m.PurchaseListComponent,
+      ),
   },
   {
     path: 'register',
@@ -28,7 +30,9 @@ const routes: Routes = [
     title: 'Detalle de compra',
     data: { breadcrumb: 'Detalle compra' },
     loadComponent: () =>
-      import('./pages/purchase-detail/purchase-detail.component').then(m => m.PurchaseDetailComponent),
+      import('./pages/purchase-detail/purchase-detail.component').then(
+        m => m.PurchaseDetailComponent,
+      ),
   },
 ];
 

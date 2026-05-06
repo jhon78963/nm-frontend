@@ -57,14 +57,16 @@ export class WarehousesFormComponent implements OnInit {
         .edit(id, { name: v.name, tenantId: v.tenantId })
         .subscribe({
           next: () => this.dynamicDialogRef.close({ success: true }),
-          error: () => this.dynamicDialogRef.close({ error: 'Error al guardar.' }),
+          error: () =>
+            this.dynamicDialogRef.close({ error: 'Error al guardar.' }),
         });
     } else {
       this.adminWarehousesService
         .create({ name: v.name, tenantId: v.tenantId })
         .subscribe({
           next: () => this.dynamicDialogRef.close({ success: true }),
-          error: () => this.dynamicDialogRef.close({ error: 'Error al crear.' }),
+          error: () =>
+            this.dynamicDialogRef.close({ error: 'Error al crear.' }),
         });
     }
   }

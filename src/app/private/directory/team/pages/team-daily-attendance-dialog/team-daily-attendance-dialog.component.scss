@@ -14,7 +14,13 @@
   font-size: 1rem;
 }
 
-:host ::ng-deep .large-day-calendar .p-datepicker .p-datepicker-calendar td > span {
+:host
+  ::ng-deep
+  .large-day-calendar
+  .p-datepicker
+  .p-datepicker-calendar
+  td
+  > span {
   width: 2.35rem;
   height: 2.35rem;
 }

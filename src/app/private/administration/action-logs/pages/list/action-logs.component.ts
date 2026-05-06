@@ -29,12 +29,48 @@ export class ActionLogsListComponent implements OnInit {
 
   ngOnInit(): void {
     this.columns = [
-      { header: '#', field: 'id', clickable: false, image: false, money: false },
-      { header: 'Fecha', field: 'creationTime', clickable: false, image: false, money: false },
-      { header: 'Acción', field: 'action', clickable: false, image: false, money: false },
-      { header: 'Usuario', field: 'userName', clickable: false, image: false, money: false },
-      { header: 'Sucursal', field: 'warehouseId', clickable: false, image: false, money: false },
-      { header: 'IP', field: 'ipAddress', clickable: false, image: false, money: false },
+      {
+        header: '#',
+        field: 'id',
+        clickable: false,
+        image: false,
+        money: false,
+      },
+      {
+        header: 'Fecha',
+        field: 'creationTime',
+        clickable: false,
+        image: false,
+        money: false,
+      },
+      {
+        header: 'Acción',
+        field: 'action',
+        clickable: false,
+        image: false,
+        money: false,
+      },
+      {
+        header: 'Usuario',
+        field: 'userName',
+        clickable: false,
+        image: false,
+        money: false,
+      },
+      {
+        header: 'Sucursal',
+        field: 'warehouseId',
+        clickable: false,
+        image: false,
+        money: false,
+      },
+      {
+        header: 'IP',
+        field: 'ipAddress',
+        clickable: false,
+        image: false,
+        money: false,
+      },
     ];
     this.load(this.limit, this.page, this.search);
     this.formGroup

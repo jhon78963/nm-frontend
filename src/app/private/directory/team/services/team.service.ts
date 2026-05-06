@@ -56,9 +56,9 @@ export class TeamService {
   }
 
   create(data: TeamPayload): Observable<TeamCreateResponse> {
-    return this.apiService.post<TeamCreateResponse>('teams', data).pipe(
-      switchMap(res => this.callGetList().pipe(map(() => res))),
-    );
+    return this.apiService
+      .post<TeamCreateResponse>('teams', data)
+      .pipe(switchMap(res => this.callGetList().pipe(map(() => res))));
   }
 
   edit(id: number, data: TeamPayload): Observable<void> {

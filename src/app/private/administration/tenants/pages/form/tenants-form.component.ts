@@ -43,7 +43,8 @@ export class TenantsFormComponent implements OnInit {
     if (id) {
       this.tenantsService.edit(id, { name }).subscribe({
         next: () => this.dynamicDialogRef.close({ success: true }),
-        error: () => this.dynamicDialogRef.close({ error: 'Error al guardar.' }),
+        error: () =>
+          this.dynamicDialogRef.close({ error: 'Error al guardar.' }),
       });
     } else {
       this.tenantsService.create({ name }).subscribe({

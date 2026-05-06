@@ -63,11 +63,16 @@ export class TeamDailyAttendanceDialogComponent implements OnInit {
     this.loadSummary();
   }
 
-  severityFor(status: string | null | undefined): 'success' | 'info' | 'warning' | 'danger' | 'secondary' {
+  severityFor(
+    status: string | null | undefined,
+  ): 'success' | 'info' | 'warning' | 'danger' | 'secondary' {
     if (!status) {
       return 'secondary';
     }
-    const m: Record<string, 'success' | 'info' | 'warning' | 'danger' | 'secondary'> = {
+    const m: Record<
+      string,
+      'success' | 'info' | 'warning' | 'danger' | 'secondary'
+    > = {
       PUNTUAL: 'success',
       TOLERANCIA: 'info',
       TARDE: 'warning',
@@ -114,7 +119,8 @@ export class TeamDailyAttendanceDialogComponent implements OnInit {
   }
 
   private syncDateStr(): void {
-    this.dateStr = this.datePipe.transform(this.selectedDate, 'yyyy-MM-dd') ?? '';
+    this.dateStr =
+      this.datePipe.transform(this.selectedDate, 'yyyy-MM-dd') ?? '';
   }
 
   private loadSummary(): void {

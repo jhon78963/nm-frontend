@@ -75,9 +75,9 @@ export class UsersService {
   }
 
   getOne(id: number): Observable<User> {
-    return this.apiService.get<User>(`users/${id}`).pipe(
-      map(u => new User(u as any)),
-    );
+    return this.apiService
+      .get<User>(`users/${id}`)
+      .pipe(map(u => new User(u as any)));
   }
 
   private updateUsers(value: User[]): void {

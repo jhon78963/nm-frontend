@@ -62,8 +62,20 @@ export class WarehousesListComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.columns = [
-      { header: '#', field: 'id', clickable: false, image: false, money: false },
-      { header: 'Tienda', field: 'name', clickable: false, image: false, money: false },
+      {
+        header: '#',
+        field: 'id',
+        clickable: false,
+        image: false,
+        money: false,
+      },
+      {
+        header: 'Tienda',
+        field: 'name',
+        clickable: false,
+        image: false,
+        money: false,
+      },
       {
         header: 'Tenant',
         field: 'tenantId',
@@ -71,7 +83,13 @@ export class WarehousesListComponent implements OnInit, OnDestroy {
         image: false,
         money: false,
       },
-      { field: 'button', header: 'Acción', clickable: false, image: false, money: false },
+      {
+        field: 'button',
+        header: 'Acción',
+        clickable: false,
+        image: false,
+        money: false,
+      },
     ];
     this.load(this.limit, this.page, this.name);
     this.formGroup

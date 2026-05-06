@@ -7,11 +7,7 @@ import {
   switchMap,
 } from 'rxjs';
 import { ApiService } from '../../../../services/api.service';
-import {
-  Permission,
-  Role,
-  RoleListResponse,
-} from '../models/roles.model';
+import { Permission, Role, RoleListResponse } from '../models/roles.model';
 
 @Injectable({
   providedIn: 'root',
@@ -58,10 +54,7 @@ export class RolesService {
     return this.apiService.get<Permission[]>('roles/permissions');
   }
 
-  create(data: {
-    name: string;
-    permissions?: string[];
-  }): Observable<void> {
+  create(data: { name: string; permissions?: string[] }): Observable<void> {
     return this.apiService
       .post('roles', data)
       .pipe(switchMap(() => this.callGetList()));

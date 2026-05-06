@@ -28,22 +28,29 @@
     </div>
   </div>
   <div class="col-12 lg:col-7">
-    <div class="surface-card border-round p-3 shadow-1 h-full flex flex-column" style="min-height: 420px">
-      <div class="flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
+    <div
+      class="surface-card border-round p-3 shadow-1 h-full flex flex-column"
+      style="min-height: 420px">
+      <div
+        class="flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
         <h3 class="m-0 text-lg font-semibold text-900">Resumen del equipo</h3>
         @if (loading) {
           <p-progressSpinner strokeWidth="4" styleClass="w-3rem h-3rem" />
         }
       </div>
       @if (!loading && rows.length === 0) {
-        <p class="text-600">No hay colaboradoras registradas o no se pudo cargar el listado.</p>
+        <p class="text-600">
+          No hay colaboradoras registradas o no se pudo cargar el listado.
+        </p>
       }
       @if (!loading && rows.length > 0) {
-        <div class="daily-list flex flex-column gap-2 overflow-auto flex-1 pr-1">
+        <div
+          class="daily-list flex flex-column gap-2 overflow-auto flex-1 pr-1">
           @for (row of rows; track row.teamId) {
             <div
               class="daily-row border-round p-3 surface-ground border-1 border-200 hover:surface-hover transition-colors transition-duration-150">
-              <div class="flex justify-content-between align-items-start gap-2 flex-wrap">
+              <div
+                class="flex justify-content-between align-items-start gap-2 flex-wrap">
                 <div class="font-semibold text-900">
                   {{ row.name }} {{ row.surname }}
                 </div>
@@ -53,10 +60,15 @@
                     [severity]="severityFor(row.attendance.status)"
                     [rounded]="true" />
                 } @else {
-                  <p-tag value="Sin registro" severity="secondary" [rounded]="true" />
+                  <p-tag
+                    value="Sin registro"
+                    severity="secondary"
+                    [rounded]="true" />
                 }
               </div>
-              <p class="m-0 mt-2 text-sm text-700 line-height-3">{{ summaryLine(row) }}</p>
+              <p class="m-0 mt-2 text-sm text-700 line-height-3">
+                {{ summaryLine(row) }}
+              </p>
             </div>
           }
         </div>

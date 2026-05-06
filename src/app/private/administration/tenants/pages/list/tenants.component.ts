@@ -61,9 +61,27 @@ export class TenantsListComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.columns = [
-      { header: '#', field: 'id', clickable: false, image: false, money: false },
-      { header: 'Cliente', field: 'name', clickable: false, image: false, money: false },
-      { field: 'button', header: 'Acción', clickable: false, image: false, money: false },
+      {
+        header: '#',
+        field: 'id',
+        clickable: false,
+        image: false,
+        money: false,
+      },
+      {
+        header: 'Cliente',
+        field: 'name',
+        clickable: false,
+        image: false,
+        money: false,
+      },
+      {
+        field: 'button',
+        header: 'Acción',
+        clickable: false,
+        image: false,
+        money: false,
+      },
     ];
     this.load(this.limit, this.page, this.name);
     this.formGroup
@@ -138,7 +156,8 @@ export class TenantsListComponent implements OnInit, OnDestroy {
   confirmDelete(id: number, event: Event): void {
     this.confirmationService.confirm({
       target: event.target as EventTarget,
-      message: '¿Eliminar este cliente? No debe tener tiendas ni usuarios asociados.',
+      message:
+        '¿Eliminar este cliente? No debe tener tiendas ni usuarios asociados.',
       header: 'Eliminar cliente',
       icon: 'pi pi-exclamation-triangle',
       acceptButtonStyleClass: 'p-button-danger p-button-text',

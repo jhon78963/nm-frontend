@@ -1,10 +1,5 @@
 import { Injectable } from '@angular/core';
-import {
-  BehaviorSubject,
-  debounceTime,
-  map,
-  Observable,
-} from 'rxjs';
+import { BehaviorSubject, debounceTime, map, Observable } from 'rxjs';
 import { ApiService } from '../../../../services/api.service';
 import {
   ActionLogListResponse,

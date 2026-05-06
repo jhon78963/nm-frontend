@@ -165,7 +165,10 @@ export class TeamPayrollService {
     formData.append('date', payload.date);
     formData.append('description', payload.description ?? '');
     formData.append('payment_method', payload.payment_method);
-    formData.append('sync_cash_movement', payload.sync_cash_movement ? '1' : '0');
+    formData.append(
+      'sync_cash_movement',
+      payload.sync_cash_movement ? '1' : '0',
+    );
     if (payload.image) {
       formData.append('image', payload.image);
     }

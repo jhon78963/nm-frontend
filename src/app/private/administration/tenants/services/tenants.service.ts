@@ -49,7 +49,9 @@ export class TenantsService {
   }
 
   create(data: Pick<Tenant, 'name'>): Observable<void> {
-    return this.apiService.post('tenants', data).pipe(switchMap(() => this.callGetList()));
+    return this.apiService
+      .post('tenants', data)
+      .pipe(switchMap(() => this.callGetList()));
   }
 
   edit(id: number, data: Pick<Tenant, 'name'>): Observable<void> {
@@ -59,7 +61,9 @@ export class TenantsService {
   }
 
   delete(id: number): Observable<void> {
-    return this.apiService.delete(`tenants/${id}`).pipe(switchMap(() => this.callGetList()));
+    return this.apiService
+      .delete(`tenants/${id}`)
+      .pipe(switchMap(() => this.callGetList()));
   }
 
   private updateList(v: Tenant[]): void {

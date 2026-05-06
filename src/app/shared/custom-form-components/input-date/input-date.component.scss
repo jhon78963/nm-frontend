@@ -1,6 +1,5 @@
 /* Usamos :host ::ng-deep para afectar solo a este componente pero penetrar estilos de PrimeNG */
 :host ::ng-deep {
-
   .custom-material-calendar {
     width: 100%;
 

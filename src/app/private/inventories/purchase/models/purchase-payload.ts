@@ -15,7 +15,9 @@ function toIsoDate(d: Date | string): string {
   return d.toISOString().slice(0, 10);
 }
 
-function lineColorToJson(c: PurchaseLineFormValue['colors'][0]): PurchaseLineColorJson {
+function lineColorToJson(
+  c: PurchaseLineFormValue['colors'][0],
+): PurchaseLineColorJson {
   const qty = Number(c.quantity) || 0;
   if (c.colorId != null) {
     return { colorId: c.colorId, quantity: qty };
@@ -119,9 +121,15 @@ export function buildPurchaseBulkPayload(
     };
   });
 
-  const grandSubtotal = lines.reduce((s, l) => s + (Number(l.subtotal) || 0), 0);
+  const grandSubtotal = lines.reduce(
+    (s, l) => s + (Number(l.subtotal) || 0),
+    0,
+  );
 
-  const vid = header.vendorId != null && Number(header.vendorId) > 0 ? Number(header.vendorId) : null;
+  const vid =
+    header.vendorId != null && Number(header.vendorId) > 0
+      ? Number(header.vendorId)
+      : null;
 
   return {
     purchase: {

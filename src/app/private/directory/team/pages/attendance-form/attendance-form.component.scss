@@ -7,7 +7,9 @@
 .stat-card {
   border-radius: 12px;
   border: 1px solid var(--surface-border, #e5e7eb);
-  transition: box-shadow 0.2s ease, transform 0.15s ease;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
 }
 
 .stat-card:hover {
@@ -72,11 +74,7 @@
 }
 
 .month-table tbody tr.row-domingo-recupera {
-  background: linear-gradient(
-    90deg,
-    rgba(168, 85, 247, 0.09),
-    transparent
-  );
+  background: linear-gradient(90deg, rgba(168, 85, 247, 0.09), transparent);
 }
 
 .month-table td {

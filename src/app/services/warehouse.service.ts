@@ -20,9 +20,9 @@ export class WarehousesService {
     if (tenantId != null) {
       path += `?tenant_id=${tenantId}`;
     }
-    return this.apiService.get<WarehouseListResponse>(path).pipe(
-      map(response => response.data),
-    );
+    return this.apiService
+      .get<WarehouseListResponse>(path)
+      .pipe(map(response => response.data));
   }
 
   getOne(id: number): Observable<Warehouse> {

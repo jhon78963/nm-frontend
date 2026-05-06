@@ -59,7 +59,9 @@ export class AdminWarehousesService {
   }
 
   create(data: { name: string; tenantId: number }): Observable<void> {
-    return this.apiService.post('warehouses', data).pipe(switchMap(() => this.callGetList()));
+    return this.apiService
+      .post('warehouses', data)
+      .pipe(switchMap(() => this.callGetList()));
   }
 
   edit(

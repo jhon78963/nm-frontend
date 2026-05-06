@@ -246,14 +246,23 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
       liq.descuentoPorTiempoNoCumplidoEnAmbito ??
       att.descuentoPorTiempoNoCumplido ??
       0;
+    const p = liq.period;
+    const baseLine =
+      p === 'q1' || p === 'q2'
+        ? `Base quincenal fija (50 % del salario): S/ ${this.money(liq.proporcionSalarioPeriodo)}`
+        : `Base mes completo (100 % del salario): S/ ${this.money(liq.proporcionSalarioPeriodo)}`;
+    const tiempoLine =
+      p === 'q1' || p === 'q2'
+        ? `Descuento por tiempo no cumplido ((min. de deuda ÷ (15×690)) × 50 % salario): − S/ ${this.money(
+            descTiempo,
+          )}`
+        : `Descuento por tiempo no cumplido ((min. de deuda ÷ 690) × valor día): − S/ ${this.money(
+            descTiempo,
+          )}`;
     return [
-      `Proporción del salario en el ámbito (${liq.diasEnPeriodo} día(s)): S/ ${this.money(
-        liq.proporcionSalarioPeriodo,
-      )}`,
+      baseLine,
       `Descuento por ausencias (Falta/Valdeo): − S/ ${this.money(descAus)}`,
-      `Descuento por tiempo no cumplido (retraso/salida ant., prorrateo 11 h 30 min): − S/ ${this.money(
-        descTiempo,
-      )}`,
+      tiempoLine,
       `Tras descuentos de asistencia: S/ ${this.money(liq.netoTrasFaltasPeriodo)}`,
       `Movimientos del período (adelantos · pagos · desc. manual): − S/ ${this.money(
         liq.adelantosPeriodo +
