@@ -87,10 +87,13 @@ export class SaleFormComponent implements OnInit {
         id: [item.id],
         product_name: [item.product_name],
         description_full: [item.description_full],
-        quantity: [item.quantity, [Validators.required, Validators.min(1)]], // Agregado Validators
+        quantity: [item.quantity, [Validators.required, Validators.min(1)]],
         unit_price: [item.unit_price, [Validators.required, Validators.min(0)]],
         subtotal: [item.subtotal],
-        product_size_id: [null],
+        // Se inicializa con el valor real del API. Así, si el usuario solo
+        // cambia el color_id, el payload sigue incluyendo el product_size_id
+        // original y el backend puede detectar correctamente el isExchange.
+        product_size_id: [item.product_size_id ?? null],
         color_id: [item.color_id],
       });
 
