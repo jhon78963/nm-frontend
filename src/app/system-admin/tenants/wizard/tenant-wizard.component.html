@@ -1,0 +1,126 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="wizard-form">
+
+  <!-- ── Sección 1: Empresa ─────────────────────────────────── -->
+  <div class="wizard-section">
+    <div class="section-label">
+      <i class="pi pi-building"></i>
+      <span>Datos de la Empresa</span>
+    </div>
+
+    <div class="field">
+      <label for="tenant_name">Nombre de la Empresa <span class="required">*</span></label>
+      <input
+        id="tenant_name"
+        type="text"
+        pInputText
+        class="w-full"
+        formControlName="tenant_name"
+        placeholder="Ej: Comercial Nómada S.A.C." />
+      @if (form.get('tenant_name')?.invalid && form.get('tenant_name')?.touched) {
+        <small class="error-msg">El nombre de la empresa es requerido.</small>
+      }
+    </div>
+
+    <div class="field">
+      <label>Módulos Contratados</label>
+      <div class="features-grid">
+        @for (opt of featureOptions; track opt.value) {
+          <div
+            class="feature-chip"
+            [class.selected]="isFeatureSelected(opt.value)"
+            (click)="toggleFeature(opt.value)"
+            (keydown.enter)="toggleFeature(opt.value)"
+            (keydown.space)="toggleFeature(opt.value)"
+            tabindex="0"
+            role="checkbox"
+            [attr.aria-checked]="isFeatureSelected(opt.value)">
+            <i class="pi pi-check-circle" *ngIf="isFeatureSelected(opt.value)"></i>
+            <i class="pi pi-circle" *ngIf="!isFeatureSelected(opt.value)"></i>
+            <span>{{ opt.label }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <p-divider styleClass="wizard-divider" />
+
+  <!-- ── Sección 2: Administrador ──────────────────────────── -->
+  <div class="wizard-section">
+    <div class="section-label">
+      <i class="pi pi-user"></i>
+      <span>Administrador Inicial</span>
+    </div>
+
+    <div class="field">
+      <label for="admin_name">Nombre Completo <span class="required">*</span></label>
+      <input
+        id="admin_name"
+        type="text"
+        pInputText
+        class="w-full"
+        formControlName="admin_name"
+        placeholder="Ej: Carlos Mendoza" />
+      @if (form.get('admin_name')?.invalid && form.get('admin_name')?.touched) {
+        <small class="error-msg">El nombre del administrador es requerido.</small>
+      }
+    </div>
+
+    <div class="field">
+      <label for="admin_email">Correo Electrónico <span class="required">*</span></label>
+      <input
+        id="admin_email"
+        type="email"
+        pInputText
+        class="w-full"
+        formControlName="admin_email"
+        placeholder="admin@empresa.com" />
+      @if (form.get('admin_email')?.invalid && form.get('admin_email')?.touched) {
+        <small class="error-msg">Ingresa un correo válido.</small>
+      }
+    </div>
+
+    <div class="field">
+      <label for="admin_password">Contraseña Inicial <span class="required">*</span></label>
+      <p-password
+        inputId="admin_password"
+        formControlName="admin_password"
+        [feedback]="true"
+        [toggleMask]="true"
+        styleClass="w-full"
+        inputStyleClass="w-full"
+        placeholder="Mínimo 8 caracteres" />
+      @if (form.get('admin_password')?.invalid && form.get('admin_password')?.touched) {
+        <small class="error-msg">La contraseña debe tener al menos 8 caracteres.</small>
+      }
+    </div>
+  </div>
+
+  <!-- ── Error del backend ──────────────────────────────────── -->
+  @if (backendError()) {
+    <div class="backend-error">
+      <i class="pi pi-exclamation-triangle"></i>
+      <span>{{ backendError() }}</span>
+    </div>
+  }
+
+  <!-- ── Acciones ───────────────────────────────────────────── -->
+  <div class="wizard-actions">
+    <p-button
+      label="Cancelar"
+      [text]="true"
+      severity="secondary"
+      (onClick)="cancel()"
+      [disabled]="saving()">
+    </p-button>
+    <p-button
+      label="Registrar Empresa"
+      icon="pi pi-check"
+      type="submit"
+      [loading]="saving()"
+      [disabled]="form.invalid || saving()">
+    </p-button>
+  </div>
+</form>
+
+<p-toast />

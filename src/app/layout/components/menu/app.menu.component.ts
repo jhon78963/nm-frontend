@@ -13,11 +13,7 @@ export class AppMenuComponent implements OnInit {
     const jsonData = localStorage.getItem('user');
     const userData = jsonData ? JSON.parse(jsonData) : undefined;
     const role = userData?.role as string | undefined;
-    const roles = userData?.roles as string[] | undefined;
-    if (role === 'Admin' || role === 'Super Admin') {
-      return true;
-    }
-    if (roles?.includes('Super Admin')) {
+    if (role === 'Admin') {
       return true;
     }
     return false;
@@ -42,12 +38,7 @@ export class AppMenuComponent implements OnInit {
               routerLink: ['/administration/users'],
             },
             {
-              label: 'Clientes (tenants)',
-              icon: 'pi pi-fw pi-building',
-              routerLink: ['/administration/tenants'],
-            },
-            {
-              label: 'Tiendas (warehouses)',
+              label: 'Tiendas',
               icon: 'pi pi-fw pi-shopping-bag',
               routerLink: ['/administration/warehouses'],
             },

@@ -18,5 +18,5 @@ export const systemAdminGuard: CanActivateFn = () => {
     return of(true);
   }
 
-  return of(router.createUrlTree(['/pos']));
+  return of(router.createUrlTree(['/']));
 };

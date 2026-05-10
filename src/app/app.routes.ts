@@ -1,22 +1,22 @@
 import { Routes } from '@angular/router';
-import { AppLayoutComponent } from './layout/layout/app.layout.component';
 import { authGuard } from './auth/guards/auth.guard';
 import { systemAdminGuard } from './auth/guards/system-admin.guard';
 import { tenantGuard } from './auth/guards/tenant.guard';
+import { AppLayoutComponent } from './layout/layout/app.layout.component';
 
 /**
  * Root route table.
  *
  * Two protected areas:
  *  · /system-admin  → SaaS provider panel (tenantId === 1 only)
- *  · /pos           → Client-tenant POS panel (any tenant except 1)
+ *  · /              → Client-tenant POS panel (any tenant except 1)
  *
  * authGuard always runs first; it hydrates PermissionsService so
  * the downstream guards can check tenantId without extra API calls.
  */
 export const routes: Routes = [
   // Default redirect — guards will bounce the user to the right panel
-  { path: '', redirectTo: 'pos', pathMatch: 'full' },
+  { path: '', redirectTo: '', pathMatch: 'full' },
 
   // ── SaaS provider panel ──────────────────────────────────────────────────
   {
@@ -30,7 +30,7 @@ export const routes: Routes = [
 
   // ── Client-tenant POS panel ──────────────────────────────────────────────
   {
-    path: 'pos',
+    path: '',
     component: AppLayoutComponent,
     canActivate: [authGuard, tenantGuard],
     children: [

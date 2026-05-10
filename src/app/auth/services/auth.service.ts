@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { Observable, catchError, switchMap, tap, throwError } from 'rxjs';
-import { Login, LoginResponse, Token, User } from '../interfaces';
-import { ApiService } from '../../services/api.service';
-import { PermissionsService } from './permissions.service';
 import { Router } from '@angular/router';
+import { Observable, catchError, switchMap, tap, throwError } from 'rxjs';
+import { ApiService } from '../../services/api.service';
+import { Login, LoginResponse, Token, User } from '../interfaces';
+import { PermissionsService } from './permissions.service';
 
 @Injectable({
   providedIn: 'root',
@@ -39,7 +39,7 @@ export class AuthService {
         // redundant API call immediately after login.
         const target = this.permissionsService.isSystemAdmin()
           ? '/system-admin'
-          : '/pos';
+          : '/';
         this.router.navigateByUrl(target);
       }),
       catchError(err => {
