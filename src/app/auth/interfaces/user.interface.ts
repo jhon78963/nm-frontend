@@ -5,8 +5,13 @@ export interface User {
   name: string;
   surname: string;
   password: string;
+  profilePicture?: string | null;
   role: string;
   roles?: string[];
-  tenantId?: number | null;
+  tenantId: number;
   warehouseId?: number | null;
+  /** Flat permission strings returned by /auth/me (e.g. 'sales.delete') */
+  permissions: string[];
+  /** Active commercial feature flags returned by /auth/me (e.g. 'electronic_billing') */
+  features: string[];
 }

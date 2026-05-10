@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, catchError, switchMap, tap, throwError } from 'rxjs';
 import { Login, LoginResponse, Token, User } from '../interfaces';
 import { ApiService } from '../../services/api.service';
+import { PermissionsService } from './permissions.service';
 import { Router } from '@angular/router';
 
 @Injectable({
@@ -10,6 +11,7 @@ import { Router } from '@angular/router';
 export class AuthService {
   constructor(
     private readonly apiService: ApiService,
+    private readonly permissionsService: PermissionsService,
     private readonly router: Router,
   ) {}
 
@@ -32,7 +34,13 @@ export class AuthService {
       switchMap(() => this.me()),
       tap((user: User) => {
         this.setUserData(user);
-        this.router.navigateByUrl('/');
+        this.permissionsService.setUser(user);
+        // Redirect based on tenant type so the router guards don't need a
+        // redundant API call immediately after login.
+        const target = this.permissionsService.isSystemAdmin()
+          ? '/system-admin'
+          : '/pos';
+        this.router.navigateByUrl(target);
       }),
       catchError(err => {
         return throwError(() => err.error.message);
@@ -48,7 +56,15 @@ export class AuthService {
     refreshToken: string | null,
     accessToken: string | null,
   ): Observable<string> {
-    return this.apiService.post('auth/logout', { refreshToken, accessToken });
+    return this.apiService
+      .post<string>('auth/logout', { refreshToken, accessToken })
+      .pipe(
+        tap(() => {
+          this.permissionsService.clear();
+          localStorage.removeItem('tokenData');
+          localStorage.removeItem('user');
+        }),
+      );
   }
 
   refreshToken(

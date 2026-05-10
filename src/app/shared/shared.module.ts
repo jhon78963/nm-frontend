@@ -1,5 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HasPermissionDirective } from './directives/has-permission.directive';
+import { HasFeatureDirective } from './directives/has-feature.directive';
 import { InputTextComponent } from './custom-form-components/input-text/input-text.component';
 import { InputSelectComponent } from './custom-form-components/input-select/input-select.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -54,6 +56,8 @@ const PRIMENG_MODULES = [
   FileUploadModule,
 ];
 
+const PERMISSION_DIRECTIVES = [HasPermissionDirective, HasFeatureDirective];
+
 const STANDALONES_COMPONENTS = [
   InputAutocompleteComponent,
   InputCheckboxComponent,
@@ -86,7 +90,12 @@ const STANDALONES_COMPONENTS = [
     ReactiveFormsModule,
     ...PRIMENG_MODULES,
     ...STANDALONES_COMPONENTS,
+    ...PERMISSION_DIRECTIVES,
   ],
-  exports: [...PRIMENG_MODULES, ...STANDALONES_COMPONENTS],
+  exports: [
+    ...PRIMENG_MODULES,
+    ...STANDALONES_COMPONENTS,
+    ...PERMISSION_DIRECTIVES,
+  ],
 })
 export class SharedModule {}
