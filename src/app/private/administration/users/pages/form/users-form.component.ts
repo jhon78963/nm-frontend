@@ -1,11 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { Subscription } from 'rxjs';
 import { Warehouse } from '../../../../../models/warehouse.interface';
 import { WarehousesService } from '../../../../../services/warehouse.service';
 import { Role } from '../../../roles/models/roles.model';
 import { RolesService } from '../../../roles/services/roles.service';
 import { TenantsService } from '../../../tenants/services/tenants.service';
+import { Tenant } from '../../../tenants/models/tenants.model';
 import { User } from '../../models/users.model';
 import { UserPayload, UsersService } from '../../services/users.service';
 
@@ -14,9 +16,13 @@ import { UserPayload, UsersService } from '../../services/users.service';
   templateUrl: './users-form.component.html',
   styleUrl: './users-form.component.scss',
 })
-export class UserFormComponent implements OnInit {
+export class UserFormComponent implements OnInit, OnDestroy {
   userId: number = 0;
   warehouses: Warehouse[] = [];
+  roles: Role[] = [];
+  tenants: Tenant[] = [];
+
+  private subs = new Subscription();
 
   constructor(
     private readonly formBuilder: FormBuilder,
@@ -39,14 +45,27 @@ export class UserFormComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.rolesService.callGetList(200, 1, '').subscribe();
-    this.tenantsService.callGetList(200, 1, '').subscribe();
+    this.subs.add(
+      this.rolesService.callGetList(200, 1, '').subscribe(),
+    );
+    this.subs.add(
+      this.rolesService.getList().subscribe(list => (this.roles = list)),
+    );
 
-    this.form.get('tenantId')?.valueChanges.subscribe(tid => {
-      if (tid != null) {
-        this.loadWarehouses(Number(tid));
-      }
-    });
+    this.subs.add(
+      this.tenantsService.callGetList(200, 1, '').subscribe(),
+    );
+    this.subs.add(
+      this.tenantsService.getList().subscribe(list => (this.tenants = list)),
+    );
+
+    this.subs.add(
+      this.form.get('tenantId')!.valueChanges.subscribe(tid => {
+        if (tid != null) {
+          this.loadWarehouses(Number(tid));
+        }
+      }),
+    );
 
     const initialTid = this.form.value.tenantId as number;
     this.loadWarehouses(initialTid);
@@ -56,28 +75,36 @@ export class UserFormComponent implements OnInit {
       this.userId = id;
       this.removeValidatorsForEdit();
 
-      this.usersService.getOne(id).subscribe((response: User) => {
-        const roleName = response.roles?.[0] ?? '';
-        this.form.patchValue({
-          username: response.username,
-          email: response.email,
-          name: response.name,
-          surname: response.surname,
-          roleName,
-          tenantId: response.tenantId,
-          warehouseId: response.warehouseId,
-        });
-        if (response.tenantId) {
-          this.loadWarehouses(response.tenantId);
-        }
-      });
+      this.subs.add(
+        this.usersService.getOne(id).subscribe((response: User) => {
+          const roleName = response.roles?.[0] ?? '';
+          this.form.patchValue({
+            username: response.username,
+            email: response.email,
+            name: response.name,
+            surname: response.surname,
+            roleName,
+            tenantId: response.tenantId,
+            warehouseId: response.warehouseId,
+          });
+          if (response.tenantId) {
+            this.loadWarehouses(response.tenantId);
+          }
+        }),
+      );
     }
   }
 
+  ngOnDestroy(): void {
+    this.subs.unsubscribe();
+  }
+
   private loadWarehouses(tenantId: number): void {
-    this.warehousesService.getAll(tenantId).subscribe((list: Warehouse[]) => {
-      this.warehouses = list;
-    });
+    this.subs.add(
+      this.warehousesService.getAll(tenantId).subscribe((list: Warehouse[]) => {
+        this.warehouses = list;
+      }),
+    );
   }
 
   private removeValidatorsForEdit(): void {
@@ -86,16 +113,6 @@ export class UserFormComponent implements OnInit {
 
     this.form.get('email')?.clearValidators();
     this.form.get('email')?.updateValueAndValidity();
-  }
-
-  get roles(): import('rxjs').Observable<Role[]> {
-    return this.rolesService.getList();
-  }
-
-  get tenantsList(): import('rxjs').Observable<
-    import('../../../tenants/models/tenants.model').Tenant[]
-  > {
-    return this.tenantsService.getList();
   }
 
   get isValid(): boolean {

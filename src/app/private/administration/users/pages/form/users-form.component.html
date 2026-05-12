@@ -7,21 +7,26 @@
           label="Cliente"
           controlName="tenantId"
           for="tenant"
-          [options]="(tenantsList | async) ?? []"
+          [options]="tenants"
           id="tenant"
           optionLabel="name"
           optionValue="id"></app-input-select>
       </div>
-      <div class="col-12">
-        <app-input-select
-          placeholder="Rol (Spatie)"
-          label="Rol"
-          controlName="roleName"
-          for="role"
-          [options]="(roles | async) ?? []"
-          id="role"
+      <div class="col-12 field">
+        <label for="roleName" class="block mb-1">Rol</label>
+        <p-dropdown
+          inputId="roleName"
+          formControlName="roleName"
+          [options]="roles"
           optionLabel="name"
-          optionValue="name"></app-input-select>
+          optionValue="name"
+          placeholder="Selecciona un rol"
+          styleClass="w-full"
+          [showClear]="false">
+        </p-dropdown>
+        @if (form.get('roleName')?.invalid && form.get('roleName')?.touched) {
+          <small class="p-error block mt-1">El campo Rol es requerido</small>
+        }
       </div>
       <div class="col-12">
         <app-input-select
