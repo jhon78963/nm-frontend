@@ -1,0 +1,153 @@
+.search-hero-input {
+  font-size: 1.35rem;
+  line-height: 1.4;
+  padding: 1rem 2.75rem 1rem 1rem;
+}
+
+.search-hero .p-input-icon-right > i {
+  right: 1rem;
+  margin-top: -0.5rem;
+}
+
+.sticky-product-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--surface-ground, #f8f9fa);
+  padding-top: 0.25rem;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--surface-border, #dfe7ef);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  @media screen and (min-width: 768px) {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+}
+
+.sticky-actions {
+  flex-shrink: 0;
+}
+
+.reconciliation-grid {
+  border-collapse: collapse;
+  min-width: 720px;
+
+  th,
+  td {
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--surface-border, #dfe7ef);
+    vertical-align: middle;
+  }
+
+  thead th {
+    background: var(--surface-100, #f1f5f9);
+    font-weight: 600;
+    color: var(--text-color-secondary, #64748b);
+    text-align: left;
+  }
+
+  thead th.col-price {
+    min-width: 5.5rem;
+    width: 6.5rem;
+  }
+
+  thead th.col-barcode {
+    min-width: 7rem;
+  }
+
+  thead th.col-stock {
+    width: 9rem;
+    min-width: 7rem;
+  }
+
+  tbody tr.row-master {
+    background: var(--surface-0, #fff);
+  }
+
+  tbody tr.row-master td {
+    background: var(--surface-50, #fafafa);
+  }
+
+  tbody tr.row-color td {
+    background: var(--surface-0, #fff);
+  }
+
+  .col-stock {
+    text-align: right;
+  }
+}
+
+.color-indent {
+  display: block;
+  padding-left: 1.25rem;
+  border-left: 3px solid var(--primary-color, #3b82f6);
+  margin-left: 0.25rem;
+  color: var(--text-color, #1e293b);
+}
+
+::ng-deep .price-input.p-inputnumber {
+  width: 100%;
+}
+
+::ng-deep .price-input .p-inputnumber-input {
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+::ng-deep .stock-input.p-inputnumber {
+  width: 100%;
+}
+
+::ng-deep .stock-input .p-inputnumber-input {
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+::ng-deep .stock-input-readonly .p-inputnumber-input {
+  font-weight: 600;
+  opacity: 1;
+  background: var(--surface-100, #f1f5f9);
+}
+
+.reconciliation-page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  border-bottom: 1px solid var(--surface-border, #dfe7ef);
+  padding-bottom: 1rem;
+}
+
+.sticky-product-summary {
+  border: 1px solid var(--surface-border, #dfe7ef);
+}
+
+.reconciliation-section {
+  border: 1px solid var(--surface-border, #e2e8f0);
+}
+
+.section-heading {
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--surface-border, #f1f5f9);
+}
+
+.section-title {
+  font-weight: 700;
+  color: var(--text-color, #0f172a);
+}
+
+.section-index {
+  flex-shrink: 0;
+}
+
+.empty-state {
+  max-width: 36rem;
+  margin-left: auto;
+  margin-right: auto;
+}

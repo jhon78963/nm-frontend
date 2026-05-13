@@ -1,6 +1,7 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 // PrimeNG
 import { ButtonModule } from 'primeng/button';
@@ -18,6 +19,7 @@ import { ReportsService } from '../../services/reports-service.service';
   imports: [
     CommonModule,
     FormsModule,
+    RouterLink,
     CardModule,
     TableModule,
     ChartModule,

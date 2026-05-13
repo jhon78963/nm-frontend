@@ -1,0 +1,362 @@
+<p-toast position="top-right" />
+
+<div class="reconciliation-page p-3 md:p-4">
+  <header class="page-header mb-3">
+    <div
+      class="flex flex-column md:flex-row md:align-items-start md:justify-content-between gap-3">
+      <div>
+        <p-tag
+          severity="info"
+          value="Inventario"
+          styleClass="mr-2 mb-2"></p-tag>
+        <h1 class="text-xl md:text-2xl font-bold text-900 m-0">
+          Cuadre y ficha de producto
+        </h1>
+        <p class="text-600 m-0 mt-2 text-sm line-height-3 max-w-48rem">
+          Todo en una sola vista: edite la ficha, la matriz de stocks y las
+          fotos. Con el lector de barras, al terminar el código pulse
+          <strong>Enter</strong>.
+        </p>
+      </div>
+      @if (draft) {
+        <div class="flex flex-wrap gap-2 align-items-center">
+          <a
+            pButton
+            pRipple
+            type="button"
+            class="p-button-outlined p-button-sm"
+            icon="pi pi-external-link"
+            label="Tallas (catálogo)"
+            [routerLink]="['/inventories/products/sizes', draft.productId]"
+            target="_blank"
+            rel="noopener"></a>
+          <a
+            pButton
+            pRipple
+            type="button"
+            class="p-button-outlined p-button-sm"
+            icon="pi pi-external-link"
+            label="Colores"
+            [routerLink]="['/inventories/products/colors', draft.productId]"
+            target="_blank"
+            rel="noopener"></a>
+        </div>
+      }
+    </div>
+  </header>
+
+  <div class="search-hero mb-4">
+    <span class="p-input-icon-right w-full block">
+      <i
+        class="pi pi-search text-600"
+        [class.pi-spin]="searching || loadingBundle"
+        aria-hidden="true"></i>
+      <input
+        #searchInput
+        pInputText
+        type="text"
+        name="reconciliationSearch"
+        class="w-full search-hero-input"
+        [(ngModel)]="searchQuery"
+        (keydown.enter)="onSearchEnter($event)"
+        [disabled]="searching || loadingBundle"
+        placeholder="Nombre, ID numérico o código de barras…"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        autofocus />
+    </span>
+  </div>
+
+  @if (loadingBundle && draft === null) {
+    <div class="flex justify-content-center p-5">
+      <p-progressSpinner
+        strokeWidth="4"
+        styleClass="w-4rem h-4rem"></p-progressSpinner>
+    </div>
+  }
+
+  @if (draft) {
+    @if (hasAnyShelfWarning()) {
+      <div
+        class="border-round p-3 mb-3 bg-orange-50 border-1 border-orange-200 text-orange-900 text-sm line-height-3">
+        <i class="pi pi-exclamation-triangle mr-2"></i>
+        <strong>Atención:</strong> al menos una talla tenía el maestro y la suma
+        de colores distintos en el servidor. Ajuste los stocks y guarde; el
+        backend alineará el maestro.
+      </div>
+    }
+
+    <div class="sticky-product-bar">
+      <div
+        class="sticky-product-summary surface-card shadow-1 border-round p-3">
+        <div
+          class="flex flex-column sm:flex-row sm:align-items-center sm:justify-content-between gap-2">
+          <div>
+            <span class="font-semibold text-900 text-lg block">{{
+              draft.name
+            }}</span>
+            <span class="text-600 text-sm">
+              ID {{ draft.productId }} · SKU
+              <span class="text-900">{{ draft.sku || '—' }}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sticky-actions flex align-items-center gap-2 flex-wrap">
+        <button
+          pButton
+          pRipple
+          type="button"
+          label="Guardar ficha e inventario"
+          icon="pi pi-save"
+          class="p-button-lg"
+          [loading]="saving"
+          [disabled]="saving || productForm.invalid"
+          (click)="saveAll()"></button>
+        <button
+          pButton
+          pRipple
+          type="button"
+          label="Otro producto"
+          icon="pi pi-times"
+          class="p-button-lg p-button-secondary p-button-outlined"
+          [disabled]="saving"
+          (click)="clearProduct()"></button>
+      </div>
+    </div>
+
+    <div class="flex flex-column gap-4 mt-3">
+      <!-- 1. Producto -->
+      <section
+        class="reconciliation-section surface-card shadow-1 border-round p-3 md:p-4"
+        aria-labelledby="section-product">
+        <div class="section-heading flex align-items-center gap-2 mb-3">
+          <span
+            class="section-index flex align-items-center justify-content-center border-circle bg-primary text-primary-contrast text-sm font-bold w-2rem h-2rem shrink-0"
+            >1</span
+          >
+          <div>
+            <h2 id="section-product" class="section-title m-0 text-lg">
+              Producto
+            </h2>
+            <p class="section-sub m-0 text-sm text-600">
+              Datos generales, estado, precios de referencia y descuentos.
+            </p>
+          </div>
+        </div>
+
+        <div [formGroup]="productForm" class="p-fluid grid">
+          <div class="col-12 md:col-6 field mb-0">
+            <app-input-select
+              placeholder="Género"
+              label="Género"
+              controlName="genderId"
+              for="gender"
+              [options]="genders"
+              id="gender"
+              optionLabel="description"
+              optionValue="id"></app-input-select>
+          </div>
+          <div class="col-12 md:col-6 field mb-0">
+            <app-input-select
+              placeholder="Tienda / almacén"
+              label="Tienda"
+              controlName="warehouseId"
+              for="warehouse"
+              [options]="warehouses"
+              id="warehouse"
+              optionLabel="name"
+              optionValue="id"></app-input-select>
+          </div>
+          <div class="col-12 field mb-0">
+            <app-input-text
+              placeholder="Nombre del producto"
+              label="Nombre"
+              controlName="name"></app-input-text>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Tallas y colores -->
+      <section
+        class="reconciliation-section surface-card shadow-1 border-round p-3 md:p-4"
+        aria-labelledby="section-inventory">
+        <div class="section-heading flex align-items-center gap-2 mb-3">
+          <span
+            class="section-index flex align-items-center justify-content-center border-circle bg-primary text-primary-contrast text-sm font-bold w-2rem h-2rem shrink-0"
+            >2</span
+          >
+          <div>
+            <h2 id="section-inventory" class="section-title m-0 text-lg">
+              Tallas y colores
+            </h2>
+            <p class="section-sub m-0 text-sm text-600">
+              Precios por talla (fila en negrita); debajo, cada color solo con
+              stock. Con colores, el stock de la talla es la suma (solo
+              lectura).
+            </p>
+          </div>
+        </div>
+
+        <div class="reconciliation-grid-wrap overflow-x-auto">
+          <table class="reconciliation-grid w-full text-sm">
+            <thead>
+              <tr>
+                <th scope="col" class="col-label">Talla / color</th>
+                <th scope="col" class="col-price text-right">P. compra</th>
+                <th scope="col" class="col-price text-right">P. venta</th>
+                <th scope="col" class="col-price text-right">P. venta mín.</th>
+                <th scope="col" class="col-barcode">Cód. talla</th>
+                <th scope="col" class="col-stock text-right">Stock</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (size of draft.sizes; track trackBySizeId($index, size)) {
+                <tr class="row-master">
+                  <td class="font-semibold text-900 align-top">
+                    <div>{{ size.sizeLabel }}</div>
+                    @if (hasColorBreakdown(size)) {
+                      <small class="block mt-2 text-600">
+                        Suma colores:
+                        <strong class="text-900">{{
+                          colorStockSum(size)
+                        }}</strong>
+                        · Ref. al abrir (maestro BD):
+                        {{ size.serverMasterStock }}
+                      </small>
+                    }
+                  </td>
+                  <td class="text-right align-top">
+                    <p-inputNumber
+                      [inputId]="'pp-' + size.id"
+                      [(ngModel)]="size.purchasePrice"
+                      [allowEmpty]="true"
+                      [min]="0"
+                      [maxFractionDigits]="4"
+                      [useGrouping]="false"
+                      mode="decimal"
+                      placeholder="—"
+                      styleClass="price-input w-full"
+                      inputStyleClass="text-right"></p-inputNumber>
+                  </td>
+                  <td class="text-right align-top">
+                    <p-inputNumber
+                      [inputId]="'sp-' + size.id"
+                      [(ngModel)]="size.salePrice"
+                      [allowEmpty]="true"
+                      [min]="0"
+                      [maxFractionDigits]="4"
+                      [useGrouping]="false"
+                      mode="decimal"
+                      placeholder="—"
+                      styleClass="price-input w-full"
+                      inputStyleClass="text-right"></p-inputNumber>
+                  </td>
+                  <td class="text-right align-top">
+                    <p-inputNumber
+                      [inputId]="'min-' + size.id"
+                      [(ngModel)]="size.minSalePrice"
+                      [allowEmpty]="true"
+                      [min]="0"
+                      [maxFractionDigits]="4"
+                      [useGrouping]="false"
+                      mode="decimal"
+                      placeholder="—"
+                      styleClass="price-input w-full"
+                      inputStyleClass="text-right"></p-inputNumber>
+                  </td>
+                  <td class="text-600 align-top">{{ size.barcode || '—' }}</td>
+                  <td class="text-right align-top">
+                    @if (hasColorBreakdown(size)) {
+                      <p-inputNumber
+                        [inputId]="'master-' + size.id"
+                        [ngModel]="colorStockSum(size)"
+                        [readonly]="true"
+                        [min]="0"
+                        [useGrouping]="false"
+                        mode="decimal"
+                        styleClass="stock-input stock-input-readonly w-full"
+                        [inputStyleClass]="'text-right'"></p-inputNumber>
+                    } @else {
+                      <p-inputNumber
+                        [inputId]="'master-' + size.id"
+                        [(ngModel)]="size.masterStock"
+                        [min]="0"
+                        [useGrouping]="false"
+                        mode="decimal"
+                        styleClass="stock-input w-full"
+                        [inputStyleClass]="'text-right'"></p-inputNumber>
+                    }
+                  </td>
+                </tr>
+                @for (
+                  color of size.colors;
+                  track trackByColorId($index, color)
+                ) {
+                  <tr class="row-color">
+                    <td class="color-label-cell">
+                      <span class="color-indent">{{ color.description }}</span>
+                    </td>
+                    <td class="text-500 text-center">—</td>
+                    <td class="text-500 text-center">—</td>
+                    <td class="text-500 text-center">—</td>
+                    <td class="text-500">—</td>
+                    <td class="text-right">
+                      <p-inputNumber
+                        [inputId]="'c-' + size.id + '-' + color.colorId"
+                        [(ngModel)]="color.stock"
+                        [min]="0"
+                        [useGrouping]="false"
+                        mode="decimal"
+                        styleClass="stock-input w-full"
+                        [inputStyleClass]="'text-right'"
+                        [pTooltip]="'Stock — ' + color.description"
+                        tooltipPosition="top"></p-inputNumber>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 3. Fotos -->
+      <section
+        class="reconciliation-section surface-card shadow-1 border-round p-3 md:p-4"
+        aria-labelledby="section-photos">
+        <div class="section-heading flex align-items-center gap-2 mb-3">
+          <span
+            class="section-index flex align-items-center justify-content-center border-circle bg-primary text-primary-contrast text-sm font-bold w-2rem h-2rem shrink-0"
+            >3</span
+          >
+          <div>
+            <h2 id="section-photos" class="section-title m-0 text-lg">Fotos</h2>
+            <p class="section-sub m-0 text-sm text-600">
+              Imágenes para ecommerce (misma gestión que en el stepper).
+            </p>
+          </div>
+        </div>
+
+        <div class="field col-12 px-0">
+          <app-input-image
+            [productId]="draft.productId"
+            [imageSaved]="imageSaved"
+            [imagesSaved]="imagesSaved"
+            [images]="(images | async) ?? []"
+            (selectedFilesChange)="getFormData($event)"
+            (imagesToDelete)="imagesToDelete($event)"></app-input-image>
+        </div>
+      </section>
+    </div>
+  } @else if (!loadingBundle) {
+    <div
+      class="surface-border border-round border-1 border-dashed p-5 text-center text-600 empty-state">
+      <i class="pi pi-box text-4xl text-300 mb-3 block"></i>
+      Busque por nombre, ID o código de barras para cargar la ficha y el
+      inventario.
+    </div>
+  }
+</div>

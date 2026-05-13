@@ -7,6 +7,13 @@ const routes: Routes = [
     loadComponent: () =>
       import('./pages/reports/reports.component').then(c => c.ReportsComponent),
   },
+  {
+    path: 'products',
+    loadComponent: () =>
+      import('./pages/products-report/products-report.component').then(
+        c => c.ProductsReportComponent,
+      ),
+  },
 ];
 
 @NgModule({

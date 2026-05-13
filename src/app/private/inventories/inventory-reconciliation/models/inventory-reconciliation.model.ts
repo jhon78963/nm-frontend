@@ -1,0 +1,74 @@
+/** Respuesta de GET search (InventoryReconciliationProductResource). */
+export interface ReconciliationProductApi {
+  id: number;
+  name: string;
+  barcode: string | null;
+  genderId?: number;
+  warehouseId?: number;
+  status?: string;
+  sizes: ReconciliationSizeApi[];
+}
+
+export interface ReconciliationSizeApi {
+  id: number;
+  sizeId: number;
+  barcode: string | null;
+  stock: number;
+  purchasePrice?: number | null;
+  salePrice?: number | null;
+  minSalePrice?: number | null;
+  size: { id: number; description: string } | null;
+  colors: ReconciliationColorApi[];
+}
+
+export interface ReconciliationColorApi {
+  id: number;
+  colorId: number;
+  description: string;
+  hash?: string | null;
+  stock: number;
+}
+
+export interface ReconciliationSearchResponse {
+  products: ReconciliationProductApi[];
+}
+
+export interface ReconciliationUpdateResponse {
+  message: string;
+  product: ReconciliationProductApi | null;
+}
+
+/** Estado editable local (copia profunda). */
+export interface ReconciliationColorDraft {
+  colorId: number;
+  description: string;
+  stock: number;
+}
+
+export interface ReconciliationSizeDraft {
+  id: number;
+  sizeId: number;
+  sizeLabel: string;
+  barcode: string | null;
+  /** Stock maestro cuando no hay desglose por color. */
+  masterStock: number;
+  /** Maestro reportado por el servidor al cargar (auditoría). */
+  serverMasterStock: number;
+  /**
+   * Si al cargar había sum(colores) ≠ maestro en BD; guardar inventario suele corregirlo
+   * aplicando los stocks por color.
+   */
+  shelfInconsistentOnLoad: boolean;
+  /** Precios a nivel talla (product_size); no aplican por color. */
+  purchasePrice: number | null;
+  salePrice: number | null;
+  minSalePrice: number | null;
+  colors: ReconciliationColorDraft[];
+}
+
+export interface ReconciliationDraft {
+  productId: number;
+  name: string;
+  sku: string | null;
+  sizes: ReconciliationSizeDraft[];
+}

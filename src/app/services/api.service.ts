@@ -26,4 +26,11 @@ export class ApiService {
   delete<T>(path: string, headers?: any) {
     return this.http.delete<T>(`${this.BASE_URL}/${path}`, { headers });
   }
+
+  getBlob(path: string, headers?: Record<string, string>) {
+    return this.http.get(`${this.BASE_URL}/${path}`, {
+      responseType: 'blob',
+      headers,
+    });
+  }
 }

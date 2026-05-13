@@ -3,6 +3,24 @@ import { RouterModule, Routes } from '@angular/router';
 
 const routes: Routes = [
   {
+    path: 'reconciliation/:productId',
+    title: 'Cuadre de inventario',
+    data: { breadcrumb: 'Cuadre de inventario' },
+    loadComponent: () =>
+      import(
+        './inventory-reconciliation/inventory-reconciliation.component'
+      ).then(m => m.InventoryReconciliationComponent),
+  },
+  {
+    path: 'reconciliation',
+    title: 'Cuadre de inventario',
+    data: { breadcrumb: 'Cuadre de inventario' },
+    loadComponent: () =>
+      import(
+        './inventory-reconciliation/inventory-reconciliation.component'
+      ).then(m => m.InventoryReconciliationComponent),
+  },
+  {
     path: 'products',
     title: 'Productos',
     data: { breadcrumb: 'Productos' },

@@ -84,6 +84,11 @@ export class AppMenuComponent implements OnInit {
           icon: 'pi pi-home',
           items: [
             {
+              label: 'Cuadre rápido',
+              icon: 'pi pi-fw pi-table',
+              routerLink: ['/inventories/reconciliation'],
+            },
+            {
               label: 'Productos',
               icon: 'pi pi-fw pi-cog',
               routerLink: ['/inventories/products'],
@@ -161,6 +166,11 @@ export class AppMenuComponent implements OnInit {
               label: 'Reportes',
               icon: 'pi pi-fw pi-user',
               routerLink: ['/reports'],
+            },
+            {
+              label: 'Productos (inventario)',
+              icon: 'pi pi-fw pi-table',
+              routerLink: ['/reports/products'],
             },
             {
               label: 'Resumen Financiero',

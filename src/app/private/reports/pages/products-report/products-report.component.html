@@ -1,0 +1,131 @@
+<div class="p-4 bg-blue-50 font-family fadein-animation">
+  <div
+    class="flex flex-column md:flex-row justify-content-between align-items-start md:align-items-center mb-4 gap-3">
+    <div class="flex flex-column gap-2">
+      <a
+        routerLink="/reports"
+        class="text-sm text-primary no-underline hover:underline flex align-items-center gap-1">
+        <i class="pi pi-arrow-left"></i>
+        Volver al reporte gerencial
+      </a>
+      <h1 class="text-2xl font-bold text-900 m-0">
+        Inventario por producto (tallas y colores)
+      </h1>
+      <p class="text-600 m-0 text-sm">
+        Una sola tabla: quiebre por producto en una fila. Colores como
+        <span class="font-semibold">cantidad nombre</span>. «Stock colores» es
+        la suma por color; debe coincidir con «Stock talla».
+      </p>
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+      <button
+        pButton
+        type="button"
+        label="Actualizar"
+        icon="pi pi-refresh"
+        class="p-button-outlined"
+        [disabled]="loading()"
+        (click)="loadData()"
+        pTooltip="Recargar datos"></button>
+      <button
+        pButton
+        type="button"
+        label="Exportar PDF"
+        icon="pi pi-file-pdf"
+        [loading]="exporting()"
+        [disabled]="loading() || exporting() || rawProducts().length === 0"
+        (click)="exportPdf()"
+        pTooltip="Descargar reporte en PDF"></button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p-card styleClass="shadow-2 border-round-xl">
+      <p-skeleton height="3rem" class="mb-3"></p-skeleton>
+      <p-skeleton height="20rem"></p-skeleton>
+    </p-card>
+  } @else if (rawProducts().length === 0) {
+    <p-card styleClass="shadow-2 border-round-xl">
+      <p class="text-center text-600 py-5 m-0">
+        No hay productos para mostrar.
+      </p>
+    </p-card>
+  } @else {
+    <p-card styleClass="shadow-2 border-round-xl p-0 overflow-hidden">
+      <p-table
+        [value]="tableRows()"
+        styleClass="p-datatable-sm p-datatable-striped products-inventory-table"
+        [tableStyle]="{ 'min-width': '52rem' }">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Talla</th>
+            <th>Cód. barras</th>
+            <th class="text-center">Compra</th>
+            <th class="text-center">Venta</th>
+            <th class="text-center">Venta Mín.</th>
+            <th class="text-center">Tallas</th>
+            <th>Colores</th>
+            <th class="text-center">Colores</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-row>
+          @if (row.kind === 'product') {
+            <tr class="product-break-row">
+              <td
+                colspan="8"
+                class="bg-indigo-50 text-900 font-bold py-2 px-3 border-bottom-1 surface-border">
+                {{ row.name }}
+              </td>
+            </tr>
+          } @else {
+            <tr [class.bg-orange-50]="row.stockMismatch">
+              <td>{{ row.size }}</td>
+              <td class="font-mono text-sm white-space-nowrap">
+                {{ row.barcode ?? '—' }}
+              </td>
+              <td class="text-center">
+                @if (row.purchasePrice !== null) {
+                  S/ {{ row.purchasePrice | number: '1.2-2' }}
+                } @else {
+                  —
+                }
+              </td>
+              <td class="text-center">
+                @if (row.salePrice !== null) {
+                  S/ {{ row.salePrice | number: '1.2-2' }}
+                } @else {
+                  —
+                }
+              </td>
+              <td class="text-center">
+                @if (row.minSalePrice !== null) {
+                  S/ {{ row.minSalePrice | number: '1.2-2' }}
+                } @else {
+                  —
+                }
+              </td>
+              <td
+                class="text-center font-semibold"
+                [class.text-orange-600]="row.stockMismatch">
+                {{ row.sizeStock !== null ? row.sizeStock : '—' }}
+              </td>
+              <td class="white-space-normal line-height-3">
+                {{ row.colorsSummary }}
+              </td>
+              <td
+                class="text-center font-semibold"
+                [class.text-orange-600]="row.stockMismatch">
+                @if (row.colorsStockSum !== null) {
+                  {{ row.colorsStockSum }}
+                } @else {
+                  —
+                }
+              </td>
+            </tr>
+          }
+        </ng-template>
+      </p-table>
+    </p-card>
+  }
+</div>
