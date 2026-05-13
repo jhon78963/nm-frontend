@@ -1,5 +1,7 @@
 <div [class]="!stepper ? ' card' : ''">
-  <p-confirmDialog [appendTo]="'body'" styleClass="dialog-confirm-inv"></p-confirmDialog>
+  <p-confirmDialog
+    [appendTo]="'body'"
+    styleClass="dialog-confirm-inv"></p-confirmDialog>
   <div
     class="flex flex-wrap justify-content-center md:justify-content-end gap-2 col-12">
     <button
@@ -21,7 +23,10 @@
       size="small"
       (click)="saveAllSelectedColors()"
       [disabled]="
-        !selectedSize || attachedColors().length === 0 || !isStockBalanced()
+        !selectedSize ||
+        attachedColors().length === 0 ||
+        !isStockBalanced() ||
+        catalogColorsPending()
       "></button>
     <button
       pButton
@@ -33,7 +38,10 @@
       size="small"
       (click)="deleteAllSelectedColors()"
       [disabled]="
-        !selectedSize || removableAttachedColors().length === 0 || !isStockBalanced()
+        !selectedSize ||
+        removableAttachedColors().length === 0 ||
+        !isStockBalanced() ||
+        catalogColorsPending()
       "></button>
     <button
       pButton
@@ -53,6 +61,7 @@
             class="surface-card p-3 border-round-xl shadow-1 border-1 border-100">
             <p-dropdown
               [options]="sizes"
+              dataKey="id"
               optionLabel="description"
               [filter]="true"
               filterBy="description"
@@ -69,46 +78,81 @@
               class="surface-card p-3 border-round-xl shadow-1 border-1 border-100">
               <div class="flex align-items-center justify-content-between mb-2">
                 <span
-                  class="text-sm font-bold"
+                  class="text-sm font-bold line-height-3"
                   [ngClass]="
-                    isStockBalanced() ? 'text-green-500' : 'text-orange-500'
+                    effectiveStockBalancedForPanel()
+                      ? 'text-green-500'
+                      : 'text-orange-500'
                   ">
-                  Variantes (suma): {{ totalAssignedStock() }} · Maestro talla:
-                  {{ selectedSize.stock }}
+                  Maestro talla-producto:
+                  <strong>{{ masterProductSizeStock() }}</strong>
+                  · Suma variantes:
+                  <strong>{{ totalAssignedStock() }}</strong>
                 </span>
                 <i
                   class="pi"
                   [ngClass]="
-                    isStockBalanced()
+                    effectiveStockBalancedForPanel()
                       ? 'pi-check-circle text-green-500'
                       : 'pi-exclamation-triangle text-orange-500'
                   "></i>
               </div>
-              <p-progressBar
-                [value]="stockAssignPercent()"
-                [showValue]="false"
-                styleClass="h-1rem shadow-1 mb-2"
-                [color]="isStockBalanced() ? '#22C55E' : '#f59e0b'">
-              </p-progressBar>
-              @if (remainingStock() !== 0) {
-                <div class="text-center p-2 border-round bg-gray-50">
+              @if (catalogColorsPending()) {
+                <p class="text-sm text-600 mb-0 line-height-3">
+                  Cargando variantes para esta talla…
+                </p>
+              } @else {
+                <p-progressBar
+                  [value]="stockAssignPercent()"
+                  [showValue]="false"
+                  styleClass="h-1rem shadow-1 mb-2"
+                  [color]="progressBarHue()">
+                </p-progressBar>
+                @if (variantVsMasterRatioPercent() !== null) {
                   <small
-                    class="text-xs font-bold"
+                    class="block text-center text-xs mb-2"
                     [ngClass]="
-                      remainingStock() > 0 ? 'text-blue-500' : 'text-red-500'
+                      isStockBalanced()
+                        ? 'text-600'
+                        : remainingStock() < 0
+                          ? 'text-red-600 font-semibold'
+                          : 'text-orange-700 font-semibold'
                     ">
-                    {{
-                      remainingStock() > 0
-                        ? 'Faltan: ' + remainingStock()
-                        : 'Sobran: ' + remainingStock() * -1
-                    }}
-                    unidades
+                    Ubicación frente al maestro:
+                    {{ variantVsMasterRatioPercent() }} % · ({{
+                      totalAssignedStock()
+                    }}/{{ masterProductSizeStock() }})
                   </small>
-                </div>
+                }
+                @if (remainingStock() !== 0) {
+                  <div class="text-center p-2 border-round bg-orange-50">
+                    <small
+                      class="text-xs font-bold line-height-3 block"
+                      [ngClass]="
+                        remainingStock() > 0
+                          ? 'text-orange-700'
+                          : 'text-red-600'
+                      ">
+                      @if (remainingStock() > 0) {
+                        Faltan
+                        {{ remainingStock() }}
+                        uds.: maestro {{ masterProductSizeStock() }}, sumas
+                        {{ totalAssignedStock() }}.
+                      } @else {
+                        Sobran
+                        {{ remainingStock() * -1 }}
+                        uds.: maestro {{ masterProductSizeStock() }}, sumas
+                        {{ totalAssignedStock() }}.
+                      }
+                    </small>
+                  </div>
+                }
               }
               <p class="text-xs text-600 line-height-3 mt-2 mb-0">
-                El stock de la talla se mantiene igual a la suma de las variantes
-                <strong>marcadas como existentes</strong> (incluye unidades en 0).
+                La <strong>barra</strong> y el
+                <strong>stock maestro</strong> siguen el stock oficial de esta
+                talla en el servidor. La <strong>suma de variantes</strong> debe
+                igualar ese valor antes de guardar.
               </p>
             </div>
           }
@@ -140,25 +184,25 @@
           </p-selectButton>
         </div>
 
-        @if (selectedSize && !isStockBalanced()) {
+        @if (selectedSize && !catalogColorsPending() && !isStockBalanced()) {
           <div
             class="stock-hint-banner border-round p-3 mb-3 shadow-1 flex flex-column gap-2">
             <div class="flex align-items-start gap-2">
               <i class="pi pi-info-circle text-orange-600 mt-1"></i>
               <div class="text-sm line-height-3 text-800">
-                <span class="font-semibold text-orange-900"
-                  >Inconsistencia local (actualice la página si persiste).</span
-                >
-                Variantes sumadas:
+                <span class="font-semibold text-orange-900">
+                  La suma de variantes no coincide con el stock maestro.
+                </span>
+                Suma variantes:
                 <strong>{{ totalAssignedStock() }}</strong>
-                · Maestro talla en pantalla:
-                <strong>{{ selectedSize.stock }}</strong
+                · Maestro (talla-producto):
+                <strong>{{ masterProductSizeStock() }}</strong
                 >.
                 <span class="block mt-2 text-700">
-                  Use el disco por fila o <strong>Guardar</strong> para enviar los cambios. El botón
-                  superior guarda todas las filas con la casilla
-                  <strong>Variante</strong> activa; el stock <strong>0</strong> se envía como
-                  agotado.
+                  Use el disco por fila o <strong>Guardar</strong> para enviar
+                  los cambios. El botón superior guarda todas las filas con la
+                  casilla <strong>Variante</strong> activa; el stock
+                  <strong>0</strong> se envía como agotado.
                 </span>
               </div>
             </div>
@@ -177,7 +221,10 @@
               styleClass="p-datatable-sm">
               <ng-template pTemplate="header">
                 <tr>
-                  <th style="width: 3rem" pTooltip="La variante existe para esta talla" tooltipPosition="top">
+                  <th
+                    style="width: 3rem"
+                    pTooltip="La variante existe para esta talla"
+                    tooltipPosition="top">
                     Var.
                   </th>
                   <th style="width: 4rem" class="hidden md:table-cell">#</th>
@@ -230,7 +277,10 @@
                             >{{ color.description }}</span
                           >
                           @if (color.variantAttached && color.stock === 0) {
-                            <p-tag severity="danger" value="Agotado" styleClass="text-xs"></p-tag>
+                            <p-tag
+                              severity="danger"
+                              value="Agotado"
+                              styleClass="text-xs"></p-tag>
                           }
                         </div>
                         <small class="text-xs text-500">{{ color.hash }}</small>
@@ -252,12 +302,6 @@
                           step="1" />
                         <span class="p-inputgroup-addon px-2 text-xs">uds</span>
                       </div>
-                      @if (color.variantAttached && color.stock === 0) {
-                        <small class="text-600 text-xs line-height-2 px-1">
-                          Registrado con 0 uds. Guarde (disco o arriba) para persistir
-                          <code>stock: 0</code> en el servidor.
-                        </small>
-                      }
                     </div>
                   </td>
                   <td class="px-1">
@@ -270,7 +314,9 @@
                         size="small"
                         [disabled]="!selectedSize || !color.variantAttached"
                         pTooltip="{{
-                          color.isExists ? 'Guardar stock de esta variante' : 'Asignar stock'
+                          color.isExists
+                            ? 'Guardar stock de esta variante'
+                            : 'Asignar stock'
                         }}"
                         tooltipPosition="top"
                         (click)="
@@ -288,7 +334,9 @@
                           [disabled]="!selectedSize || !color.variantAttached"
                           pTooltip="Quitar variante de esta talla (elimina relación en servidor)"
                           tooltipPosition="top"
-                          (click)="removeColorSizeProductButton(color)"></button>
+                          (click)="
+                            removeColorSizeProductButton(color)
+                          "></button>
                       }
                     </div>
                   </td>

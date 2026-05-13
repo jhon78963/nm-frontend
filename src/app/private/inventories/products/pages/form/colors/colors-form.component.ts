@@ -76,6 +76,22 @@ export class ColorsFormComponent implements OnInit {
   selectedSize: any;
   stepper: boolean = true;
 
+  /** Talla elegida vigente para ignorar respuestas de red de una selección anterior. */
+  private catalogSelectedSizeId: number | null = null;
+
+  /** Variantes cargándose tras cambiar talla — evita mezclar suma anterior con maestro nuevo. */
+  catalogColorsPending = signal(false);
+
+  /**
+   * `computed()` solo observa Signals; selectedSize/sizes son campos normales sin invalidarlo.
+   * Se incrementa al cambiar selección u opciones para que maestro/recap no queden pegados.
+   */
+  private panelStockSourceEpoch = signal(0);
+
+  private bumpPanelStockSourceEpoch(): void {
+    this.panelStockSourceEpoch.update(n => n + 1);
+  }
+
   searchTerm = signal<string>('');
   filterStatus = signal<'all' | 'active' | 'inactive'>('all');
 
@@ -88,31 +104,90 @@ export class ColorsFormComponent implements OnInit {
   );
 
   totalAssignedStock = computed(() => {
-    return this.colors().reduce((acc, color: { variantAttached?: boolean; stock?: unknown }) => {
-      if (!color.variantAttached) {
-        return acc;
+    if (this.catalogColorsPending()) {
+      return 0;
+    }
+    return this.colors().reduce(
+      (acc, color: { variantAttached?: boolean; stock?: unknown }) => {
+        if (!color.variantAttached) {
+          return acc;
+        }
+        return acc + (Number(color.stock) || 0);
+      },
+      0,
+    );
+  });
+
+  /** Maestro desde la fila de `sizes` (misma fuente que el texto del combo), con respaldo del modelo. */
+  masterProductSizeStock = computed(() => {
+    this.panelStockSourceEpoch();
+    const id = this.selectedSize?.id;
+    if (id == null || id === '') {
+      return 0;
+    }
+    const row = this.sizes.find(
+      (s: ProductSizeOption) => Number(s.id) === Number(id),
+    );
+    if (
+      row != null &&
+      row.stock !== undefined &&
+      row.stock !== null &&
+      `${row.stock}`.trim() !== ''
+    ) {
+      const n = Number(row.stock);
+      if (!Number.isNaN(n)) {
+        return Math.max(0, Math.trunc(n));
       }
-      return acc + (Number(color.stock) || 0);
-    }, 0);
+    }
+    return Math.max(0, Math.trunc(Number(this.selectedSize?.stock ?? 0) || 0));
   });
 
   remainingStock = computed(() => {
-    const limit = this.selectedSize?.stock || 0;
+    const limit = this.masterProductSizeStock();
     return limit - this.totalAssignedStock();
   });
 
   isStockBalanced = computed(() => {
-    return this.totalAssignedStock() === (this.selectedSize?.stock || 0);
+    return this.totalAssignedStock() === this.masterProductSizeStock();
   });
 
-  /** Barra de progreso: evita división por cero si el maestro es 0. */
+  /** Barra estable mientras llegan variantes — evita barras/aviso contradictorios. */
+  effectiveStockBalancedForPanel = computed(
+    () => this.catalogColorsPending() || this.isStockBalanced(),
+  );
+
+  /** Barra sobre el maestro: 100% = igual al maestro; se capa visualmente pero el aviso marca exceso. */
   stockAssignPercent = computed(() => {
-    const cap = this.selectedSize?.stock ?? 0;
+    const master = this.masterProductSizeStock();
     const assigned = this.totalAssignedStock();
-    if (cap <= 0) {
-      return assigned > 0 ? 100 : 0;
+    if (this.catalogColorsPending() || master <= 0) {
+      return assigned > 0 && !this.catalogColorsPending() ? 100 : 0;
     }
-    return Math.min(100, Math.round((assigned / cap) * 100));
+    const pct = (assigned / master) * 100;
+    return Math.min(100, Math.round(pct));
+  });
+
+  progressBarHue = computed((): string => {
+    if (this.catalogColorsPending() || this.isStockBalanced()) {
+      return '#22C55E';
+    }
+    const r = this.remainingStock();
+    if (r < 0) {
+      return '#EF4444';
+    }
+    return '#f59e0b';
+  });
+
+  /** Porcentaje real suma/maestro (>100 si hay exceso). La barra sigue usando `stockAssignPercent` (cap 100). */
+  variantVsMasterRatioPercent = computed((): number | null => {
+    if (this.catalogColorsPending()) {
+      return null;
+    }
+    const m = this.masterProductSizeStock();
+    if (m <= 0) {
+      return null;
+    }
+    return Math.round((this.totalAssignedStock() / m) * 100);
   });
 
   filteredColors = computed(() => {
@@ -136,8 +211,8 @@ export class ColorsFormComponent implements OnInit {
       .sort((a, b) => {
         const wa = Number(a.stock) || 0;
         const wb = Number(b.stock) || 0;
-        const aa = !!(a.variantAttached && wa > 0) ? 1 : 0;
-        const bb = !!(b.variantAttached && wb > 0) ? 1 : 0;
+        const aa = a.variantAttached && wa > 0 ? 1 : 0;
+        const bb = b.variantAttached && wb > 0 ? 1 : 0;
         return bb - aa;
       });
   });
@@ -171,29 +246,38 @@ export class ColorsFormComponent implements OnInit {
   loadColors() {
     const raw = localStorage.getItem('selectedSize');
     if (!raw) {
+      this.catalogSelectedSizeId = null;
+      this.catalogColorsPending.set(false);
       localStorage.removeItem('selectedSize');
       return;
     }
-    let selectedSize: Record<string, unknown>;
+    let parsed: Record<string, unknown>;
     try {
-      selectedSize = JSON.parse(raw) as Record<string, unknown>;
+      parsed = JSON.parse(raw) as Record<string, unknown>;
     } catch {
+      this.catalogSelectedSizeId = null;
+      this.catalogColorsPending.set(false);
       localStorage.removeItem('selectedSize');
       return;
     }
-    if (selectedSize && Number(selectedSize['productId']) === this.productId) {
-      const psIdStored = selectedSize['productSizeId'];
+    if (parsed && Number(parsed['productId']) === this.productId) {
+      const psIdStored = parsed['productSizeId'];
       this.selectedSize = {
-        id: Number(selectedSize['id']),
+        id: Number(parsed['id']),
         productSizeId:
           psIdStored != null && psIdStored !== ''
             ? Number(psIdStored)
             : undefined,
-        description: selectedSize['description'],
-        stock: Number(selectedSize['stock']) || 0,
+        description: parsed['description'],
+        stock: Number(parsed['stock']) || 0,
       };
-      this.getColors(this.selectedSize.id);
+      this.catalogSelectedSizeId = Number(this.selectedSize.id);
+      this.pinSelectedSizeToOptions();
+      this.bumpPanelStockSourceEpoch();
+      this.getColors(Number(this.selectedSize.id));
     } else {
+      this.catalogSelectedSizeId = null;
+      this.catalogColorsPending.set(false);
       localStorage.removeItem('selectedSize');
     }
   }
@@ -202,26 +286,46 @@ export class ColorsFormComponent implements OnInit {
     this.productSizeColorsService.getSizes(this.productId, size).subscribe({
       next: (sizesList: Size[]) => {
         this.sizes = sizesList as ProductSizeOption[];
+        this.pinSelectedSizeToOptions();
+        this.bumpPanelStockSourceEpoch();
       },
     });
   }
 
   getColors(sizeId: number) {
-    this.productSizeColorsService.getColors(this.productId, sizeId).subscribe({
+    const sid = Number(sizeId);
+    this.catalogColorsPending.set(true);
+    this.colors.set([]);
+
+    this.productSizeColorsService.getColors(this.productId, sid).subscribe({
       next: (rawColors: unknown) => {
+        if (
+          sid !== this.catalogSelectedSizeId ||
+          Number(this.selectedSize?.id) !== sid
+        ) {
+          return;
+        }
+
         const rows = Array.isArray(rawColors)
           ? (rawColors as Record<string, unknown>[])
           : [];
         const normalized = rows.map(c => this.normalizeColorRowFromApi(c));
         this.colors.set(normalized);
-        this.syncSizesProductSizeMeta(sizeId);
-        this.syncMasterStockFromVariants();
+        this.catalogColorsPending.set(false);
+        this.syncSizesProductSizeMeta(sid);
+      },
+      error: () => {
+        if (sid === this.catalogSelectedSizeId) {
+          this.catalogColorsPending.set(false);
+        }
       },
     });
   }
 
   /** Alineación con backend: existe variante ⇔ fila pivot; stock 0 es válido (agotado). */
-  private normalizeColorRowFromApi(c: Record<string, unknown>): CatalogColorRow {
+  private normalizeColorRowFromApi(
+    c: Record<string, unknown>,
+  ): CatalogColorRow {
     const isExists = !!c['isExists'];
     const rawStock = c['stock'];
     const stockNum = Math.max(
@@ -241,41 +345,68 @@ export class ColorsFormComponent implements OnInit {
     } as CatalogColorRow;
   }
 
-  /** Actualiza opciones del dropdown (`product_size` id) sin pisar el stock maestro sincronizado por variantes. */
+  /**
+   * Tras cada GET colors/sizes el array tiene objetos nuevos: el dropdown usa dataKey=id
+   * y esta rutina enlaza selectedSize al mismo objeto que la opción en la lista.
+   */
+  private pinSelectedSizeToOptions(): void {
+    const current = this.selectedSize as ProductSizeOption | undefined;
+    if (!current?.id) {
+      return;
+    }
+    const row = this.sizes.find(s => Number(s.id) === Number(current.id));
+    if (!row) {
+      return;
+    }
+
+    row.productSizeId = row.productSizeId ?? current.productSizeId;
+
+    this.selectedSize = row;
+    this.persistSelectedSizeSnapshot();
+    this.bumpPanelStockSourceEpoch();
+  }
+
+  /** Refresca `productSizeId` y stock maestro desde `GET colors/sizes`. */
   private syncSizesProductSizeMeta(sizeId: number): void {
-    if (!this.selectedSize || this.selectedSize.id !== sizeId) {
+    const sid = Number(sizeId);
+    if (
+      this.catalogSelectedSizeId !== sid ||
+      !this.selectedSize ||
+      Number(this.selectedSize.id) !== sid
+    ) {
       return;
     }
     this.productSizeColorsService.getSizes(this.productId).subscribe({
       next: (sizesList: Size[]) => {
-        this.sizes = sizesList as ProductSizeOption[];
-        const row = this.sizes.find(s => s.id === sizeId);
-        if (!row) {
+        if (
+          sid !== this.catalogSelectedSizeId ||
+          Number(this.selectedSize?.id) !== sid
+        ) {
           return;
         }
-        this.selectedSize = {
-          ...this.selectedSize,
-          productSizeId: row.productSizeId ?? this.selectedSize.productSizeId,
-        };
+
+        this.sizes = sizesList as ProductSizeOption[];
+        const row = this.sizes.find(s => Number(s.id) === sid);
+        if (!row) {
+          this.pinSelectedSizeToOptions();
+          return;
+        }
+        const apiMaster =
+          row.stock != null && !Number.isNaN(Number(row.stock))
+            ? Math.max(0, Math.trunc(Number(row.stock)))
+            : null;
+        if (apiMaster !== null) {
+          row.stock = apiMaster;
+        }
+        row.productSizeId =
+          row.productSizeId ?? this.selectedSize?.productSizeId;
+
+        this.selectedSize = row;
+        this.sizes = [...this.sizes];
         this.persistSelectedSizeSnapshot();
+        this.bumpPanelStockSourceEpoch();
       },
     });
-  }
-
-  /** Stock maestro (`product_size`) = suma de stocks de variantes marcadas como existentes en esta vista. */
-  private syncMasterStockFromVariants(): void {
-    if (!this.selectedSize) {
-      return;
-    }
-    const sum = this.totalAssignedStock();
-    this.selectedSize = { ...this.selectedSize, stock: sum };
-    const sizeId = this.selectedSize.id;
-    const idx = this.sizes.findIndex(s => s.id === sizeId);
-    if (idx >= 0) {
-      this.sizes[idx] = { ...this.sizes[idx], stock: sum };
-      this.sizes = [...this.sizes];
-    }
-    this.persistSelectedSizeSnapshot();
   }
 
   private persistSelectedSizeSnapshot(): void {
@@ -296,7 +427,6 @@ export class ColorsFormComponent implements OnInit {
       color.variantAttached = true;
       color.stock = Math.max(0, Math.trunc(Number(color.stock) || 0));
       this.colors.update(rows => [...rows]);
-      this.syncMasterStockFromVariants();
       return;
     }
 
@@ -320,13 +450,15 @@ export class ColorsFormComponent implements OnInit {
 
     color.variantAttached = false;
     this.colors.update(rows => [...rows]);
-    this.syncMasterStockFromVariants();
   }
 
   private detachVariantWithApi(color: CatalogColorRow): void {
     const psId = color.productSizeId;
     if (!psId) {
-      showError(this.messageService, 'Falta el identificador de talla-producto.');
+      showError(
+        this.messageService,
+        'Falta el identificador de talla-producto.',
+      );
       return;
     }
     this.productSizeColorsService.remove(psId, color.id).subscribe({
@@ -339,14 +471,34 @@ export class ColorsFormComponent implements OnInit {
   }
 
   getSelectedSize(event: any) {
-    if (event.value) {
+    if (event?.value?.id != null && event.value.id !== '') {
+      const sid = Number(event.value.id);
+      this.catalogSelectedSizeId = sid;
+
       event.value.productId = this.productId;
-      localStorage.setItem('selectedSize', JSON.stringify(event.value));
-      this.getColors(event.value.id);
-    } else {
-      this.messageService.clear();
+      this.pinSelectedSizeToOptions();
+      const pin = this.selectedSize;
+      localStorage.setItem(
+        'selectedSize',
+        JSON.stringify({
+          ...pin,
+          productId: this.productId,
+        }),
+      );
+
+      this.catalogColorsPending.set(true);
       this.colors.set([]);
+      this.bumpPanelStockSourceEpoch();
+      this.getColors(sid);
+      return;
     }
+
+    this.catalogSelectedSizeId = null;
+    this.catalogColorsPending.set(false);
+    this.messageService.clear();
+    this.colors.set([]);
+    localStorage.removeItem('selectedSize');
+    this.bumpPanelStockSourceEpoch();
   }
 
   resetFunction() {
@@ -362,7 +514,6 @@ export class ColorsFormComponent implements OnInit {
     );
     color.stock = stockNum;
     this.colors.update(currentColors => [...currentColors]);
-    this.syncMasterStockFromVariants();
   }
 
   createColor() {
@@ -389,14 +540,10 @@ export class ColorsFormComponent implements OnInit {
 
   saveAllSelectedColors() {
     const targets = this.attachedColors().filter(
-      (c: CatalogColorRow) =>
-        !!c.productSizeId && c.variantAttached === true,
+      (c: CatalogColorRow) => !!c.productSizeId && c.variantAttached === true,
     );
     const requests = targets.map(color => {
-      const stockPayload = Math.max(
-        0,
-        Math.trunc(Number(color.stock)),
-      );
+      const stockPayload = Math.max(0, Math.trunc(Number(color.stock)));
       const productSizeColorSave: ProductSizeColorSave = {
         stock: stockPayload,
       };
@@ -412,10 +559,7 @@ export class ColorsFormComponent implements OnInit {
     });
 
     if (!requests.length) {
-      showError(
-        this.messageService,
-        'No hay variantes marcadas para guardar.',
-      );
+      showError(this.messageService, 'No hay variantes marcadas para guardar.');
       return;
     }
 
@@ -449,7 +593,9 @@ export class ColorsFormComponent implements OnInit {
       rejectLabel: 'Cancelar',
       acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
-        const toRemove = removable.filter(c => c.productSizeId != null) as CatalogColorRow[];
+        const toRemove = removable.filter(
+          c => c.productSizeId != null,
+        ) as CatalogColorRow[];
         const requests = toRemove.map((color: CatalogColorRow) =>
           this.productSizeColorsService
             .remove(color.productSizeId as number, color.id)
@@ -502,7 +648,10 @@ export class ColorsFormComponent implements OnInit {
   removeColorSizeProductButton(color: CatalogColorRow) {
     const psId = color.productSizeId;
     if (!psId) {
-      showError(this.messageService, 'Falta el identificador de talla-producto.');
+      showError(
+        this.messageService,
+        'Falta el identificador de talla-producto.',
+      );
       return;
     }
     this.productSizeColorsService.remove(psId, color.id).subscribe({

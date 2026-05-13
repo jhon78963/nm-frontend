@@ -117,8 +117,7 @@ export class ProductsReportComponent implements OnInit {
           : null;
         const sizeStock = size.stock;
         const stockMismatch =
-          colorsStockSum !== null &&
-          colorsStockSum !== sizeStock;
+          colorsStockSum !== null && colorsStockSum !== sizeStock;
 
         out.push({
           kind: 'size',

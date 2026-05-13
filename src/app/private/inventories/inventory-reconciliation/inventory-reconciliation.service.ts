@@ -32,13 +32,13 @@ export class InventoryReconciliationService {
   search(q: string): Observable<ReconciliationSearchResponse> {
     const query = encodeURIComponent(q.trim());
     return this.api
-      .get<{ products: unknown }>(
-        `inventory/reconciliation/search?q=${query}`,
-      )
+      .get<{ products: unknown }>(`inventory/reconciliation/search?q=${query}`)
       .pipe(
-        map((res): ReconciliationSearchResponse => ({
-          products: this.normalizeProductList(res.products),
-        })),
+        map(
+          (res): ReconciliationSearchResponse => ({
+            products: this.normalizeProductList(res.products),
+          }),
+        ),
       );
   }
 
