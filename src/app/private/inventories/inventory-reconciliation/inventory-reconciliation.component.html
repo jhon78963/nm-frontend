@@ -1,6 +1,6 @@
 <p-toast position="top-right" />
 
-<div class="reconciliation-page p-3 md:p-4">
+<div class="p-3 md:p-4">
   <header class="page-header mb-3">
     <div
       class="flex flex-column md:flex-row md:align-items-start md:justify-content-between gap-3">
@@ -314,7 +314,9 @@
                           [disabled]="saving || replacingVariantColor"
                           pTooltip="Sustituir por otro color del catálogo (conserva stock)"
                           tooltipPosition="left"
-                          (click)="openReplaceColorDialog(size, color)"></button>
+                          (click)="
+                            openReplaceColorDialog(size, color)
+                          "></button>
                       </div>
                     </td>
                     <td class="text-500 text-center">—</td>
