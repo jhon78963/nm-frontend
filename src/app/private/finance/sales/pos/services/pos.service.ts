@@ -76,6 +76,10 @@ export class PosService {
       return this.showToast('El carrito está vacío');
     }
 
+    if (!Array.isArray(payments) || payments.length < 1) {
+      return this.showToast('Debe registrar al menos un método de pago');
+    }
+
     this.isLoading.set(true);
 
     // CORRECCIÓN: Estructura anidada para cumplir validación 'items.*.color.product_size_id'

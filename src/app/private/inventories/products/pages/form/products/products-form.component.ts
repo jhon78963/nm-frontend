@@ -87,7 +87,7 @@ export class ProductsFormComponent implements OnInit {
   }
 
   saveProductButton() {
-    const product = new ProductSave(this.form.value);
+    const product = new ProductSave(this.form.value as Product);
     if (product.id) {
       this.productsService.edit(product.id, product).subscribe({
         next: (resP: any) => {

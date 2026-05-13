@@ -110,14 +110,22 @@ export class PosFooterComponent {
     const active = this.activeMethods();
     const total = this.totalToPay();
 
-    // 1. Validación de Carrito
-    if (total <= 0) {
-      // Dejar que el servicio maneje el error de carrito vacío
-      this.posService.processCheckoutWithPayments([]);
+    // 1. Carrito sin ítems
+    if (this.posService.cart().length === 0) {
+      this.posService.showToast('El carrito está vacío');
       return;
     }
 
-    // 2. Preparar pagos
+    // 2. Total 0 pero con líneas en carrito → el backend igual exige payments (min 1)
+    if (total <= 0) {
+      const methodId = active[0]?.id ?? 'CASH';
+      this.posService.processCheckoutWithPayments([
+        { method: methodId, amount: 0 },
+      ]);
+      return;
+    }
+
+    // 3. Preparar pagos
     let finalPayments = [];
 
     if (active.length === 1) {
@@ -144,7 +152,7 @@ export class PosFooterComponent {
       }));
     }
 
-    // 3. Enviar al servicio
+    // 4. Enviar al servicio
     this.posService.processCheckoutWithPayments(finalPayments);
   }
 }
