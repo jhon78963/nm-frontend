@@ -195,7 +195,10 @@
             <p class="section-sub m-0 text-sm text-600">
               Precios por talla (fila en negrita); debajo, cada color solo con
               stock. Con colores, el stock de la talla es la suma (solo
-              lectura).
+              lectura). Use el ícono
+              <i class="pi pi-sync text-700 vertical-align-middle"></i>
+              junto al nombre del color para sustituirlo por otro del catálogo
+              (el stock se conserva).
             </p>
           </div>
         </div>
@@ -297,7 +300,22 @@
                 ) {
                   <tr class="row-color">
                     <td class="color-label-cell">
-                      <span class="color-indent">{{ color.description }}</span>
+                      <div
+                        class="flex align-items-center gap-2 justify-content-between flex-wrap">
+                        <span class="color-indent flex-1 min-w-0">{{
+                          color.description
+                        }}</span>
+                        <button
+                          pButton
+                          pRipple
+                          type="button"
+                          icon="pi pi-sync"
+                          class="p-button-rounded p-button-text p-button-sm shrink-0"
+                          [disabled]="saving || replacingVariantColor"
+                          pTooltip="Sustituir por otro color del catálogo (conserva stock)"
+                          tooltipPosition="left"
+                          (click)="openReplaceColorDialog(size, color)"></button>
+                      </div>
                     </td>
                     <td class="text-500 text-center">—</td>
                     <td class="text-500 text-center">—</td>
@@ -360,3 +378,62 @@
     </div>
   }
 </div>
+
+<p-dialog
+  header="Cambiar color de la variante"
+  [(visible)]="replaceDialogVisible"
+  [modal]="true"
+  [dismissableMask]="true"
+  [closable]="true"
+  [style]="{ width: 'min(26rem, 94vw)' }"
+  [draggable]="false"
+  [resizable]="false"
+  (onHide)="closeReplaceColorDialog()">
+  @if (replaceCtx) {
+    <p class="text-sm text-600 line-height-3 mt-0 mb-3">
+      Talla <strong>{{ replaceCtx.sizeLabel }}</strong
+      >. Sustituir <strong>{{ replaceCtx.fromLabel }}</strong> (stock
+      {{ replaceCtx.stock }}) por el color correcto del catálogo.
+    </p>
+  }
+  @if (catalogColorsLoading) {
+    <p class="text-600 text-sm m-0">Cargando colores…</p>
+  } @else {
+    <p-dropdown
+      class="w-full block"
+      styleClass="w-full"
+      inputId="replace-color-dropdown"
+      [options]="replaceColorDropdownOptions"
+      optionLabel="description"
+      optionValue="id"
+      placeholder="Buscar color destino…"
+      [(ngModel)]="replaceTargetColorId"
+      [filter]="true"
+      filterBy="description"
+      appendTo="body"
+      [showClear]="true"></p-dropdown>
+  }
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      pRipple
+      type="button"
+      label="Cancelar"
+      class="p-button-text"
+      [disabled]="replacingVariantColor"
+      (click)="closeReplaceColorDialog()"></button>
+    <button
+      pButton
+      pRipple
+      type="button"
+      label="Aplicar cambio"
+      icon="pi pi-check"
+      [loading]="replacingVariantColor"
+      [disabled]="
+        catalogColorsLoading ||
+        replaceTargetColorId === null ||
+        replaceCtx === null
+      "
+      (click)="confirmReplaceVariantColor()"></button>
+  </ng-template>
+</p-dialog>

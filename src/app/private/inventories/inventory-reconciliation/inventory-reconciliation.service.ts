@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { ApiService } from '../../../services/api.service';
+import { Color, ColorListResponse } from '../colors/models/colors.model';
 import {
   ReconciliationProductApi,
   ReconciliationSearchResponse,
@@ -17,6 +18,11 @@ export interface ReconciliationUpdatePayload {
     minSalePrice?: number | null;
     colors?: Array<{ colorId: number; stock: number }>;
   }>;
+}
+
+export interface ReplaceVariantColorBody {
+  fromColorId: number;
+  toColorId: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -44,6 +50,25 @@ export class InventoryReconciliationService {
       `inventory/reconciliation/${productId}`,
       body,
     );
+  }
+
+  /** Sustituye el pivote color en una talla (stock se traslada al color destino). */
+  replaceVariantColor(
+    productId: number,
+    productSizeId: number,
+    body: ReplaceVariantColorBody,
+  ): Observable<ReconciliationUpdateResponse> {
+    return this.api.post<ReconciliationUpdateResponse>(
+      `inventory/reconciliation/${productId}/product-size/${productSizeId}/replace-color`,
+      body,
+    );
+  }
+
+  /** Lista de colores del catálogo (para selector en cuadre). */
+  loadColorsCatalog(limit = 2000): Observable<Color[]> {
+    return this.api
+      .get<ColorListResponse>(`colors?limit=${limit}&page=1`)
+      .pipe(map(res => res?.data ?? []));
   }
 
   private normalizeProductList(raw: unknown): ReconciliationProductApi[] {

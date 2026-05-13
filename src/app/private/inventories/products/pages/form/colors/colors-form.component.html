@@ -1,4 +1,5 @@
 <div [class]="!stepper ? ' card' : ''">
+  <p-confirmDialog [appendTo]="'body'" styleClass="dialog-confirm-inv"></p-confirmDialog>
   <div
     class="flex flex-wrap justify-content-center md:justify-content-end gap-2 col-12">
     <button
@@ -20,7 +21,7 @@
       size="small"
       (click)="saveAllSelectedColors()"
       [disabled]="
-        !selectedColors || !selectedColors.length || !isStockBalanced()
+        !selectedSize || attachedColors().length === 0 || !isStockBalanced()
       "></button>
     <button
       pButton
@@ -32,7 +33,7 @@
       size="small"
       (click)="deleteAllSelectedColors()"
       [disabled]="
-        !selectedColors || !selectedColors.length || !isStockBalanced()
+        !selectedSize || removableAttachedColors().length === 0 || !isStockBalanced()
       "></button>
     <button
       pButton
@@ -72,7 +73,7 @@
                   [ngClass]="
                     isStockBalanced() ? 'text-green-500' : 'text-orange-500'
                   ">
-                  Asignado: {{ totalAssignedStock() }} /
+                  Variantes (suma): {{ totalAssignedStock() }} · Maestro talla:
                   {{ selectedSize.stock }}
                 </span>
                 <i
@@ -84,7 +85,7 @@
                   "></i>
               </div>
               <p-progressBar
-                [value]="(totalAssignedStock() / selectedSize.stock) * 100"
+                [value]="stockAssignPercent()"
                 [showValue]="false"
                 styleClass="h-1rem shadow-1 mb-2"
                 [color]="isStockBalanced() ? '#22C55E' : '#f59e0b'">
@@ -105,6 +106,10 @@
                   </small>
                 </div>
               }
+              <p class="text-xs text-600 line-height-3 mt-2 mb-0">
+                El stock de la talla se mantiene igual a la suma de las variantes
+                <strong>marcadas como existentes</strong> (incluye unidades en 0).
+              </p>
             </div>
           }
         </div>
@@ -124,8 +129,8 @@
           <p-selectButton
             [options]="[
               { label: 'Todos', value: 'all' },
-              { label: 'Stock', value: 'active' },
-              { label: 'Sin Stock', value: 'inactive' },
+              { label: 'Con stock', value: 'active' },
+              { label: 'Agotado', value: 'inactive' },
             ]"
             [ngModel]="filterStatus()"
             (ngModelChange)="filterStatus.set($event)"
@@ -137,14 +142,25 @@
 
         @if (selectedSize && !isStockBalanced()) {
           <div
-            class="bg-red-50 border-left-3 border-red-500 p-3 mb-3 border-round-right shadow-1">
-            <div class="flex align-items-center">
-              <i class="pi pi-info-circle text-red-500 mr-2 text-xl"></i>
-              <span class="text-red-700 font-medium">
-                El stock total asignado ({{ totalAssignedStock() }}) no coincide
-                con el stock de la talla ({{ selectedSize.stock }}). Ajusta los
-                valores para poder guardar.
-              </span>
+            class="stock-hint-banner border-round p-3 mb-3 shadow-1 flex flex-column gap-2">
+            <div class="flex align-items-start gap-2">
+              <i class="pi pi-info-circle text-orange-600 mt-1"></i>
+              <div class="text-sm line-height-3 text-800">
+                <span class="font-semibold text-orange-900"
+                  >Inconsistencia local (actualice la página si persiste).</span
+                >
+                Variantes sumadas:
+                <strong>{{ totalAssignedStock() }}</strong>
+                · Maestro talla en pantalla:
+                <strong>{{ selectedSize.stock }}</strong
+                >.
+                <span class="block mt-2 text-700">
+                  Use el disco por fila o <strong>Guardar</strong> para enviar los cambios. El botón
+                  superior guarda todas las filas con la casilla
+                  <strong>Variante</strong> activa; el stock <strong>0</strong> se envía como
+                  agotado.
+                </span>
+              </div>
             </div>
           </div>
         }
@@ -154,7 +170,6 @@
             <p-table
               #dt
               [value]="filteredColors()"
-              [(selection)]="selectedColors"
               responsiveLayout="scroll"
               dataKey="id"
               [scrollable]="true"
@@ -162,7 +177,9 @@
               styleClass="p-datatable-sm">
               <ng-template pTemplate="header">
                 <tr>
-                  <th style="width: 3rem"></th>
+                  <th style="width: 3rem" pTooltip="La variante existe para esta talla" tooltipPosition="top">
+                    Var.
+                  </th>
                   <th style="width: 4rem" class="hidden md:table-cell">#</th>
                   <th>Color</th>
                   <th style="width: 9rem">Stock</th>
@@ -173,10 +190,21 @@
               <ng-template pTemplate="body" let-color>
                 <tr
                   [ngClass]="{
-                    'bg-blue-50/30': color.isExists,
-                    'opacity-60': !color.isExists,
+                    'bg-blue-50/30': color.variantAttached,
+                    'opacity-60': !color.variantAttached,
+                    'color-row-zero-stock':
+                      color.variantAttached &&
+                      (color.stock === 0 || color.stock === '0'),
                   }">
-                  <td><p-tableCheckbox [value]="color"></p-tableCheckbox></td>
+                  <td class="text-center align-top pt-3">
+                    <p-checkbox
+                      [binary]="true"
+                      [inputId]="'variant-' + color.id"
+                      [ngModel]="color.variantAttached"
+                      (ngModelChange)="onVariantAttachedChange(color, $event)"
+                      pTooltip="Si está marcado, esta variante existe para la talla. Desmarcar una variante ya guardada la elimina (tras confirmar)."
+                      tooltipPosition="top"></p-checkbox>
+                  </td>
                   <td class="hidden md:table-cell text-xs text-500">
                     {{ color.id }}
                   </td>
@@ -190,53 +218,77 @@
                           width: '1.8rem',
                           height: '1.8rem',
                         }"></div>
-                      <div class="flex flex-column overflow-hidden">
-                        <span
-                          class="text-xs md:text-sm font-bold text-900 truncate"
-                          >{{ color.description }}</span
-                        >
+                      <div class="flex flex-column overflow-hidden flex-1">
+                        <div class="flex align-items-center gap-2 flex-wrap">
+                          <span
+                            class="text-xs md:text-sm font-bold truncate"
+                            [ngClass]="
+                              color.variantAttached && color.stock === 0
+                                ? 'text-500'
+                                : 'text-900'
+                            "
+                            >{{ color.description }}</span
+                          >
+                          @if (color.variantAttached && color.stock === 0) {
+                            <p-tag severity="danger" value="Agotado" styleClass="text-xs"></p-tag>
+                          }
+                        </div>
                         <small class="text-xs text-500">{{ color.hash }}</small>
                       </div>
                     </div>
                   </td>
                   <td>
-                    <div class="p-inputgroup">
-                      <input
-                        type="number"
-                        pInputText
-                        [(ngModel)]="color.stock"
-                        (ngModelChange)="onStockChange(color)"
-                        class="w-full text-center p-2 text-sm"
-                        placeholder="0"
-                        min="0" />
-                      <span class="p-inputgroup-addon px-2 text-xs">uds</span>
+                    <div class="flex flex-column gap-1">
+                      <div class="p-inputgroup stock-input-wrap">
+                        <input
+                          type="number"
+                          pInputText
+                          [(ngModel)]="color.stock"
+                          (ngModelChange)="onStockChange(color)"
+                          [disabled]="!color.variantAttached"
+                          class="w-full text-center p-2 text-sm font-semibold"
+                          placeholder="0"
+                          min="0"
+                          step="1" />
+                        <span class="p-inputgroup-addon px-2 text-xs">uds</span>
+                      </div>
+                      @if (color.variantAttached && color.stock === 0) {
+                        <small class="text-600 text-xs line-height-2 px-1">
+                          Registrado con 0 uds. Guarde (disco o arriba) para persistir
+                          <code>stock: 0</code> en el servidor.
+                        </small>
+                      }
                     </div>
                   </td>
                   <td class="px-1">
-                    <div class="flex justify-content-end">
+                    <div class="flex justify-content-end gap-1">
                       <button
                         pButton
                         icon="pi pi-save"
                         [severity]="color.isExists ? 'secondary' : 'success'"
                         class="p-button-rounded p-button-text md:p-button-outlined p-0 w-6"
                         size="small"
-                        [disabled]="!isStockBalanced()"
+                        [disabled]="!selectedSize || !color.variantAttached"
+                        pTooltip="{{
+                          color.isExists ? 'Guardar stock de esta variante' : 'Asignar stock'
+                        }}"
+                        tooltipPosition="top"
                         (click)="
                           color.isExists
                             ? editColorSizeProductButton(color)
                             : saveColorSizeProductButton(color)
                         "></button>
-                      @if (color.isExists) {
+                      @if (color.variantAttached && color.isExists) {
                         <button
                           pButton
                           icon="pi pi-trash"
                           severity="danger"
                           class="p-button-rounded p-button-text md:p-button-outlined p-0 w-6"
                           size="small"
-                          [disabled]="!isStockBalanced()"
-                          (click)="
-                            removeColorSizeProductButton(color)
-                          "></button>
+                          [disabled]="!selectedSize || !color.variantAttached"
+                          pTooltip="Quitar variante de esta talla (elimina relación en servidor)"
+                          tooltipPosition="top"
+                          (click)="removeColorSizeProductButton(color)"></button>
                       }
                     </div>
                   </td>

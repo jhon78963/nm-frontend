@@ -105,3 +105,17 @@
     margin-top: -13px;
   }
 }
+
+.stock-hint-banner {
+  border-left: 4px solid #f59e0b;
+  background: linear-gradient(90deg, #fffbeb 0%, #ffffff 100%);
+}
+
+::ng-deep .color-row-zero-stock .stock-input-wrap input {
+  border-color: #fecaca;
+  background-color: #fef2f2;
+}
+
+::ng-deep .color-row-zero-stock .stock-input-wrap input:focus {
+  box-shadow: 0 0 0 2px #fecaca;
+}

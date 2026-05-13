@@ -19,6 +19,7 @@ import {
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { DividerModule } from 'primeng/divider';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
@@ -38,10 +39,12 @@ import { InputImage } from '../../../shared/custom-form-components/input-image/i
 import { SharedModule } from '../../../shared/shared.module';
 import { getFileSize } from '../../../utils/files';
 import { PImage } from '../products/models/images.interface';
+import { Color } from '../colors/models/colors.model';
 import { Product, ProductSave } from '../products/models/products.model';
 import { ProductsService } from '../products/services/products.service';
 import { InventoryReconciliationService } from './inventory-reconciliation.service';
 import {
+  ReconciliationColorDraft,
   ReconciliationDraft,
   ReconciliationProductApi,
   ReconciliationSizeDraft,
@@ -57,6 +60,7 @@ import {
     SharedModule,
     RouterLink,
     ButtonModule,
+    DialogModule,
     DividerModule,
     InputTextModule,
     InputNumberModule,
@@ -126,6 +130,21 @@ export class InventoryReconciliationComponent
   private routeSub?: Subscription;
   private searchSub: Subscription | null = null;
   private saveSub: Subscription | null = null;
+  private replaceColorSub: Subscription | null = null;
+  private catalogSub: Subscription | null = null;
+
+  replaceDialogVisible = false;
+  replaceTargetColorId: number | null = null;
+  catalogColors: Color[] = [];
+  catalogColorsLoading = false;
+  replacingVariantColor = false;
+  replaceCtx: {
+    productSizeId: number;
+    sizeLabel: string;
+    fromColorId: number;
+    fromLabel: string;
+    stock: number;
+  } | null = null;
 
   ngOnInit(): void {
     this.gendersService.getAll().subscribe((g: Gender[]) => (this.genders = g));
@@ -155,6 +174,8 @@ export class InventoryReconciliationComponent
     this.routeSub?.unsubscribe();
     this.searchSub?.unsubscribe();
     this.saveSub?.unsubscribe();
+    this.replaceColorSub?.unsubscribe();
+    this.catalogSub?.unsubscribe();
   }
 
   get images(): Observable<PImage[]> {
@@ -351,6 +372,11 @@ export class InventoryReconciliationComponent
     this.imageSaved = undefined;
     this.imagesSaved = undefined;
     this.searchQuery = '';
+    this.replaceDialogVisible = false;
+    this.replaceCtx = null;
+    this.replaceTargetColorId = null;
+    this.catalogSub?.unsubscribe();
+    this.replaceColorSub?.unsubscribe();
     if (navigate) {
       void this.router.navigate(['/inventories/reconciliation'], {
         replaceUrl: true,
@@ -407,6 +433,89 @@ export class InventoryReconciliationComponent
 
   trackByColorId(_: number, c: { colorId: number }): number {
     return c.colorId;
+  }
+
+  get replaceColorDropdownOptions(): Color[] {
+    const fromId = this.replaceCtx?.fromColorId;
+    if (fromId == null) {
+      return this.catalogColors;
+    }
+    return this.catalogColors.filter(c => c.id !== fromId);
+  }
+
+  openReplaceColorDialog(
+    size: ReconciliationSizeDraft,
+    color: ReconciliationColorDraft,
+  ): void {
+    if (this.replacingVariantColor || this.saving) {
+      return;
+    }
+    this.replaceCtx = {
+      productSizeId: size.id,
+      sizeLabel: size.sizeLabel,
+      fromColorId: color.colorId,
+      fromLabel: color.description,
+      stock: Math.max(0, Math.trunc(Number(color.stock) || 0)),
+    };
+    this.replaceTargetColorId = null;
+    this.replaceDialogVisible = true;
+
+    if (this.catalogColors.length > 0) {
+      return;
+    }
+    this.catalogColorsLoading = true;
+    this.catalogSub?.unsubscribe();
+    this.catalogSub = this.inventoryService.loadColorsCatalog().subscribe({
+      next: rows => {
+        this.catalogColors = rows ?? [];
+        this.catalogColorsLoading = false;
+      },
+      error: err => {
+        this.catalogColorsLoading = false;
+        this.toast('error', this.parseHttpError(err));
+      },
+    });
+  }
+
+  closeReplaceColorDialog(): void {
+    this.replaceDialogVisible = false;
+    this.replaceCtx = null;
+    this.replaceTargetColorId = null;
+  }
+
+  confirmReplaceVariantColor(): void {
+    const draft = this.draft;
+    const ctx = this.replaceCtx;
+    const toId = this.replaceTargetColorId;
+    if (!draft || !ctx || toId == null) {
+      this.toast('warn', 'Seleccione el color destino en el catálogo.');
+      return;
+    }
+    if (toId === ctx.fromColorId) {
+      this.toast('warn', 'Elija un color distinto al actual.');
+      return;
+    }
+
+    this.replacingVariantColor = true;
+    this.replaceColorSub?.unsubscribe();
+    this.replaceColorSub = this.inventoryService
+      .replaceVariantColor(draft.productId, ctx.productSizeId, {
+        fromColorId: ctx.fromColorId,
+        toColorId: toId,
+      })
+      .pipe(finalize(() => (this.replacingVariantColor = false)))
+      .subscribe({
+        next: res => {
+          this.toast('success', res.message ?? 'Color actualizado.');
+          if (res.product) {
+            this.applyProduct(res.product as ReconciliationProductApi);
+          }
+          this.closeReplaceColorDialog();
+        },
+        error: err => {
+          this.toast('error', this.parseHttpError(err));
+        },
+      });
   }
 
   getFormData(inputImage: InputImage): void {

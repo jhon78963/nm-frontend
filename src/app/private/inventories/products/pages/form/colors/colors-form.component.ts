@@ -7,9 +7,11 @@ import {
   ReactiveFormsModule,
 } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
 import { ColorPickerModule } from 'primeng/colorpicker';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { DialogService } from 'primeng/dynamicdialog';
 import { InputNumberModule } from 'primeng/inputnumber';
@@ -19,6 +21,8 @@ import { ProgressBarModule } from 'primeng/progressbar';
 import { RippleModule } from 'primeng/ripple';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
 import { catchError, forkJoin, of } from 'rxjs';
 import { showError, showSuccess } from '../../../../../../utils/notifications';
 import { ColorsCreateFormComponent } from '../../../../colors/pages/form/colors.component';
@@ -26,12 +30,25 @@ import { Size } from '../../../../sizes/models/sizes.model';
 import { ProductSizeColorSave } from '../../../models/colors.interface';
 import { ProductSizeColorsService } from '../../../services/productColors.service';
 
+type ProductSizeOption = Size & { stock?: number; productSizeId?: number };
+
+type CatalogColorRow = Record<string, unknown> & {
+  id: number;
+  productSizeId?: number | null;
+  variantAttached: boolean;
+  stock: number;
+  isExists?: boolean;
+  description?: string;
+};
+
 @Component({
   selector: 'app-colors-form',
   standalone: true,
   imports: [
     ButtonModule,
+    CheckboxModule,
     CommonModule,
+    ConfirmDialogModule,
     DropdownModule,
     FormsModule,
     ReactiveFormsModule,
@@ -43,29 +60,40 @@ import { ProductSizeColorsService } from '../../../services/productColors.servic
     RouterLink,
     SelectButtonModule,
     ProgressBarModule,
+    TagModule,
     InputNumberModule,
+    TooltipModule,
   ],
   templateUrl: './colors-form.component.html',
   styleUrl: './colors-form.component.scss',
-  providers: [DialogService, MessageService],
+  providers: [ConfirmationService, DialogService, MessageService],
 })
 export class ColorsFormComponent implements OnInit {
   productId: number = 0;
-  sizes: Size[] = [];
-  colors = signal<any[]>([]);
+  sizes: ProductSizeOption[] = [];
+  colors = signal<CatalogColorRow[]>([]);
   filterValue: any;
-  selectedColors: any[] = [];
   selectedSize: any;
   stepper: boolean = true;
 
   searchTerm = signal<string>('');
   filterStatus = signal<'all' | 'active' | 'inactive'>('all');
 
+  attachedColors = computed(() =>
+    this.colors().filter((c: CatalogColorRow) => c.variantAttached),
+  );
+
+  removableAttachedColors = computed(() =>
+    this.attachedColors().filter((c: CatalogColorRow) => !!c.isExists),
+  );
+
   totalAssignedStock = computed(() => {
-    return this.colors().reduce(
-      (acc, color) => acc + (Number(color.stock) || 0),
-      0,
-    );
+    return this.colors().reduce((acc, color: { variantAttached?: boolean; stock?: unknown }) => {
+      if (!color.variantAttached) {
+        return acc;
+      }
+      return acc + (Number(color.stock) || 0);
+    }, 0);
   });
 
   remainingStock = computed(() => {
@@ -77,22 +105,41 @@ export class ColorsFormComponent implements OnInit {
     return this.totalAssignedStock() === (this.selectedSize?.stock || 0);
   });
 
+  /** Barra de progreso: evita división por cero si el maestro es 0. */
+  stockAssignPercent = computed(() => {
+    const cap = this.selectedSize?.stock ?? 0;
+    const assigned = this.totalAssignedStock();
+    if (cap <= 0) {
+      return assigned > 0 ? 100 : 0;
+    }
+    return Math.min(100, Math.round((assigned / cap) * 100));
+  });
+
   filteredColors = computed(() => {
     const term = this.searchTerm().toLowerCase();
     const status = this.filterStatus();
 
     return this.colors()
       .filter(c => {
-        const matchesSearch = c.description.toLowerCase().includes(term);
+        const matchesSearch = String(c.description ?? '')
+          .toLowerCase()
+          .includes(term);
+        const stockNum = Number(c.stock) || 0;
         const matchesStatus =
           status === 'all'
             ? true
             : status === 'active'
-              ? c.isExists
-              : !c.isExists;
+              ? !!c.variantAttached && stockNum > 0
+              : !!c.variantAttached && stockNum === 0;
         return matchesSearch && matchesStatus;
       })
-      .sort((a, b) => (b.isExists ? 1 : 0) - (a.isExists ? 1 : 0)); // Activos primero
+      .sort((a, b) => {
+        const wa = Number(a.stock) || 0;
+        const wb = Number(b.stock) || 0;
+        const aa = !!(a.variantAttached && wa > 0) ? 1 : 0;
+        const bb = !!(b.variantAttached && wb > 0) ? 1 : 0;
+        return bb - aa;
+      });
   });
 
   constructor(
@@ -100,6 +147,7 @@ export class ColorsFormComponent implements OnInit {
     private readonly route: ActivatedRoute,
     private readonly dialogService: DialogService,
     private readonly messageService: MessageService,
+    private readonly confirmationService: ConfirmationService,
     private readonly productSizeColorsService: ProductSizeColorsService,
   ) {
     if (this.route.snapshot.paramMap.get('id')) {
@@ -121,13 +169,28 @@ export class ColorsFormComponent implements OnInit {
   }
 
   loadColors() {
-    const selectedSize = JSON.parse(localStorage.getItem('selectedSize')!);
-    if (selectedSize && selectedSize.productId == this.productId) {
+    const raw = localStorage.getItem('selectedSize');
+    if (!raw) {
+      localStorage.removeItem('selectedSize');
+      return;
+    }
+    let selectedSize: Record<string, unknown>;
+    try {
+      selectedSize = JSON.parse(raw) as Record<string, unknown>;
+    } catch {
+      localStorage.removeItem('selectedSize');
+      return;
+    }
+    if (selectedSize && Number(selectedSize['productId']) === this.productId) {
+      const psIdStored = selectedSize['productSizeId'];
       this.selectedSize = {
-        id: selectedSize.id,
-        productSizeId: selectedSize.productSizeId,
-        description: selectedSize.description,
-        stock: selectedSize.stock,
+        id: Number(selectedSize['id']),
+        productSizeId:
+          psIdStored != null && psIdStored !== ''
+            ? Number(psIdStored)
+            : undefined,
+        description: selectedSize['description'],
+        stock: Number(selectedSize['stock']) || 0,
       };
       this.getColors(this.selectedSize.id);
     } else {
@@ -137,17 +200,141 @@ export class ColorsFormComponent implements OnInit {
 
   getSizes(size?: string) {
     this.productSizeColorsService.getSizes(this.productId, size).subscribe({
-      next: (sizes: Size[]) => {
-        this.sizes = sizes;
+      next: (sizesList: Size[]) => {
+        this.sizes = sizesList as ProductSizeOption[];
       },
     });
   }
 
   getColors(sizeId: number) {
     this.productSizeColorsService.getColors(this.productId, sizeId).subscribe({
-      next: (colors: any) => {
-        this.colors.set(colors);
+      next: (rawColors: unknown) => {
+        const rows = Array.isArray(rawColors)
+          ? (rawColors as Record<string, unknown>[])
+          : [];
+        const normalized = rows.map(c => this.normalizeColorRowFromApi(c));
+        this.colors.set(normalized);
+        this.syncSizesProductSizeMeta(sizeId);
+        this.syncMasterStockFromVariants();
       },
+    });
+  }
+
+  /** Alineación con backend: existe variante ⇔ fila pivot; stock 0 es válido (agotado). */
+  private normalizeColorRowFromApi(c: Record<string, unknown>): CatalogColorRow {
+    const isExists = !!c['isExists'];
+    const rawStock = c['stock'];
+    const stockNum = Math.max(
+      0,
+      Math.trunc(
+        Number(
+          rawStock === null || rawStock === undefined || rawStock === ''
+            ? 0
+            : rawStock,
+        ),
+      ),
+    );
+    return {
+      ...c,
+      stock: stockNum,
+      variantAttached: isExists,
+    } as CatalogColorRow;
+  }
+
+  /** Actualiza opciones del dropdown (`product_size` id) sin pisar el stock maestro sincronizado por variantes. */
+  private syncSizesProductSizeMeta(sizeId: number): void {
+    if (!this.selectedSize || this.selectedSize.id !== sizeId) {
+      return;
+    }
+    this.productSizeColorsService.getSizes(this.productId).subscribe({
+      next: (sizesList: Size[]) => {
+        this.sizes = sizesList as ProductSizeOption[];
+        const row = this.sizes.find(s => s.id === sizeId);
+        if (!row) {
+          return;
+        }
+        this.selectedSize = {
+          ...this.selectedSize,
+          productSizeId: row.productSizeId ?? this.selectedSize.productSizeId,
+        };
+        this.persistSelectedSizeSnapshot();
+      },
+    });
+  }
+
+  /** Stock maestro (`product_size`) = suma de stocks de variantes marcadas como existentes en esta vista. */
+  private syncMasterStockFromVariants(): void {
+    if (!this.selectedSize) {
+      return;
+    }
+    const sum = this.totalAssignedStock();
+    this.selectedSize = { ...this.selectedSize, stock: sum };
+    const sizeId = this.selectedSize.id;
+    const idx = this.sizes.findIndex(s => s.id === sizeId);
+    if (idx >= 0) {
+      this.sizes[idx] = { ...this.sizes[idx], stock: sum };
+      this.sizes = [...this.sizes];
+    }
+    this.persistSelectedSizeSnapshot();
+  }
+
+  private persistSelectedSizeSnapshot(): void {
+    if (!this.selectedSize) {
+      return;
+    }
+    localStorage.setItem(
+      'selectedSize',
+      JSON.stringify({
+        ...this.selectedSize,
+        productId: this.productId,
+      }),
+    );
+  }
+
+  onVariantAttachedChange(color: CatalogColorRow, nextChecked: boolean): void {
+    if (nextChecked) {
+      color.variantAttached = true;
+      color.stock = Math.max(0, Math.trunc(Number(color.stock) || 0));
+      this.colors.update(rows => [...rows]);
+      this.syncMasterStockFromVariants();
+      return;
+    }
+
+    if (color.isExists) {
+      // Evita desmarcar hasta confirmación: quitar equivale a borrar pivote `product_size_color`.
+      color.variantAttached = true;
+      this.colors.update(rows => [...rows]);
+      this.confirmationService.confirm({
+        header: 'Quitar variante de color',
+        message: `"${String(color.description)}" ya está enlazado a esta talla. ¿Eliminar esta variante? Se eliminará la relación en el servidor.`,
+        icon: 'pi pi-exclamation-triangle',
+        acceptLabel: 'Sí, eliminar',
+        rejectLabel: 'Cancelar',
+        acceptButtonStyleClass: 'p-button-danger',
+        accept: () => {
+          this.detachVariantWithApi(color);
+        },
+      });
+      return;
+    }
+
+    color.variantAttached = false;
+    this.colors.update(rows => [...rows]);
+    this.syncMasterStockFromVariants();
+  }
+
+  private detachVariantWithApi(color: CatalogColorRow): void {
+    const psId = color.productSizeId;
+    if (!psId) {
+      showError(this.messageService, 'Falta el identificador de talla-producto.');
+      return;
+    }
+    this.productSizeColorsService.remove(psId, color.id).subscribe({
+      next: () => {
+        showSuccess(this.messageService, 'Variante de color eliminada.');
+        this.loadColors();
+      },
+      error: () => this.loadColors(),
     });
   }
 
@@ -167,66 +354,15 @@ export class ColorsFormComponent implements OnInit {
     this.formGroup.get('size')?.patchValue('');
   }
 
-  selectColor(color: any) {
-    const maxStock = this.selectedSize.stock;
-    const totalSelected = this.selectedColors.reduce(
-      (acc, curr) => acc + Number(curr.stock || 0),
+  onStockChange(color: CatalogColorRow) {
+    const raw = color.stock as unknown;
+    const stockNum = Math.max(
       0,
+      Math.trunc(Number(raw === '' || raw == null ? 0 : raw)),
     );
-
-    const colorExists = this.selectedColors.find(c => c.id === color.id);
-    const colorStock = Number(color.stock || 0);
-
-    const isEmpty = !color.stock?.toString().trim();
-    if (isEmpty) {
-      this.selectedColors = this.selectedColors.filter(c => c.id !== color.id);
-      this.messageService.clear();
-      return;
-    }
-
-    if (colorExists) {
-      const totalExcludingCurrent =
-        totalSelected - Number(colorExists.stock || 0);
-      if (totalExcludingCurrent + colorStock <= maxStock) {
-        colorExists.stock = colorStock;
-        this.messageService.clear();
-      } else {
-        this.messageService.clear();
-        this.messageService.add({
-          severity: 'warn',
-          summary: 'Stock',
-          detail: `Stock máximo alcanzado: ${this.selectedSize.stock}`,
-        });
-      }
-    } else {
-      if (totalSelected + colorStock <= maxStock) {
-        this.selectedColors = [...this.selectedColors, color];
-        this.messageService.clear();
-      } else {
-        this.messageService.clear();
-        this.messageService.add({
-          severity: 'warn',
-          summary: 'Stock',
-          detail: `No se puede seleccionar más tallas: stock maximo ${this.selectedSize.stock}`,
-        });
-      }
-    }
-  }
-
-  onStockChange(color: any) {
-    // 1. FORZAMOS LA REACTIVIDAD:
-    // Actualizamos el signal con una copia del arreglo para que Angular detecte el cambio
+    color.stock = stockNum;
     this.colors.update(currentColors => [...currentColors]);
-
-    // 2. GESTIÓN DE SELECCIÓN AUTOMÁTICA:
-    // Si tiene stock, asegúrate de que esté en selectedColors para el guardado masivo
-    const isSelected = this.selectedColors.some(c => c.id === color.id);
-
-    if (color.stock > 0 && !isSelected) {
-      this.selectedColors = [...this.selectedColors, color];
-    } else if ((color.stock === 0 || !color.stock) && isSelected) {
-      this.selectedColors = this.selectedColors.filter(c => c.id !== color.id);
-    }
+    this.syncMasterStockFromVariants();
   }
 
   createColor() {
@@ -252,13 +388,22 @@ export class ColorsFormComponent implements OnInit {
   }
 
   saveAllSelectedColors() {
-    const requests = this.selectedColors.map(color => {
+    const targets = this.attachedColors().filter(
+      (c: CatalogColorRow) =>
+        !!c.productSizeId && c.variantAttached === true,
+    );
+    const requests = targets.map(color => {
+      const stockPayload = Math.max(
+        0,
+        Math.trunc(Number(color.stock)),
+      );
       const productSizeColorSave: ProductSizeColorSave = {
-        stock: color.stock,
+        stock: stockPayload,
       };
 
+      const psId = color.productSizeId;
       return this.productSizeColorsService
-        .add(color.productSizeId, color.id, productSizeColorSave)
+        .add(psId as number, color.id, productSizeColorSave)
         .pipe(
           catchError(() => {
             return of(null);
@@ -266,64 +411,106 @@ export class ColorsFormComponent implements OnInit {
         );
     });
 
+    if (!requests.length) {
+      showError(
+        this.messageService,
+        'No hay variantes marcadas para guardar.',
+      );
+      return;
+    }
+
     forkJoin(requests).subscribe({
       next: () => {
+        showSuccess(this.messageService, 'Cambios de color guardados.');
         this.loadColors();
-        this.selectedColors = [];
       },
+      error: () =>
+        showError(
+          this.messageService,
+          'No se pudieron guardar todos los colores.',
+        ),
     });
   }
 
   deleteAllSelectedColors() {
-    const requests = this.selectedColors.map(color => {
-      return this.productSizeColorsService
-        .remove(color.productSizeId, color.id)
-        .pipe(
-          catchError(() => {
-            return of(null);
-          }),
+    const removable = this.removableAttachedColors();
+    if (!removable.length) {
+      showError(
+        this.messageService,
+        'No hay variantes guardadas para eliminar (solo están pendientes sin guardar).',
+      );
+      return;
+    }
+    this.confirmationService.confirm({
+      header: 'Quitar todas las variantes enlazadas',
+      message: `Se eliminarán ${removable.length} variante(s) de color de esta talla. ¿Continuar?`,
+      icon: 'pi pi-trash',
+      acceptLabel: 'Sí, quitar todas',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        const toRemove = removable.filter(c => c.productSizeId != null) as CatalogColorRow[];
+        const requests = toRemove.map((color: CatalogColorRow) =>
+          this.productSizeColorsService
+            .remove(color.productSizeId as number, color.id)
+            .pipe(catchError(() => of(null))),
         );
-    });
-
-    forkJoin(requests).subscribe({
-      next: () => {
-        this.loadColors();
-        this.selectedColors = [];
+        forkJoin(requests).subscribe({
+          next: () => {
+            showSuccess(this.messageService, 'Colores removidos.');
+            this.loadColors();
+          },
+          error: () =>
+            showError(
+              this.messageService,
+              'No se pudieron remover todos los colores.',
+            ),
+        });
       },
     });
   }
 
-  saveColorSizeProductButton(color: any) {
+  saveColorSizeProductButton(color: CatalogColorRow) {
+    const psId = color.productSizeId;
+    if (!psId) {
+      showError(
+        this.messageService,
+        'No hay vínculo producto–talla; guarde primero la talla en inventario.',
+      );
+      return;
+    }
+    const stockPayload = Math.max(0, Math.trunc(Number(color.stock)));
     const productSizeColorSave: ProductSizeColorSave = {
-      stock: color.stock,
+      stock: stockPayload,
     };
 
     this.productSizeColorsService
-      .add(color.productSizeId, color.id, productSizeColorSave)
+      .add(psId, color.id, productSizeColorSave)
       .subscribe({
         next: () => {
+          showSuccess(this.messageService, 'Stock de color actualizado.');
           this.loadColors();
-          this.selectedColors = this.selectedColors.filter(
-            c => c.id !== color.id,
-          );
         },
         error: () => this.loadColors(),
       });
   }
 
-  editColorSizeProductButton(color: any) {
+  editColorSizeProductButton(color: CatalogColorRow) {
     this.saveColorSizeProductButton(color);
   }
 
-  removeColorSizeProductButton(color: any) {
-    this.productSizeColorsService
-      .remove(color.productSizeId, color.id)
-      .subscribe({
-        next: () => {
-          this.loadColors();
-          this.selectedColors = [];
-        },
-        error: () => this.loadColors(),
-      });
+  removeColorSizeProductButton(color: CatalogColorRow) {
+    const psId = color.productSizeId;
+    if (!psId) {
+      showError(this.messageService, 'Falta el identificador de talla-producto.');
+      return;
+    }
+    this.productSizeColorsService.remove(psId, color.id).subscribe({
+      next: () => {
+        showSuccess(this.messageService, 'Variante de color eliminada.');
+        this.loadColors();
+      },
+      error: () => this.loadColors(),
+    });
   }
 }
