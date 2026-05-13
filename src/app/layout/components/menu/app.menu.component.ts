@@ -84,11 +84,6 @@ export class AppMenuComponent implements OnInit {
           icon: 'pi pi-home',
           items: [
             {
-              label: 'Cuadre rápido',
-              icon: 'pi pi-fw pi-table',
-              routerLink: ['/inventories/reconciliation'],
-            },
-            {
               label: 'Productos',
               icon: 'pi pi-fw pi-cog',
               routerLink: ['/inventories/products'],
@@ -102,6 +97,11 @@ export class AppMenuComponent implements OnInit {
               label: 'Colores',
               icon: 'pi pi-fw pi-cog',
               routerLink: ['/inventories/colors'],
+            },
+            {
+              label: 'Cuadre rápido',
+              icon: 'pi pi-fw pi-table',
+              routerLink: ['/inventories/reconciliation'],
             },
           ],
         },
