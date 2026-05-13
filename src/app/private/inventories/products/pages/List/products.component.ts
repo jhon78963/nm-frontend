@@ -1,24 +1,24 @@
-import { Component, OnInit } from '@angular/core';
-import { SharedModule } from '../../../../../shared/shared.module';
 import { CommonModule } from '@angular/common';
-import { ToastModule } from 'primeng/toast';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { Component, OnInit } from '@angular/core';
+import { FormControl, FormGroup } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogService } from 'primeng/dynamicdialog';
+import { PaginatorState } from 'primeng/paginator';
+import { ToastModule } from 'primeng/toast';
+import { debounceTime, Observable } from 'rxjs';
 import {
   CallToAction,
   Column,
 } from '../../../../../interfaces/table.interface';
-import { Product } from '../../models/products.model';
-import { DialogService } from 'primeng/dynamicdialog';
-import { LoadingService } from '../../../../../services/loading.service';
-import { ProductsService } from '../../services/products.service';
-import { PaginatorState } from 'primeng/paginator';
-import { debounceTime, Observable } from 'rxjs';
-import { Router, RouterModule } from '@angular/router';
-import { showError, showSuccess } from '../../../../../utils/notifications';
-import { FormControl, FormGroup } from '@angular/forms';
-import { GendersService } from '../../../../../services/genders.service';
 import { Gender } from '../../../../../models/gender.interface';
+import { GendersService } from '../../../../../services/genders.service';
+import { LoadingService } from '../../../../../services/loading.service';
+import { SharedModule } from '../../../../../shared/shared.module';
+import { showError, showSuccess } from '../../../../../utils/notifications';
+import { Product } from '../../models/products.model';
+import { ProductsService } from '../../services/products.service';
 
 @Component({
   selector: 'app-products',
@@ -116,21 +116,21 @@ export class ProductListComponent implements OnInit {
     {
       type: 'button',
       size: 'small',
+      icon: 'pi pi-history',
+      outlined: true,
+      pTooltip: 'Historial',
+      tooltipPosition: 'bottom',
+      click: (rowData: Product) => this.historyProductButton(rowData.id),
+    },
+    {
+      type: 'button',
+      size: 'small',
       icon: 'pi pi-trash',
       outlined: true,
       pTooltip: 'Eliminar',
       tooltipPosition: 'bottom',
       click: (rowData: Product, event?: Event) =>
         this.deleteProductButton(rowData.id, event!),
-    },
-    {
-      type: 'button',
-      size: 'small',
-      icon: 'pi pi-history',
-      outlined: true,
-      pTooltip: 'Historial',
-      tooltipPosition: 'bottom',
-      click: (rowData: Product) => this.historyProductButton(rowData.id),
     },
   ];
 
@@ -236,18 +236,18 @@ export class ProductListComponent implements OnInit {
   }
 
   sizeProductButton(id: number) {
-    this.router.navigate([`/inventories/products/sizes/${id}`]);
+    this.router.navigate([`/inventories/products/step/sizes/${id}`]);
   }
 
   colorProductButton(id: number) {
-    this.router.navigate([`/inventories/products/colors/${id}`]);
+    this.router.navigate([`/inventories/products/step/colors/${id}`]);
   }
 
   ecommerceProductButton(id: number) {
-    this.router.navigate([`/inventories/products/ecommerce/${id}`]);
+    this.router.navigate([`/inventories/products/step/ecommerce/${id}`]);
   }
   historyProductButton(id: number) {
-    this.router.navigate([`/inventories/products/history/${id}`]);
+    this.router.navigate([`/inventories/products/step/history/${id}`]);
   }
 
   deleteProductButton(id: number, event: Event) {

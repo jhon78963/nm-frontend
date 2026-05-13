@@ -1,6 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+import {
+  ActivatedRoute,
+  NavigationEnd,
+  Router,
+} from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
@@ -67,6 +71,10 @@ export class StepperFormComponent implements OnInit {
         label: 'Ecommerce',
         routerLink: [`/inventories/products/step/ecommerce/${this.productId}`],
       },
+      {
+        label: 'Historial',
+        routerLink: [`/inventories/products/step/history/${this.productId}`],
+      },
     ];
   }
 
@@ -92,17 +100,34 @@ export class StepperFormComponent implements OnInit {
 
   updateStepStatus() {
     const isDisabled = this.productId === 0;
-    [1, 2, 3].forEach(index => {
-      if (this.items[index]) {
-        this.items[index].disabled = isDisabled;
+    for (let i = 1; i < this.items.length; i++) {
+      if (this.items[i]) {
+        this.items[i].disabled = isDisabled;
       }
+    }
+  }
+
+  private syncActiveIndexFromUrl(url: string): void {
+    const stepSeg = url.match(/\/products\/step\/([^/?]+)/)?.[1];
+    if (!stepSeg || !this.items.length) {
+      return;
+    }
+    const idx = this.items.findIndex(step => {
+      const link = (step.routerLink?.[0] as string | undefined) ?? '';
+      const m = link.match(/\/step\/([^/]+)/);
+      return m?.[1] === stepSeg;
     });
+    if (idx >= 0) {
+      this.currentIndex = idx;
+    }
   }
 
   updateQueryParam() {
     this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
-      .subscribe(() => {
+      .subscribe(event => {
+        const navEnd = event as NavigationEnd;
+        const url = navEnd.urlAfterRedirects || navEnd.url;
         const childRoute = this.route.firstChild;
         if (childRoute) {
           childRoute.paramMap.subscribe(params => {
@@ -110,6 +135,7 @@ export class StepperFormComponent implements OnInit {
             this.productId = id;
             this.uploadSteps();
             this.updateStepStatus();
+            this.syncActiveIndexFromUrl(url);
           });
         }
       });

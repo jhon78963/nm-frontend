@@ -43,6 +43,13 @@ const routes: Routes = [
             c => c.EcommerceFormComponent,
           ),
       },
+      {
+        path: 'history/:id',
+        loadComponent: () =>
+          import(
+            './pages/form/products-history/products-history.component'
+          ).then(c => c.ProductHistoryComponent),
+      },
     ],
   },
   {
@@ -59,34 +66,34 @@ const routes: Routes = [
         c => c.ProductsFormComponent,
       ),
   },
-  {
-    path: 'sizes/:id',
-    loadComponent: () =>
-      import('./pages/form/sizes/sizes-form.component').then(
-        c => c.SizesFormComponent,
-      ),
-  },
-  {
-    path: 'colors/:id',
-    loadComponent: () =>
-      import('./pages/form/colors/colors-form.component').then(
-        c => c.ColorsFormComponent,
-      ),
-  },
-  {
-    path: 'ecommerce/:id',
-    loadComponent: () =>
-      import('./pages/form/ecommerce/ecommerce-form.component').then(
-        c => c.EcommerceFormComponent,
-      ),
-  },
-  {
-    path: 'history/:id',
-    loadComponent: () =>
-      import('./pages/form/products-history/products-history.component').then(
-        c => c.ProductHistoryComponent,
-      ),
-  },
+  // {
+  //   path: 'sizes/:id',
+  //   loadComponent: () =>
+  //     import('./pages/form/sizes/sizes-form.component').then(
+  //       c => c.SizesFormComponent,
+  //     ),
+  // },
+  // {
+  //   path: 'colors/:id',
+  //   loadComponent: () =>
+  //     import('./pages/form/colors/colors-form.component').then(
+  //       c => c.ColorsFormComponent,
+  //     ),
+  // },
+  // {
+  //   path: 'ecommerce/:id',
+  //   loadComponent: () =>
+  //     import('./pages/form/ecommerce/ecommerce-form.component').then(
+  //       c => c.EcommerceFormComponent,
+  //     ),
+  // },
+  // {
+  //   path: 'history/:id',
+  //   loadComponent: () =>
+  //     import('./pages/form/products-history/products-history.component').then(
+  //       c => c.ProductHistoryComponent,
+  //     ),
+  // },
   { path: '', pathMatch: 'full', redirectTo: 'products' },
 ];
 

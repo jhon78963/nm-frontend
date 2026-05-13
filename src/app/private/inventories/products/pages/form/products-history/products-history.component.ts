@@ -1,53 +1,71 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TimelineModule } from 'primeng/timeline';
-import { CardModule } from 'primeng/card';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  ActivatedRoute,
+  NavigationEnd,
+  Router,
+  RouterLink,
+} from '@angular/router';
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { RippleModule } from 'primeng/ripple';
 import { TagModule } from 'primeng/tag';
+import { TimelineModule } from 'primeng/timeline';
+import { filter } from 'rxjs';
 import { ProductsService } from '../../../services/products.service';
-import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-product-history',
   standalone: true,
-  imports: [CommonModule, TimelineModule, CardModule, ButtonModule, TagModule],
-  templateUrl: './products-history.component.html',
-  styles: [
-    `
-      .custom-marker {
-        display: flex;
-        width: 2rem;
-        height: 2rem;
-        align-items: center;
-        justify-content: center;
-        color: #ffffff;
-        border-radius: 50%;
-        z-index: 1;
-      }
-      ::ng-deep .p-timeline-event-content {
-        padding-bottom: 2rem;
-      }
-      ::ng-deep .p-timeline-event-opposite {
-        flex: 0;
-        padding: 0 !important;
-      }
-    `,
+  imports: [
+    CommonModule,
+    RouterLink,
+    TimelineModule,
+    CardModule,
+    ButtonModule,
+    RippleModule,
+    TagModule,
   ],
+  templateUrl: './products-history.component.html',
+  styleUrl: './products-history.component.scss',
 })
 export class ProductHistoryComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+
   productsService = inject(ProductsService);
   route = inject(ActivatedRoute);
+  router = inject(Router);
 
   events = signal<any[]>([]);
   loading = signal<boolean>(true);
 
-  ngOnInit() {
-    // Obtenemos el ID del producto pasado al modal
-    const productId = this.route.snapshot.params['id'];
+  stepper: boolean = true;
 
-    if (productId) {
-      this.loadHistory(productId);
-    }
+  ngOnInit() {
+    this.syncStepperFromUrl(this.router.url);
+    this.router.events
+      .pipe(
+        filter(e => e instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(event => {
+        const nav = event as NavigationEnd;
+        this.syncStepperFromUrl(nav.urlAfterRedirects ?? nav.url);
+      });
+
+    this.route.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(pm => {
+        const productIdRaw = pm.get('id');
+        if (productIdRaw !== null && productIdRaw !== '') {
+          this.loadHistory(Number(productIdRaw));
+        }
+      });
+  }
+
+  private syncStepperFromUrl(url: string): void {
+    this.stepper = url.includes('/step/');
   }
 
   loadHistory(id: number) {

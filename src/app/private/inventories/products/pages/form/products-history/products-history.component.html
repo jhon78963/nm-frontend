@@ -1,4 +1,18 @@
-<div class="w-full h-full" style="min-height: 400px">
+<div [class]="'w-full' + (!stepper ? ' card' : '')">
+  <div
+    class="flex justify-content-center md:justify-content-end gap-2 mb-3 col-12">
+    <div class="flex flex-wrap justify-content-center gap-2">
+      <button
+        pButton
+        pRipple
+        label="Regresar"
+        icon="pi pi-arrow-left"
+        severity="warning"
+        class="btn-menu-back w-9rem"
+        size="small"
+        [routerLink]="['/inventories/products']"></button>
+    </div>
+  </div>
   <!-- LOADING -->
   @if (loading()) {
     <div
