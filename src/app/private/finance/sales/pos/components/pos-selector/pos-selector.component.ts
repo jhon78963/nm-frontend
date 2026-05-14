@@ -28,6 +28,9 @@ interface SelectionItem {
 export class PosSelectorComponent {
   posService = inject(PosService);
 
+  /** Aviso de validación de precios (vacío cuando no hay error). */
+  pricingAlert = signal<string | null>(null);
+
   activeSize = signal<string | null>(null);
   selections = signal<Map<string, SelectionItem>>(new Map());
 
@@ -67,6 +70,7 @@ export class PosSelectorComponent {
           if (state.isOpen && state.product) {
             // 1. INICIO LIMPIO
             const initialMap = new Map<string, SelectionItem>();
+            this.pricingAlert.set(null);
             this.activeSize.set(null);
 
             // 2. SINCRONIZACIÓN INTELIGENTE (CARGAR DESDE CARRITO)
@@ -156,10 +160,8 @@ export class PosSelectorComponent {
 
     if (currentMap.has(key)) {
       const current = currentMap.get(key)!;
-      if (current.qty < variant.stock) {
-        current.qty++;
-        currentMap.set(key, current);
-      }
+      current.qty++;
+      currentMap.set(key, current);
     } else {
       currentMap.set(key, { variant, size, qty: 1, price: variant.price });
     }
@@ -190,7 +192,7 @@ export class PosSelectorComponent {
 
     if (newQty <= 0) {
       currentMap.delete(key);
-    } else if (newQty <= variant.stock) {
+    } else {
       item.qty = newQty;
       currentMap.set(key, item);
     }
@@ -206,9 +208,10 @@ export class PosSelectorComponent {
 
     if (currentMap.has(key)) {
       const item = currentMap.get(key)!;
-      item.price = newPrice;
+      item.price = Number(newPrice);
       currentMap.set(key, item);
       this.selections.set(currentMap);
+      this.pricingAlert.set(null);
     }
   }
 
@@ -231,6 +234,18 @@ export class PosSelectorComponent {
     if (!state.product) return;
 
     const selections = this.selections();
+
+    for (const selection of selections.values()) {
+      const unit = Number(selection.price);
+      if (!Number.isFinite(unit) || unit <= 0) {
+        this.pricingAlert.set(
+          'No se admiten precios en 0. Ingrese un precio válido mayor a 0 antes de guardar.',
+        );
+        return;
+      }
+    }
+
+    this.pricingAlert.set(null);
 
     const currentCart = this.posService.cart();
     const existingItems = currentCart.filter(
