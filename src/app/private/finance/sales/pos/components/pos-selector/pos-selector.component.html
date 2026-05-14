@@ -68,9 +68,9 @@
                 [class.border-indigo-500]="getSelectionQty(v) > 0"
                 [class.bg-indigo-50]="getSelectionQty(v) > 0"
                 [class.border-white]="getSelectionQty(v) === 0"
-                [class.opacity-50]="v.stock <= 0"
+                [class.opacity-50]="variantAvailableQty(v) <= 0"
                 (click)="
-                  v.stock > 0 && getSelectionQty(v) === 0
+                  variantAvailableQty(v) > 0 && getSelectionQty(v) === 0
                     ? toggleVariant(v)
                     : null
                 ">

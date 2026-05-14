@@ -1,3 +1,5 @@
+import type { ProductVariantInventory } from '../../products/models/products.model';
+
 /** Respuesta de GET search (InventoryReconciliationProductResource). */
 export interface ReconciliationProductApi {
   id: number;
@@ -13,7 +15,7 @@ export interface ReconciliationSizeApi {
   id: number;
   sizeId: number;
   barcode: string | null;
-  stock: number;
+  inventory?: ProductVariantInventory;
   purchasePrice?: number | null;
   salePrice?: number | null;
   minSalePrice?: number | null;
@@ -26,7 +28,7 @@ export interface ReconciliationColorApi {
   colorId: number;
   description: string;
   hash?: string | null;
-  stock: number;
+  inventory?: ProductVariantInventory;
 }
 
 export interface ReconciliationSearchResponse {
@@ -42,6 +44,7 @@ export interface ReconciliationUpdateResponse {
 export interface ReconciliationColorDraft {
   colorId: number;
   description: string;
+  /** Cantidad editada (mapeada desde inventory.available_quantity al cargar). */
   stock: number;
 }
 

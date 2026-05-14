@@ -44,8 +44,12 @@
         </td>
         <td
           class="text-center font-bold"
-          [ngClass]="prod.stock <= 0 ? 'text-red-500' : 'text-green-600'">
-          {{ prod.stock }}
+          [ngClass]="
+            (prod.inventory?.available_quantity ?? 0) <= 0
+              ? 'text-red-500'
+              : 'text-green-600'
+          ">
+          {{ prod.inventory?.available_quantity ?? 0 }}
         </td>
         <td class="text-right font-bold text-indigo-600">
           S/ {{ prod.sale_price | number: '1.2-2' }}

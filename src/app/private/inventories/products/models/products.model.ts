@@ -1,17 +1,24 @@
+/** Saldo desde `inventory_balances` (API ProductResource / tallas). */
+export interface ProductVariantInventory {
+  available_quantity: number;
+  warehouse_id: number;
+}
+
 export interface Color {
   id: number;
   description: string;
   value?: string;
-  stock?: number;
   price?: number;
+  /** Respuesta API: stock por variante en almacén resuelto. */
+  inventory?: ProductVariantInventory;
 }
 
 export interface Size {
   id: number;
   description: string;
-  stock?: number;
   price?: number;
   colors?: Color[];
+  inventory?: ProductVariantInventory;
 }
 
 export interface ProductSize {
@@ -25,7 +32,6 @@ export interface Product {
   name: string;
   barcode: string;
   description: string;
-  stock: number;
   purchasePrice: number;
   salePrice: number;
   minSalePrice: number;
@@ -38,6 +44,7 @@ export interface Product {
   percentageDiscount: number;
   cashDiscount: number;
   warehouseId: number;
+  inventory?: ProductVariantInventory;
 }
 
 export interface Paginate {

@@ -146,6 +146,11 @@ export class PosSelectorComponent {
     return `${size}_${String(colorId)}`;
   }
 
+  /** Cantidad disponible POS para una variante. */
+  variantAvailableQty(v: Variant): number {
+    return v.inventory?.available_quantity ?? 0;
+  }
+
   selectTabSize(size: string) {
     this.activeSize.set(size);
   }
@@ -153,13 +158,18 @@ export class PosSelectorComponent {
   toggleVariant(variant: Variant) {
     const size = this.activeSize();
     if (!size) return;
-    if (variant.stock <= 0) return;
+    if (this.variantAvailableQty(variant) <= 0) return;
 
     const key = this.getItemKey(size, variant.color_id);
     const currentMap = new Map(this.selections());
 
     if (currentMap.has(key)) {
       const current = currentMap.get(key)!;
+      const max = this.variantAvailableQty(variant);
+      if (current.qty + 1 > max) {
+        this.posService.showToast(`Stock máx: ${max}`);
+        return;
+      }
       current.qty++;
       currentMap.set(key, current);
     } else {
@@ -189,6 +199,14 @@ export class PosSelectorComponent {
 
     const item = currentMap.get(key)!;
     const newQty = item.qty + delta;
+
+    if (delta > 0) {
+      const max = this.variantAvailableQty(variant);
+      if (item.qty + delta > max) {
+        this.posService.showToast(`Stock máx: ${max}`);
+        return;
+      }
+    }
 
     if (newQty <= 0) {
       currentMap.delete(key);

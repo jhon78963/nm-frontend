@@ -100,7 +100,7 @@ export class PosService {
           color_id: item.color.color_id,
           colorName: item.color.colorName,
           hex: item.color.hex,
-          stock: item.color.stock,
+          inventory: item.color.inventory,
         },
       })),
     };
@@ -180,8 +180,10 @@ export class PosService {
           if (newQty <= 0) return item;
 
           // Validación local de stock
-          if (newQty > item.color.stock) {
-            this.showToast(`Stock máx: ${item.color.stock}`);
+          const maxQty =
+            item.color.inventory?.available_quantity ?? 0;
+          if (newQty > maxQty) {
+            this.showToast(`Stock máx: ${maxQty}`);
             return item;
           }
           return { ...item, quantity: newQty, total: newQty * item.unitPrice };

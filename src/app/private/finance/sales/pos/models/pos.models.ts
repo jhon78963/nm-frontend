@@ -1,3 +1,8 @@
+export interface ProductVariantInventory {
+  available_quantity: number;
+  warehouse_id: number;
+}
+
 export interface Variant {
   // IDs necesarios para la venta (backend)
   product_size_id: number;
@@ -6,7 +11,7 @@ export interface Variant {
   // Datos visuales
   colorName: string;
   hex: string;
-  stock: number;
+  inventory?: ProductVariantInventory;
   price: number; // Precio específico de la variante
   sku?: string; // <--- NUEVO: Necesario para la auto-selección
 }

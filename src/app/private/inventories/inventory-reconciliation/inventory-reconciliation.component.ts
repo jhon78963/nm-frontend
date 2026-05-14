@@ -630,10 +630,26 @@ export class InventoryReconciliationComponent
         const colors = (s.colors ?? []).map(c => ({
           colorId: c.colorId,
           description: c.description ?? `Color #${c.colorId}`,
-          stock: Math.max(0, Math.trunc(Number(c.stock) || 0)),
+          stock: Math.max(
+            0,
+            Math.trunc(
+              Number(
+                c.inventory?.available_quantity ??
+                  (c as { stock?: number }).stock,
+              ) || 0,
+            ),
+          ),
         }));
         const sumColors = colors.reduce((acc, c) => acc + c.stock, 0);
-        const master = Math.max(0, Math.trunc(Number(s.stock) || 0));
+        const master = Math.max(
+          0,
+          Math.trunc(
+            Number(
+              s.inventory?.available_quantity ??
+                (s as { stock?: number }).stock,
+            ) || 0,
+          ),
+        );
         return {
           id: s.id,
           sizeId: s.sizeId,
