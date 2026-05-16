@@ -23,7 +23,7 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
-import { catchError, forkJoin, of } from 'rxjs';
+import { catchError, concat, of } from 'rxjs';
 import { showError, showSuccess } from '../../../../../../utils/notifications';
 import { ColorsCreateFormComponent } from '../../../../colors/pages/form/colors.component';
 import { Size } from '../../../../sizes/models/sizes.model';
@@ -548,14 +548,15 @@ export class ColorsFormComponent implements OnInit {
         stock: stockPayload,
       };
 
-      const psId = color.productSizeId;
+      const psId = color.productSizeId as number;
+      if (color.isExists) {
+        return this.productSizeColorsService
+          .update(psId, color.id, productSizeColorSave)
+          .pipe(catchError(() => of(null)));
+      }
       return this.productSizeColorsService
-        .add(psId as number, color.id, productSizeColorSave)
-        .pipe(
-          catchError(() => {
-            return of(null);
-          }),
-        );
+        .add(psId, color.id, productSizeColorSave)
+        .pipe(catchError(() => of(null)));
     });
 
     if (!requests.length) {
@@ -563,8 +564,8 @@ export class ColorsFormComponent implements OnInit {
       return;
     }
 
-    forkJoin(requests).subscribe({
-      next: () => {
+    concat(...requests).subscribe({
+      complete: () => {
         showSuccess(this.messageService, 'Cambios de color guardados.');
         this.loadColors();
       },
@@ -601,8 +602,8 @@ export class ColorsFormComponent implements OnInit {
             .remove(color.productSizeId as number, color.id)
             .pipe(catchError(() => of(null))),
         );
-        forkJoin(requests).subscribe({
-          next: () => {
+        concat(...requests).subscribe({
+          complete: () => {
             showSuccess(this.messageService, 'Colores removidos.');
             this.loadColors();
           },

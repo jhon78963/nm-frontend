@@ -3,7 +3,6 @@ import { Observable } from 'rxjs';
 import { ApiService } from '../../../../services/api.service';
 import { Size } from '../../sizes/models/sizes.model';
 import { ProductSizeColorSave } from '../models/colors.interface';
-import { ProductSizeSave } from '../models/sizes.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -31,7 +30,7 @@ export class ProductSizeColorsService {
   update(
     productSizeId: number,
     colorId: number,
-    data: ProductSizeSave,
+    data: ProductSizeColorSave,
   ): Observable<void> {
     return this.apiService.patch(
       `product-size/${productSizeId}/color/${colorId}`,
