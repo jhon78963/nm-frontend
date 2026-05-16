@@ -134,6 +134,10 @@ export class SizesFormComponent implements OnInit {
   }
 
   selectSize(size: any) {
+    if (size.isExists) {
+      return;
+    }
+
     const exists = this.selectedSizes.some(s => s.id === size.id);
     if (!exists) {
       this.selectedSizes = [...this.selectedSizes, size];
@@ -151,28 +155,60 @@ export class SizesFormComponent implements OnInit {
   }
 
   saveAllSelectedSizes() {
-    const requests = this.selectedSizes.map(size => {
+    const toAdd = this.selectedSizes.filter((s: any) => !s.isExists);
+    const toUpdate = this.selectedSizes.filter((s: any) => s.isExists);
+
+    const addRequests = toAdd.map(size => {
       const productSizeSave: ProductSizeSave = {
         barcode: size.barcode,
-        stock: size.stock,
-        purchasePrice: size.purchasePrice,
-        salePrice: size.salePrice,
-        minSalePrice: size.minSalePrice,
+        stock: size.stock != null ? Number(size.stock) : (undefined as any),
+        purchasePrice:
+          size.purchasePrice != null
+            ? Number(size.purchasePrice)
+            : (undefined as any),
+        salePrice:
+          size.salePrice != null ? Number(size.salePrice) : (undefined as any),
+        minSalePrice:
+          size.minSalePrice != null
+            ? Number(size.minSalePrice)
+            : (undefined as any),
       };
 
       return this.productSizesService
         .add(this.productId, size.id, productSizeSave)
-        .pipe(
-          catchError(() => {
-            return of(null);
-          }),
-        );
+        .pipe(catchError(() => of(null)));
     });
 
-    forkJoin(requests).subscribe({
+    const updateRequests = toUpdate.map(size => {
+      const productSizeSave: ProductSizeSave = {
+        barcode: size.barcode,
+        stock: size.stock != null ? Number(size.stock) : (undefined as any),
+        purchasePrice:
+          size.purchasePrice != null
+            ? Number(size.purchasePrice)
+            : (undefined as any),
+        salePrice:
+          size.salePrice != null ? Number(size.salePrice) : (undefined as any),
+        minSalePrice:
+          size.minSalePrice != null
+            ? Number(size.minSalePrice)
+            : (undefined as any),
+      };
+
+      return this.productSizesService
+        .update(this.productId, size.id, productSizeSave)
+        .pipe(catchError(() => of(null)));
+    });
+
+    forkJoin([...addRequests, ...updateRequests]).subscribe({
       next: () => {
+        showSuccess(this.messageService, 'Operación completada.');
         this.getSizes();
         this.selectedSizes = [];
+      },
+      error: () => {
+        showError(this.messageService, 'Hubo un error en la operación masiva.');
+        this.getSizes();
       },
     });
   }
@@ -188,8 +224,13 @@ export class SizesFormComponent implements OnInit {
 
     forkJoin(requests).subscribe({
       next: () => {
+        showSuccess(this.messageService, 'Tallas eliminadas.');
         this.getSizes();
         this.selectedSizes = [];
+      },
+      error: () => {
+        showError(this.messageService, 'Error al eliminar tallas.');
+        this.getSizes();
       },
     });
   }
@@ -197,33 +238,75 @@ export class SizesFormComponent implements OnInit {
   saveSizeProductButton(size: any) {
     const productSizeSave: ProductSizeSave = {
       barcode: size.barcode,
-      stock: size.stock,
-      purchasePrice: size.purchasePrice,
-      salePrice: size.salePrice,
-      minSalePrice: size.minSalePrice,
+      stock: size.stock != null ? Number(size.stock) : (undefined as any),
+      purchasePrice:
+        size.purchasePrice != null
+          ? Number(size.purchasePrice)
+          : (undefined as any),
+      salePrice:
+        size.salePrice != null ? Number(size.salePrice) : (undefined as any),
+      minSalePrice:
+        size.minSalePrice != null
+          ? Number(size.minSalePrice)
+          : (undefined as any),
     };
 
     this.productSizesService
       .add(this.productId, size.id, productSizeSave)
       .subscribe({
         next: () => {
+          showSuccess(this.messageService, 'Talla guardada.');
           this.getSizes();
           this.selectedSizes = this.selectedSizes.filter(s => s.id !== size.id);
         },
-        error: () => this.getSizes(),
+        error: () => {
+          showError(this.messageService, 'Error al guardar la talla.');
+          this.getSizes();
+        },
       });
   }
 
   editSizeProductButton(size: any) {
-    this.saveSizeProductButton(size);
+    const productSizeSave: ProductSizeSave = {
+      barcode: size.barcode,
+      stock: size.stock != null ? Number(size.stock) : (undefined as any),
+      purchasePrice:
+        size.purchasePrice != null
+          ? Number(size.purchasePrice)
+          : (undefined as any),
+      salePrice:
+        size.salePrice != null ? Number(size.salePrice) : (undefined as any),
+      minSalePrice:
+        size.minSalePrice != null
+          ? Number(size.minSalePrice)
+          : (undefined as any),
+    };
+
+    this.productSizesService
+      .update(this.productId, size.id, productSizeSave)
+      .subscribe({
+        next: () => {
+          showSuccess(this.messageService, 'Talla actualizada.');
+          this.getSizes();
+          this.selectedSizes = this.selectedSizes.filter(s => s.id !== size.id);
+        },
+        error: () => {
+          showError(this.messageService, 'Error al actualizar la talla.');
+          this.getSizes();
+        },
+      });
   }
   removeSizeProductButton(size: any) {
     this.productSizesService.remove(this.productId, size.id).subscribe({
       next: () => {
+        showSuccess(this.messageService, 'Talla eliminada.');
         this.getSizes();
         this.selectedSizes = this.selectedSizes.filter(s => s.id !== size.id);
       },
-      error: () => this.getSizes(),
+      error: () => {
+        showError(this.messageService, 'Error al eliminar la talla.');
+        this.getSizes();
+      },
     });
   }
 }
