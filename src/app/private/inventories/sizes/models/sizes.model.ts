@@ -2,6 +2,9 @@ export interface Size {
   id: number;
   description: string;
   sizeTypeId: number;
+  /** Fila `product_size.id` cuando la talla ya está ligada al producto (API `sizes/selected`). */
+  productSizeId?: number | null;
+  isExists?: boolean;
 }
 
 export interface Paginate {

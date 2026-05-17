@@ -53,6 +53,15 @@ const routes: Routes = [
     ],
   },
   {
+    path: 'kardex/:id',
+    title: 'Kardex',
+    data: { breadcrumb: 'Kardex' },
+    loadComponent: () =>
+      import('./pages/kardex/product-kardex.component').then(
+        c => c.ProductKardexComponent,
+      ),
+  },
+  {
     path: '',
     loadComponent: () =>
       import('./pages/list/products.component').then(

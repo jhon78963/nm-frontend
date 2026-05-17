@@ -116,6 +116,15 @@ export class ProductListComponent implements OnInit {
     {
       type: 'button',
       size: 'small',
+      icon: 'pi pi-list',
+      outlined: true,
+      pTooltip: 'Ver Kardex',
+      tooltipPosition: 'bottom',
+      click: (rowData: Product) => this.kardexProductButton(rowData.id),
+    },
+    {
+      type: 'button',
+      size: 'small',
       icon: 'pi pi-history',
       outlined: true,
       pTooltip: 'Historial',
@@ -248,6 +257,10 @@ export class ProductListComponent implements OnInit {
   }
   historyProductButton(id: number) {
     this.router.navigate([`/inventories/products/step/history/${id}`]);
+  }
+
+  kardexProductButton(id: number) {
+    this.router.navigate([`/inventories/products/kardex/${id}`]);
   }
 
   deleteProductButton(id: number, event: Event) {

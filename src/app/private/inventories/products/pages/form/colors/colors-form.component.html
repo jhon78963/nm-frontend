@@ -23,10 +23,7 @@
       size="small"
       (click)="saveAllSelectedColors()"
       [disabled]="
-        !selectedSize ||
-        attachedColors().length === 0 ||
-        !isStockBalanced() ||
-        catalogColorsPending()
+        !selectedSize || attachedColors().length === 0 || catalogColorsPending()
       "></button>
     <button
       pButton

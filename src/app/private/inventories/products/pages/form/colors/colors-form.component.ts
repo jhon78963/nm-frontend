@@ -643,7 +643,28 @@ export class ColorsFormComponent implements OnInit {
   }
 
   editColorSizeProductButton(color: CatalogColorRow) {
-    this.saveColorSizeProductButton(color);
+    const psId = color.productSizeId;
+    if (!psId) {
+      showError(
+        this.messageService,
+        'No hay vínculo producto–talla; guarde primero la talla en inventario.',
+      );
+      return;
+    }
+    const stockPayload = Math.max(0, Math.trunc(Number(color.stock)));
+    const productSizeColorSave: ProductSizeColorSave = {
+      stock: stockPayload,
+    };
+
+    this.productSizeColorsService
+      .update(psId, color.id, productSizeColorSave)
+      .subscribe({
+        next: () => {
+          showSuccess(this.messageService, 'Stock de color actualizado.');
+          this.loadColors();
+        },
+        error: () => this.loadColors(),
+      });
   }
 
   removeColorSizeProductButton(color: CatalogColorRow) {
