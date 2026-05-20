@@ -1,3 +1,4 @@
+import { HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import {
   BehaviorSubject,
@@ -30,11 +31,15 @@ export class TeamService {
     page: number = 1,
     name: string = '',
   ): Observable<void> {
-    let url = `teams?limit=${limit}&page=${page}`;
-    if (name) {
-      url += `&search=${name}`;
+    let params = new HttpParams()
+      .set('limit', String(limit))
+      .set('page', String(page));
+
+    if (name.trim()) {
+      params = params.set('search', name.trim());
     }
-    return this.apiService.get<TeamListResponse>(url).pipe(
+
+    return this.apiService.get<TeamListResponse>('teams', { params }).pipe(
       debounceTime(600),
       map((response: TeamListResponse) => {
         this.updateTeam(response.data);

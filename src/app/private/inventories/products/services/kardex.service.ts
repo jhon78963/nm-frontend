@@ -1,7 +1,7 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { BASE_URL } from '../../../../utils/constants';
+import { ApiService } from '../../../../services/api.service';
 import {
   KardexReportParams,
   KardexReportResponse,
@@ -9,8 +9,7 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class KardexService {
-  private readonly http = inject(HttpClient);
-  private readonly baseUrl = BASE_URL;
+  private readonly apiService = inject(ApiService);
 
   getReport(params: KardexReportParams): Observable<KardexReportResponse> {
     let httpParams = new HttpParams()
@@ -28,9 +27,8 @@ export class KardexService {
       httpParams = httpParams.set('color_id', String(params.colorId));
     }
 
-    return this.http.get<KardexReportResponse>(
-      `${this.baseUrl}/inventory/kardex`,
-      { params: httpParams },
-    );
+    return this.apiService.get<KardexReportResponse>('inventory/kardex', {
+      params: httpParams,
+    });
   }
 }

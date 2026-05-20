@@ -1,3 +1,4 @@
+import { HttpParams } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../../../../services/api.service'; // Asegúrate que la ruta sea correcta
@@ -36,7 +37,9 @@ export class PosService {
     this.isLoading.set(true);
     try {
       const product = await firstValueFrom(
-        this.apiService.get<Product>(`pos/products?sku=${sku}`),
+        this.apiService.get<Product>('pos/products', {
+          params: new HttpParams().set('sku', sku),
+        }),
       );
       return product;
     } catch (error) {
@@ -52,7 +55,9 @@ export class PosService {
     this.isLoading.set(true);
     try {
       const customer = await firstValueFrom(
-        this.apiService.get<Customer>(`pos/customers?dni=${dni}`),
+        this.apiService.get<Customer>('pos/customers', {
+          params: new HttpParams().set('dni', dni),
+        }),
       );
 
       if (customer) {
