@@ -1,3 +1,4 @@
+<p-toast position="top-center" />
 <form [formGroup]="myForm" (ngSubmit)="login()">
   <div class="surface-0">
     <div
@@ -36,8 +37,9 @@
             pRipple
             class="w-full mb-4"
             type="submit"
-            label="Login"
-            [disabled]="myForm.invalid"></button>
+            [label]="loading ? 'Ingresando...' : 'Login'"
+            [loading]="loading"
+            [disabled]="myForm.invalid || loading"></button>
         </div>
       </div>
       <div class="flex flex-wrap align-items-center pb-8 px-4">

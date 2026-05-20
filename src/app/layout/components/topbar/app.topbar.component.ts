@@ -37,16 +37,23 @@ export class AppTopbarComponent {
     this.layoutService.showConfigSidebar();
   }
 
-  onLogout() {
+  onLogout(): void {
     const tokenData = JSON.parse(localStorage.getItem('tokenData') || '{}');
-    this.authService.logout(tokenData.refreshToken, tokenData.token).subscribe({
-      next: () => {
-        localStorage.removeItem('tokenData');
-        localStorage.removeItem('user');
-        localStorage.removeItem('selectedSize');
-        this.router.navigate(['/auth/login']);
-      },
-      error: () => {},
-    });
+    this.authService
+      .logout(tokenData.refreshToken, tokenData.token)
+      .subscribe({
+        next: () => this.clearSessionAndGoToLogin(),
+        error: err => {
+          console.error('Logout failed; clearing local session:', err);
+          this.clearSessionAndGoToLogin();
+        },
+      });
+  }
+
+  private clearSessionAndGoToLogin(): void {
+    localStorage.removeItem('tokenData');
+    localStorage.removeItem('user');
+    localStorage.removeItem('selectedSize');
+    this.router.navigate(['/auth/login']);
   }
 }
