@@ -217,11 +217,10 @@ export class TeamListComponent implements OnInit, OnDestroy {
           const L = value.login as {
             email: string;
             username: string;
-            temporaryPassword: string;
           };
           this.showSuccess(
-            `Colaborador creado. Usuario vendedora: ${L.email} · contraseña temporal: ${L.temporaryPassword}`,
-            20000,
+            `Colaborador creado. Usuario vendedora: ${L.email}`,
+            3000,
           );
         } else if (value?.success) {
           this.showSuccess('Colaborador creado.');
