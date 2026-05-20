@@ -17,6 +17,7 @@ import { RippleModule } from 'primeng/ripple';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { BadgeModule } from 'primeng/badge';
 import { RadioButtonModule } from 'primeng/radiobutton';
+import { ToastModule } from 'primeng/toast';
 import { CommonModule } from '@angular/common';
 
 @NgModule({
@@ -42,6 +43,7 @@ import { CommonModule } from '@angular/common';
     RouterModule,
     ButtonModule,
     DropdownModule,
+    ToastModule,
   ],
 })
 export class AppLayoutModule {}
