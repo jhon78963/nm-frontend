@@ -5,13 +5,7 @@ import {
   ProductListResponse,
   ProductSave,
 } from '../models/products.model';
-import {
-  BehaviorSubject,
-  debounceTime,
-  map,
-  Observable,
-  switchMap,
-} from 'rxjs';
+import { BehaviorSubject, map, Observable, switchMap } from 'rxjs';
 
 export interface ProductFilterState {
   limit: number;
@@ -89,7 +83,6 @@ export class ProductsService {
       url += `&genderId=${genderId}`;
     }
     return this.apiService.get<ProductListResponse>(url).pipe(
-      debounceTime(600),
       map((response: ProductListResponse) => {
         this.updateProducts(response.data);
         this.updateTotalProducts(response.paginate.total);

@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -7,7 +8,14 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { PaginatorState } from 'primeng/paginator';
 import { ToastModule } from 'primeng/toast';
-import { debounceTime, Observable } from 'rxjs';
+import {
+  debounceTime,
+  distinctUntilChanged,
+  finalize,
+  map,
+  Observable,
+  switchMap,
+} from 'rxjs';
 import {
   CallToAction,
   Column,
@@ -35,6 +43,8 @@ import { ProductsService } from '../../services/products.service';
   providers: [ConfirmationService, DialogService, MessageService],
 })
 export class ProductListComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+
   columns: Column[] = [
     {
       header: '#',
@@ -162,18 +172,34 @@ export class ProductListComponent implements OnInit {
   ngOnInit(): void {
     this.restoreFilters();
     this.getProducts(this.limit, this.page, this.name, this.selectedGenderIds);
-    this.formGroup
-      .get('search')
-      ?.valueChanges.pipe(debounceTime(600))
-      .subscribe((value: any) => {
-        this.name = value ? value : '';
-        this.loadingService.sendLoadingState(true);
-        this.getProducts(this.limit, 1, this.name, this.selectedGenderIds);
-      });
 
-    this.gendersService.getAll().subscribe((genders: Gender[]) => {
-      this.genders = genders;
-    });
+    const searchControl = this.formGroup.get('search');
+    if (searchControl) {
+      searchControl.valueChanges
+        .pipe(
+          map((value: string | null) => (value ?? '').trim()),
+          debounceTime(600),
+          distinctUntilChanged(),
+          switchMap((term: string) => {
+            this.name = term;
+            return this.fetchProducts(
+              this.limit,
+              1,
+              this.name,
+              this.selectedGenderIds,
+            );
+          }),
+          takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe();
+    }
+
+    this.gendersService
+      .getAll()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((genders: Gender[]) => {
+        this.genders = genders;
+      });
   }
 
   restoreFilters() {
@@ -209,17 +235,27 @@ export class ProductListComponent implements OnInit {
     this.getProducts(this.limit, 1, this.name, this.selectedGenderIds);
   }
 
-  async getProducts(
+  getProducts(
     limit = this.limit,
     page = this.page,
     name = this.name,
     gender = this.selectedGenderIds,
-  ): Promise<void> {
+  ): void {
+    this.fetchProducts(limit, page, name, gender).subscribe();
+  }
+
+  /** Petición HTTP + loading; el debounce vive en valueChanges del buscador. */
+  private fetchProducts(
+    limit: number,
+    page: number,
+    name: string,
+    gender: number[],
+  ): Observable<void> {
     this.updatePage(page);
-    this.productsService.callGetList(limit, page, name, gender).subscribe();
-    setTimeout(() => {
-      this.loadingService.sendLoadingState(false);
-    }, 600);
+    this.loadingService.sendLoadingState(true);
+    return this.productsService.callGetList(limit, page, name, gender).pipe(
+      finalize(() => this.loadingService.sendLoadingState(false)),
+    );
   }
 
   async onPageSelected(paginate: PaginatorState): Promise<void> {

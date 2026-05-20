@@ -1,7 +1,22 @@
-import { Component, Input, OnInit, output } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  Input,
+  OnInit,
+  inject,
+  output,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime } from 'rxjs';
+import {
+  debounceTime,
+  distinctUntilChanged,
+  EMPTY,
+  map,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { ApiService } from '../../../services/api.service';
@@ -30,6 +45,11 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
   providers: [ConfirmationService, MessageService],
 })
 export class InputAutocompleteApiComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly apiService = inject(ApiService);
+  private readonly confirmationService = inject(ConfirmationService);
+  private readonly messageService = inject(MessageService);
+
   @Input() placeholder: string | null = null;
   @Input() label: string | null = null;
   @Input() for: string | null = null;
@@ -39,54 +59,66 @@ export class InputAutocompleteApiComponent implements OnInit {
   @Input() collectionToCall: string | null = null;
   @Input() queryParam: string | null = null;
   @Input() collectionToSave: string | null = null;
-  @Input() collectionToEdit: any;
+  @Input() collectionToEdit: AutocompleteResponse | string | null = null;
   @Input() bodyColumn: string = '';
   @Input() multipleOptions: boolean = false;
   itemSelected = output<AutocompleteResponse>();
   private keyToAddString = '+ ';
-  collection: any[] = [];
+  collection: AutocompleteResponse[] = [];
 
   formGroup: FormGroup = new FormGroup({
-    size: new FormControl(),
+    size: new FormControl<string | null>(null),
   });
-
-  constructor(
-    private readonly apiService: ApiService,
-    private readonly confirmationService: ConfirmationService,
-    private readonly messageService: MessageService,
-  ) {}
 
   ngOnInit(): void {
     if (this.collectionToEdit) {
       this.formGroup
         .get('size')
-        ?.setValue(this.collectionToEdit, { emitEvent: false });
+        ?.setValue(
+          typeof this.collectionToEdit === 'string'
+            ? this.collectionToEdit
+            : this.collectionToEdit.value,
+          { emitEvent: false },
+        );
     }
-    this.formGroup
-      .get('size')
-      ?.valueChanges.pipe(debounceTime(200))
-      .subscribe((value: string | null) => {
-        this.collection = [];
-        if (value) {
-          this.apiService
-            .get<
-              AutocompleteResponse[]
-            >(`${this.collectionToCall}?${this.queryParam}=${value}`)
-            .subscribe({
-              next: (res: AutocompleteResponse[]) => {
-                if (res.length > 0) {
-                  this.collection = res;
-                } else {
-                  this.collection.push({
-                    id: 0,
-                    value: `${this.keyToAddString}${value}`,
-                  });
-                }
-              },
-            });
-        } else {
+
+    const sizeControl = this.formGroup.get('size');
+    if (!sizeControl || !this.collectionToCall || !this.queryParam) {
+      return;
+    }
+
+    sizeControl.valueChanges
+      .pipe(
+        map((value: string | null) => (value ?? '').trim()),
+        debounceTime(200),
+        distinctUntilChanged(),
+        switchMap((term: string) => {
           this.collection = [];
-        }
+          if (!term) {
+            return EMPTY;
+          }
+          const path = `${this.collectionToCall}?${this.queryParam}=${encodeURIComponent(term)}`;
+          return this.apiService.get<AutocompleteResponse[]>(path).pipe(
+            tap((res: AutocompleteResponse[]) => {
+              if (res.length > 0) {
+                this.collection = res;
+              } else {
+                this.collection = [
+                  {
+                    id: 0,
+                    value: `${this.keyToAddString}${term}`,
+                  },
+                ];
+              }
+            }),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        error: () => {
+          this.collection = [];
+        },
       });
   }
 
