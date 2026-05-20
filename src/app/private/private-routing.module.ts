@@ -9,27 +9,11 @@ const routes: Routes = [
     loadChildren: () => import('./home/home.module').then(m => m.HomeModule),
   },
   {
-    path: 'inventories',
-    title: 'Inventario',
-    data: { breadcrumb: 'Inventario' },
-    loadChildren: () =>
-      import('./inventories/inventories.module').then(m => m.InventoriesModule),
-  },
-  {
     path: 'profile',
     title: 'Profile',
     data: { breadcrumb: 'Profile' },
     loadChildren: () =>
       import('./profile/profile.module').then(m => m.ProfileModule),
-  },
-  {
-    path: 'administration',
-    title: 'Administración',
-    data: { breadcrumb: 'Administración' },
-    loadChildren: () =>
-      import('./administration/administration.module').then(
-        m => m.AdministrationModule,
-      ),
   },
   {
     path: 'directory',
@@ -69,13 +53,6 @@ const routes: Routes = [
       import('./finance/financial-summary/financial-summary.module').then(
         m => m.FinancialSummaryModule,
       ),
-  },
-  {
-    path: 'reports',
-    title: 'Reportes',
-    data: { breadcrumb: 'Reportes' },
-    loadChildren: () =>
-      import('./reports/reports.module').then(m => m.ReportsModule),
   },
   {
     path: '',

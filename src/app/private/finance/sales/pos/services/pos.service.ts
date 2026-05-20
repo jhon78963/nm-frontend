@@ -112,7 +112,7 @@ export class PosService {
 
       if (response.success) {
         this.showToast(`Venta ${response.sale_id} Exitosa!`);
-        this.printTicket(response.sale_id);
+        this.printTicket(response.sale_id, response.ticket_url);
         this.clearCart();
       }
     } catch (error: any) {
@@ -223,13 +223,28 @@ export class PosService {
     this.paymentMethod.set(method);
   }
 
-  printTicket(saleId: number) {
+  async printTicket(saleId: number, ticketUrl?: string) {
     console.log('Imprimiendo ticket para venta ID:', saleId);
-    const baseUrl = this.apiService.BASE_URL.replace(/\/api\/?$/, '');
-    const ticketUrl = `${baseUrl}/pos/sales/${saleId}/ticket`;
+
+    let url = ticketUrl;
+    if (!url) {
+      try {
+        const response = await firstValueFrom(
+          this.apiService.get<{ ticket_url: string }>(
+            `pos/sales/${saleId}/ticket-url`,
+          ),
+        );
+        url = response.ticket_url;
+      } catch (error) {
+        console.error('Error obteniendo URL firmada del ticket:', error);
+        this.showToast('No se pudo generar el ticket de venta');
+        return;
+      }
+    }
+
     const iframe = document.createElement('iframe');
     iframe.style.display = 'none';
-    iframe.src = ticketUrl;
+    iframe.src = url;
     document.body.appendChild(iframe);
     iframe.onload = () => {
       try {

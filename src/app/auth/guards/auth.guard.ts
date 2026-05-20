@@ -1,17 +1,24 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { of } from 'rxjs';
+
+type TokenData = {
+  token?: string;
+};
 
 export const authGuard: CanActivateFn = () => {
   const router = inject(Router);
   const tokenData = localStorage.getItem('tokenData');
 
   if (tokenData) {
-    const parsedTokenData = JSON.parse(tokenData);
-    if (parsedTokenData.token) {
-      return of(true);
+    try {
+      const parsed = JSON.parse(tokenData) as TokenData;
+      if (parsed.token) {
+        return true;
+      }
+    } catch {
+      // tokenData inválido → login
     }
   }
 
-  return router.navigate(['auth/login']);
+  return router.createUrlTree(['auth', 'login']);
 };
