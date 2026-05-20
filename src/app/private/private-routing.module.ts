@@ -1,6 +1,11 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
+/**
+ * Rutas de uso general (home, perfil).
+ * Rutas sensibles (directory, sales, finance, financial-summary) viven en app.routes.ts
+ * con roleGuard y roles de administración.
+ */
 const routes: Routes = [
   {
     path: '',
@@ -14,45 +19,6 @@ const routes: Routes = [
     data: { breadcrumb: 'Profile' },
     loadChildren: () =>
       import('./profile/profile.module').then(m => m.ProfileModule),
-  },
-  {
-    path: 'directory',
-    title: 'Directorio',
-    data: { breadcrumb: 'Directorio' },
-    loadChildren: () =>
-      import('./directory/directory.module').then(m => m.DirectoryModule),
-  },
-  {
-    path: 'sales',
-    title: 'Ventas',
-    data: { breadcrumb: 'Ventas' },
-    loadChildren: () =>
-      import('./finance/sales/list/sales-list.module').then(
-        m => m.SalesListModule,
-      ),
-  },
-  {
-    path: 'sales/pos',
-    title: 'POS',
-    data: { breadcrumb: 'POS' },
-    loadChildren: () =>
-      import('./finance/sales/pos/pos.module').then(m => m.PosModule),
-  },
-  {
-    path: 'finance',
-    title: 'Módulo Financiero',
-    data: { breadcrumb: 'Módulo Financiero' },
-    loadChildren: () =>
-      import('./finance/finance.module').then(m => m.FinanceModule),
-  },
-  {
-    path: 'financial-summary',
-    title: 'Resumen Financiero',
-    data: { breadcrumb: 'Resumen Financiero' },
-    loadChildren: () =>
-      import('./finance/financial-summary/financial-summary.module').then(
-        m => m.FinancialSummaryModule,
-      ),
   },
   {
     path: '',
