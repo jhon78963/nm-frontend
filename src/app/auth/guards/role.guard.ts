@@ -37,8 +37,9 @@ function readStoredUser(): StoredUser | undefined {
 
 export const roleGuard: CanActivateFn = route => {
   const router = inject(Router);
-  const allowedRoles =
-    (route.data['roles'] as string[] | undefined) ?? [...ADMIN_ROUTE_ROLES];
+  const allowedRoles = (route.data['roles'] as string[] | undefined) ?? [
+    ...ADMIN_ROUTE_ROLES,
+  ];
 
   if (allowedRoles.length === 0) {
     return router.createUrlTree(['/']);

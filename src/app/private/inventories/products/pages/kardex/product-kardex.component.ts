@@ -66,9 +66,9 @@ export class ProductKardexComponent implements OnInit {
   readonly sizeOptions = signal<Size[]>([]);
   selectedSize: Size | null = null;
 
-  readonly colorSelectItems = signal<
-    { label: string; value: number | null }[]
-  >([{ label: 'Maestro (sin color)', value: null }]);
+  readonly colorSelectItems = signal<{ label: string; value: number | null }[]>(
+    [{ label: 'Maestro (sin color)', value: null }],
+  );
   selectedColorId: number | null = null;
 
   readonly loadingSizes = signal(false);
@@ -168,9 +168,7 @@ export class ProductKardexComponent implements OnInit {
   onSizeChange(): void {
     const size = this.selectedSize;
     this.selectedColorId = null;
-    this.colorSelectItems.set([
-      { label: 'Maestro (sin color)', value: null },
-    ]);
+    this.colorSelectItems.set([{ label: 'Maestro (sin color)', value: null }]);
     const prod = this.product();
     if (prod !== null && size !== null && size.id > 0) {
       this.loadColorsForSize(prod.id, size.id);
@@ -237,29 +235,31 @@ export class ProductKardexComponent implements OnInit {
   }
 
   private loadColorsForSize(productId: number, catalogSizeId: number): void {
-    this.productSizeColorsService.getColors(productId, catalogSizeId).subscribe({
-      next: (rows: unknown) => {
-        const list = Array.isArray(rows) ? rows : [];
-        const options: { label: string; value: number | null }[] = [
-          { label: 'Maestro (sin color)', value: null },
-        ];
-        for (const raw of list) {
-          const c = raw as KardexColorOption;
-          if (c && typeof c.id === 'number') {
-            options.push({
-              label: c.description ?? `Color #${c.id}`,
-              value: c.id,
-            });
+    this.productSizeColorsService
+      .getColors(productId, catalogSizeId)
+      .subscribe({
+        next: (rows: unknown) => {
+          const list = Array.isArray(rows) ? rows : [];
+          const options: { label: string; value: number | null }[] = [
+            { label: 'Maestro (sin color)', value: null },
+          ];
+          for (const raw of list) {
+            const c = raw as KardexColorOption;
+            if (c && typeof c.id === 'number') {
+              options.push({
+                label: c.description ?? `Color #${c.id}`,
+                value: c.id,
+              });
+            }
           }
-        }
-        this.colorSelectItems.set(options);
-      },
-      error: () => {
-        this.colorSelectItems.set([
-          { label: 'Maestro (sin color)', value: null },
-        ]);
-      },
-    });
+          this.colorSelectItems.set(options);
+        },
+        error: () => {
+          this.colorSelectItems.set([
+            { label: 'Maestro (sin color)', value: null },
+          ]);
+        },
+      });
   }
 
   private buildCurrentMonthRange(): Date[] {

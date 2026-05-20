@@ -253,9 +253,9 @@ export class ProductListComponent implements OnInit {
   ): Observable<void> {
     this.updatePage(page);
     this.loadingService.sendLoadingState(true);
-    return this.productsService.callGetList(limit, page, name, gender).pipe(
-      finalize(() => this.loadingService.sendLoadingState(false)),
-    );
+    return this.productsService
+      .callGetList(limit, page, name, gender)
+      .pipe(finalize(() => this.loadingService.sendLoadingState(false)));
   }
 
   async onPageSelected(paginate: PaginatorState): Promise<void> {

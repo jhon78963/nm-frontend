@@ -180,8 +180,7 @@ export class PosService {
           if (newQty <= 0) return item;
 
           // Validación local de stock
-          const maxQty =
-            item.color.inventory?.available_quantity ?? 0;
+          const maxQty = item.color.inventory?.available_quantity ?? 0;
           if (newQty > maxQty) {
             this.showToast(`Stock máx: ${maxQty}`);
             return item;
