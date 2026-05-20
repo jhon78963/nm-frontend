@@ -1,4 +1,3 @@
-import { HttpClientModule } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { AppLayoutModule } from './layout/app.layout.module';
@@ -14,7 +13,6 @@ import { CommonModule } from '@angular/common';
     RouterOutlet,
     CommonModule,
     AppLayoutModule,
-    HttpClientModule,
     ProgressSpinnerModule,
   ],
   templateUrl: './app.component.html',

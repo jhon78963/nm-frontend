@@ -93,12 +93,29 @@ import { AuthService } from './auth.service';
 let refreshTokenInProgress = false;
 let refreshTokenSubject: Subject<any> = new Subject<any>();
 
+function readTokenDataFromStorage(): {
+  token?: string;
+  refreshToken?: string;
+} {
+  try {
+    return JSON.parse(localStorage.getItem('tokenData') || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function clearAuthSession(): void {
+  localStorage.removeItem('tokenData');
+  localStorage.removeItem('user');
+  localStorage.removeItem('selectedSize');
+}
+
 export const tokenInterceptor: HttpInterceptorFn = (request, next) => {
   const authService = inject(AuthService);
   const router = inject(Router);
   const excludedEndpoints: string[] = ['login'];
   const excludedEndpointsAfterRefresh: string[] = ['refresh-token', 'logout'];
-  const tokenData = JSON.parse(localStorage.getItem('tokenData') || '{}');
+  const tokenData = readTokenDataFromStorage();
   const hasCustomTokenFlag = request.headers.has('X-Use-Custom-Token');
 
   if (hasCustomTokenFlag) {
@@ -130,7 +147,8 @@ export const tokenInterceptor: HttpInterceptorFn = (request, next) => {
       const isNotExcludedAfterRefresh = !excludedEndpointsAfterRefresh.some(
         endpoint => request.url.includes(endpoint),
       );
-      const hasRefreshToken = tokenData && tokenData.refreshToken;
+      const currentTokenData = readTokenDataFromStorage();
+      const hasRefreshToken = Boolean(currentTokenData.refreshToken);
 
       if (is401 && isNotExcludedAfterRefresh && hasRefreshToken) {
         if (refreshTokenInProgress) {
@@ -150,7 +168,10 @@ export const tokenInterceptor: HttpInterceptorFn = (request, next) => {
           refreshTokenSubject = new Subject<any>();
 
           return authService
-            .refreshToken(tokenData.refreshToken, tokenData.token)
+            .refreshToken(
+              currentTokenData.refreshToken ?? null,
+              currentTokenData.token ?? null,
+            )
             .pipe(
               switchMap((response: any) => {
                 refreshTokenInProgress = false;
@@ -171,8 +192,8 @@ export const tokenInterceptor: HttpInterceptorFn = (request, next) => {
                 refreshTokenInProgress = false;
                 refreshTokenSubject.error(refreshError);
                 console.error('Error refreshing token:', refreshError);
-                localStorage.clear();
-                router.navigate(['auth']);
+                clearAuthSession();
+                void router.navigate(['/auth/login']);
                 return throwError(() => refreshError);
               }),
             );
