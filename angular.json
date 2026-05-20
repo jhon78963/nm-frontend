@@ -32,13 +32,13 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "5mb",
-                  "maximumError": "2mb"
+                  "maximumWarning": "1.5mb",
+                  "maximumError": "3mb"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "5mb",
-                  "maximumError": "2mb"
+                  "maximumWarning": "1.5mb",
+                  "maximumError": "3mb"
                 }
               ],
               "fileReplacements": [
@@ -78,7 +78,7 @@
               "prerender": false
             }
           },
-          "defaultConfiguration": "local"
+          "defaultConfiguration": "production"
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
