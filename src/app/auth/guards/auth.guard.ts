@@ -20,20 +20,19 @@ function readTokenData(): Token | null {
 
 /**
  * expirationToken del backend es timestamp absoluto en ms (Carbon::getTimestampMs).
- * Valores pequeños o ausentes no se tratan como expirados.
+ * Fail-closed: cualquier valor ausente, inválido o ya vencido rechaza el acceso.
  */
 function isAccessTokenValid(token: Token): boolean {
   const raw = token.expirationToken;
   if (raw === undefined || raw === null) {
-    return true;
+    return false;
   }
   const exp = typeof raw === 'string' ? Number(raw) : raw;
   if (!Number.isFinite(exp) || exp <= 0) {
-    return true;
+    return false;
   }
-  // TTL en segundos/minutos, no timestamp absoluto → no validar
   if (exp < 1_000_000_000) {
-    return true;
+    return false;
   }
   const expMs = exp > 1_000_000_000_000 ? exp : exp * 1000;
   return Date.now() < expMs;
@@ -52,9 +51,6 @@ export const authGuard: CanActivateFn = () => {
     return true;
   }
 
-  if (token) {
-    clearAuthStorage();
-  }
-
+  clearAuthStorage();
   return router.createUrlTree(['auth', 'login']);
 };
