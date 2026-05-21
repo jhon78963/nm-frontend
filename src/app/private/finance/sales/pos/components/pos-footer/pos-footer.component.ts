@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, Input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PosService } from '../../services/pos.service';
 
@@ -19,6 +19,8 @@ interface PaymentMethodState {
   styleUrl: './pos-footer.component.scss',
 })
 export class PosFooterComponent {
+  @Input() hasNoWarehouse = false;
+
   posService = inject(PosService);
 
   // Estado local de los métodos de pago
@@ -107,6 +109,10 @@ export class PosFooterComponent {
   }
 
   handleCheckout() {
+    if (this.hasNoWarehouse) {
+      return;
+    }
+
     const active = this.activeMethods();
     const total = this.totalToPay();
 
