@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { AppLayoutComponent } from './layout/layout/app.layout.component';
 import { authGuard } from './auth/guards/auth.guard';
+import { permissionGuard } from './auth/guards/permission.guard';
 import { ADMIN_ROUTE_ROLES, roleGuard } from './auth/guards/role.guard';
 
 export const routes: Routes = [
@@ -40,9 +41,11 @@ export const routes: Routes = [
       {
         path: 'directory',
         title: 'Directorio',
-        canActivate: [roleGuard],
-        data: { breadcrumb: 'Directorio', roles: [...ADMIN_ROUTE_ROLES] },
-        // TODO: permission guard por hijo (team.getAll, customer.getAll, vendor.getAll)
+        canActivate: [permissionGuard],
+        data: {
+          breadcrumb: 'Directorio',
+          permissions: ['team.getAll', 'customer.getAll', 'vendor.getAll'],
+        },
         loadChildren: () =>
           import('./private/directory/directory.module').then(
             m => m.DirectoryModule,
@@ -51,18 +54,19 @@ export const routes: Routes = [
       {
         path: 'sales/pos',
         title: 'POS',
-        canActivate: [roleGuard],
-        data: { breadcrumb: 'POS', roles: [...ADMIN_ROUTE_ROLES] },
-        // TODO: permission:pos.searchProduct | pos.checkout
+        canActivate: [permissionGuard],
+        data: { breadcrumb: 'POS', permission: 'pos.checkout' },
         loadChildren: () =>
           import('./private/finance/sales/pos/pos.module').then(m => m.PosModule),
       },
       {
         path: 'sales',
         title: 'Ventas',
-        canActivate: [roleGuard],
-        data: { breadcrumb: 'Ventas', roles: [...ADMIN_ROUTE_ROLES] },
-        // TODO: permission:sale.getAll | sale.get | sale.update
+        canActivate: [permissionGuard],
+        data: {
+          breadcrumb: 'Ventas',
+          permissions: ['sale.getAll', 'sale.get', 'sale.update'],
+        },
         loadChildren: () =>
           import('./private/finance/sales/list/sales-list.module').then(
             m => m.SalesListModule,
@@ -71,24 +75,22 @@ export const routes: Routes = [
       {
         path: 'finance',
         title: 'Módulo Financiero',
-        canActivate: [roleGuard],
+        canActivate: [permissionGuard],
         data: {
           breadcrumb: 'Módulo Financiero',
-          roles: [...ADMIN_ROUTE_ROLES],
+          permissions: ['cashflow.getDaily', 'expense.getAll', 'order.getAll'],
         },
-        // TODO: permisos por hijo (cash-movement.*, expense.*, order.*)
         loadChildren: () =>
           import('./private/finance/finance.module').then(m => m.FinanceModule),
       },
       {
         path: 'financial-summary',
         title: 'Resumen Financiero',
-        canActivate: [roleGuard],
+        canActivate: [permissionGuard],
         data: {
           breadcrumb: 'Resumen Financiero',
-          roles: [...ADMIN_ROUTE_ROLES],
+          permission: 'financialSummary.getSummary',
         },
-        // TODO: permission granular de resumen financiero
         loadChildren: () =>
           import('./private/finance/financial-summary/financial-summary.module').then(
             m => m.FinancialSummaryModule,

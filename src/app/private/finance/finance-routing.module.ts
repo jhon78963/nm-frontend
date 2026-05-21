@@ -1,17 +1,16 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { ADMIN_ROUTE_ROLES, roleGuard } from '../../auth/guards/role.guard';
+import { permissionGuard } from '../../auth/guards/permission.guard';
 
 const routes: Routes = [
   {
     path: 'cash-movements',
     title: 'Movimientos de Caja',
-    canActivate: [roleGuard],
+    canActivate: [permissionGuard],
     data: {
       breadcrumb: 'Movimientos de Caja',
-      roles: [...ADMIN_ROUTE_ROLES],
+      permission: 'cashflow.getDaily',
     },
-    // TODO: permission granular de caja
     loadChildren: () =>
       import('./cash-movements/cash-movements.module').then(
         m => m.CashMovementsModule,
@@ -20,18 +19,16 @@ const routes: Routes = [
   {
     path: 'expenses',
     title: 'Gastos',
-    canActivate: [roleGuard],
-    data: { breadcrumb: 'Gastos', roles: [...ADMIN_ROUTE_ROLES] },
-    // TODO: permission:expense.*
+    canActivate: [permissionGuard],
+    data: { breadcrumb: 'Gastos', permission: 'expense.getAll' },
     loadChildren: () =>
       import('./expenses/expenses.module').then(m => m.ExpensesModule),
   },
   {
     path: 'orders',
     title: 'Ordenes',
-    canActivate: [roleGuard],
-    data: { breadcrumb: 'Ordenes', roles: [...ADMIN_ROUTE_ROLES] },
-    // TODO: permission:order.*
+    canActivate: [permissionGuard],
+    data: { breadcrumb: 'Ordenes', permission: 'order.getAll' },
     loadChildren: () =>
       import('./orders/orders.module').then(m => m.OrdersModule),
   },

@@ -64,7 +64,8 @@
         type="submit"
         pButton
         label="Guardar"
-        [disabled]="!isValid"></button>
+        [disabled]="!isValid || isSaving"></button>
     </div>
   </form>
 }
+<p-toast />

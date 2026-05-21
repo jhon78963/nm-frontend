@@ -1,5 +1,13 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
@@ -30,10 +38,12 @@ import { ReportsService } from '../../services/reports-service.service';
   ],
   providers: [DatePipe],
   templateUrl: './reports.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReportsComponent implements OnInit {
   reportsService = inject(ReportsService);
   datePipe = inject(DatePipe);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   loading = signal(true);
 
@@ -90,6 +100,7 @@ export class ReportsComponent implements OnInit {
 
   ngOnInit() {
     this.initChartOptions();
+    this.cdr.markForCheck();
     this.loadData();
   }
 
@@ -122,8 +133,12 @@ export class ReportsComponent implements OnInit {
           this.setupChart(res.data.financials.chart_data);
         }
         this.loading.set(false);
+        this.cdr.markForCheck();
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.cdr.markForCheck();
+      },
     });
   }
 
@@ -147,6 +162,7 @@ export class ReportsComponent implements OnInit {
         },
       ],
     };
+    this.cdr.markForCheck();
   }
 
   initChartOptions() {

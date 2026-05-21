@@ -1,5 +1,6 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormArray,
   FormBuilder,
@@ -14,8 +15,10 @@ import {
   DynamicDialogConfig,
   DynamicDialogRef,
 } from 'primeng/dynamicdialog';
+import { finalize } from 'rxjs';
 import { SharedModule } from '../../../../../../shared/shared.module';
 import { formatDateTime } from '../../../../../../utils/dates';
+import { showError } from '../../../../../../utils/notifications';
 import { SalesService } from '../../services/sales.service';
 import { ProductSelectorComponent } from '../product-selector/product-selector.component';
 
@@ -28,6 +31,8 @@ import { ProductSelectorComponent } from '../product-selector/product-selector.c
   providers: [DialogService, MessageService, DatePipe],
 })
 export class SaleFormComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+
   form: FormGroup = this.formBuilder.group({
     creationTime: [new Date(), Validators.nullValidator],
     items: this.formBuilder.array([]),
@@ -40,6 +45,7 @@ export class SaleFormComponent implements OnInit {
   paymentMethodsList = ['CASH', 'YAPE', 'CARD'];
 
   isCanceled = signal<boolean>(false);
+  isSaving = false;
 
   constructor(
     private readonly datePipe: DatePipe,
@@ -54,7 +60,10 @@ export class SaleFormComponent implements OnInit {
   ngOnInit(): void {
     if (this.dynamicDialogConfig.data.id) {
       const id = this.dynamicDialogConfig.data.id;
-      this.salesService.getOne(id).subscribe((response: any) => {
+      this.salesService
+        .getOne(id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((response: any) => {
         this.isCanceled.set(response.status === 'CANCELED');
 
         if (response.datetime_iso) {
@@ -102,8 +111,14 @@ export class SaleFormComponent implements OnInit {
         this.recalculateTotals();
       };
 
-      group.get('unit_price')?.valueChanges.subscribe(recalculate);
-      group.get('quantity')?.valueChanges.subscribe(recalculate); // Escuchar cantidad
+      group
+        .get('unit_price')
+        ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(recalculate);
+      group
+        .get('quantity')
+        ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(recalculate);
 
       itemsArray.push(group);
     });
@@ -132,7 +147,10 @@ export class SaleFormComponent implements OnInit {
       amount: [amount, [Validators.required, Validators.min(0)]],
     });
 
-    group.get('amount')?.valueChanges.subscribe(() => this.recalculateTotals());
+    group
+      .get('amount')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.recalculateTotals());
 
     paymentsArray.push(group);
     this.recalculateTotals();
@@ -198,10 +216,26 @@ export class SaleFormComponent implements OnInit {
         })),
       };
 
-      this.salesService.edit(id, payload).subscribe({
-        next: () => this.dynamicDialogRef.close(true),
-        error: () => {},
-      });
+      this.isSaving = true;
+      this.salesService
+        .edit(id, payload)
+        .pipe(
+          finalize(() => {
+            this.isSaving = false;
+          }),
+          takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe({
+          next: () => this.dynamicDialogRef.close(true),
+          error: (err: unknown) => {
+            const message =
+              (err as { error?: { message?: string }; message?: string })
+                ?.error?.message ??
+              (err as { message?: string })?.message ??
+              'Error al guardar la venta.';
+            showError(this.messageService, message);
+          },
+        });
     }
   }
 
@@ -211,7 +245,7 @@ export class SaleFormComponent implements OnInit {
       width: '60vw',
     });
 
-    ref.onClose.subscribe((res: any) => {
+    ref.onClose.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((res: any) => {
       if (res) {
         const itemsArray = this.form.get('items') as FormArray;
         const row = itemsArray.at(index);

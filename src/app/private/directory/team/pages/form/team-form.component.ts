@@ -97,6 +97,7 @@ export class TeamFormComponent implements OnInit {
 
   buttonSaveTeam() {
     if (!this.form.valid) {
+      this.form.markAllAsTouched();
       return;
     }
     const payload = this.buildPayload();

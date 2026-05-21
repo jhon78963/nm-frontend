@@ -16,7 +16,7 @@ import { CalendarModule } from 'primeng/calendar';
 import { DropdownModule } from 'primeng/dropdown';
 import { TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
-import { take } from 'rxjs';
+import { catchError, EMPTY, switchMap, take } from 'rxjs';
 import { showError } from '../../../../../utils/notifications';
 import { Size } from '../../../sizes/models/sizes.model';
 import { SizesSelectedService } from '../../../sizes/services/sizes-selected.service';
@@ -206,32 +206,32 @@ export class ProductKardexComponent implements OnInit {
 
   private loadProductContext(id: number): void {
     this.loadingSizes.set(true);
-    this.productsService.getOne(id).subscribe({
-      next: (p: Product) => {
-        this.product.set(p);
-        const typeIds =
-          p.sizeTypeId && p.sizeTypeId.length > 0 ? p.sizeTypeId : [1];
-        this.sizesSelectedService.callGetList(id, typeIds).subscribe({
-          next: () => {
-            this.sizesSelectedService
-              .getList()
-              .pipe(take(1))
-              .subscribe({
-                next: (sizes: Size[]) => {
-                  const usable = sizes.filter(
-                    s => s.isExists === true && (s.productSizeId ?? 0) > 0,
-                  );
-                  this.sizeOptions.set(usable);
-                  this.loadingSizes.set(false);
-                },
-                error: () => this.loadingSizes.set(false),
-              });
-          },
-          error: () => this.loadingSizes.set(false),
-        });
-      },
-      error: () => this.loadingSizes.set(false),
-    });
+    this.productsService
+      .getOne(id)
+      .pipe(
+        switchMap((p: Product) => {
+          this.product.set(p);
+          const typeIds =
+            p.sizeTypeId && p.sizeTypeId.length > 0 ? p.sizeTypeId : [1];
+          return this.sizesSelectedService.callGetList(id, typeIds).pipe(
+            switchMap(() => this.sizesSelectedService.getList().pipe(take(1))),
+          );
+        }),
+        catchError(() => {
+          this.loadingSizes.set(false);
+          return EMPTY;
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (sizes: Size[]) => {
+          const usable = sizes.filter(
+            s => s.isExists === true && (s.productSizeId ?? 0) > 0,
+          );
+          this.sizeOptions.set(usable);
+          this.loadingSizes.set(false);
+        },
+      });
   }
 
   private loadColorsForSize(productId: number, catalogSizeId: number): void {

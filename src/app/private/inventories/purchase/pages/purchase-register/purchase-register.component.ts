@@ -1,12 +1,16 @@
 import { CommonModule } from '@angular/common';
 import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
+  DestroyRef,
   HostListener,
-  OnDestroy,
+  inject,
   OnInit,
   signal,
   ViewChild,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
   FormArray,
@@ -51,7 +55,6 @@ import {
   of,
   Subject,
   switchMap,
-  takeUntil,
   tap,
 } from 'rxjs';
 
@@ -133,9 +136,11 @@ interface PurchaseRegisterLocalDraftV1Legacy {
   templateUrl: './purchase-register.component.html',
   styleUrl: './purchase-register.component.scss',
   providers: [MessageService],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PurchaseRegisterComponent implements OnInit, OnDestroy {
-  private readonly destroy$ = new Subject<void>();
+export class PurchaseRegisterComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly cdr = inject(ChangeDetectorRef);
   private readonly persistDraft$ = new Subject<void>();
   /** Clave estable para no colisionar con otras pantallas. */
   private readonly purchaseDraftStorageKey = 'nm_purchase_register_draft_v2';
@@ -230,28 +235,54 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
     private readonly router: Router,
   ) {}
 
+  /** OnPush: refresca la vista tras mutaciones async fuera de signals. */
+  private markViewForCheck(): void {
+    this.cdr.markForCheck();
+  }
+
   ngOnInit(): void {
-    this.gendersService.getAll().subscribe({
-      next: rows => {
-        this.genders = rows;
-      },
-    });
-    this.catalog.getSizeTypes().subscribe({
-      next: rows => {
-        this.sizeTypes = rows ?? [];
-      },
-    });
-    this.warehousesService.getAll().subscribe({
-      next: rows => {
-        this.warehouses = rows ?? [];
-      },
-    });
+    this.gendersService
+      .getAll()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.markViewForCheck()),
+      )
+      .subscribe({
+        next: rows => {
+          this.genders = rows;
+        },
+      });
+    this.catalog
+      .getSizeTypes()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.markViewForCheck()),
+      )
+      .subscribe({
+        next: rows => {
+          this.sizeTypes = rows ?? [];
+        },
+      });
+    this.warehousesService
+      .getAll()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.markViewForCheck()),
+      )
+      .subscribe({
+        next: rows => {
+          this.warehouses = rows ?? [];
+        },
+      });
 
     this.tryRestoreDraftFromStorage();
 
     this.header
       .get('supplierName')
-      ?.valueChanges.pipe(takeUntil(this.destroy$))
+      ?.valueChanges.pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.markViewForCheck()),
+      )
       .subscribe(val => {
         const lock = this.supplierNameLockedForVendorId;
         if (lock != null && String(val ?? '').trim() !== lock) {
@@ -259,11 +290,6 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
           this.supplierNameLockedForVendorId = null;
         }
       });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 
   @HostListener('window:beforeunload')
@@ -279,11 +305,17 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
       this.filteredVendors = [];
       return;
     }
-    this.catalog.searchVendors(q, 20).subscribe({
-      next: rows => {
-        this.filteredVendors = rows ?? [];
-      },
-    });
+    this.catalog
+      .searchVendors(q, 20)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.markViewForCheck()),
+      )
+      .subscribe({
+        next: rows => {
+          this.filteredVendors = rows ?? [];
+        },
+      });
   }
 
   onSupplierSelect(ev: AutoCompleteSelectEvent): void {
@@ -308,11 +340,17 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
       this.filteredProducts = [];
       return;
     }
-    this.catalog.searchProducts(q, 20, 1).subscribe({
-      next: rows => {
-        this.filteredProducts = rows;
-      },
-    });
+    this.catalog
+      .searchProducts(q, 20, 1)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.markViewForCheck()),
+      )
+      .subscribe({
+        next: rows => {
+          this.filteredProducts = rows;
+        },
+      });
   }
 
   onProductPicked(product: Product): void {
@@ -334,53 +372,56 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
       full: this.productsService
         .getOne(product.id)
         .pipe(catchError(() => of(product))),
-    }).subscribe({
-      next: ({ sizes, full }) => {
-        this.selectedProduct = full;
-        this.filteredProducts = [full];
-        const m = new Map<number, ProductSizeOption>();
-        for (const r of sizes ?? []) {
-          m.set(r.id, r);
-        }
-        this.productPivotBySizeId.set(m);
+    })
+      .pipe(
+        switchMap(({ sizes, full }) => {
+          this.selectedProduct = full;
+          this.filteredProducts = [full];
+          const m = new Map<number, ProductSizeOption>();
+          for (const r of sizes ?? []) {
+            m.set(r.id, r);
+          }
+          this.productPivotBySizeId.set(m);
 
-        const types = full.sizeTypeId ?? [];
-        const firstType =
-          Array.isArray(types) && types.length > 0 ? Number(types[0]) : null;
-        if (firstType != null && Number.isFinite(firstType) && firstType > 0) {
-          this.lineDraft.patchValue(
-            { selectedSizeTypeId: firstType },
-            { emitEvent: false },
-          );
-          this.catalog.getSizesBySizeType(firstType).subscribe({
-            next: rows => {
-              this.catalogSizes.set(rows ?? []);
-              this.refreshColorsAfterSizeChange();
-              this.requestPersistDraft();
-            },
-            error: () => {
-              this.catalogSizes.set([]);
-              this.refreshColorsAfterSizeChange();
-              this.requestPersistDraft();
-            },
-          });
-        } else {
+          const types = full.sizeTypeId ?? [];
+          const firstType =
+            Array.isArray(types) && types.length > 0 ? Number(types[0]) : null;
+
+          if (firstType != null && Number.isFinite(firstType) && firstType > 0) {
+            this.lineDraft.patchValue(
+              { selectedSizeTypeId: firstType },
+              { emitEvent: false },
+            );
+            return this.catalog.getSizesBySizeType(firstType).pipe(
+              catchError(() => of([] as Size[])),
+            );
+          }
+
           this.lineDraft.patchValue(
             { selectedSizeTypeId: null },
             { emitEvent: false },
           );
           this.catalogSizes.set([]);
+          return of(null);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.markViewForCheck()),
+      )
+      .subscribe({
+        next: rows => {
+          if (rows != null) {
+            this.catalogSizes.set(rows ?? []);
+          }
           this.refreshColorsAfterSizeChange();
           this.requestPersistDraft();
-        }
-      },
-      error: () => {
-        this.selectedProduct = product;
-        this.filteredProducts = [product];
-        this.productPivotBySizeId.set(new Map());
-        this.requestPersistDraft();
-      },
-    });
+        },
+        error: () => {
+          this.selectedProduct = product;
+          this.filteredProducts = [product];
+          this.productPivotBySizeId.set(new Map());
+          this.requestPersistDraft();
+        },
+      });
   }
 
   clearProductSelection(): void {
@@ -514,11 +555,17 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
       this.catalogSizes.set([]);
       return;
     }
-    this.catalog.getSizesBySizeType(Number(typeId)).subscribe({
-      next: rows => {
-        this.catalogSizes.set(rows ?? []);
-      },
-    });
+    this.catalog
+      .getSizesBySizeType(Number(typeId))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.markViewForCheck()),
+      )
+      .subscribe({
+        next: rows => {
+          this.catalogSizes.set(rows ?? []);
+        },
+      });
   }
 
   onCatalogSizeChosen(): void {
@@ -556,28 +603,40 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
     }
 
     if (useExisting && productId) {
-      this.catalog.getColors(productId, draft.selectedSizeId).subscribe({
-        next: rows => {
-          this.colorOptions.set(rows ?? []);
-          this.lineDraft.patchValue(
-            { selectedColorId: null },
-            { emitEvent: false },
-          );
-        },
-      });
+      this.catalog
+        .getColors(productId, draft.selectedSizeId)
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          tap(() => this.markViewForCheck()),
+        )
+        .subscribe({
+          next: rows => {
+            this.colorOptions.set(rows ?? []);
+            this.lineDraft.patchValue(
+              { selectedColorId: null },
+              { emitEvent: false },
+            );
+          },
+        });
       return;
     }
 
     if (!useExisting) {
-      this.catalog.getColorsCatalogAll().subscribe({
-        next: rows => {
-          this.colorOptions.set(rows ?? []);
-          this.lineDraft.patchValue(
-            { selectedColorId: null },
-            { emitEvent: false },
-          );
-        },
-      });
+      this.catalog
+        .getColorsCatalogAll()
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          tap(() => this.markViewForCheck()),
+        )
+        .subscribe({
+          next: rows => {
+            this.colorOptions.set(rows ?? []);
+            this.lineDraft.patchValue(
+              { selectedColorId: null },
+              { emitEvent: false },
+            );
+          },
+        });
       return;
     }
 
@@ -1085,13 +1144,20 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
     const onChange = (): void => {
       this.recalcLineSubtotal(lineGroup);
       this.recalcGrandTotal();
+      this.markViewForCheck();
     };
     merge(p.valueChanges, colors.valueChanges)
-      .pipe(takeUntil(this.destroy$))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.markViewForCheck()),
+      )
       .subscribe(onChange);
     colors.controls.forEach(cg => {
       cg.get('quantity')!
-        .valueChanges.pipe(takeUntil(this.destroy$))
+        .valueChanges.pipe(
+          takeUntilDestroyed(this.destroyRef),
+          tap(() => this.markViewForCheck()),
+        )
         .subscribe(onChange);
     });
     onChange();
@@ -1215,18 +1281,24 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
     );
 
     if (sizeTypeId) {
-      this.catalog.getSizesBySizeType(sizeTypeId).subscribe({
-        next: sizes => {
-          this.catalogSizes.set(sizes ?? []);
-          if (sizeMode === 'existing' && raw['sizeId'] != null) {
-            this.lineDraft.patchValue(
-              { selectedSizeId: Number(raw['sizeId']) },
-              { emitEvent: false },
-            );
-          }
-          this.finishEditLineProductHydration(raw);
-        },
-      });
+      this.catalog
+        .getSizesBySizeType(sizeTypeId)
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          tap(() => this.markViewForCheck()),
+        )
+        .subscribe({
+          next: sizes => {
+            this.catalogSizes.set(sizes ?? []);
+            if (sizeMode === 'existing' && raw['sizeId'] != null) {
+              this.lineDraft.patchValue(
+                { selectedSizeId: Number(raw['sizeId']) },
+                { emitEvent: false },
+              );
+            }
+            this.finishEditLineProductHydration(raw);
+          },
+        });
     } else {
       this.catalogSizes.set([]);
       this.finishEditLineProductHydration(raw);
@@ -1250,6 +1322,8 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
             this.filteredProducts = [p];
             return this.catalog.getProductSizes(p.id);
           }),
+          takeUntilDestroyed(this.destroyRef),
+          tap(() => this.markViewForCheck()),
         )
         .subscribe({
           next: rows => {
@@ -1355,8 +1429,12 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
           console.warn('[purchase:bulk]', err);
           return EMPTY;
         }),
-        finalize(() => this.submitting.set(false)),
-        takeUntil(this.destroy$),
+        finalize(() => {
+          this.submitting.set(false);
+          this.markViewForCheck();
+        }),
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.markViewForCheck()),
       )
       .subscribe({
         next: (res: PurchaseRegisterBulkResponse) => {
@@ -1537,7 +1615,7 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
       .pipe(
         debounceTime(400),
         filter(() => this.persistDraftEnabled),
-        takeUntil(this.destroy$),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(() => this.persistDraftToStorage());
   }
@@ -1732,16 +1810,22 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
 
     const typeId = this.lineDraft.get('selectedSizeTypeId')?.value;
     if (typeId) {
-      this.catalog.getSizesBySizeType(Number(typeId)).subscribe({
-        next: rows => {
-          this.catalogSizes.set(rows ?? []);
-          afterCatalogSizes();
-        },
-        error: () => {
-          this.catalogSizes.set([]);
-          afterCatalogSizes();
-        },
-      });
+      this.catalog
+        .getSizesBySizeType(Number(typeId))
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          tap(() => this.markViewForCheck()),
+        )
+        .subscribe({
+          next: rows => {
+            this.catalogSizes.set(rows ?? []);
+            afterCatalogSizes();
+          },
+          error: () => {
+            this.catalogSizes.set([]);
+            afterCatalogSizes();
+          },
+        });
     } else {
       this.catalogSizes.set([]);
       afterCatalogSizes();
@@ -1755,58 +1839,61 @@ export class PurchaseRegisterComponent implements OnInit, OnDestroy {
     forkJoin({
       full: this.productsService.getOne(productId),
       sizes: this.catalog.getProductSizes(productId),
-    }).subscribe({
-      next: ({ full, sizes }) => {
-        this.selectedProduct = full;
-        this.filteredProducts = [full];
-        const m = new Map<number, ProductSizeOption>();
-        for (const r of sizes ?? []) {
-          m.set(r.id, r);
-        }
-        this.productPivotBySizeId.set(m);
+    })
+      .pipe(
+        switchMap(({ full, sizes }) => {
+          this.selectedProduct = full;
+          this.filteredProducts = [full];
+          const m = new Map<number, ProductSizeOption>();
+          for (const r of sizes ?? []) {
+            m.set(r.id, r);
+          }
+          this.productPivotBySizeId.set(m);
 
-        const draftType = this.lineDraft.get('selectedSizeTypeId')?.value;
-        if (draftType != null && Number(draftType) > 0) {
+          const draftType = this.lineDraft.get('selectedSizeTypeId')?.value;
+          if (draftType != null && Number(draftType) > 0) {
+            return of(void 0);
+          }
+
+          const types = full.sizeTypeId ?? [];
+          const firstType =
+            Array.isArray(types) && types.length > 0 ? Number(types[0]) : null;
+
+          if (firstType != null && Number.isFinite(firstType) && firstType > 0) {
+            this.lineDraft.patchValue(
+              { selectedSizeTypeId: firstType },
+              { emitEvent: false },
+            );
+            return this.catalog.getSizesBySizeType(firstType).pipe(
+              tap(rows => this.catalogSizes.set(rows ?? [])),
+              catchError(() => {
+                this.catalogSizes.set([]);
+                return of([]);
+              }),
+              map(() => void 0),
+            );
+          }
+
+          return of(void 0);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.markViewForCheck()),
+      )
+      .subscribe({
+        next: () => {
           this.refreshColorsAfterSizeChange();
           done();
-          return;
-        }
-
-        const types = full.sizeTypeId ?? [];
-        const firstType =
-          Array.isArray(types) && types.length > 0 ? Number(types[0]) : null;
-        if (firstType != null && Number.isFinite(firstType) && firstType > 0) {
-          this.lineDraft.patchValue(
-            { selectedSizeTypeId: firstType },
-            { emitEvent: false },
+        },
+        error: () => {
+          showError(
+            this.messageService,
+            'Borrador: no se pudo recargar el producto guardado.',
           );
-          this.catalog.getSizesBySizeType(firstType).subscribe({
-            next: rows => {
-              this.catalogSizes.set(rows ?? []);
-              this.refreshColorsAfterSizeChange();
-              done();
-            },
-            error: () => {
-              this.catalogSizes.set([]);
-              this.refreshColorsAfterSizeChange();
-              done();
-            },
-          });
-        } else {
-          this.refreshColorsAfterSizeChange();
+          this.selectedProduct = null;
+          this.filteredProducts = [];
           done();
-        }
-      },
-      error: () => {
-        showError(
-          this.messageService,
-          'Borrador: no se pudo recargar el producto guardado.',
-        );
-        this.selectedProduct = null;
-        this.filteredProducts = [];
-        done();
-      },
-    });
+        },
+      });
   }
 
   private createDraftColorQueueGroup(row: Record<string, unknown>): FormGroup {

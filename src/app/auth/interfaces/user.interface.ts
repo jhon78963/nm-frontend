@@ -7,6 +7,8 @@ export interface User {
   password: string;
   role: string;
   roles?: string[];
+  /** Nombres Spatie devueltos por auth/me (ej. pos.checkout, sale.getAll). */
+  permissions?: string[];
   tenantId?: number | null;
   warehouseId?: number | null;
 }

@@ -1,8 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { MessageService } from 'primeng/api';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { finalize } from 'rxjs';
 import { Warehouse } from '../../../../../models/warehouse.interface';
 import { WarehousesService } from '../../../../../services/warehouse.service';
+import { showError } from '../../../../../utils/notifications';
 import { Role } from '../../../roles/models/roles.model';
 import { RolesService } from '../../../roles/services/roles.service';
 import { TenantsService } from '../../../tenants/services/tenants.service';
@@ -13,10 +16,12 @@ import { UserPayload, UsersService } from '../../services/users.service';
   selector: 'app-users-form',
   templateUrl: './users-form.component.html',
   styleUrl: './users-form.component.scss',
+  providers: [MessageService],
 })
 export class UserFormComponent implements OnInit {
   userId: number = 0;
   warehouses: Warehouse[] = [];
+  isSaving = false;
 
   constructor(
     private readonly formBuilder: FormBuilder,
@@ -26,6 +31,7 @@ export class UserFormComponent implements OnInit {
     private readonly tenantsService: TenantsService,
     private readonly dynamicDialogRef: DynamicDialogRef,
     private readonly dynamicDialogConfig: DynamicDialogConfig,
+    private readonly messageService: MessageService,
   ) {}
 
   form: FormGroup = this.formBuilder.group({
@@ -116,6 +122,8 @@ export class UserFormComponent implements OnInit {
         profilePicture: '',
       };
 
+      this.isSaving = true;
+
       if (this.userId) {
         const patch: Partial<UserPayload> = {
           name: payload.name,
@@ -124,21 +132,38 @@ export class UserFormComponent implements OnInit {
           warehouseId: payload.warehouseId,
           roleNames: payload.roleNames,
         };
-        this.usersService.edit(this.userId, patch).subscribe({
-          next: () => this.dynamicDialogRef.close({ success: true }),
-          error: () => {},
-        });
+        this.usersService
+          .edit(this.userId, patch)
+          .pipe(finalize(() => (this.isSaving = false)))
+          .subscribe({
+            next: () => this.dynamicDialogRef.close({ success: true }),
+            error: (err: unknown) =>
+              this.handleSaveError(err, 'Error al actualizar el usuario.'),
+          });
       } else {
-        this.usersService.create(payload).subscribe({
-          next: () => {
-            this.dynamicDialogRef.close({ success: true });
-            this.form.reset();
-          },
-          error: () => {},
-        });
+        this.usersService
+          .create(payload)
+          .pipe(finalize(() => (this.isSaving = false)))
+          .subscribe({
+            next: () => {
+              this.dynamicDialogRef.close({ success: true });
+              this.form.reset();
+            },
+            error: (err: unknown) =>
+              this.handleSaveError(err, 'Error al crear el usuario.'),
+          });
       }
     } else {
       this.form.markAllAsTouched();
     }
+  }
+
+  private handleSaveError(err: unknown, fallback: string): void {
+    const message =
+      (err as { error?: { message?: string }; message?: string })?.error
+        ?.message ??
+      (err as { message?: string })?.message ??
+      fallback;
+    showError(this.messageService, message);
   }
 }

@@ -1,4 +1,4 @@
-import { HttpParams } from '@angular/common/http';
+import { HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../../../../services/api.service'; // Asegúrate que la ruta sea correcta
@@ -50,8 +50,30 @@ export class PosService {
       );
       return product;
     } catch (error) {
-      console.error('Error buscando producto:', error);
-      this.showToast('Producto no encontrado');
+      if (error instanceof HttpErrorResponse) {
+        switch (error.status) {
+          case 404:
+            this.showToast('Producto no encontrado o código incorrecto');
+            break;
+          case 403: {
+            const message = error.error?.message;
+            this.showToast(
+              message ??
+                'No tienes permisos o un almacén asignado para este producto',
+            );
+            break;
+          }
+          case 500:
+            this.showToast(
+              'Error interno del servidor al buscar el producto',
+            );
+            break;
+          default:
+            this.showToast('Error de red o conexión');
+        }
+      } else {
+        this.showToast('Error de red o conexión');
+      }
       return undefined;
     } finally {
       this.isLoading.set(false);
@@ -74,7 +96,6 @@ export class PosService {
       }
       return false;
     } catch (error) {
-      console.error('Error buscando cliente:', error);
       this.showToast('Cliente no encontrado / Error API');
       return false;
     } finally {
@@ -129,7 +150,6 @@ export class PosService {
       }
     } catch (error: any) {
       this.showToast('Error al procesar venta');
-      console.error(error);
     } finally {
       this.isLoading.set(false);
     }
@@ -235,8 +255,6 @@ export class PosService {
   }
 
   async printTicket(saleId: number, ticketUrl?: string) {
-    console.log('Imprimiendo ticket para venta ID:', saleId);
-
     let url = ticketUrl;
     if (!url) {
       try {
@@ -247,14 +265,12 @@ export class PosService {
         );
         url = response.ticket_url;
       } catch (error) {
-        console.error('Error obteniendo URL firmada del ticket:', error);
         this.showToast('No se pudo generar el ticket de venta');
         return;
       }
     }
 
     if (!this.isValidTicketUrl(url)) {
-      console.error('URL de ticket rechazada por validación de seguridad');
       this.showToast('No se pudo imprimir: URL de ticket no válida');
       return;
     }
@@ -267,15 +283,14 @@ export class PosService {
       iframe.onload = () => {
         try {
           iframe.contentWindow?.print();
-        } catch (e) {
-          console.error(e);
+        } catch {
+          // Fallo silencioso del diálogo de impresión del navegador
         }
         setTimeout(() => {
           document.body.removeChild(iframe);
         }, 5000);
       };
     } catch (error) {
-      console.error('Error al imprimir ticket:', error);
       this.showToast('No se pudo imprimir el ticket de venta');
     }
   }

@@ -20,6 +20,6 @@ export class OrderFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    console.log(this.orderId);
+    // Reservado para carga de la orden cuando el formulario esté implementado.
   }
 }

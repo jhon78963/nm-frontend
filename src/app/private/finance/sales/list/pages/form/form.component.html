@@ -167,7 +167,7 @@
         label="Guardar Todo"
         class="mt-4 w-full p-button-primary font-bold shadow-2"
         autofocus
-        [disabled]="!isFormValid"></button>
+        [disabled]="!isFormValid || isSaving"></button>
     </div>
   </form>
 }

@@ -6,12 +6,15 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import { MessageService } from 'primeng/api';
 import { SharedModule } from '../../../../../shared/shared.module';
 import { ToastModule } from 'primeng/toast';
 import { Size, SizeSave } from '../../models/sizes.model';
 import { SizesSelectedService } from '../../services/sizes-selected.service';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { SizesService } from '../../services/sizes.service';
+import { finalize } from 'rxjs';
+import { showError } from '../../../../../utils/notifications';
 
 @Component({
   selector: 'app-sizes-form',
@@ -19,11 +22,13 @@ import { SizesService } from '../../services/sizes.service';
   imports: [CommonModule, ReactiveFormsModule, ToastModule, SharedModule],
   templateUrl: './sizes-form.component.html',
   styleUrl: './sizes-form.component.scss',
+  providers: [MessageService],
 })
 export class SizesCreateFormComponent implements OnInit {
   productId: number = 0;
   sizeTypeId: number = 0;
   sizesType: Size[] = [];
+  isSaving = false;
 
   constructor(
     private readonly formBuilder: FormBuilder,
@@ -31,6 +36,7 @@ export class SizesCreateFormComponent implements OnInit {
     private readonly sizesService: SizesService,
     private readonly dynamicDialogConfig: DynamicDialogConfig,
     private readonly dynamicDialogRef: DynamicDialogRef,
+    private readonly messageService: MessageService,
   ) {}
 
   form: FormGroup = this.formBuilder.group({
@@ -59,20 +65,42 @@ export class SizesCreateFormComponent implements OnInit {
   }
 
   saveSizeButton() {
-    if (this.form) {
-      const size = new SizeSave(this.form.value);
-      if (this.dynamicDialogConfig.data.id) {
-        const id = this.dynamicDialogConfig.data.id;
-        this.sizesService.edit(id, size).subscribe({
-          next: () => this.dynamicDialogRef.close({ success: true }),
-          error: () => {},
-        });
-      } else {
-        this.sizesService.create(size).subscribe({
-          next: () => this.dynamicDialogRef.close({ success: true }),
-          error: () => {},
-        });
-      }
+    if (!this.form.valid) {
+      this.form.markAllAsTouched();
+      return;
     }
+
+    const size = new SizeSave(this.form.value);
+    this.isSaving = true;
+
+    if (this.dynamicDialogConfig.data.id) {
+      const id = this.dynamicDialogConfig.data.id;
+      this.sizesService
+        .edit(id, size)
+        .pipe(finalize(() => (this.isSaving = false)))
+        .subscribe({
+          next: () => this.dynamicDialogRef.close({ success: true }),
+          error: (err: unknown) =>
+            this.handleSaveError(err, 'Error al actualizar la talla.'),
+        });
+    } else {
+      this.sizesService
+        .create(size)
+        .pipe(finalize(() => (this.isSaving = false)))
+        .subscribe({
+          next: () => this.dynamicDialogRef.close({ success: true }),
+          error: (err: unknown) =>
+            this.handleSaveError(err, 'Error al crear la talla.'),
+        });
+    }
+  }
+
+  private handleSaveError(err: unknown, fallback: string): void {
+    const message =
+      (err as { error?: { message?: string }; message?: string })?.error
+        ?.message ??
+      (err as { message?: string })?.message ??
+      fallback;
+    showError(this.messageService, message);
   }
 }

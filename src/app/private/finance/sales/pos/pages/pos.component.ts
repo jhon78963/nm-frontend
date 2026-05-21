@@ -2,14 +2,15 @@ import { CommonModule } from '@angular/common';
 import {
   AfterViewChecked,
   Component,
+  DestroyRef,
   ElementRef,
   inject,
-  OnDestroy,
   OnInit,
   ViewChild,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { debounceTime, Subject, Subscription } from 'rxjs';
+import { debounceTime, Subject } from 'rxjs';
 import { PosFooterComponent } from '../components/pos-footer/pos-footer.component';
 import { PosHeaderComponent } from '../components/pos-header/pos-header.component';
 import { PosSelectorComponent } from '../components/pos-selector/pos-selector.component';
@@ -28,24 +29,22 @@ import { PosService } from '../services/pos.service';
   templateUrl: './pos.component.html',
   styleUrl: './pos.component.scss',
 })
-export class PosComponent implements AfterViewChecked, OnInit, OnDestroy {
+export class PosComponent implements AfterViewChecked, OnInit {
   posService = inject(PosService);
+  private readonly destroyRef = inject(DestroyRef);
 
   barcodeQuery = '';
   @ViewChild('barcodeInput') barcodeInput!: ElementRef;
 
   private barcodeSubject = new Subject<string>();
-  private barcodeSubscription?: Subscription;
 
   ngOnInit() {
-    // 2. Nos suscribimos con un retraso (debounce)
-    this.barcodeSubscription = this.barcodeSubject
+    this.barcodeSubject
       .pipe(
-        debounceTime(300), // Espera 300ms después de la última tecla
-        // distinctUntilChanged(), // Evita disparar si el valor es el mismo
+        debounceTime(300),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(valor => {
-        // Si el valor no está vacío, buscamos
         if (valor) {
           this.onScan();
         }
@@ -74,10 +73,4 @@ export class PosComponent implements AfterViewChecked, OnInit, OnDestroy {
     }
   }
 
-  ngOnDestroy() {
-    // Importante desuscribirse para evitar fugas de memoria
-    if (this.barcodeSubscription) {
-      this.barcodeSubscription.unsubscribe();
-    }
-  }
 }
