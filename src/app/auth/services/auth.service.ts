@@ -5,11 +5,10 @@ import {
   finalize,
   map,
   of,
-  switchMap,
   tap,
   throwError,
 } from 'rxjs';
-import { Login, LoginResponse, Token, User } from '../interfaces';
+import { Login, LoginResponse, User } from '../interfaces';
 import { ApiService } from '../../services/api.service';
 import { Router } from '@angular/router';
 
@@ -22,36 +21,17 @@ export class AuthService {
     private readonly router: Router,
   ) {}
 
-  private setAuthentication(token: Token): void {
-    localStorage.setItem('tokenData', JSON.stringify(token));
-  }
-
   private setUserData(user: User): void {
     const userToSave = { ...user };
     delete (userToSave as any).password;
     localStorage.setItem('user', JSON.stringify(userToSave));
   }
 
-  setRefreshData(token: Token): void {
-    localStorage.setItem('tokenData', JSON.stringify(token));
-  }
-
   login(body: Login): Observable<User> {
-    return this.apiService.post<LoginResponse>('auth/login', body).pipe(
-      switchMap(response => {
-        const token = this.normalizeToken(response);
-        if (!token.token.trim()) {
-          return throwError(
-            () => 'La respuesta del servidor no incluyó un token válido.',
-          );
-        }
-        this.setAuthentication(token);
-        return this.me().pipe(
-          tap((user: User) => {
-            this.setUserData(user);
-            void this.router.navigateByUrl('/');
-          }),
-        );
+    return this.apiService.post<User>('auth/login', body).pipe(
+      tap((user: User) => {
+        this.setUserData(user);
+        void this.router.navigateByUrl('/');
       }),
       catchError(err => throwError(() => this.extractErrorMessage(err))),
     );
@@ -120,22 +100,6 @@ export class AuthService {
       refreshToken,
       accessToken,
     });
-  }
-
-  private normalizeToken(response: LoginResponse): Token {
-    const raw = response as LoginResponse & Record<string, unknown>;
-    return {
-      token: String(raw.token ?? raw['access_token'] ?? '').trim(),
-      refreshToken: String(
-        raw.refreshToken ?? raw['refresh_token'] ?? '',
-      ).trim(),
-      expirationToken: Number(
-        raw.expirationToken ?? raw['expiration_token'] ?? 0,
-      ),
-      expirationRefreshToken: Number(
-        raw.expirationRefreshToken ?? raw['expiration_refresh_token'] ?? 0,
-      ),
-    };
   }
 
   private extractErrorMessage(err: unknown): string {

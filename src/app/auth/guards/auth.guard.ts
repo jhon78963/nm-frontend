@@ -1,41 +1,22 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { Token } from '../interfaces';
+import { User } from '../interfaces';
 
-function readTokenData(): Token | null {
-  const raw = localStorage.getItem('tokenData');
+function readUserFromStorage(): User | null {
+  const raw = localStorage.getItem('user');
   if (!raw) {
     return null;
   }
+
   try {
-    const parsed = JSON.parse(raw) as Token;
-    if (!parsed?.token?.trim()) {
+    const parsed = JSON.parse(raw) as User;
+    if (!parsed?.username?.trim()) {
       return null;
     }
     return parsed;
   } catch {
     return null;
   }
-}
-
-/**
- * expirationToken del backend es timestamp absoluto en ms (Carbon::getTimestampMs).
- * Fail-closed: cualquier valor ausente, inválido o ya vencido rechaza el acceso.
- */
-function isAccessTokenValid(token: Token): boolean {
-  const raw = token.expirationToken;
-  if (raw === undefined || raw === null) {
-    return false;
-  }
-  const exp = typeof raw === 'string' ? Number(raw) : raw;
-  if (!Number.isFinite(exp) || exp <= 0) {
-    return false;
-  }
-  if (exp < 1_000_000_000) {
-    return false;
-  }
-  const expMs = exp > 1_000_000_000_000 ? exp : exp * 1000;
-  return Date.now() < expMs;
 }
 
 function clearAuthStorage(): void {
@@ -45,9 +26,9 @@ function clearAuthStorage(): void {
 
 export const authGuard: CanActivateFn = () => {
   const router = inject(Router);
-  const token = readTokenData();
+  const user = readUserFromStorage();
 
-  if (token && isAccessTokenValid(token)) {
+  if (user) {
     return true;
   }
 
