@@ -5,6 +5,7 @@ import {
   DestroyRef,
   ElementRef,
   inject,
+  OnDestroy,
   OnInit,
   ViewChild,
 } from '@angular/core';
@@ -36,7 +37,7 @@ import { PosService } from '../services/pos.service';
   templateUrl: './pos.component.html',
   styleUrl: './pos.component.scss',
 })
-export class PosComponent implements AfterViewChecked, OnInit {
+export class PosComponent implements AfterViewChecked, OnDestroy, OnInit {
   posService = inject(PosService);
   private readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
@@ -121,4 +122,7 @@ export class PosComponent implements AfterViewChecked, OnInit {
     }
   }
 
+  ngOnDestroy(): void {
+    this.posService.clearCart();
+  }
 }

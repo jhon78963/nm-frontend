@@ -4,7 +4,6 @@ export interface User {
   email: string;
   name: string;
   surname: string;
-  password: string;
   role: string;
   roles?: string[];
   /** Nombres Spatie devueltos por auth/me (ej. pos.checkout, sale.getAll). */

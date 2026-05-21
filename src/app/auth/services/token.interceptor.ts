@@ -110,11 +110,42 @@ function clearAuthSession(): void {
   localStorage.removeItem('selectedSize');
 }
 
+/** Rutas API (relativas a BASE_URL) sin Bearer. */
+const ENDPOINTS_WITHOUT_BEARER = ['auth/login', 'auth/register'] as const;
+
+/** Rutas API en las que un 401 no debe disparar refresh automático. */
+const ENDPOINTS_WITHOUT_REFRESH_ON_401 = [
+  'auth/refresh-token',
+  'auth/logout',
+] as const;
+
+/**
+ * Coincidencia estricta por pathname (evita falsos positivos de `.includes()`
+ * p. ej. `.../catalog/login-history` al buscar `login`).
+ */
+function requestUrlMatchesApiPath(requestUrl: string, apiPath: string): boolean {
+  const normalized = apiPath.replace(/^\/+|\/+$/g, '');
+  const suffix = `/${normalized}`;
+
+  try {
+    const pathname = new URL(requestUrl).pathname.replace(/\/+$/, '') || '/';
+    return pathname === suffix || pathname.endsWith(suffix);
+  } catch {
+    const path = requestUrl.split('?')[0]?.replace(/\/+$/, '') || '/';
+    return path === suffix || path.endsWith(suffix);
+  }
+}
+
+function matchesAnyApiPath(
+  requestUrl: string,
+  paths: readonly string[],
+): boolean {
+  return paths.some(path => requestUrlMatchesApiPath(requestUrl, path));
+}
+
 export const tokenInterceptor: HttpInterceptorFn = (request, next) => {
   const authService = inject(AuthService);
   const router = inject(Router);
-  const excludedEndpoints: string[] = ['login'];
-  const excludedEndpointsAfterRefresh: string[] = ['refresh-token', 'logout'];
   const tokenData = readTokenDataFromStorage();
   const hasCustomTokenFlag = request.headers.has('X-Use-Custom-Token');
 
@@ -123,7 +154,7 @@ export const tokenInterceptor: HttpInterceptorFn = (request, next) => {
     request = request.clone({ headers: cleanedHeaders });
   }
 
-  if (excludedEndpoints.some(endpoint => request.url.includes(endpoint))) {
+  if (matchesAnyApiPath(request.url, ENDPOINTS_WITHOUT_BEARER)) {
     return next(request);
   }
 
@@ -144,8 +175,9 @@ export const tokenInterceptor: HttpInterceptorFn = (request, next) => {
   return next(request).pipe(
     catchError((error: HttpErrorResponse) => {
       const is401 = error.status === 401;
-      const isNotExcludedAfterRefresh = !excludedEndpointsAfterRefresh.some(
-        endpoint => request.url.includes(endpoint),
+      const isNotExcludedAfterRefresh = !matchesAnyApiPath(
+        request.url,
+        ENDPOINTS_WITHOUT_REFRESH_ON_401,
       );
       const currentTokenData = readTokenDataFromStorage();
       const hasRefreshToken = Boolean(currentTokenData.refreshToken);

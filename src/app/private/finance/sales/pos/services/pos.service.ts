@@ -151,8 +151,17 @@ export class PosService {
         this.printTicket(response.sale_id, response.ticket_url);
         this.clearCart();
       }
-    } catch (error: any) {
-      this.showToast('Error al procesar venta');
+    } catch (error: unknown) {
+      const fallback = 'Error al procesar venta';
+      if (error instanceof HttpErrorResponse) {
+        const raw = error.error?.message || error.error?.error;
+        const backendMessage = Array.isArray(raw) ? raw[0] : raw;
+        if (typeof backendMessage === 'string' && backendMessage.trim()) {
+          this.showToast(backendMessage.trim());
+          return;
+        }
+      }
+      this.showToast(fallback);
     } finally {
       this.isLoading.set(false);
     }
@@ -201,10 +210,14 @@ export class PosService {
     this.cart.update(items => items.filter(i => i.cartId !== cartId));
   }
 
-  clearCart() {
+  /** Reinicia la venta activa (carrito, cliente, modal, pagos). Llamar al salir del POS. */
+  clearCart(): void {
     this.cart.set([]);
     this.currentCustomer.set(null);
     this.paymentMethod.set('EFECTIVO');
+    this.modalState.set({ isOpen: false, product: null, isEditing: false });
+    this.toastMessage.set(null);
+    this.isLoading.set(false);
   }
 
   updateQuantity(cartId: number, delta: number) {

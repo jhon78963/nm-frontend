@@ -27,7 +27,9 @@ export class AuthService {
   }
 
   private setUserData(user: User): void {
-    localStorage.setItem('user', JSON.stringify(user));
+    const userToSave = { ...user };
+    delete (userToSave as any).password;
+    localStorage.setItem('user', JSON.stringify(userToSave));
   }
 
   setRefreshData(token: Token): void {
