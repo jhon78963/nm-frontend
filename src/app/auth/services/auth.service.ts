@@ -22,13 +22,22 @@ export class AuthService {
   ) {}
 
   private setUserData(user: User): void {
-    const userToSave = { ...user };
+    const userToSave = { ...this.normalizeUser(user) };
     delete (userToSave as any).password;
     localStorage.setItem('user', JSON.stringify(userToSave));
   }
 
+  /** MeResource de Laravel puede venir plano o envuelto en `{ data: ... }`. */
+  private normalizeUser(raw: User | { data?: User }): User {
+    if (raw && typeof raw === 'object' && 'data' in raw && raw.data) {
+      return raw.data;
+    }
+    return raw as User;
+  }
+
   login(body: Login): Observable<User> {
-    return this.apiService.post<User>('auth/login', body).pipe(
+    return this.apiService.post<User | { data: User }>('auth/login', body).pipe(
+      map(response => this.normalizeUser(response)),
       tap((user: User) => {
         this.setUserData(user);
         void this.router.navigateByUrl('/');
@@ -38,7 +47,9 @@ export class AuthService {
   }
 
   me(): Observable<User> {
-    return this.apiService.post<User>('auth/me', {});
+    return this.apiService.post<User | { data: User }>('auth/me', {}).pipe(
+      map(response => this.normalizeUser(response)),
+    );
   }
 
   logout(

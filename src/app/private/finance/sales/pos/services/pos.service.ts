@@ -147,9 +147,9 @@ export class PosService {
       );
 
       if (response.success) {
-        this.showToast(`Venta ${response.sale_id} Exitosa!`);
-        this.printTicket(response.sale_id, response.ticket_url);
         this.clearCart();
+        this.showToast(`Venta ${response.sale_id} Exitosa!`, 4_000);
+        void this.printTicket(response.sale_id, response.ticket_url);
       }
     } catch (error: unknown) {
       const fallback = 'Error al procesar venta';
@@ -261,9 +261,9 @@ export class PosService {
     this.modalState.set({ isOpen: false, product: null, isEditing: false });
   }
 
-  showToast(msg: string) {
+  showToast(msg: string, durationMs = 2_500) {
     this.toastMessage.set(msg);
-    setTimeout(() => this.toastMessage.set(null), 2500);
+    setTimeout(() => this.toastMessage.set(null), durationMs);
   }
 
   setPaymentMethod(method: 'EFECTIVO' | 'YAPE/PLIN' | 'TRANSFERENCIA') {
@@ -281,13 +281,13 @@ export class PosService {
         );
         url = response.ticket_url;
       } catch (error) {
-        this.showToast('No se pudo generar el ticket de venta');
+        console.warn('No se pudo obtener URL del ticket de venta', error);
         return;
       }
     }
 
     if (!this.isValidTicketUrl(url)) {
-      this.showToast('No se pudo imprimir: URL de ticket no válida');
+      console.warn('No se pudo imprimir: URL de ticket no válida', url);
       return;
     }
 
@@ -307,7 +307,7 @@ export class PosService {
         }, 5000);
       };
     } catch (error) {
-      this.showToast('No se pudo imprimir el ticket de venta');
+      console.warn('No se pudo imprimir el ticket de venta', error);
     }
   }
 

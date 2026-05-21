@@ -13,6 +13,7 @@
             <i class="pi pi-envelope"></i>
             <input
               id="email"
+              data-testid="login-username"
               name="username"
               formControlName="username"
               type="text"
@@ -24,8 +25,10 @@
             <i class="pi pi-lock z-2"></i>
             <p-password
               id="password"
+              data-testid="login-password"
               name="password"
               formControlName="password"
+              inputId="login-password-input"
               placeholder="Password"
               [inputStyle]="{ paddingLeft: '2.5rem' }"
               inputStyleClass="w-full md:w-25rem text-color-secondary surface-50 border-200"
