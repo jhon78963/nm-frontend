@@ -2,6 +2,13 @@ import { HttpParams } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../../../../services/api.service'; // Asegúrate que la ruta sea correcta
+import {
+  BASE_FILE_URL,
+  BASE_STORAGE_URL,
+  BASE_UPLOAD_URL,
+  BASE_URL,
+  BASE_WEB_URL,
+} from '../../../../../utils/constants';
 import { CartItem, Customer, ModalState, Product } from '../models/pos.models';
 
 @Injectable({ providedIn: 'root' })
@@ -246,19 +253,76 @@ export class PosService {
       }
     }
 
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = url;
-    document.body.appendChild(iframe);
-    iframe.onload = () => {
-      try {
-        iframe.contentWindow?.print();
-      } catch (e) {
-        console.error(e);
+    if (!this.isValidTicketUrl(url)) {
+      console.error('URL de ticket rechazada por validación de seguridad');
+      this.showToast('No se pudo imprimir: URL de ticket no válida');
+      return;
+    }
+
+    try {
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = url;
+      document.body.appendChild(iframe);
+      iframe.onload = () => {
+        try {
+          iframe.contentWindow?.print();
+        } catch (e) {
+          console.error(e);
+        }
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 5000);
+      };
+    } catch (error) {
+      console.error('Error al imprimir ticket:', error);
+      this.showToast('No se pudo imprimir el ticket de venta');
+    }
+  }
+
+  private isValidTicketUrl(url: string): boolean {
+    const normalized = (url ?? '').trim();
+    if (!normalized) {
+      return false;
+    }
+
+    const lower = normalized.toLowerCase();
+    if (
+      lower.startsWith('javascript:') ||
+      lower.startsWith('data:') ||
+      lower.startsWith('vbscript:') ||
+      lower.startsWith('blob:')
+    ) {
+      return false;
+    }
+
+    try {
+      const parsed = new URL(normalized);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        return false;
       }
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 5000);
-    };
+
+      return this.getAllowedTicketOrigins().has(parsed.origin);
+    } catch {
+      return false;
+    }
+  }
+
+  private getAllowedTicketOrigins(): Set<string> {
+    const origins = new Set<string>();
+    for (const base of [
+      BASE_URL,
+      BASE_WEB_URL,
+      BASE_FILE_URL,
+      BASE_STORAGE_URL,
+      BASE_UPLOAD_URL,
+    ]) {
+      try {
+        origins.add(new URL(base).origin);
+      } catch {
+        // Ignorar entradas de entorno mal formadas
+      }
+    }
+    return origins;
   }
 }

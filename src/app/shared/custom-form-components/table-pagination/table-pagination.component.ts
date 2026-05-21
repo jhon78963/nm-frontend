@@ -1,5 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  EventEmitter,
+  inject,
+  Input,
+  OnInit,
+  Output,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -31,6 +40,9 @@ import { LoadingService } from '../../../services/loading.service';
   providers: [MessageService],
 })
 export class TablePaginationComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly loadingService = inject(LoadingService);
+
   @Input()
   data: any[] = [];
 
@@ -59,21 +71,18 @@ export class TablePaginationComponent implements OnInit {
 
   loading: boolean = false;
 
-  constructor(private loadingService: LoadingService) {}
-
   ngOnInit(): void {
     this.loading = true;
-    this.loadingService.loading$.subscribe(loading => {
-      this.loading = loading;
-    });
+    this.loadingService.loading$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(loading => {
+        this.loading = loading;
+      });
   }
 
   selectPageNumber(paginate: PaginatorState): void {
     this.loading = true;
     this.paginateSelected.emit(paginate);
-    this.loadingService.loading$.subscribe(loading => {
-      this.loading = loading;
-    });
   }
 
   getButtonActions<T>(callToAction: CallToAction<T>[]): CallToAction<T>[] {

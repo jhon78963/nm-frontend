@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -8,7 +9,8 @@ import { KeyFilterModule } from 'primeng/keyfilter';
 import { MessageService } from 'primeng/api';
 import { StepsModule } from 'primeng/steps';
 import { ToastModule } from 'primeng/toast';
-import { filter } from 'rxjs';
+import { EMPTY } from 'rxjs';
+import { filter, map, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-products-form',
@@ -25,6 +27,8 @@ import { filter } from 'rxjs';
   providers: [DialogService, MessageService],
 })
 export class StepperFormComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+
   productId: number = 0;
   items: any[] = [];
   currentIndex: number = 0;
@@ -118,22 +122,25 @@ export class StepperFormComponent implements OnInit {
     }
   }
 
-  updateQueryParam() {
+  updateQueryParam(): void {
     this.router.events
-      .pipe(filter(event => event instanceof NavigationEnd))
-      .subscribe(event => {
-        const navEnd = event as NavigationEnd;
-        const url = navEnd.urlAfterRedirects || navEnd.url;
-        const childRoute = this.route.firstChild;
-        if (childRoute) {
-          childRoute.paramMap.subscribe(params => {
-            const id = Number(params.get('id'));
-            this.productId = id;
-            this.uploadSteps();
-            this.updateStepStatus();
-            this.syncActiveIndexFromUrl(url);
-          });
-        }
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        switchMap(navEnd => {
+          const url = navEnd.urlAfterRedirects || navEnd.url;
+          const childRoute = this.route.firstChild;
+          if (!childRoute) {
+            return EMPTY;
+          }
+          return childRoute.paramMap.pipe(map(params => ({ params, url })));
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(({ params, url }) => {
+        this.productId = Number(params.get('id'));
+        this.uploadSteps();
+        this.updateStepStatus();
+        this.syncActiveIndexFromUrl(url);
       });
   }
 }

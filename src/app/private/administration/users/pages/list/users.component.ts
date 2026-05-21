@@ -1,4 +1,5 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnDestroy, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { PaginatorState } from 'primeng/paginator';
@@ -25,6 +26,8 @@ import { FormControl, FormGroup } from '@angular/forms';
   providers: [ConfirmationService, MessageService],
 })
 export class UserListComponent implements OnInit, OnDestroy {
+  private readonly destroyRef = inject(DestroyRef);
+
   userModal: DynamicDialogRef | undefined;
   columns: Column[] = [];
   cellToAction: any;
@@ -114,7 +117,10 @@ export class UserListComponent implements OnInit, OnDestroy {
     this.getUsers(this.limit, this.page, this.name);
     this.formGroup
       .get('search')
-      ?.valueChanges.pipe(debounceTime(600))
+      ?.valueChanges.pipe(
+        debounceTime(600),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe((value: any) => {
         this.name = value ? value : '';
         this.loadingService.sendLoadingState(true);
@@ -166,15 +172,17 @@ export class UserListComponent implements OnInit, OnDestroy {
       styleClass: 'dialog-custom-form',
     });
 
-    this.userModal.onClose.subscribe({
-      next: value => {
-        value && value?.success
-          ? showSuccess(this.messageService, 'Usuario Creado.')
-          : value?.error
-            ? showError(this.messageService, value?.error)
-            : null;
-      },
-    });
+    this.userModal.onClose
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: value => {
+          value && value?.success
+            ? showSuccess(this.messageService, 'Usuario Creado.')
+            : value?.error
+              ? showError(this.messageService, value?.error)
+              : null;
+        },
+      });
   }
 
   buttonEditUSer(id: number): void {
@@ -184,15 +192,17 @@ export class UserListComponent implements OnInit, OnDestroy {
       styleClass: 'dialog-custom-form',
     });
 
-    this.userModal.onClose.subscribe({
-      next: value => {
-        value && value?.success
-          ? showSuccess(this.messageService, 'Usuario actualizado.')
-          : value?.error
-            ? showError(this.messageService, value?.error)
-            : null;
-      },
-    });
+    this.userModal.onClose
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: value => {
+          value && value?.success
+            ? showSuccess(this.messageService, 'Usuario actualizado.')
+            : value?.error
+              ? showError(this.messageService, value?.error)
+              : null;
+        },
+      });
   }
 
   buttonDeleteUser(id: number, event: Event): void {

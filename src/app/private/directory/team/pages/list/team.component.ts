@@ -1,7 +1,8 @@
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { TooltipModule } from 'primeng/tooltip';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnDestroy, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { debounceTime, Observable } from 'rxjs';
 import { TeamService } from '../../services/team.service';
@@ -42,6 +43,8 @@ import {
   providers: [ConfirmationService, MessageService, DialogService],
 })
 export class TeamListComponent implements OnInit, OnDestroy {
+  private readonly destroyRef = inject(DestroyRef);
+
   teamModal: DynamicDialogRef | undefined;
   dailySummaryDialog?: DynamicDialogRef;
   columns: Column[] = [];
@@ -145,7 +148,10 @@ export class TeamListComponent implements OnInit, OnDestroy {
     this.getTeam(this.limit, this.page, this.name);
     this.formGroup
       .get('search')
-      ?.valueChanges.pipe(debounceTime(600))
+      ?.valueChanges.pipe(
+        debounceTime(600),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe((value: any) => {
         this.name = value ? value : '';
         this.loadingService.sendLoadingState(true);
@@ -211,24 +217,26 @@ export class TeamListComponent implements OnInit, OnDestroy {
       header: 'Crear',
     });
 
-    this.teamModal.onClose.subscribe({
-      next: value => {
-        if (value?.success && value?.login) {
-          const L = value.login as {
-            email: string;
-            username: string;
-          };
-          this.showSuccess(
-            `Colaborador creado. Usuario vendedora: ${L.email}`,
-            3000,
-          );
-        } else if (value?.success) {
-          this.showSuccess('Colaborador creado.');
-        } else if (value?.error) {
-          this.showError(value.error);
-        }
-      },
-    });
+    this.teamModal.onClose
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: value => {
+          if (value?.success && value?.login) {
+            const L = value.login as {
+              email: string;
+              username: string;
+            };
+            this.showSuccess(
+              `Colaborador creado. Usuario vendedora: ${L.email}`,
+              3000,
+            );
+          } else if (value?.success) {
+            this.showSuccess('Colaborador creado.');
+          } else if (value?.error) {
+            this.showError(value.error);
+          }
+        },
+      });
   }
 
   buttonEditTeam(id: number): void {
@@ -239,15 +247,17 @@ export class TeamListComponent implements OnInit, OnDestroy {
       header: 'Editar',
     });
 
-    this.teamModal.onClose.subscribe({
-      next: value => {
-        value && value?.success
-          ? this.showSuccess('Colaborador actualizado.')
-          : value?.error
-            ? this.showError(value?.error)
-            : null;
-      },
-    });
+    this.teamModal.onClose
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: value => {
+          value && value?.success
+            ? this.showSuccess('Colaborador actualizado.')
+            : value?.error
+              ? this.showError(value?.error)
+              : null;
+        },
+      });
   }
 
   buttonAttendanceTeam(rowData: Team): void {
