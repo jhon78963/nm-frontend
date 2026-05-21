@@ -52,11 +52,8 @@ export class AuthService {
     );
   }
 
-  logout(
-    refreshToken: string | null,
-    accessToken: string | null,
-  ): Observable<string> {
-    return this.apiService.post('auth/logout', { refreshToken, accessToken });
+  logout(): Observable<string> {
+    return this.apiService.post('auth/logout', {});
   }
 
   /** Elimina credenciales y datos de sesión del almacenamiento local. */
@@ -71,9 +68,7 @@ export class AuthService {
    * y redirige al login, incluso si la petición HTTP falla.
    */
   signOut(): Observable<void> {
-    const { refreshToken, accessToken } = this.readTokenDataFromStorage();
-
-    return this.logout(refreshToken, accessToken).pipe(
+    return this.logout().pipe(
       catchError(err => {
         console.error('Logout failed; clearing local session:', err);
         return of(undefined);
