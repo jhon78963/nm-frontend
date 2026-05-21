@@ -23,8 +23,18 @@ export const routes: Routes = [
       {
         path: 'inventories',
         title: 'Inventario',
-        canActivate: [roleGuard],
-        data: { breadcrumb: 'Inventario', roles: [...ADMIN_ROUTE_ROLES] },
+        canActivate: [permissionGuard],
+        data: {
+          breadcrumb: 'Inventario',
+          permissions: [
+            'product.getAll',
+            'product.get',
+            'purchase.getAll',
+            'inventoryReconciliation.search',
+            'size.getAll',
+            'color.getAll',
+          ],
+        },
         loadChildren: () =>
           import('./private/inventories/inventories.module').then(
             m => m.InventoriesModule,
@@ -95,6 +105,11 @@ export const routes: Routes = [
           import('./private/finance/financial-summary/financial-summary.module').then(
             m => m.FinancialSummaryModule,
           ),
+      },
+      {
+        path: 'dashboard',
+        redirectTo: '',
+        pathMatch: 'full',
       },
       {
         path: '',

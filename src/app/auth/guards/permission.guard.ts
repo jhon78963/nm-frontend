@@ -1,92 +1,110 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { ActivatedRouteSnapshot, CanActivateFn, Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
+import { User } from '../interfaces';
 import { showError } from '../../utils/notifications';
-import { ADMIN_ROUTE_ROLES } from './role.guard';
 
-type StoredUser = {
-  role?: string;
-  roles?: string[];
-  permissions?: string[];
-};
+const SUPER_ADMIN_ROLE = 'Super Admin';
 
-function readStoredUser(): StoredUser | undefined {
+function readUserFromStorage(): User | null {
   const raw = localStorage.getItem('user');
   if (!raw) {
-    return undefined;
+    return null;
   }
+
   try {
-    return JSON.parse(raw) as StoredUser;
+    const parsed = JSON.parse(raw) as User;
+    if (!parsed?.username?.trim()) {
+      return null;
+    }
+    return parsed;
   } catch {
-    return undefined;
+    return null;
   }
 }
 
-function isAdminUser(user: StoredUser | undefined): boolean {
+function isSuperAdmin(user: User | null): boolean {
   if (!user) {
     return false;
   }
-  const { role, roles = [] } = user;
-  if (role !== undefined && (ADMIN_ROUTE_ROLES as readonly string[]).includes(role)) {
+
+  if (user.role === SUPER_ADMIN_ROLE) {
     return true;
   }
-  return roles.some(r => (ADMIN_ROUTE_ROLES as readonly string[]).includes(r));
+
+  return (user.roles ?? []).includes(SUPER_ADMIN_ROLE);
 }
 
-function readUserPermissions(user: StoredUser | undefined): Set<string> {
+function readUserPermissions(user: User | null): Set<string> {
   const names = user?.permissions ?? [];
-  return new Set(names.filter(p => typeof p === 'string' && p.trim().length > 0));
+  return new Set(
+    names.filter(
+      (permission): permission is string =>
+        typeof permission === 'string' && permission.trim().length > 0,
+    ),
+  );
 }
 
-function resolveRequiredPermissions(route: {
-  data: Record<string, unknown>;
-}): string[] {
-  const single = route.data['permission'];
-  if (typeof single === 'string' && single.trim()) {
-    return [single.trim()];
+function resolveRequiredPermissions(route: ActivatedRouteSnapshot): string[] {
+  const requiredPermission = route.data['permission'];
+  if (typeof requiredPermission === 'string' && requiredPermission.trim()) {
+    return [requiredPermission.trim()];
   }
 
-  const many = route.data['permissions'];
-  if (Array.isArray(many)) {
-    return many.filter(
-      (p): p is string => typeof p === 'string' && p.trim().length > 0,
+  const requiredPermissions = route.data['permissions'];
+  if (Array.isArray(requiredPermissions)) {
+    return requiredPermissions.filter(
+      (permission): permission is string =>
+        typeof permission === 'string' && permission.trim().length > 0,
     );
   }
 
   return [];
 }
 
-/** Usuario tiene al menos uno de los permisos requeridos (OR). */
+/** Comprueba si el usuario tiene el permiso exacto (Spatie). */
+export function userHasPermission(
+  user: User | null,
+  permission: string,
+): boolean {
+  if (isSuperAdmin(user)) {
+    return true;
+  }
+
+  return readUserPermissions(user).has(permission);
+}
+
+/** Comprueba si el usuario tiene al menos uno de los permisos requeridos (OR). */
 export function userHasAnyPermission(
-  user: StoredUser | undefined,
+  user: User | null,
   required: readonly string[],
 ): boolean {
   if (required.length === 0) {
     return true;
   }
 
-  if (isAdminUser(user)) {
+  if (isSuperAdmin(user)) {
     return true;
   }
 
   const granted = readUserPermissions(user);
-  return required.some(name => granted.has(name));
+  return required.some(permission => granted.has(permission));
 }
 
 function denyAccess(router: Router, messageService: MessageService) {
-  showError(messageService, 'No tienes permiso para acceder a esta sección.');
-  return router.createUrlTree(['/']);
+  showError(messageService, 'Acceso Denegado');
+  return router.createUrlTree(['/dashboard']);
 }
 
 /**
- * Guard funcional de permisos granulares (Spatie).
+ * Guard funcional estricto de permisos granulares (Spatie).
  *
  * Configuración en la ruta:
- * - `data: { permission: 'pos.checkout' }` — un permiso obligatorio
+ * - `data: { permission: 'pos.checkout' }` — permiso exacto obligatorio
  * - `data: { permissions: ['sale.getAll', 'sale.get'] }` — basta con tener uno (OR)
  *
- * Admin / Super Admin siempre pasan. Los demás se validan contra `user.permissions`
- * persistido en localStorage tras `auth/me`.
+ * Super Admin siempre pasa. Los demás se validan contra `user.permissions`
+ * persistido en localStorage tras login / auth/me.
  */
 export const permissionGuard: CanActivateFn = route => {
   const router = inject(Router);
@@ -97,7 +115,8 @@ export const permissionGuard: CanActivateFn = route => {
     return true;
   }
 
-  const user = readStoredUser();
+  const user = readUserFromStorage();
+
   if (userHasAnyPermission(user, required)) {
     return true;
   }
