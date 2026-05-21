@@ -12,14 +12,16 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 import { debounceTime, Subject } from 'rxjs';
-import { User } from '../../../../../auth/interfaces/user.interface';
+import { AuthService } from '../../../../../auth/services/auth.service';
+import {
+  readStoredUser,
+  userRequiresWarehouseAssignment,
+} from '../../../../../auth/utils/warehouse-access.util';
 import { showToastWarn } from '../../../../../utils/notifications';
 import { PosFooterComponent } from '../components/pos-footer/pos-footer.component';
 import { PosHeaderComponent } from '../components/pos-header/pos-header.component';
 import { PosSelectorComponent } from '../components/pos-selector/pos-selector.component';
 import { PosService } from '../services/pos.service';
-
-type StoredUser = User & { warehouse_id?: number | null };
 
 @Component({
   selector: 'app-pos',
@@ -36,6 +38,7 @@ type StoredUser = User & { warehouse_id?: number | null };
 })
 export class PosComponent implements AfterViewChecked, OnInit {
   posService = inject(PosService);
+  private readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly messageService = inject(MessageService);
 
@@ -46,7 +49,17 @@ export class PosComponent implements AfterViewChecked, OnInit {
   private barcodeSubject = new Subject<string>();
 
   ngOnInit() {
-    this.checkWarehouseAssignment();
+    this.applyWarehouseGate(readStoredUser());
+
+    this.authService
+      .me()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: user => {
+          localStorage.setItem('user', JSON.stringify(user));
+          this.applyWarehouseGate(user);
+        },
+      });
 
     this.barcodeSubject
       .pipe(
@@ -60,43 +73,24 @@ export class PosComponent implements AfterViewChecked, OnInit {
       });
   }
 
-  private checkWarehouseAssignment(): void {
-    const user = this.readLoggedUser();
-    if (!user) {
+  private applyWarehouseGate(
+    user: ReturnType<typeof readStoredUser>,
+  ): void {
+    const shouldBlock = userRequiresWarehouseAssignment(user);
+    if (!shouldBlock) {
+      this.hasNoWarehouse = false;
       return;
     }
 
-    if (!this.isSuperAdmin(user) && this.isWarehouseMissing(user)) {
-      this.hasNoWarehouse = true;
-      showToastWarn(
-        this.messageService,
-        'Atención: Tu usuario no tiene un almacén asignado. No podrás buscar productos ni registrar ventas. Contacta al administrador.',
-      );
+    if (this.hasNoWarehouse) {
+      return;
     }
-  }
 
-  private readLoggedUser(): StoredUser | undefined {
-    const raw = localStorage.getItem('user');
-    if (!raw) {
-      return undefined;
-    }
-    try {
-      return JSON.parse(raw) as StoredUser;
-    } catch {
-      return undefined;
-    }
-  }
-
-  private isSuperAdmin(user: StoredUser): boolean {
-    if (user.role === 'Super Admin') {
-      return true;
-    }
-    return user.roles?.includes('Super Admin') ?? false;
-  }
-
-  private isWarehouseMissing(user: StoredUser): boolean {
-    const warehouseId = user.warehouseId ?? user.warehouse_id;
-    return warehouseId == null || warehouseId === 0;
+    this.hasNoWarehouse = true;
+    showToastWarn(
+      this.messageService,
+      'Atención: Tu usuario no tiene un almacén asignado. No podrás buscar productos ni registrar ventas. Contacta al administrador.',
+    );
   }
 
   async onScan() {

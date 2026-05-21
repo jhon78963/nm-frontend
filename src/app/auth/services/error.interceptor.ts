@@ -61,20 +61,23 @@ export const errorInterceptor: HttpInterceptorFn = (request, next) => {
       }
 
       if (status === 403) {
-        const backendMessage = error.error?.message || error.error?.error;
+        const raw = error.error?.message || error.error?.error;
+        const backendMessage = Array.isArray(raw) ? raw[0] : raw;
         showError(messageService, backendMessage || 'Acceso denegado');
         void router.navigate(['/']);
         return throwError(() => error);
       }
 
       if (status === 422) {
-        const backendMessage = error.error?.message || error.error?.error;
+        const raw = error.error?.message || error.error?.error;
+        const backendMessage = Array.isArray(raw) ? raw[0] : raw;
         showError(messageService, backendMessage || 'Error de validación');
         return throwError(() => error);
       }
 
       if (status >= 500) {
-        const backendMessage = error.error?.message || error.error?.error;
+        const raw = error.error?.message || error.error?.error;
+        const backendMessage = Array.isArray(raw) ? raw[0] : raw;
         showError(
           messageService,
           backendMessage || 'Error interno del servidor',

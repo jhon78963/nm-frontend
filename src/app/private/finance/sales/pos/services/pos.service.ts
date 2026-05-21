@@ -56,9 +56,12 @@ export class PosService {
             this.showToast('Producto no encontrado o código incorrecto');
             break;
           case 403: {
-            const message = error.error?.message;
+            const raw = error.error?.message ?? error.error?.error;
+            const message = Array.isArray(raw) ? raw[0] : raw;
             this.showToast(
-              message ??
+              (typeof message === 'string' && message.trim()
+                ? message
+                : null) ??
                 'No tienes permisos o un almacén asignado para este producto',
             );
             break;
