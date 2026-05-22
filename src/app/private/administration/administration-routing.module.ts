@@ -1,37 +1,43 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { permissionGuard } from '../../auth/guards/permission.guard';
 
 const routes: Routes = [
   {
     path: 'roles',
     title: 'Roles y permisos',
-    data: { breadcrumb: 'Roles' },
+    canActivate: [permissionGuard],
+    data: { breadcrumb: 'Roles', permission: 'role.getAll' },
     loadChildren: () => import('./roles/roles.module').then(m => m.RolesModule),
   },
   {
     path: 'users',
     title: 'Usuarios',
-    data: { breadcrumb: 'Usuarios' },
+    canActivate: [permissionGuard],
+    data: { breadcrumb: 'Usuarios', permission: 'user.getAll' },
     loadChildren: () => import('./users/users.module').then(m => m.UsersModule),
   },
   {
     path: 'tenants',
     title: 'Clientes',
-    data: { breadcrumb: 'Clientes' },
+    canActivate: [permissionGuard],
+    data: { breadcrumb: 'Clientes', permission: 'tenant.getAll' },
     loadChildren: () =>
       import('./tenants/tenants.module').then(m => m.TenantsModule),
   },
   {
     path: 'warehouses',
     title: 'Tiendas',
-    data: { breadcrumb: 'Tiendas' },
+    canActivate: [permissionGuard],
+    data: { breadcrumb: 'Tiendas', permission: 'warehouse.getAll' },
     loadChildren: () =>
       import('./warehouses/warehouses.module').then(m => m.WarehousesModule),
   },
   {
     path: 'action-logs',
     title: 'Historial de acciones',
-    data: { breadcrumb: 'Historial' },
+    canActivate: [permissionGuard],
+    data: { breadcrumb: 'Historial', permission: 'audit.getAll' },
     loadChildren: () =>
       import('./action-logs/action-logs.module').then(m => m.ActionLogsModule),
   },

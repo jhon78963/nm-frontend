@@ -22,8 +22,18 @@ export const routes: Routes = [
       {
         path: 'administration',
         title: 'Administración',
-        canActivate: [roleGuard],
-        data: { breadcrumb: 'Administración', roles: [...ADMIN_ROUTE_ROLES] },
+        canActivate: [roleGuard, permissionGuard],
+        data: {
+          breadcrumb: 'Administración',
+          roles: [...ADMIN_ROUTE_ROLES],
+          permissions: [
+            'role.getAll',
+            'user.getAll',
+            'tenant.getAll',
+            'warehouse.getAll',
+            'audit.getAll',
+          ],
+        },
         loadChildren: () =>
           import('./private/administration/administration.module').then(
             m => m.AdministrationModule,
