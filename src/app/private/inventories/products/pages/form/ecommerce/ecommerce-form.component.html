@@ -46,15 +46,6 @@
             * Dejar en blanco para desactivar descuento
           </span>
         </div>
-        <div class="field col-12">
-          <app-input-image
-            [productId]="productId"
-            [imageSaved]="imageSaved"
-            [imagesSaved]="imagesSaved"
-            [images]="(images | async) ?? []"
-            (selectedFilesChange)="getFormData($event)"
-            (imagesToDelete)="imagesToDelete($event)" />
-        </div>
       </div>
     </div>
   </form>

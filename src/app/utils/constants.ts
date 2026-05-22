@@ -4,7 +4,4 @@ export const BASE_URL = environment.apiUrl;
 export const BASE_WEB_URL = environment.baseWebUrl;
 export const COMPANY_ID = environment.COMPANY_ID;
 
-export const BASE_FILE_URL = environment.BASE_FILE_URL;
-export const BASE_STORAGE_URL = environment.BASE_STORAGE_URL;
-
-export const BASE_UPLOAD_URL = environment.BASE_UPLOAD_URL;
+export const BASE_UPLOAD_URL = environment.baseUploadUrl;

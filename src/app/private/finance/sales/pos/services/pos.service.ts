@@ -3,8 +3,6 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../../../../services/api.service'; // Asegúrate que la ruta sea correcta
 import {
-  BASE_FILE_URL,
-  BASE_STORAGE_URL,
   BASE_UPLOAD_URL,
   BASE_URL,
   BASE_WEB_URL,
@@ -341,13 +339,7 @@ export class PosService {
 
   private getAllowedTicketOrigins(): Set<string> {
     const origins = new Set<string>();
-    for (const base of [
-      BASE_URL,
-      BASE_WEB_URL,
-      BASE_FILE_URL,
-      BASE_STORAGE_URL,
-      BASE_UPLOAD_URL,
-    ]) {
+    for (const base of [BASE_URL, BASE_WEB_URL, BASE_UPLOAD_URL]) {
       try {
         origins.add(new URL(base).origin);
       } catch {

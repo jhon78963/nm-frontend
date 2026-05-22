@@ -28,18 +28,14 @@ import { RippleModule } from 'primeng/ripple';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
-import { finalize, forkJoin, Observable, Subscription, switchMap } from 'rxjs';
+import { finalize, forkJoin, Subscription, switchMap } from 'rxjs';
 import { Gender } from '../../../models/gender.interface';
 import { Warehouse } from '../../../models/warehouse.interface';
-import { FileService } from '../../../services/file.service';
 import { GendersService } from '../../../services/genders.service';
 import { ProgressSpinnerService } from '../../../services/progress-spinner.service';
 import { WarehousesService } from '../../../services/warehouse.service';
-import { InputImage } from '../../../shared/custom-form-components/input-image/input-image.component';
 import { SharedModule } from '../../../shared/shared.module';
-import { getFileSize } from '../../../utils/files';
 import { Color } from '../colors/models/colors.model';
-import { PImage } from '../products/models/images.interface';
 import { Product, ProductSave } from '../products/models/products.model';
 import { ProductsService } from '../products/services/products.service';
 import { InventoryReconciliationService } from './inventory-reconciliation.service';
@@ -87,7 +83,6 @@ export class InventoryReconciliationComponent
   private readonly productsService = inject(ProductsService);
   private readonly gendersService = inject(GendersService);
   private readonly warehousesService = inject(WarehousesService);
-  private readonly fileService = inject(FileService);
   private readonly progressSpinnerService = inject(ProgressSpinnerService);
   private readonly messageService = inject(MessageService);
 
@@ -122,9 +117,6 @@ export class InventoryReconciliationComponent
 
   /** Última respuesta de GET /products/{id} para reconstruir ProductSave con campos no editables. */
   lastProductFromApi: Product | null = null;
-
-  imageSaved: unknown;
-  imagesSaved: unknown;
 
   draft: ReconciliationDraft | null = null;
   private routeSub?: Subscription;
@@ -176,10 +168,6 @@ export class InventoryReconciliationComponent
     this.saveSub?.unsubscribe();
     this.replaceColorSub?.unsubscribe();
     this.catalogSub?.unsubscribe();
-  }
-
-  get images(): Observable<PImage[]> {
-    return this.fileService.getList();
   }
 
   onSearchEnter(event: Event): void {
@@ -276,7 +264,6 @@ export class InventoryReconciliationComponent
             (meta.barcode ? String(meta.barcode) : '') ||
             String(id);
 
-          this.fileService.callGetList(id).subscribe();
         },
         error: err => {
           this.toast('error', this.parseHttpError(err));
@@ -369,8 +356,6 @@ export class InventoryReconciliationComponent
       percentageDiscount: '',
       cashDiscount: '',
     });
-    this.imageSaved = undefined;
-    this.imagesSaved = undefined;
     this.searchQuery = '';
     this.replaceDialogVisible = false;
     this.replaceCtx = null;
@@ -516,102 +501,6 @@ export class InventoryReconciliationComponent
           this.toast('error', this.parseHttpError(err));
         },
       });
-  }
-
-  getFormData(inputImage: InputImage): void {
-    const productId = this.draft?.productId;
-    if (!productId) {
-      return;
-    }
-
-    const formData = new FormData();
-    const sizes: string[] = [];
-    const names: string[] = [];
-    let size = '';
-    let name = '';
-
-    if (inputImage.multiply && Array.isArray(inputImage.images)) {
-      inputImage.images.forEach((file: File) => {
-        formData.append('file[]', file);
-        sizes.push(getFileSize(file.size));
-        names.push(file.name);
-      });
-    } else if (inputImage.images instanceof File) {
-      formData.append('file', inputImage.images);
-      size = getFileSize(inputImage.images.size);
-      name = inputImage.images.name;
-    }
-
-    this.progressSpinnerService.show();
-    this.fileService.createImage(formData, inputImage.multiply).subscribe({
-      next: (resp: unknown) => {
-        const r = resp as { image?: string; images?: string[] };
-        if (r.image) {
-          this.fileService
-            .saveImage(productId, { image: r.image, size, name })
-            .subscribe({
-              next: () => {
-                this.imageSaved = { image: r.image, size, name };
-                this.progressSpinnerService.hidden();
-              },
-              error: () => this.progressSpinnerService.hidden(),
-            });
-        }
-        if (r.images) {
-          this.fileService
-            .saveMultipleImage(productId, {
-              image: r.images,
-              size: sizes,
-              name: names,
-            })
-            .subscribe({
-              next: () => {
-                this.imagesSaved = {
-                  images: r.images,
-                  sizes,
-                  names,
-                };
-                this.progressSpinnerService.hidden();
-              },
-              error: () => this.progressSpinnerService.hidden(),
-            });
-        }
-      },
-      error: () => {
-        this.progressSpinnerService.hidden();
-      },
-    });
-  }
-
-  imagesToDelete(collection: {
-    multiply: boolean;
-    images: string | string[];
-  }): void {
-    const productId = this.draft?.productId;
-    if (!productId) {
-      return;
-    }
-
-    this.progressSpinnerService.show();
-    if (collection.multiply) {
-      this.fileService
-        .removeMultipleImage(productId, collection.images as string[])
-        .subscribe({
-          next: () => this.progressSpinnerService.hidden(),
-          error: () => this.progressSpinnerService.hidden(),
-        });
-    } else {
-      this.fileService.deleteImage(collection.images as string).subscribe({
-        next: () => {
-          this.fileService
-            .removeImage(productId, collection.images as string)
-            .subscribe({
-              next: () => this.progressSpinnerService.hidden(),
-            });
-        },
-        error: () => this.progressSpinnerService.hidden(),
-      });
-    }
   }
 
   private applyProduct(api: ReconciliationProductApi): void {

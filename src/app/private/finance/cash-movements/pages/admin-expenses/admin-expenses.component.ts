@@ -3,7 +3,6 @@ import { Component, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 // PrimeNG
-import { toSignal } from '@angular/core/rxjs-interop';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CalendarModule } from 'primeng/calendar';
@@ -57,9 +56,7 @@ export class AdminExpensesComponent implements OnInit {
 
   // Estado del componente
   loading = signal(false);
-  adminExpenses = toSignal(this.cashService.getAdminExpenses(), {
-    initialValue: [],
-  });
+  adminExpenses = signal<any[]>([]);
   selectedFile: File | null = null;
 
   // Variables para el Preview
@@ -97,12 +94,19 @@ export class AdminExpensesComponent implements OnInit {
 
     // El service se encarga de actualizar el BehaviorSubject
     this.cashService.loadMonthlyAdminExpenses(monthStr).subscribe({
+      next: expenses => this.adminExpenses.set(expenses),
+      error: () => {
+        this.adminExpenses.set([]);
+        this.loading.set(false);
+      },
       complete: () => this.loading.set(false),
     });
   }
 
   showVoucher(path: string) {
-    const fullUrl = `${this.baseUploadUrl}${path}`;
+    const base = this.baseUploadUrl.replace(/\/$/, '');
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    const fullUrl = `${base}${normalizedPath}`;
     this.previewUrl.set(fullUrl);
 
     // Detectamos si es PDF por la extensión

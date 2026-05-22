@@ -151,7 +151,8 @@
 </div>
 
 <p-dialog
-  [(visible)]="displayPreview"
+  [visible]="displayPreview()"
+  (visibleChange)="displayPreview.set($event)"
   [modal]="true"
   [header]="'Vista Previa del Voucher'"
   [style]="{ width: '90vw', maxWidth: '800px' }"

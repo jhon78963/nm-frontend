@@ -343,33 +343,6 @@
         </div>
       </section>
 
-      <!-- 3. Fotos -->
-      <section
-        class="reconciliation-section surface-card shadow-1 border-round p-3 md:p-4"
-        aria-labelledby="section-photos">
-        <div class="section-heading flex align-items-center gap-2 mb-3">
-          <span
-            class="section-index flex align-items-center justify-content-center border-circle bg-primary text-primary-contrast text-sm font-bold w-2rem h-2rem shrink-0"
-            >3</span
-          >
-          <div>
-            <h2 id="section-photos" class="section-title m-0 text-lg">Fotos</h2>
-            <p class="section-sub m-0 text-sm text-600">
-              Imágenes para ecommerce (misma gestión que en el stepper).
-            </p>
-          </div>
-        </div>
-
-        <div class="field col-12 px-0">
-          <app-input-image
-            [productId]="draft.productId"
-            [imageSaved]="imageSaved"
-            [imagesSaved]="imagesSaved"
-            [images]="(images | async) ?? []"
-            (selectedFilesChange)="getFormData($event)"
-            (imagesToDelete)="imagesToDelete($event)"></app-input-image>
-        </div>
-      </section>
     </div>
   } @else if (!loadingBundle) {
     <div

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { map, switchMap, tap } from 'rxjs/operators';
 import { ApiService } from '../../../../services/api.service';
 
 type SummaryMovementCategory =
@@ -62,16 +62,16 @@ export class CashflowService {
   }
 
   // --- MÉTODOS ADMINISTRATIVOS (MENSUAL) ---
-  loadMonthlyAdminExpenses(month: string): Observable<void> {
-    // URL: cash-flow/admin/monthly?month=2026-04
+  loadMonthlyAdminExpenses(month: string): Observable<any[]> {
     const url = `${this.apiUrl}/admin/monthly?month=${month}`;
     return this.apiService.get<any>(url).pipe(
       map(response => {
-        if (response.success) {
-          // Actualizamos solo el estado administrativo
-          this.adminExpensesSubject.next(response.data.expenses);
+        if (!response?.success) {
+          return [];
         }
+        return response.data?.expenses ?? [];
       }),
+      tap(expenses => this.adminExpensesSubject.next(expenses)),
     );
   }
 
@@ -148,7 +148,7 @@ export class CashflowService {
     data: any,
     file: File | null,
     currentDate: string, // 'yyyy-MM-dd' para tienda o 'yyyy-MM' para admin
-  ): Observable<void> {
+  ): Observable<any[] | void> {
     const formData = new FormData();
     formData.append('type', data.type);
     formData.append('category', data.category);
@@ -178,7 +178,7 @@ export class CashflowService {
     data: any,
     file: File | null,
     currentDate: string,
-  ): Observable<void> {
+  ): Observable<any[]> {
     const formData = new FormData();
 
     // Spoofing de método para que Laravel acepte archivos en PUT
