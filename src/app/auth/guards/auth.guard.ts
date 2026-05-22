@@ -1,37 +1,25 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
+import { map } from 'rxjs';
 import { User } from '../interfaces';
+import { AuthService } from '../services/auth.service';
 
-function readUserFromStorage(): User | null {
-  const raw = localStorage.getItem('user');
-  if (!raw) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as User;
-    if (!parsed?.username?.trim()) {
-      return null;
-    }
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-function clearAuthStorage(): void {
-  localStorage.removeItem('tokenData');
-  localStorage.removeItem('user');
+function isAuthenticatedUser(user: User | null): user is User {
+  return !!user?.username?.trim();
 }
 
 export const authGuard: CanActivateFn = () => {
   const router = inject(Router);
-  const user = readUserFromStorage();
+  const authService = inject(AuthService);
 
-  if (user) {
-    return true;
-  }
+  return authService.ensureSessionLoaded().pipe(
+    map(user => {
+      if (isAuthenticatedUser(user)) {
+        return true;
+      }
 
-  clearAuthStorage();
-  return router.createUrlTree(['auth', 'login']);
+      authService.clearLocalSession();
+      return router.createUrlTree(['auth', 'login']);
+    }),
+  );
 };

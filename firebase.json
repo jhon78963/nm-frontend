@@ -7,6 +7,25 @@
         "source": "**",
         "destination": "/index.html"
       }
+    ],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          },
+          {
+            "key": "X-Frame-Options",
+            "value": "SAMEORIGIN"
+          },
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com data:; img-src 'self' data: blob: https://api-upload.novedadesmaritex.net.pe https://upload.novedadesmaritex.net.pe; connect-src 'self' https://api.novedadesmaritex.net.pe https://api-upload.novedadesmaritex.net.pe https://upload.novedadesmaritex.net.pe; frame-src 'self' https://api.novedadesmaritex.net.pe https://api-upload.novedadesmaritex.net.pe https://upload.novedadesmaritex.net.pe; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests"
+          }
+        ]
+      }
     ]
   }
 }

@@ -1,10 +1,11 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import {
   Observable,
   catchError,
   finalize,
   map,
   of,
+  shareReplay,
   tap,
   throwError,
 } from 'rxjs';
@@ -16,6 +17,18 @@ import { Router } from '@angular/router';
   providedIn: 'root',
 })
 export class AuthService {
+  /**
+   * Preferencias de UI que deben sobrevivir al logout (p. ej. tema).
+   * El layout actual vive en memoria (`LayoutService`); la lista queda lista
+   * para cuando se persistan prefs en localStorage/sessionStorage.
+   */
+  private static readonly PERSISTENT_STORAGE_KEYS: readonly string[] = [];
+
+  /** Fuente de verdad de la sesión en memoria; validada por el servidor vía auth/me. */
+  readonly currentUser = signal<User | null>(null);
+
+  private sessionLoadRequest$?: Observable<User | null>;
+
   constructor(
     private readonly apiService: ApiService,
     private readonly router: Router,
@@ -24,6 +37,8 @@ export class AuthService {
   private setUserData(user: User): void {
     const userToSave = { ...this.normalizeUser(user) };
     delete (userToSave as any).password;
+    this.currentUser.set(userToSave);
+    this.sessionLoadRequest$ = undefined;
     localStorage.setItem('user', JSON.stringify(userToSave));
   }
 
@@ -52,15 +67,93 @@ export class AuthService {
     );
   }
 
+  /**
+   * Hidrata `currentUser` desde el servidor (POST auth/me en Laravel).
+   * Si la cookie de sesión es inválida o expiró, limpia el estado local.
+   */
+  loadSessionFromApi(): void {
+    this.ensureSessionLoaded().subscribe();
+  }
+
+  /**
+   * Garantiza que la sesión en memoria esté resuelta antes de activar rutas.
+   * Reutiliza la petición en vuelo si AppComponent ya inició la hidratación.
+   */
+  ensureSessionLoaded(): Observable<User | null> {
+    const cachedUser = this.currentUser();
+    if (cachedUser?.username?.trim()) {
+      return of(cachedUser);
+    }
+
+    if (!this.sessionLoadRequest$) {
+      this.sessionLoadRequest$ = this.me().pipe(
+        map(user => {
+          this.setUserData(user);
+          return user;
+        }),
+        catchError(() => {
+          this.clearLocalSession();
+          return of(null);
+        }),
+        shareReplay({ bufferSize: 1, refCount: true }),
+      );
+    }
+
+    return this.sessionLoadRequest$;
+  }
+
   logout(): Observable<string> {
     return this.apiService.post('auth/logout', {});
   }
 
-  /** Elimina credenciales y datos de sesión del almacenamiento local. */
+  /**
+   * Limpieza profunda de sesión: memoria + todo el storage del dominio.
+   * Preserva únicamente claves listadas en `PERSISTENT_STORAGE_KEYS`.
+   */
   clearLocalSession(): void {
-    localStorage.removeItem('tokenData');
-    localStorage.removeItem('user');
-    localStorage.removeItem('selectedSize');
+    this.currentUser.set(null);
+    this.sessionLoadRequest$ = undefined;
+
+    const preserved = this.preservePersistentStorage();
+    localStorage.clear();
+    sessionStorage.clear();
+    this.restorePersistentStorage(preserved);
+  }
+
+  private preservePersistentStorage(): Record<string, string> {
+    const preserved: Record<string, string> = {};
+
+    for (const key of AuthService.PERSISTENT_STORAGE_KEYS) {
+      const localValue = localStorage.getItem(key);
+      if (localValue !== null) {
+        preserved[`local:${key}`] = localValue;
+      }
+
+      const sessionValue = sessionStorage.getItem(key);
+      if (sessionValue !== null) {
+        preserved[`session:${key}`] = sessionValue;
+      }
+    }
+
+    return preserved;
+  }
+
+  private restorePersistentStorage(preserved: Record<string, string>): void {
+    for (const [compoundKey, value] of Object.entries(preserved)) {
+      const separatorIndex = compoundKey.indexOf(':');
+      if (separatorIndex === -1) {
+        continue;
+      }
+
+      const scope = compoundKey.slice(0, separatorIndex);
+      const key = compoundKey.slice(separatorIndex + 1);
+
+      if (scope === 'local') {
+        localStorage.setItem(key, value);
+      } else if (scope === 'session') {
+        sessionStorage.setItem(key, value);
+      }
+    }
   }
 
   /**

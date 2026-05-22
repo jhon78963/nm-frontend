@@ -6,24 +6,20 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { catchError, throwError } from 'rxjs';
+import { AuthService } from './auth.service';
 import { showError } from '../../utils/notifications';
-
-function clearAuthStorage(): void {
-  localStorage.removeItem('tokenData');
-  localStorage.removeItem('user');
-  localStorage.removeItem('selectedSize');
-}
 
 export const errorInterceptor: HttpInterceptorFn = (request, next) => {
   const router = inject(Router);
   const messageService = inject(MessageService);
+  const authService = inject(AuthService);
 
   return next(request).pipe(
     catchError((error: HttpErrorResponse) => {
       const status = error.status;
 
       if (status === 401) {
-        clearAuthStorage();
+        authService.clearLocalSession();
         void router.navigate(['/auth/login']);
         return throwError(() => error);
       }

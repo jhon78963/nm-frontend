@@ -1,26 +1,15 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
+import { map } from 'rxjs';
 import { User } from '../interfaces';
+import { AuthService } from '../services/auth.service';
 import { showError } from '../../utils/notifications';
 
 const SUPER_ADMIN_ROLE = 'Super Admin';
 
-function readUserFromStorage(): User | null {
-  const raw = localStorage.getItem('user');
-  if (!raw) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as User;
-    if (!parsed?.username?.trim()) {
-      return null;
-    }
-    return parsed;
-  } catch {
-    return null;
-  }
+function isAuthenticatedUser(user: User | null): user is User {
+  return !!user?.username?.trim();
 }
 
 function isSuperAdmin(user: User | null): boolean {
@@ -104,22 +93,30 @@ function denyAccess(router: Router, messageService: MessageService) {
  * - `data: { permissions: ['sale.getAll', 'sale.get'] }` — basta con tener uno (OR)
  *
  * Super Admin siempre pasa. Los demás se validan contra `user.permissions`
- * persistido en localStorage tras login / auth/me.
+ * en memoria (`AuthService.currentUser`), validados por el servidor vía auth/me.
  */
 export const permissionGuard: CanActivateFn = route => {
   const router = inject(Router);
   const messageService = inject(MessageService);
+  const authService = inject(AuthService);
   const required = resolveRequiredPermissions(route);
 
   if (required.length === 0) {
     return true;
   }
 
-  const user = readUserFromStorage();
+  return authService.ensureSessionLoaded().pipe(
+    map(user => {
+      if (!isAuthenticatedUser(user)) {
+        authService.clearLocalSession();
+        return router.createUrlTree(['auth', 'login']);
+      }
 
-  if (userHasAnyPermission(user, required)) {
-    return true;
-  }
+      if (userHasAnyPermission(user, required)) {
+        return true;
+      }
 
-  return denyAccess(router, messageService);
+      return denyAccess(router, messageService);
+    }),
+  );
 };
