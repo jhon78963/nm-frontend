@@ -8,18 +8,36 @@ function isAuthenticatedUser(user: User | null): user is User {
   return !!user?.username?.trim();
 }
 
-export const authGuard: CanActivateFn = () => {
+function mustChangePassword(user: User): boolean {
+  return user.mustChangePassword === true;
+}
+
+function isChangePasswordRoute(url: string): boolean {
+  return url.includes('/change-password');
+}
+
+export const authGuard: CanActivateFn = (_route, state) => {
   const router = inject(Router);
   const authService = inject(AuthService);
 
   return authService.ensureSessionLoaded().pipe(
     map(user => {
-      if (isAuthenticatedUser(user)) {
-        return true;
+      if (!isAuthenticatedUser(user)) {
+        authService.clearLocalSession();
+        return router.createUrlTree(['auth', 'login']);
       }
 
-      authService.clearLocalSession();
-      return router.createUrlTree(['auth', 'login']);
+      const onChangePasswordRoute = isChangePasswordRoute(state.url);
+
+      if (mustChangePassword(user) && !onChangePasswordRoute) {
+        return router.createUrlTree(['/change-password']);
+      }
+
+      if (!mustChangePassword(user) && onChangePasswordRoute) {
+        return router.createUrlTree(['/']);
+      }
+
+      return true;
     }),
   );
 };

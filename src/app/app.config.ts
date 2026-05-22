@@ -12,7 +12,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes, withHashLocation()),
     provideHttpClient(
-      withInterceptors([tokenInterceptor, errorInterceptor]),
+      withInterceptors([errorInterceptor, tokenInterceptor]),
     ),
     MessageService,
     importProvidersFrom([BrowserAnimationsModule]),

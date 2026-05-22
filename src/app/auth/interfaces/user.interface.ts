@@ -10,4 +10,5 @@ export interface User {
   permissions?: string[];
   tenantId?: number | null;
   warehouseId?: number | null;
+  mustChangePassword?: boolean;
 }

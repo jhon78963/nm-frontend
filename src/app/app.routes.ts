@@ -6,6 +6,15 @@ import { ADMIN_ROUTE_ROLES, roleGuard } from './auth/guards/role.guard';
 
 export const routes: Routes = [
   {
+    path: 'change-password',
+    title: 'Cambiar contraseña',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./auth/pages/change-password/change-password.component').then(
+        m => m.ChangePasswordComponent,
+      ),
+  },
+  {
     path: '',
     component: AppLayoutComponent,
     canActivate: [authGuard],

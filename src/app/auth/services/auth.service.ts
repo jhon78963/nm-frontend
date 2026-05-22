@@ -9,7 +9,7 @@ import {
   tap,
   throwError,
 } from 'rxjs';
-import { Login, LoginResponse, User } from '../interfaces';
+import { Login, User } from '../interfaces';
 import { ApiService } from '../../services/api.service';
 import { Router } from '@angular/router';
 
@@ -55,7 +55,9 @@ export class AuthService {
       map(response => this.normalizeUser(response)),
       tap((user: User) => {
         this.setUserData(user);
-        void this.router.navigateByUrl('/');
+        void this.router.navigateByUrl(
+          user.mustChangePassword ? '/change-password' : '/',
+        );
       }),
       catchError(err => throwError(() => this.extractErrorMessage(err))),
     );
@@ -104,6 +106,33 @@ export class AuthService {
 
   logout(): Observable<string> {
     return this.apiService.post('auth/logout', {});
+  }
+
+  /**
+   * Renueva el par access/refresh vía cookies HttpOnly (POST auth/refresh).
+   * Invocado automáticamente por el interceptor ante un 401.
+   */
+  refreshSession(): Observable<void> {
+    return this.apiService.post<{ message: string }>('auth/refresh', {}).pipe(
+      map(() => undefined),
+    );
+  }
+
+  changePassword(body: {
+    currentPassword: string;
+    password: string;
+    passwordConfirmation: string;
+  }): Observable<User> {
+    return this.apiService
+      .post<User | { data: User }>('auth/change-password', body)
+      .pipe(
+        map(response => this.normalizeUser(response)),
+        tap(user => {
+          this.setUserData(user);
+          void this.router.navigateByUrl('/');
+        }),
+        catchError(err => throwError(() => this.extractErrorMessage(err))),
+      );
   }
 
   /**
@@ -172,33 +201,6 @@ export class AuthService {
         void this.router.navigate(['/auth/login']);
       }),
     );
-  }
-
-  private readTokenDataFromStorage(): {
-    refreshToken: string | null;
-    accessToken: string | null;
-  } {
-    try {
-      const tokenData = JSON.parse(
-        localStorage.getItem('tokenData') || '{}',
-      ) as { refreshToken?: string; token?: string };
-      return {
-        refreshToken: tokenData.refreshToken ?? null,
-        accessToken: tokenData.token ?? null,
-      };
-    } catch {
-      return { refreshToken: null, accessToken: null };
-    }
-  }
-
-  refreshToken(
-    refreshToken: string | null,
-    accessToken: string | null,
-  ): Observable<LoginResponse> {
-    return this.apiService.post<LoginResponse>('auth/refresh-token', {
-      refreshToken,
-      accessToken,
-    });
   }
 
   private extractErrorMessage(err: unknown): string {
