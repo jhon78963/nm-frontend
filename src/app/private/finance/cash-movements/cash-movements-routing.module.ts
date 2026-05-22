@@ -9,6 +9,8 @@ const routes: Routes = [
       import('./pages/list/cash-movements.component').then(
         c => c.CashMovementsListComponent,
       ),
+    canActivate: [permissionGuard],
+    data: { permission: 'cashflow.getDaily' },
   },
   {
     path: 'admin-expenses',

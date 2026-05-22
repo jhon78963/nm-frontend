@@ -97,7 +97,12 @@ export const routes: Routes = [
         canActivate: [permissionGuard],
         data: {
           breadcrumb: 'Módulo Financiero',
-          permissions: ['cashflow.getDaily', 'expense.getAll', 'order.getAll'],
+          permissions: [
+            'cashflow.getDaily',
+            'cashflow.getAdminMonthlyReport',
+            'expense.getAll',
+            'order.getAll',
+          ],
         },
         loadChildren: () =>
           import('./private/finance/finance.module').then(m => m.FinanceModule),

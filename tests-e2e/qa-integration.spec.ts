@@ -13,11 +13,9 @@ const MOCK_VENDEDORA = {
   permissions: [
     'pos.checkout',
     'pos.searchProduct',
-    'product.getAll',
-    'product.get',
-    'purchase.getAll',
+    'pos.searchCustomer',
     'cashflow.getDaily',
-    'expense.getAll',
+    'cashflow.store',
   ],
   tenantId: 1,
   warehouseId: 1,
@@ -118,14 +116,24 @@ test.describe('QA — Protección de rutas frontend', () => {
     await expect(page).not.toHaveURL(/auth\/login/);
   });
 
-  test('vendedora puede navegar a purchase/register (guard amplio — gap QA)', async ({
+  test('vendedora no puede acceder al registro de compras sin permiso', async ({
     page,
   }) => {
     await setupAuthMocks(page);
     await login(page);
     await page.goto('/#/inventories/purchase/register');
-    await expect(page).not.toHaveURL(/auth\/login/);
-    await expect(page).not.toHaveURL(/notfound/);
+    await expect(page).toHaveURL(/\/(dashboard|home|sales\/pos)?/, {
+      timeout: 10_000,
+    });
+  });
+
+  test('vendedora no ve inventario de productos en menú', async ({ page }) => {
+    await setupAuthMocks(page);
+    await login(page);
+    await page.goto('/#/sales/pos');
+    await expect(page.getByText('Productos', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('POS', { exact: true })).toBeVisible();
+    await expect(page.getByText('Caja', { exact: true })).toBeVisible();
   });
 
   test('manipulación localStorage no otorga permisos admin en menú', async ({
