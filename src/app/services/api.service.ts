@@ -1,5 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 import { BASE_URL, BASE_WEB_URL } from '../utils/constants';
 
 export type ApiGetOptions = {
@@ -12,6 +13,7 @@ export class ApiService {
   BASE_URL = BASE_URL;
   BASE_WEB_URL = BASE_WEB_URL;
   constructor(private readonly http: HttpClient) {}
+
   get<T>(path: string, options?: ApiGetOptions) {
     return this.http.get<T>(`${this.BASE_URL}/${path}`, {
       headers: options?.headers,

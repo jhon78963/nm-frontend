@@ -1,3 +1,4 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
 import {
   Observable,
@@ -6,9 +7,11 @@ import {
   map,
   of,
   shareReplay,
+  switchMap,
   tap,
   throwError,
 } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import { Login, User } from '../interfaces';
 import {
   userHasAnyPermission,
@@ -16,6 +19,7 @@ import {
 } from '../guards/permission.guard';
 import { ADMIN_ROUTE_ROLES } from '../guards/role.guard';
 import { ApiService } from '../../services/api.service';
+import { CsrfTokenService } from './csrf-token.service';
 import { PurchaseRegisterDraftService } from '../../private/inventories/purchase/services/purchase-register-draft.service';
 import { Router } from '@angular/router';
 
@@ -64,10 +68,42 @@ export class AuthService {
   }
 
   constructor(
+    private readonly http: HttpClient,
     private readonly apiService: ApiService,
+    private readonly csrfTokenService: CsrfTokenService,
     private readonly router: Router,
     private readonly purchaseRegisterDraft: PurchaseRegisterDraftService,
   ) {}
+
+  /**
+   * Paso 1: cookie Sanctum (204 vacío).
+   * Paso 2: token CSRF en JSON desde el backend (no el origen del SPA).
+   */
+  fetchCsrfHandshake(): Observable<string> {
+    return this.http
+      .get(`${environment.baseWebUrl}/sanctum/csrf-cookie`, {
+        withCredentials: true,
+        responseType: 'text' as const,
+      })
+      .pipe(
+        switchMap(() =>
+          this.http.get<{ csrf_token?: string; message?: string }>(
+            `${environment.apiUrl}/auth/csrf-token`,
+            { withCredentials: true },
+          ),
+        ),
+        map(response => {
+          if (!response?.csrf_token) {
+            throw new Error(
+              response?.message ??
+                'No se pudo obtener el token CSRF. Verifique sesión y reinicie el backend (php artisan route:clear).',
+            );
+          }
+
+          return response.csrf_token;
+        }),
+      );
+  }
 
   private setUserData(user: User): void {
     const userInMemory = { ...this.normalizeUser(user) };
@@ -101,7 +137,14 @@ export class AuthService {
   }
 
   login(body: Login): Observable<User> {
-    return this.apiService.post<User | { data: User }>('auth/login', body).pipe(
+    return this.fetchCsrfHandshake().pipe(
+      tap(token => this.csrfTokenService.setToken(token)),
+      switchMap(() =>
+        this.http.post<User | { data: User }>(
+          `${environment.apiUrl}/auth/login`,
+          body,
+        ),
+      ),
       map(response => this.normalizeUser(response)),
       tap((user: User) => {
         this.setUserData(user);
@@ -192,6 +235,7 @@ export class AuthService {
   clearLocalSession(): void {
     this.currentUser.set(null);
     this.sessionLoadRequest$ = undefined;
+    this.csrfTokenService.clear();
     this.persistSessionFlag(false);
     this.purchaseRegisterDraft.clear();
 
@@ -269,6 +313,9 @@ export class AuthService {
     }
     if (http?.status === 401) {
       return 'Credenciales inválidas. Verifica tu usuario y contraseña.';
+    }
+    if (http?.status === 419) {
+      return 'La sesión de seguridad expiró. Recarga la página e intenta de nuevo.';
     }
     return http?.message ?? 'Error de autenticación. Intenta nuevamente.';
   }

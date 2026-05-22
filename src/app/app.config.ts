@@ -4,7 +4,8 @@ import { provideRouter, withHashLocation } from '@angular/router';
 import { MessageService } from 'primeng/api';
 
 import { routes } from './app.routes';
-import { provideHttpClient, withInterceptors, withXsrfConfiguration } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { csrfInterceptor } from './auth/services/csrf.interceptor';
 import { errorInterceptor } from './auth/services/error.interceptor';
 import { tokenInterceptor } from './auth/services/token.interceptor';
 
@@ -12,11 +13,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes, withHashLocation()),
     provideHttpClient(
-      withXsrfConfiguration({
-        cookieName: 'XSRF-TOKEN',
-        headerName: 'X-XSRF-TOKEN',
-      }),
-      withInterceptors([errorInterceptor, tokenInterceptor]),
+      withInterceptors([csrfInterceptor, errorInterceptor, tokenInterceptor]),
     ),
     MessageService,
     importProvidersFrom([BrowserAnimationsModule]),

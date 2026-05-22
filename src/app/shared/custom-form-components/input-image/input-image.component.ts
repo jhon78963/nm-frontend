@@ -48,7 +48,7 @@ export class InputImageComponent implements OnChanges {
   index: number = 0;
   newImageIndexes: any[] = [];
   newImages: any[] = [];
-  apiUrl = environment.BASE_URL;
+  apiUrl = environment.apiUrl;
   selectedFiles: File[] = [];
   imagePreviews: string[] = [];
   isDragging = false;
