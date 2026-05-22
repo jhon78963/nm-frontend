@@ -12,6 +12,7 @@
   </p-calendar>
 </div>
 <div class="grid p-fluid">
+  @if (canStoreCashflow() || canUpdateCashflow()) {
   <div class="col-12 lg:col-4">
     <div class="surface-card p-4 shadow-2 border-round-xl">
       <h2 class="text-xl font-bold mb-4 text-900">
@@ -80,17 +81,20 @@
             class="p-button-secondary py-3 font-bold"
             (click)="resetForm()"></button>
         }
-        <button
-          pButton
-          [label]="isEditing() ? 'Actualizar Gasto' : 'Registrar Gasto'"
-          [icon]="isEditing() ? 'pi pi-refresh' : 'pi pi-check'"
-          [class]="isEditing() ? 'p-button-warning' : 'p-button-help'"
-          class="flex-1 py-3 font-bold"
-          [loading]="loading()"
-          (click)="saveExpense()"></button>
+        @if (canSaveAdminExpense()) {
+          <button
+            pButton
+            [label]="isEditing() ? 'Actualizar Gasto' : 'Registrar Gasto'"
+            [icon]="isEditing() ? 'pi pi-refresh' : 'pi pi-check'"
+            [class]="isEditing() ? 'p-button-warning' : 'p-button-help'"
+            class="flex-1 py-3 font-bold"
+            [loading]="loading()"
+            (click)="saveExpense()"></button>
+        }
       </div>
     </div>
   </div>
+  }
 
   <div class="col-12 lg:col-8">
     <div class="surface-card p-4 shadow-2 border-round-xl">
@@ -121,11 +125,13 @@
             </td>
             <td class="text-center">
               <div class="flex justify-content-center gap-1">
-                <button
-                  pButton
-                  icon="pi pi-pencil"
-                  class="p-button-rounded p-button-text p-button-sm p-button-warning"
-                  (click)="editExpense(expense)"></button>
+                @if (canUpdateCashflow()) {
+                  <button
+                    pButton
+                    icon="pi pi-pencil"
+                    class="p-button-rounded p-button-text p-button-sm p-button-warning"
+                    (click)="editExpense(expense)"></button>
+                }
                 @if (expense.voucher_path) {
                   <button
                     pButton

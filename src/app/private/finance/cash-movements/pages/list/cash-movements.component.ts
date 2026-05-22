@@ -46,6 +46,10 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
 
   readonly isAdmin = computed(() => this.authService.isAdminUser());
 
+  canStoreCashflow(): boolean {
+    return this.authService.hasPermission('cashflow.store');
+  }
+
   // Fecha actual seleccionada
   currentDate = new Date();
 

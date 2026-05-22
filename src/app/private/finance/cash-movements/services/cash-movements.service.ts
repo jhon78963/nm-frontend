@@ -3,6 +3,30 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { ApiService } from '../../../../services/api.service';
 
+type SummaryMovementCategory =
+  | string
+  | {
+      id?: number;
+      name: string;
+    };
+
+export interface SummaryMovementInput {
+  type: 'INGRESO' | 'GASTO' | string;
+  amount: number;
+  category?: SummaryMovementCategory;
+  description?: string;
+  date?: string;
+}
+
+interface CashflowStorePayload {
+  type: 'INCOME' | 'EXPENSE';
+  category: 'STORE' | 'ADMINISTRATIVE';
+  amount: number;
+  description: string;
+  date: string;
+  payment_method: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class CashflowService {
   private apiService = inject(ApiService);
@@ -51,14 +75,70 @@ export class CashflowService {
     );
   }
 
-  registerSummaryMovement(movement: {
-    type: string;
+  registerSummaryMovement(
+    movement: SummaryMovementInput,
+  ): Observable<{ success: boolean; data?: unknown }> {
+    const payload = this.mapSummaryMovementToApiPayload(movement);
+    return this.apiService.post(this.apiUrl, payload);
+  }
 
-    amount: number;
+  private mapSummaryMovementToApiPayload(
+    movement: SummaryMovementInput,
+  ): CashflowStorePayload {
+    const type =
+      movement.type === 'INGRESO' || movement.type === 'INCOME'
+        ? 'INCOME'
+        : 'EXPENSE';
 
-    description: string;
-  }): Observable<void> {
-    return this.apiService.post(this.apiUrl, movement);
+    const categoryLabel = this.resolveSummaryCategoryLabel(movement.category);
+
+    return {
+      type,
+      category: this.resolveSummaryCashflowCategory(movement.category),
+      amount: movement.amount,
+      description: movement.description?.trim() || categoryLabel,
+      date: movement.date ?? this.todayIsoDate(),
+      payment_method: 'CASH',
+    };
+  }
+
+  private resolveSummaryCategoryLabel(
+    category: SummaryMovementCategory | undefined,
+  ): string {
+    if (!category) {
+      return 'Movimiento manual';
+    }
+
+    if (typeof category === 'string') {
+      return category.trim() || 'Movimiento manual';
+    }
+
+    return category.name?.trim() || 'Movimiento manual';
+  }
+
+  private resolveSummaryCashflowCategory(
+    category: SummaryMovementCategory | undefined,
+  ): 'STORE' | 'ADMINISTRATIVE' {
+    if (typeof category === 'string') {
+      const normalized = category.trim().toUpperCase();
+      if (normalized === 'ADMINISTRATIVE' || normalized === 'ADMINISTRATIVO') {
+        return 'ADMINISTRATIVE';
+      }
+      if (normalized === 'STORE' || normalized === 'TIENDA') {
+        return 'STORE';
+      }
+    }
+
+    // Movimientos rápidos del resumen financiero operan sobre caja de tienda.
+    return 'STORE';
+  }
+
+  private todayIsoDate(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   /**

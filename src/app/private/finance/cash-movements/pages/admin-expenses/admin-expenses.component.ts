@@ -18,6 +18,7 @@ import { ToastModule } from 'primeng/toast';
 import { DialogModule } from 'primeng/dialog';
 import { BASE_UPLOAD_URL } from '../../../../../utils/constants';
 import { SafeUrlPipe } from '../../pipes/safe-url.pipe';
+import { AuthService } from '../../../../../auth/services/auth.service';
 import { CashflowService } from '../../services/cash-movements.service';
 
 @Component({
@@ -43,6 +44,8 @@ import { CashflowService } from '../../services/cash-movements.service';
 })
 export class AdminExpensesComponent implements OnInit {
   @ViewChild('fileUpload') fileUpload!: FileUpload;
+
+  private readonly authService = inject(AuthService);
 
   baseUploadUrl = BASE_UPLOAD_URL;
 
@@ -189,5 +192,17 @@ export class AdminExpensesComponent implements OnInit {
     this.isEditing.set(false);
     this.editingId = null;
     if (this.fileUpload) this.fileUpload.clear();
+  }
+
+  canStoreCashflow(): boolean {
+    return this.authService.hasPermission('cashflow.store');
+  }
+
+  canUpdateCashflow(): boolean {
+    return this.authService.hasPermission('cashflow.update');
+  }
+
+  canSaveAdminExpense(): boolean {
+    return this.isEditing() ? this.canUpdateCashflow() : this.canStoreCashflow();
   }
 }

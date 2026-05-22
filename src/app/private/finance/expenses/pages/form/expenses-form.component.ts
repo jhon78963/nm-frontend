@@ -42,7 +42,7 @@ export class ExpenseFormComponent implements OnInit {
     amount: [0, Validators.required],
     paymentMethod: ['', Validators.required],
     referenceCode: ['', Validators.nullValidator],
-    userId: [0, Validators.required],
+    userId: [null, Validators.required],
   });
 
   categories = [
@@ -124,7 +124,7 @@ export class ExpenseFormComponent implements OnInit {
   }
 
   private cleanUserID(): void {
-    this.form.get('userID')?.setValue(0);
+    this.form.get('userId')?.setValue(null);
   }
 
   get users(): Observable<User[]> {

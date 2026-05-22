@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -21,6 +21,7 @@ import {
 } from '../../../../../utils/notifications';
 import { Expense } from '../../models/expenses.model';
 import { ExpensesService } from '../../services/expenses.service';
+import { AuthService } from '../../../../../auth/services/auth.service';
 import { ExpenseFormComponent } from '../form/expenses-form.component';
 
 @Component({
@@ -94,6 +95,7 @@ export class ExpenseListComponent implements OnInit, OnDestroy {
       pTooltip: 'Editar',
       tooltipPosition: 'bottom',
       click: (rowData: Expense) => this.buttonEditExpense(rowData.id),
+      visible: () => this.authService.hasPermission('expense.update'),
     },
     {
       type: 'button',
@@ -104,8 +106,11 @@ export class ExpenseListComponent implements OnInit, OnDestroy {
       tooltipPosition: 'bottom',
       click: (rowData: Expense, event?: Event) =>
         this.buttonDeleteExpense(rowData.id, event!),
+      visible: () => this.authService.hasPermission('expense.delete'),
     },
   ];
+
+  private readonly authService = inject(AuthService);
 
   formGroup: FormGroup = new FormGroup({
     search: new FormControl<string | null>(null),
@@ -261,5 +266,9 @@ export class ExpenseListComponent implements OnInit, OnDestroy {
 
   private updatePage(value: number): void {
     this.page = value;
+  }
+
+  canCreateExpense(): boolean {
+    return this.authService.hasPermission('expense.create');
   }
 }
