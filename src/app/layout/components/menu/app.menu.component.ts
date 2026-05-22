@@ -193,7 +193,7 @@ export class AppMenuComponent implements OnInit {
           label: 'Productos (inventario)',
           icon: 'pi pi-fw pi-table',
           routerLink: ['/reports/products'],
-          permissions: ['product.getAll', 'product.get'],
+          permission: 'report.products',
         },
         {
           label: 'Resumen Financiero',

@@ -201,6 +201,18 @@ function resolvePermissionPlacement(perm: Permission): MenuPlacement {
     };
   }
 
+  if (name === 'report.products') {
+    return placement('Reportes', 'Productos (inventario)', 1);
+  }
+
+  if (prefix === 'report') {
+    return placement('Reportes', 'Reportes', 0);
+  }
+
+  if (prefix === 'financialSummary') {
+    return placement('Reportes', 'Resumen Financiero', 2);
+  }
+
   const byPrefix: Record<string, MenuPlacement> = {
     role: placement('Administración', 'Roles y permisos', 0),
     user: placement('Administración', 'Usuarios', 1),
@@ -225,8 +237,6 @@ function resolvePermissionPlacement(perm: Permission): MenuPlacement {
     pos: placement('Ventas', 'POS', 0),
     sale: placement('Ventas', 'Ventas', 1),
     expense: placement('Gastos', 'Gastos Generales', 1),
-    report: placement('Reportes', 'Reportes', 0),
-    financialSummary: placement('Reportes', 'Resumen Financiero', 1),
   };
 
   if (byPrefix[prefix]) {
