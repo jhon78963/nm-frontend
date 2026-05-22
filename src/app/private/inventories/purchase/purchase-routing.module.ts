@@ -11,7 +11,8 @@ const routes: Routes = [
   {
     path: 'list',
     title: 'Listado de compras',
-    data: { breadcrumb: 'Compras' },
+    canActivate: [permissionGuard],
+    data: { breadcrumb: 'Compras', permission: 'purchase.getAll' },
     loadComponent: () =>
       import('./pages/purchase-list/purchase-list.component').then(
         m => m.PurchaseListComponent,
@@ -30,7 +31,8 @@ const routes: Routes = [
   {
     path: ':id',
     title: 'Detalle de compra',
-    data: { breadcrumb: 'Detalle compra' },
+    canActivate: [permissionGuard],
+    data: { breadcrumb: 'Detalle compra', permission: 'purchase.get' },
     loadComponent: () =>
       import('./pages/purchase-detail/purchase-detail.component').then(
         m => m.PurchaseDetailComponent,

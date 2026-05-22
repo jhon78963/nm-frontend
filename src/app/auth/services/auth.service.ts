@@ -16,6 +16,7 @@ import {
 } from '../guards/permission.guard';
 import { ADMIN_ROUTE_ROLES } from '../guards/role.guard';
 import { ApiService } from '../../services/api.service';
+import { PurchaseRegisterDraftService } from '../../private/inventories/purchase/services/purchase-register-draft.service';
 import { Router } from '@angular/router';
 
 @Injectable({
@@ -65,6 +66,7 @@ export class AuthService {
   constructor(
     private readonly apiService: ApiService,
     private readonly router: Router,
+    private readonly purchaseRegisterDraft: PurchaseRegisterDraftService,
   ) {}
 
   private setUserData(user: User): void {
@@ -191,6 +193,7 @@ export class AuthService {
     this.currentUser.set(null);
     this.sessionLoadRequest$ = undefined;
     this.persistSessionFlag(false);
+    this.purchaseRegisterDraft.clear();
 
     const preserved = this.preservePersistentStorage();
     localStorage.clear();

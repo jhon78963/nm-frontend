@@ -11,6 +11,8 @@ const routes: Routes = [
       { path: '', redirectTo: 'general', pathMatch: 'full' },
       {
         path: 'general',
+        canActivate: [permissionGuard],
+        data: { permission: 'product.create' },
         loadComponent: () =>
           import('./pages/form/products/products-form.component').then(
             c => c.ProductsFormComponent,
@@ -18,6 +20,8 @@ const routes: Routes = [
       },
       {
         path: 'general/:id',
+        canActivate: [permissionGuard],
+        data: { permission: 'product.get' },
         loadComponent: () =>
           import('./pages/form/products/products-form.component').then(
             c => c.ProductsFormComponent,
@@ -25,6 +29,10 @@ const routes: Routes = [
       },
       {
         path: 'sizes/:id',
+        canActivate: [permissionGuard],
+        data: {
+          permissions: ['productSize.add', 'productSize.modify'],
+        },
         loadComponent: () =>
           import('./pages/form/sizes/sizes-form.component').then(
             c => c.SizesFormComponent,
@@ -32,6 +40,10 @@ const routes: Routes = [
       },
       {
         path: 'colors/:id',
+        canActivate: [permissionGuard],
+        data: {
+          permissions: ['productSizeColor.add', 'productSizeColor.modify'],
+        },
         loadComponent: () =>
           import('./pages/form/colors/colors-form.component').then(
             c => c.ColorsFormComponent,
@@ -39,6 +51,8 @@ const routes: Routes = [
       },
       {
         path: 'ecommerce/:id',
+        canActivate: [permissionGuard],
+        data: { permission: 'product.update' },
         loadComponent: () =>
           import('./pages/form/ecommerce/ecommerce-form.component').then(
             c => c.EcommerceFormComponent,
@@ -46,6 +60,8 @@ const routes: Routes = [
       },
       {
         path: 'history/:id',
+        canActivate: [permissionGuard],
+        data: { permission: 'productHistory.index' },
         loadComponent: () =>
           import(
             './pages/form/products-history/products-history.component'
@@ -65,6 +81,8 @@ const routes: Routes = [
   },
   {
     path: '',
+    canActivate: [permissionGuard],
+    data: { permission: 'product.getAll' },
     loadComponent: () =>
       import('./pages/list/products.component').then(
         c => c.ProductListComponent,
@@ -72,6 +90,8 @@ const routes: Routes = [
   },
   {
     path: 'edit/:id',
+    canActivate: [permissionGuard],
+    data: { permission: 'product.update' },
     loadComponent: () =>
       import('./pages/form/products/products-form.component').then(
         c => c.ProductsFormComponent,

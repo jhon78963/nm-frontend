@@ -79,34 +79,16 @@ import {
 } from '../../models/purchase.models';
 import type { PurchaseRegisterBulkResponse } from '../../models/purchases-list.model';
 import { PurchaseCatalogService } from '../../services/purchase-catalog.service';
+import {
+  PurchaseRegisterDraftService,
+  PurchaseRegisterDraftSnapshot,
+} from '../../services/purchase-register-draft.service';
 import { PurchaseService } from '../../services/purchase.service';
 
-/** Snapshot en `localStorage` para recuperar cabecera, constructor y detalle. */
-interface PurchaseRegisterLocalDraftV2 {
-  version: 2;
-  header: Record<string, unknown>;
-  /** Incluye `draftColorQueue[]` (FormArray serializado). */
-  lineDraft: Record<string, unknown>;
-  lines: Record<string, unknown>[];
-  useExistingProduct: boolean;
-  /** Solo el id; el producto completo se obtiene con `getOne` al rehidratar. */
-  selectedProductId: number | null;
-  activeNewProductTempId: string | null;
-  isEditingLine: boolean;
-}
-
-/** Borradores antiguos (cola de colores fuera del `FormGroup`). */
-interface PurchaseRegisterLocalDraftV1Legacy {
-  version: 1;
-  header: Record<string, unknown>;
-  lineDraft: Record<string, unknown>;
-  lines: Record<string, unknown>[];
-  useExistingProduct: boolean;
-  selectedProductId: number | null;
-  draftColorVariants?: PurchaseDraftColorVariant[];
-  activeNewProductTempId: string | null;
-  isEditingLine: boolean;
-}
+const LEGACY_DRAFT_STORAGE_KEYS = [
+  'nm_purchase_register_draft_v2',
+  'nm_purchase_register_draft_v1',
+] as const;
 
 @Component({
   selector: 'app-purchase-register',
@@ -142,9 +124,7 @@ export class PurchaseRegisterComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly persistDraft$ = new Subject<void>();
-  /** Clave estable para no colisionar con otras pantallas. */
-  private readonly purchaseDraftStorageKey = 'nm_purchase_register_draft_v2';
-  /** Evita escribir en `localStorage` mientras se aplica un borrador (evita bucles y basura). */
+  /** Evita escribir en memoria mientras se aplica un borrador (evita bucles). */
   private persistDraftEnabled = false;
   /** Si el usuario eligió proveedor de la lista: al editar el texto se limpia `vendorId`. */
   private supplierNameLockedForVendorId: string | null = null;
@@ -228,6 +208,7 @@ export class PurchaseRegisterComponent implements OnInit {
     private readonly fb: FormBuilder,
     private readonly catalog: PurchaseCatalogService,
     private readonly purchaseApi: PurchaseService,
+    private readonly purchaseDraft: PurchaseRegisterDraftService,
     private readonly gendersService: GendersService,
     private readonly warehousesService: WarehousesService,
     private readonly productsService: ProductsService,
@@ -275,7 +256,7 @@ export class PurchaseRegisterComponent implements OnInit {
         },
       });
 
-    this.tryRestoreDraftFromStorage();
+    this.tryRestoreDraftFromMemory();
 
     this.header
       .get('supplierName')
@@ -295,7 +276,7 @@ export class PurchaseRegisterComponent implements OnInit {
   @HostListener('window:beforeunload')
   flushPurchaseDraftOnUnload(): void {
     if (this.persistDraftEnabled) {
-      this.persistDraftToStorage();
+      this.persistDraftInMemory();
     }
   }
 
@@ -1543,7 +1524,7 @@ export class PurchaseRegisterComponent implements OnInit {
 
   resetAll(): void {
     this.persistDraftEnabled = false;
-    this.clearPurchaseDraftFromStorage();
+    this.purchaseDraft.clear();
     this.lines.clear({ emitEvent: false });
     this.isEditingLine.set(false);
     this.totalEstimated.set(0);
@@ -1597,7 +1578,7 @@ export class PurchaseRegisterComponent implements OnInit {
     }
   }
 
-  // ——— Borrador en `localStorage` (anti pérdida por recarga) ———
+  // ——— Borrador en memoria (solo mientras la SPA está abierta) ———
 
   private requestPersistDraft(): void {
     if (this.persistDraftEnabled) {
@@ -1617,10 +1598,10 @@ export class PurchaseRegisterComponent implements OnInit {
         filter(() => this.persistDraftEnabled),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe(() => this.persistDraftToStorage());
+      .subscribe(() => this.persistDraftInMemory());
   }
 
-  private buildLocalDraftSnapshot(): PurchaseRegisterLocalDraftV2 {
+  private buildDraftSnapshot(): PurchaseRegisterDraftSnapshot {
     const useExisting = this.useExistingProduct();
     return {
       version: 2,
@@ -1640,8 +1621,8 @@ export class PurchaseRegisterComponent implements OnInit {
     };
   }
 
-  private persistDraftToStorage(): void {
-    const snap = this.buildLocalDraftSnapshot();
+  private persistDraftInMemory(): void {
+    const snap = this.buildDraftSnapshot();
     const supplier = String(snap.header['supplierName'] ?? '').trim();
     const hasLines = snap.lines.length > 0;
     const dq = snap.lineDraft['draftColorQueue'];
@@ -1666,44 +1647,21 @@ export class PurchaseRegisterComponent implements OnInit {
       snap.selectedProductId != null;
 
     if (!hasLines && !supplier && !hasMeaningfulConstructor) {
-      try {
-        localStorage.removeItem(this.purchaseDraftStorageKey);
-        localStorage.removeItem('nm_purchase_register_draft_v1');
-      } catch {
-        /* ignore */
-      }
+      this.purchaseDraft.clear();
       return;
     }
 
-    try {
-      const json = JSON.stringify(snap);
-      localStorage.setItem(this.purchaseDraftStorageKey, json);
-      localStorage.removeItem('nm_purchase_register_draft_v1');
-    } catch (e) {
-      console.warn(
-        '[purchase-register] No se pudo guardar borrador en localStorage',
-        e,
-      );
-    }
+    this.purchaseDraft.save(snap);
   }
 
-  private clearPurchaseDraftFromStorage(): void {
+  /** Elimina borradores legacy en localStorage (hallazgo M5 — ya no se usan). */
+  private purgeLegacyBrowserDraft(): void {
     try {
-      localStorage.removeItem(this.purchaseDraftStorageKey);
-      localStorage.removeItem('nm_purchase_register_draft_v1');
+      for (const key of LEGACY_DRAFT_STORAGE_KEYS) {
+        localStorage.removeItem(key);
+      }
     } catch {
       /* ignore */
-    }
-  }
-
-  private readStoredDraftJson(): string | null {
-    try {
-      return (
-        localStorage.getItem(this.purchaseDraftStorageKey) ??
-        localStorage.getItem('nm_purchase_register_draft_v1')
-      );
-    } catch {
-      return null;
     }
   }
 
@@ -1711,36 +1669,11 @@ export class PurchaseRegisterComponent implements OnInit {
     this.persistDraftEnabled = true;
   }
 
-  private tryRestoreDraftFromStorage(): void {
-    const raw = this.readStoredDraftJson();
-    if (raw == null) {
-      this.enablePersistDraft();
-      this.wireDraftAutoSave();
-      return;
-    }
+  private tryRestoreDraftFromMemory(): void {
+    this.purgeLegacyBrowserDraft();
 
-    if (!raw.trim()) {
-      this.enablePersistDraft();
-      this.wireDraftAutoSave();
-      return;
-    }
-
-    let parsed:
-      | PurchaseRegisterLocalDraftV2
-      | PurchaseRegisterLocalDraftV1Legacy;
-    try {
-      parsed = JSON.parse(raw) as
-        | PurchaseRegisterLocalDraftV2
-        | PurchaseRegisterLocalDraftV1Legacy;
-    } catch {
-      this.clearPurchaseDraftFromStorage();
-      this.enablePersistDraft();
-      this.wireDraftAutoSave();
-      return;
-    }
-
-    if (!parsed || (parsed.version !== 1 && parsed.version !== 2)) {
-      this.clearPurchaseDraftFromStorage();
+    const parsed = this.purchaseDraft.read();
+    if (!parsed || parsed.version !== 2) {
       this.enablePersistDraft();
       this.wireDraftAutoSave();
       return;
@@ -1771,13 +1704,8 @@ export class PurchaseRegisterComponent implements OnInit {
     this.supplierNameLockedForVendorId =
       vendorId != null && supName ? supName : null;
 
-    const legacyQueue =
-      parsed.version === 1
-        ? (parsed as PurchaseRegisterLocalDraftV1Legacy).draftColorVariants
-        : undefined;
-    this.applyLineDraftFromStorage(
+    this.applyLineDraftFromSnapshot(
       (parsed.lineDraft ?? {}) as Record<string, unknown>,
-      legacyQueue,
     );
 
     this.useExistingProduct.set(!!parsed.useExistingProduct);
@@ -1793,7 +1721,7 @@ export class PurchaseRegisterComponent implements OnInit {
           this.wireDraftAutoSave();
           showSuccess(
             this.messageService,
-            'Se recuperó un borrador guardado (cabecera, producto y líneas).',
+            'Se recuperó el borrador de esta sesión (cabecera, producto y líneas).',
           );
         });
       } else {
@@ -1804,7 +1732,10 @@ export class PurchaseRegisterComponent implements OnInit {
         this.refreshColorsAfterSizeChange();
         this.enablePersistDraft();
         this.wireDraftAutoSave();
-        showSuccess(this.messageService, 'Se recuperó un borrador guardado.');
+        showSuccess(
+          this.messageService,
+          'Se recuperó el borrador de esta sesión.',
+        );
       }
     };
 
@@ -1932,22 +1863,11 @@ export class PurchaseRegisterComponent implements OnInit {
    * Rehidrata la Sección 2 sin `patchValue` ciego sobre el `FormArray`:
    * vacía la cola, aplica escalares con coerción y vuelve a crear cada fila.
    */
-  private applyLineDraftFromStorage(
-    rawLineDraft: Record<string, unknown>,
-    legacyQueue: PurchaseDraftColorVariant[] | undefined,
-  ): void {
+  private applyLineDraftFromSnapshot(rawLineDraft: Record<string, unknown>): void {
     const qRaw = rawLineDraft['draftColorQueue'];
-    const fromForm = Array.isArray(qRaw)
+    const queueSnapshot: Record<string, unknown>[] = Array.isArray(qRaw)
       ? (qRaw as Record<string, unknown>[])
       : [];
-    const queueSnapshot: Record<string, unknown>[] =
-      fromForm.length > 0
-        ? fromForm
-        : legacyQueue != null && legacyQueue.length > 0
-          ? legacyQueue.map(v => ({
-              ...(v as unknown as Record<string, unknown>),
-            }))
-          : [];
 
     this.draftColorQueue.clear({ emitEvent: false });
 
