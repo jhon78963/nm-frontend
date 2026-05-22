@@ -11,7 +11,7 @@
 
       <div
         class="flex align-items-center surface-100 border-round-xl p-1 w-full md:w-auto justify-content-between md:justify-content-center mt-2 md:mt-0 h-custom">
-        @if (isAdmin) {
+        @if (isAdmin()) {
           <button
             pButton
             icon="pi pi-chevron-left"
@@ -29,7 +29,7 @@
           }}</span>
         </div>
 
-        @if (isAdmin) {
+        @if (isAdmin()) {
           <button
             pButton
             icon="pi pi-chevron-right"
@@ -314,7 +314,7 @@
     }
 
     <!-- CAMPO DE FECHA AÑADIDO -->
-    @if (isAdmin) {
+    @if (isAdmin()) {
       <div>
         <span class="block text-500 font-bold text-sm mb-1">Fecha y Hora</span>
         <p-calendar

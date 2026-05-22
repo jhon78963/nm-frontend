@@ -14,10 +14,7 @@ import { FormsModule } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 import { debounceTime, Subject } from 'rxjs';
 import { AuthService } from '../../../../../auth/services/auth.service';
-import {
-  readStoredUser,
-  userRequiresWarehouseAssignment,
-} from '../../../../../auth/utils/warehouse-access.util';
+import { userRequiresWarehouseAssignment } from '../../../../../auth/utils/warehouse-access.util';
 import { showToastWarn } from '../../../../../utils/notifications';
 import { PosFooterComponent } from '../components/pos-footer/pos-footer.component';
 import { PosHeaderComponent } from '../components/pos-header/pos-header.component';
@@ -50,16 +47,13 @@ export class PosComponent implements AfterViewChecked, OnDestroy, OnInit {
   private barcodeSubject = new Subject<string>();
 
   ngOnInit() {
-    this.applyWarehouseGate(readStoredUser());
+    this.applyWarehouseGate(this.authService.currentUser());
 
     this.authService
-      .me()
+      .ensureSessionLoaded()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: user => {
-          localStorage.setItem('user', JSON.stringify(user));
-          this.applyWarehouseGate(user);
-        },
+      .subscribe(user => {
+        this.applyWarehouseGate(user);
       });
 
     this.barcodeSubject
@@ -74,9 +68,7 @@ export class PosComponent implements AfterViewChecked, OnDestroy, OnInit {
       });
   }
 
-  private applyWarehouseGate(
-    user: ReturnType<typeof readStoredUser>,
-  ): void {
+  private applyWarehouseGate(user: ReturnType<AuthService['currentUser']>): void {
     const shouldBlock = userRequiresWarehouseAssignment(user);
     if (!shouldBlock) {
       this.hasNoWarehouse = false;

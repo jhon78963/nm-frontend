@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { permissionGuard } from '../../../auth/guards/permission.guard';
 
 const routes: Routes = [
   {
@@ -11,6 +12,8 @@ const routes: Routes = [
   },
   {
     path: 'admin-expenses',
+    canActivate: [permissionGuard],
+    data: { permission: 'cashflow.getAdminMonthlyReport' },
     loadComponent: () =>
       import('./pages/admin-expenses/admin-expenses.component').then(
         c => c.AdminExpensesComponent,

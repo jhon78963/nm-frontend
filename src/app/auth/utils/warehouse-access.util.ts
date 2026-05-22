@@ -3,18 +3,6 @@ import { User } from '../interfaces/user.interface';
 
 export type StoredUserWithWarehouse = User & { warehouse_id?: number | null };
 
-export function readStoredUser(): StoredUserWithWarehouse | undefined {
-  const raw = localStorage.getItem('user');
-  if (!raw) {
-    return undefined;
-  }
-  try {
-    return JSON.parse(raw) as StoredUserWithWarehouse;
-  } catch {
-    return undefined;
-  }
-}
-
 /** Admin / Super Admin pueden operar sin almacén en el perfil (el backend aplica fallback). */
 export function userBypassesWarehouseRequirement(
   user: StoredUserWithWarehouse,
@@ -38,7 +26,7 @@ export function isWarehouseMissing(user: StoredUserWithWarehouse): boolean {
 }
 
 export function userRequiresWarehouseAssignment(
-  user: StoredUserWithWarehouse | undefined,
+  user: StoredUserWithWarehouse | null | undefined,
 ): boolean {
   if (!user) {
     return false;

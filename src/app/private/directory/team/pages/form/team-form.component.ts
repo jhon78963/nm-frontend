@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { AuthService } from '../../../../../auth/services/auth.service';
 import { Warehouse } from '../../../../../models/warehouse.interface';
 import { WarehousesService } from '../../../../../services/warehouse.service';
 import { ITeam, TeamPayload } from '../../models/team.model';
@@ -12,6 +13,8 @@ import { TeamService } from '../../services/team.service';
   styleUrl: './team-form.component.scss',
 })
 export class TeamFormComponent implements OnInit {
+  private readonly authService = inject(AuthService);
+
   warehouses: Warehouse[] = [];
 
   get isEdit(): boolean {
@@ -59,17 +62,8 @@ export class TeamFormComponent implements OnInit {
   }
 
   private tenantIdFromSession(): number | undefined {
-    try {
-      const raw = localStorage.getItem('user');
-      if (!raw) {
-        return undefined;
-      }
-      const u = JSON.parse(raw) as { tenantId?: number | null };
-      const t = u?.tenantId;
-      return typeof t === 'number' ? t : undefined;
-    } catch {
-      return undefined;
-    }
+    const tenantId = this.authService.currentUser()?.tenantId;
+    return typeof tenantId === 'number' ? tenantId : undefined;
   }
 
   get isValid(): boolean {

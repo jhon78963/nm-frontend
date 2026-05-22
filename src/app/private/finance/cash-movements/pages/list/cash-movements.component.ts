@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
+import { AuthService } from '../../../../../auth/services/auth.service';
 
 // PrimeNG imports
 import { AutoCompleteModule } from 'primeng/autocomplete';
@@ -41,6 +42,9 @@ import { CashflowService } from '../../services/cash-movements.service';
 export class CashMovementsListComponent implements OnInit, OnDestroy {
   cashflowService = inject(CashflowService);
   datePipe = inject(DatePipe);
+  private readonly authService = inject(AuthService);
+
+  readonly isAdmin = computed(() => this.authService.isAdminUser());
 
   // Fecha actual seleccionada
   currentDate = new Date();
@@ -61,12 +65,6 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
     amount: null as number | null,
     date: new Date(),
   };
-
-  get isAdmin() {
-    const jsonData = localStorage.getItem('user');
-    const userData = jsonData ? JSON.parse(jsonData) : undefined;
-    return userData.role === 'Super Admin' || userData.role === 'Admin';
-  }
 
   paymentMethodsList = ['CASH', 'YAPE', 'CARD'];
 

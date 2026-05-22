@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { permissionGuard } from '../../../auth/guards/permission.guard';
 
 const routes: Routes = [
   {
@@ -19,7 +20,8 @@ const routes: Routes = [
   {
     path: 'register',
     title: 'Registro de compras',
-    data: { breadcrumb: 'Nueva compra' },
+    canActivate: [permissionGuard],
+    data: { breadcrumb: 'Nueva compra', permission: 'purchase.registerBulk' },
     loadComponent: () =>
       import('./pages/purchase-register/purchase-register.component').then(
         c => c.PurchaseRegisterComponent,

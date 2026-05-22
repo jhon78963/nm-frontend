@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { permissionGuard } from '../../../auth/guards/permission.guard';
 
 const routes: Routes = [
   {
@@ -55,7 +56,8 @@ const routes: Routes = [
   {
     path: 'kardex/:id',
     title: 'Kardex',
-    data: { breadcrumb: 'Kardex' },
+    canActivate: [permissionGuard],
+    data: { breadcrumb: 'Kardex', permission: 'inventoryKardex.index' },
     loadComponent: () =>
       import('./pages/kardex/product-kardex.component').then(
         c => c.ProductKardexComponent,

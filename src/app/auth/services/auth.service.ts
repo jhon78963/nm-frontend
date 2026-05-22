@@ -10,6 +10,11 @@ import {
   throwError,
 } from 'rxjs';
 import { Login, User } from '../interfaces';
+import {
+  userHasAnyPermission,
+  userHasPermission,
+} from '../guards/permission.guard';
+import { ADMIN_ROUTE_ROLES } from '../guards/role.guard';
 import { ApiService } from '../../services/api.service';
 import { Router } from '@angular/router';
 
@@ -28,6 +33,31 @@ export class AuthService {
   readonly currentUser = signal<User | null>(null);
 
   private sessionLoadRequest$?: Observable<User | null>;
+
+  hasPermission(permission: string): boolean {
+    return userHasPermission(this.currentUser(), permission);
+  }
+
+  hasAnyPermission(permissions: readonly string[]): boolean {
+    return userHasAnyPermission(this.currentUser(), permissions);
+  }
+
+  hasAnyRole(roles: readonly string[]): boolean {
+    const user = this.currentUser();
+    if (!user) {
+      return false;
+    }
+
+    if (user.role && roles.includes(user.role)) {
+      return true;
+    }
+
+    return (user.roles ?? []).some(role => roles.includes(role));
+  }
+
+  isAdminUser(): boolean {
+    return this.hasAnyRole(ADMIN_ROUTE_ROLES);
+  }
 
   constructor(
     private readonly apiService: ApiService,
