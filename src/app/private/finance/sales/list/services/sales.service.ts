@@ -86,12 +86,6 @@ export class SalesService {
     return this.callGetList(s?.limit ?? 10, s?.page ?? 1, s?.search ?? '');
   }
 
-  create(data: Sale): Observable<void> {
-    return this.apiService
-      .post('sales', data)
-      .pipe(switchMap(() => this.reloadWithCurrentState()));
-  }
-
   delete(id: number): Observable<void> {
     return this.apiService
       .delete(`sales/${id}`)

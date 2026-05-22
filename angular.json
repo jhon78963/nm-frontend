@@ -49,27 +49,6 @@
               ],
               "outputHashing": "all"
             },
-            "development": {
-              "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "5mb",
-                  "maximumError": "2mb"
-                },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "5mb",
-                  "maximumError": "2mb"
-                }
-              ],
-              "fileReplacements": [
-                {
-                  "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.dev.ts"
-                }
-              ],
-              "outputHashing": "all"
-            },
             "local": {
               "optimization": false,
               "extractLicenses": false,
@@ -88,9 +67,6 @@
           "configurations": {
             "production": {
               "buildTarget": "nmaritexApp:build:production"
-            },
-            "development": {
-              "buildTarget": "nmaritexApp:build:development"
             },
             "local": {
               "buildTarget": "nmaritexApp:build:local"
