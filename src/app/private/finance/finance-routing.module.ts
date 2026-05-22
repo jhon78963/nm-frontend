@@ -24,14 +24,6 @@ const routes: Routes = [
     loadChildren: () =>
       import('./expenses/expenses.module').then(m => m.ExpensesModule),
   },
-  {
-    path: 'orders',
-    title: 'Ordenes',
-    canActivate: [permissionGuard],
-    data: { breadcrumb: 'Ordenes', permission: 'order.getAll' },
-    loadChildren: () =>
-      import('./orders/orders.module').then(m => m.OrdersModule),
-  },
   { path: '', pathMatch: 'full', redirectTo: 'cash-movements' },
 ];
 

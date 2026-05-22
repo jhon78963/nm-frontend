@@ -101,7 +101,6 @@ export const routes: Routes = [
             'cashflow.getDaily',
             'cashflow.getAdminMonthlyReport',
             'expense.getAll',
-            'order.getAll',
           ],
         },
         loadChildren: () =>

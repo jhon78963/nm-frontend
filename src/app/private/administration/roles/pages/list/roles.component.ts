@@ -1,6 +1,7 @@
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { debounceTime, Observable } from 'rxjs';
 import { RolesService } from '../../services/roles.service';
 import { LoadingService } from '../../../../../services/loading.service';
@@ -9,7 +10,6 @@ import { CommonModule } from '@angular/common';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { RolesFormComponent } from '../form/roles-form.component';
-import { RoleSyncComponent } from '../form/role-sync.component';
 import {
   CallToAction,
   Column,
@@ -84,6 +84,7 @@ export class RoleListComponent implements OnInit, OnDestroy {
   constructor(
     private readonly dialogService: DialogService,
     private readonly rolesService: RolesService,
+    private readonly router: Router,
     public messageService: MessageService,
     private confirmationService: ConfirmationService,
     private loadingService: LoadingService,
@@ -203,20 +204,7 @@ export class RoleListComponent implements OnInit, OnDestroy {
   }
 
   openSync(id: number): void {
-    this.roleModal = this.dialogService.open(RoleSyncComponent, {
-      data: { id },
-      header: 'Sincronizar permisos',
-      width: '40rem',
-    });
-    this.roleModal.onClose.subscribe({
-      next: value => {
-        if (value?.success) {
-          this.showSuccess('Permisos sincronizados.');
-        } else if (value?.error) {
-          this.showError(value.error);
-        }
-      },
-    });
+    void this.router.navigate(['/administration/roles', id, 'sync']);
   }
 
   buttonDeleteRole(id: number, event: Event) {

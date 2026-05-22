@@ -1,40 +1,164 @@
-<div class="flex flex-column gap-3 p-2" *ngIf="!loading; else loadingTpl">
-  <label for="perms">Permisos</label>
-  <p class="text-600 text-sm m-0">
-    En el desplegable verás la descripción en español y debajo el código interno
-    del permiso.
-  </p>
-  <p-multiSelect
-    inputId="perms"
-    [options]="permissionGroups"
-    [(ngModel)]="selected"
-    [group]="true"
-    optionLabel="label"
-    optionValue="value"
-    optionGroupLabel="label"
-    optionGroupChildren="items"
-    [filter]="true"
-    filterBy="label,value"
-    display="chip"
-    [style]="{ width: '100%' }"
-    placeholder="Selecciona permisos"
-    [showToggleAll]="true"
-    appendTo="body">
-    <ng-template let-opt pTemplate="item">
-      <div class="flex flex-column gap-1">
-        <span>{{ opt.label }}</span>
-        <small class="text-500">{{ opt.value }}</small>
+<p-toast />
+
+<div class="card role-sync-page">
+  <header
+    class="role-sync-page__header flex flex-column md:flex-row justify-content-between align-items-start md:align-items-center gap-3 mb-4">
+    <div class="flex flex-column gap-1">
+      <h1 class="text-2xl m-0">Sincronizar permisos</h1>
+      @if (roleName) {
+        <span class="text-600 text-sm md:text-base">
+          Rol: <strong>{{ roleName }}</strong>
+        </span>
+      }
+    </div>
+    <div class="role-sync-page__header-actions flex flex-wrap gap-2">
+      <p-button
+        label="Volver"
+        icon="pi pi-arrow-left"
+        [outlined]="true"
+        severity="secondary"
+        [disabled]="saving"
+        (click)="goBack()"></p-button>
+      <p-button
+        label="Sincronizar"
+        icon="pi pi-sync"
+        [loading]="saving"
+        (click)="save()"></p-button>
+    </div>
+  </header>
+
+  @if (!loading) {
+    <div class="role-sync">
+      <div class="role-sync__toolbar">
+        <span class="p-input-icon-left role-sync__search">
+          <i class="pi pi-search"></i>
+          <input
+            pInputText
+            type="search"
+            [(ngModel)]="search"
+            (ngModelChange)="onSearchChange()"
+            placeholder="Buscar módulo, submódulo o permiso…"
+            aria-label="Buscar permisos" />
+        </span>
+        <div class="role-sync__summary">
+          <span class="role-sync__count">
+            {{ selectedCount }} / {{ totalPermissions }} seleccionados
+          </span>
+          <div class="role-sync__toolbar-actions">
+            <button
+              type="button"
+              pButton
+              label="Expandir todo"
+              class="p-button-text p-button-sm"
+              (click)="expandAllModules()"></button>
+            <button
+              type="button"
+              pButton
+              label="Contraer todo"
+              class="p-button-text p-button-sm"
+              (click)="collapseAllModules()"></button>
+          </div>
+        </div>
       </div>
-    </ng-template>
-  </p-multiSelect>
-  <div class="flex justify-content-end gap-2">
-    <p-button
-      label="Cancelar"
-      [text]="true"
-      (click)="dynamicDialogRef.close()"></p-button>
-    <p-button label="Sincronizar" icon="pi pi-sync" (click)="save()"></p-button>
-  </div>
+
+      <p class="role-sync__hint">
+        Los permisos están organizados como en el menú principal. Expande cada
+        módulo, marca los submódulos completos o elige acciones puntuales.
+      </p>
+
+      @if (filteredTree.length) {
+        <div class="role-sync__tree">
+          <p-accordion [multiple]="true" [(activeIndex)]="activeModules">
+            @for (module of filteredTree; track module.id) {
+              <p-accordionTab>
+                <ng-template pTemplate="header">
+                  <div class="role-sync__module-header">
+                    <span class="role-sync__module-title">{{
+                      module.label
+                    }}</span>
+                    <span class="role-sync__module-badge">
+                      {{ selectedInModule(module) }} /
+                      {{ totalInModule(module) }}
+                    </span>
+                  </div>
+                </ng-template>
+
+                <div class="role-sync__module-actions">
+                  <p-checkbox
+                    [binary]="true"
+                    [ngModel]="moduleSelectionState(module) === 'all'"
+                    (onChange)="toggleModule(module, $event.checked)"
+                    [inputId]="'module-all-' + module.id"></p-checkbox>
+                  <label [for]="'module-all-' + module.id">
+                    Seleccionar todo {{ module.label }}
+                  </label>
+                </div>
+
+                <div class="role-sync__submodules">
+                  @for (submodule of module.submodules; track submodule.id) {
+                    <section class="role-sync__submodule">
+                      <header class="role-sync__submodule-header">
+                        <div class="role-sync__submodule-title-wrap">
+                          <p-checkbox
+                            [binary]="true"
+                            [ngModel]="
+                              submoduleSelectionState(submodule) === 'all'
+                            "
+                            (onChange)="
+                              toggleSubmodule(submodule, $event.checked)
+                            "
+                            [inputId]="'submodule-' + submodule.id"></p-checkbox>
+                          <label [for]="'submodule-' + submodule.id">
+                            {{ submodule.label }}
+                          </label>
+                        </div>
+                        <span class="role-sync__submodule-count">
+                          {{ selectedInSubmodule(submodule) }} /
+                          {{ submodule.permissions.length }}
+                        </span>
+                      </header>
+
+                      <ul class="role-sync__permissions">
+                        @for (
+                          permission of submodule.permissions;
+                          track permission.value
+                        ) {
+                          <li class="role-sync__permission">
+                            <p-checkbox
+                              [binary]="true"
+                              [ngModel]="isSelected(permission.value)"
+                              (onChange)="
+                                togglePermission(
+                                  permission.value,
+                                  $event.checked
+                                )
+                              "
+                              [inputId]="permission.value"></p-checkbox>
+                            <label [for]="permission.value">
+                              <span class="role-sync__permission-label">
+                                {{ permission.actionLabel }}
+                              </span>
+                              <small class="role-sync__permission-code">
+                                {{ permission.value }}
+                              </small>
+                            </label>
+                          </li>
+                        }
+                      </ul>
+                    </section>
+                  }
+                </div>
+              </p-accordionTab>
+            }
+          </p-accordion>
+        </div>
+      } @else {
+        <div class="role-sync__empty">
+          No hay permisos que coincidan con «{{ search }}».
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="role-sync__loading">Cargando permisos…</div>
+  }
 </div>
-<ng-template #loadingTpl>
-  <div class="p-4">Cargando permisos…</div>
-</ng-template>
