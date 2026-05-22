@@ -166,21 +166,18 @@ async function fillLoginForm(page: Page): Promise<void> {
   await expect(passwordInput).toHaveValue(E2E_PASSWORD);
 }
 
-async function readStoredUsername(page: Page): Promise<string | null> {
+async function readSessionFlag(page: Page): Promise<boolean> {
   return page.evaluate(() => {
-    const raw = localStorage.getItem('user');
+    const raw = localStorage.getItem('authSession');
     if (!raw) {
-      return null;
+      return false;
     }
 
     try {
-      const parsed = JSON.parse(raw) as {
-        username?: string;
-        data?: { username?: string };
-      };
-      return parsed.username?.trim() || parsed.data?.username?.trim() || null;
+      const parsed = JSON.parse(raw) as { isLoggedIn?: boolean };
+      return parsed.isLoggedIn === true;
     } catch {
-      return null;
+      return false;
     }
   });
 }
@@ -215,8 +212,8 @@ test.describe('Flujo crítico POS — cajero', () => {
     }
 
     await expect
-      .poll(async () => readStoredUsername(page), { timeout: 5_000 })
-      .toBe(E2E_USERNAME);
+      .poll(async () => readSessionFlag(page), { timeout: 5_000 })
+      .toBe(true);
 
     await page.waitForURL(currentUrl => !currentUrl.hash.includes('/auth/login'), {
       timeout: 15_000,

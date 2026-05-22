@@ -29,6 +29,9 @@ export class AuthService {
    */
   private static readonly PERSISTENT_STORAGE_KEYS: readonly string[] = [];
 
+  /** Bandera mínima en localStorage; nunca guardar PII, roles ni permisos ahí. */
+  private static readonly SESSION_FLAG_KEY = 'authSession';
+
   /** Fuente de verdad de la sesión en memoria; validada por el servidor vía auth/me. */
   readonly currentUser = signal<User | null>(null);
 
@@ -65,11 +68,26 @@ export class AuthService {
   ) {}
 
   private setUserData(user: User): void {
-    const userToSave = { ...this.normalizeUser(user) };
-    delete (userToSave as any).password;
-    this.currentUser.set(userToSave);
+    const userInMemory = { ...this.normalizeUser(user) };
+    delete (userInMemory as { password?: string }).password;
+    this.currentUser.set(userInMemory);
     this.sessionLoadRequest$ = undefined;
-    localStorage.setItem('user', JSON.stringify(userToSave));
+    this.persistSessionFlag(true);
+  }
+
+  /** Solo persiste `isLoggedIn`; el perfil completo vive en `currentUser` (RAM). */
+  private persistSessionFlag(isLoggedIn: boolean): void {
+    localStorage.removeItem('user');
+
+    if (isLoggedIn) {
+      localStorage.setItem(
+        AuthService.SESSION_FLAG_KEY,
+        JSON.stringify({ isLoggedIn: true }),
+      );
+      return;
+    }
+
+    localStorage.removeItem(AuthService.SESSION_FLAG_KEY);
   }
 
   /** MeResource de Laravel puede venir plano o envuelto en `{ data: ... }`. */
@@ -172,6 +190,7 @@ export class AuthService {
   clearLocalSession(): void {
     this.currentUser.set(null);
     this.sessionLoadRequest$ = undefined;
+    this.persistSessionFlag(false);
 
     const preserved = this.preservePersistentStorage();
     localStorage.clear();

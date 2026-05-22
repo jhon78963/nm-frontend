@@ -134,13 +134,14 @@ test.describe('QA — Protección de rutas frontend', () => {
     await setupAuthMocks(page);
     await login(page);
     await page.evaluate(() => {
-      const raw = localStorage.getItem('user');
-      if (!raw) return;
-      const user = JSON.parse(raw);
-      user.role = 'Admin';
-      user.roles = ['Admin'];
-      user.permissions = ['cashflow.getAdminMonthlyReport', 'purchase.registerBulk'];
-      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem(
+        'user',
+        JSON.stringify({
+          role: 'Admin',
+          roles: ['Admin'],
+          permissions: ['cashflow.getAdminMonthlyReport', 'purchase.registerBulk'],
+        }),
+      );
     });
     await page.reload();
     await page.goto('/#/finance/cash-movements/admin-expenses');
