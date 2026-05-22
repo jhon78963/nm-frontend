@@ -31,11 +31,14 @@ export class SafeUrlPipe implements PipeTransform {
 
     const lower = url.toLowerCase();
 
+    if (lower.startsWith('blob:')) {
+      return true;
+    }
+
     if (
       lower.startsWith('javascript:') ||
       lower.startsWith('data:') ||
-      lower.startsWith('vbscript:') ||
-      lower.startsWith('blob:')
+      lower.startsWith('vbscript:')
     ) {
       return false;
     }

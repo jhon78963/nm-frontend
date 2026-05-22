@@ -6,10 +6,8 @@ const routes: Routes = [
   {
     path: 'cash-movements',
     title: 'Movimientos de Caja',
-    canActivate: [permissionGuard],
     data: {
       breadcrumb: 'Movimientos de Caja',
-      permission: 'cashflow.getDaily',
     },
     loadChildren: () =>
       import('./cash-movements/cash-movements.module').then(

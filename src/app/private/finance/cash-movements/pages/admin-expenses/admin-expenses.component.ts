@@ -15,7 +15,6 @@ import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 
 import { DialogModule } from 'primeng/dialog';
-import { BASE_UPLOAD_URL } from '../../../../../utils/constants';
 import { SafeUrlPipe } from '../../pipes/safe-url.pipe';
 import { AuthService } from '../../../../../auth/services/auth.service';
 import { CashflowService } from '../../services/cash-movements.service';
@@ -46,8 +45,6 @@ export class AdminExpensesComponent implements OnInit {
 
   private readonly authService = inject(AuthService);
 
-  baseUploadUrl = BASE_UPLOAD_URL;
-
   selectedMonth: Date = new Date();
 
   private cashService = inject(CashflowService);
@@ -63,6 +60,8 @@ export class AdminExpensesComponent implements OnInit {
   displayPreview = signal(false);
   previewUrl = signal('');
   isPdf = signal(false);
+  previewLoading = signal(false);
+  private previewObjectUrl: string | null = null;
 
   isEditing = signal(false);
   editingId: number | null = null;
@@ -104,15 +103,44 @@ export class AdminExpensesComponent implements OnInit {
   }
 
   showVoucher(path: string) {
-    const base = this.baseUploadUrl.replace(/\/$/, '');
-    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-    const fullUrl = `${base}${normalizedPath}`;
-    this.previewUrl.set(fullUrl);
-
-    // Detectamos si es PDF por la extensión
+    this.revokePreviewUrl();
     this.isPdf.set(path.toLowerCase().endsWith('.pdf'));
-
     this.displayPreview.set(true);
+    this.previewLoading.set(true);
+
+    this.cashService.getVoucherPreview(path).subscribe({
+      next: blob => {
+        this.previewObjectUrl = URL.createObjectURL(blob);
+        this.previewUrl.set(this.previewObjectUrl);
+        this.previewLoading.set(false);
+      },
+      error: () => {
+        this.previewLoading.set(false);
+        this.displayPreview.set(false);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo cargar el comprobante.',
+        });
+      },
+    });
+  }
+
+  onPreviewVisibleChange(visible: boolean) {
+    this.displayPreview.set(visible);
+
+    if (!visible) {
+      this.revokePreviewUrl();
+    }
+  }
+
+  private revokePreviewUrl() {
+    if (this.previewObjectUrl) {
+      URL.revokeObjectURL(this.previewObjectUrl);
+      this.previewObjectUrl = null;
+    }
+
+    this.previewUrl.set('');
   }
 
   onFileSelect(event: any) {

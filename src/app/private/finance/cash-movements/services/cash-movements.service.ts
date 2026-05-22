@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { HttpParams } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map, switchMap, tap } from 'rxjs/operators';
 import { ApiService } from '../../../../services/api.service';
@@ -211,5 +212,11 @@ export class CashflowService {
   }
   getAdminExpenses() {
     return this.adminExpenses$;
+  }
+
+  getVoucherPreview(voucherPath: string): Observable<Blob> {
+    const params = new HttpParams().set('path', voucherPath);
+
+    return this.apiService.getBlob(`${this.apiUrl}/vouchers/preview`, { params });
   }
 }

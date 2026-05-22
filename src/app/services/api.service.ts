@@ -37,10 +37,14 @@ export class ApiService {
     return this.http.delete<T>(`${this.BASE_URL}/${path}`, { headers });
   }
 
-  getBlob(path: string, headers?: Record<string, string>) {
+  getBlob(
+    path: string,
+    options?: { headers?: Record<string, string>; params?: HttpParams },
+  ) {
     return this.http.get(`${this.BASE_URL}/${path}`, {
       responseType: 'blob',
-      headers,
+      headers: options?.headers,
+      params: options?.params,
     });
   }
 }
