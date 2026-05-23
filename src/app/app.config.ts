@@ -8,12 +8,18 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { csrfInterceptor } from './auth/services/csrf.interceptor';
 import { errorInterceptor } from './auth/services/error.interceptor';
 import { tokenInterceptor } from './auth/services/token.interceptor';
+import { warehouseInterceptor } from './services/warehouse.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes, withHashLocation()),
     provideHttpClient(
-      withInterceptors([csrfInterceptor, errorInterceptor, tokenInterceptor]),
+      withInterceptors([
+        csrfInterceptor,
+        warehouseInterceptor,
+        errorInterceptor,
+        tokenInterceptor,
+      ]),
     ),
     MessageService,
     importProvidersFrom([BrowserAnimationsModule]),
