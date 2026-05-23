@@ -8,6 +8,7 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { CashflowService } from '../../../../finance/cash-movements/services/cash-movements.service';
+import { AuthService } from '../../../../../auth/services/auth.service';
 import { FinancialSummaryService } from '../../services/financial-summary.service';
 import { TransactionModalComponent } from '../form/transaction-modal.component';
 
@@ -32,6 +33,7 @@ export class FinancialSummaryListComponent implements OnInit {
   // Variables para controlar el modal
   private financialSummaryService = inject(FinancialSummaryService);
   private cashflowService = inject(CashflowService);
+  private authService = inject(AuthService);
   currentDate = new Date();
   datePipe = inject(DatePipe);
   messageService = inject(MessageService);
@@ -49,8 +51,10 @@ export class FinancialSummaryListComponent implements OnInit {
 
   showModal: boolean = false;
   modalType: 'INGRESO' | 'GASTO' = 'INGRESO';
+  canManageCashflow = false;
 
   ngOnInit() {
+    this.canManageCashflow = this.authService.hasPermission('cashflow.store');
     this.loadDashboardData();
   }
 
