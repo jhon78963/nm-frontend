@@ -15,6 +15,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { TreeTableModule } from 'primeng/treetable';
@@ -31,6 +32,7 @@ import { LoadingService } from '../../../services/loading.service';
     PaginatorModule,
     TableModule,
     ButtonModule,
+    TagModule,
     TooltipModule,
     CheckboxModule,
     InputTextModule,

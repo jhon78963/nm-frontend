@@ -38,8 +38,10 @@ export interface CartItem {
 
 export interface Customer {
   id: string;
-  dni: string; // O RUC
+  dni: string; // DNI, RUC u otro número de documento
   name: string;
+  document_type?: string | null; // 'DNI' | 'RUC' | 'CE' — proviene de la API
+  document_number?: string | null;
 }
 
 export interface ModalState {

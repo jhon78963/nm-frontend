@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, Input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { SelectButtonModule } from 'primeng/selectbutton';
 import { PosService } from '../../services/pos.service';
+import { DocumentType } from '../../../list/models/sales.model';
 
 interface PaymentMethodState {
   id: string; // 'CASH' | 'YAPE' | 'CARD'
@@ -11,10 +13,16 @@ interface PaymentMethodState {
   amount: number | null; // null = automático/vacío
 }
 
+interface DocTypeOption {
+  label: string;
+  value: DocumentType;
+  icon: string;
+}
+
 @Component({
   selector: 'app-pos-footer',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SelectButtonModule],
   templateUrl: './pos-footer.component.html',
   styleUrl: './pos-footer.component.scss',
 })
@@ -22,6 +30,12 @@ export class PosFooterComponent {
   @Input() hasNoWarehouse = false;
 
   posService = inject(PosService);
+
+  readonly docTypeOptions: DocTypeOption[] = [
+    { label: 'Boleta',   value: 'BOLETA',          icon: 'pi pi-receipt' },
+    { label: 'Factura',  value: 'FACTURA',          icon: 'pi pi-file' },
+    { label: 'Ticket',   value: 'TICKET_INTERNO',   icon: 'pi pi-tag' },
+  ];
 
   // Estado local de los métodos de pago
   methods = signal<PaymentMethodState[]>([

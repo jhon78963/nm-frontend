@@ -69,6 +69,32 @@
     >
   </div>
 
+  <!-- Selector de tipo de comprobante -->
+  <div class="mb-3">
+    <span class="text-xs font-bold text-gray-400 uppercase block mb-1">Tipo de comprobante</span>
+    <div class="flex gap-2">
+      @for (opt of docTypeOptions; track opt.value) {
+        <button
+          type="button"
+          class="flex-1 flex align-items-center justify-content-center gap-1 py-2 border-1 border-round-lg text-xs font-bold cursor-pointer transition-all border-none outline-none"
+          [class.bg-indigo-600]="posService.documentType() === opt.value"
+          [class.text-white]="posService.documentType() === opt.value"
+          [class.shadow-2]="posService.documentType() === opt.value"
+          [class.bg-gray-100]="posService.documentType() !== opt.value"
+          [class.text-gray-500]="posService.documentType() !== opt.value"
+          (click)="posService.documentType.set(opt.value)">
+          <i [class]="opt.icon"></i>
+          <span>{{ opt.label }}</span>
+        </button>
+      }
+    </div>
+    @if (posService.documentType() !== 'TICKET_INTERNO') {
+      <span class="text-xs text-gray-400 mt-1 block">
+        Serie: <strong>{{ posService.serie() }}</strong>
+      </span>
+    }
+  </div>
+
   <button
     class="w-full bg-indigo-700 text-white py-3 border-round-xl font-bold text-lg shadow-3 border-none cursor-pointer hover:bg-indigo-800 active:scale-95 transition-all flex justify-content-center align-items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
     [disabled]="hasNoWarehouse || (activeMethods().length > 1 && remaining() > 0.1)"

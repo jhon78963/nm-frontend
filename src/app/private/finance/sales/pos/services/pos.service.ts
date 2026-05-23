@@ -3,6 +3,13 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../../../../services/api.service'; // Asegúrate que la ruta sea correcta
 import { CartItem, Customer, ModalState, Product } from '../models/pos.models';
+import { DocumentType } from '../../list/models/sales.model';
+
+/** Series por defecto por tipo de documento. Configurable por almacén en el futuro. */
+const DEFAULT_SERIE: Record<Exclude<DocumentType, 'TICKET_INTERNO'>, string> = {
+  BOLETA: 'B001',
+  FACTURA: 'F001',
+};
 
 @Injectable({ providedIn: 'root' })
 export class PosService {
@@ -22,6 +29,13 @@ export class PosService {
     'EFECTIVO',
   );
   isLoading = signal<boolean>(false);
+  /** Tipo de comprobante electrónico seleccionado por el cajero. */
+  documentType = signal<DocumentType>('BOLETA');
+  /** Serie derivada automáticamente del tipo de comprobante. */
+  serie = computed<string>(() => {
+    const type = this.documentType();
+    return type === 'TICKET_INTERNO' ? '' : (DEFAULT_SERIE[type] ?? '');
+  });
   /** Última venta exitosa; botón manual si el diálogo de impresión no aparece (tablets). */
   lastSaleIdForReprint = signal<number | null>(null);
 
@@ -115,6 +129,8 @@ export class PosService {
 
     // CORRECCIÓN: Estructura anidada para cumplir validación 'items.*.color.product_size_id'
     const payload = {
+      document_type: this.documentType(),
+      serie: this.serie() || undefined,
       // Usamos objeto customer para compatibilidad si el backend espera 'customer.id'
       customer: { id: this.currentCustomer()?.id },
       total: this.grandTotal(),
@@ -214,11 +230,12 @@ export class PosService {
     this.cart.update(items => items.filter(i => i.cartId !== cartId));
   }
 
-  /** Reinicia la venta activa (carrito, cliente, modal, pagos). Llamar al salir del POS. */
+  /** Reinicia la venta activa (carrito, cliente, modal, pagos, tipo comprobante). Llamar al salir del POS. */
   clearCart(): void {
     this.cart.set([]);
     this.currentCustomer.set(null);
     this.paymentMethod.set('EFECTIVO');
+    this.documentType.set('BOLETA');
     this.modalState.set({ isOpen: false, product: null, isEditing: false });
     this.toastMessage.set(null);
     this.isLoading.set(false);

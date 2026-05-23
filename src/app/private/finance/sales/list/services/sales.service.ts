@@ -114,9 +114,30 @@ export class SalesService {
     return (
       this.apiService
         .post('sales/exchange', payload)
-        // Usamos el reload inteligente aquí también
         .pipe(switchMap(() => this.reloadWithCurrentState()))
     );
+  }
+
+  /**
+   * Descarga la representación impresa del comprobante electrónico como PDF.
+   * El backend devuelve un Blob binario con Content-Disposition: attachment.
+   * Este método obtiene el Blob y fuerza la descarga sin abrir nueva pestaña.
+   */
+  downloadInvoicePdf(saleId: number, filename?: string): void {
+    this.apiService.getBlob(`sales/${saleId}/pdf`).subscribe({
+      next: (blob: Blob) => {
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href  = url;
+        link.download = filename ?? `comprobante-${saleId}.pdf`;
+        link.click();
+        // Liberar la URL de objeto para no acumular memoria
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+      error: () => {
+        console.error(`No se pudo descargar el PDF de la venta #${saleId}`);
+      },
+    });
   }
 
   private updateSales(value: Sale[]): void {

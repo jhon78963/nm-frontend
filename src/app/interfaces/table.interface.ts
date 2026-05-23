@@ -16,6 +16,13 @@ export interface Column {
   image: boolean;
   money: boolean;
   color?: boolean;
+  /**
+   * Si `true`, la celda se renderiza como un `<p-tag>` de PrimeNG.
+   * Usa `tagSeverityFn` para mapear el valor a una severity de PrimeNG.
+   */
+  tag?: boolean;
+  /** Mapea el valor del campo a una severity de p-tag. */
+  tagSeverityFn?: (value: string | null | undefined) => 'success' | 'info' | 'warning' | 'danger' | 'secondary' | 'contrast';
 }
 
 export interface Paginate {

@@ -20,7 +20,7 @@ import {
   showSuccess,
   showToastWarn,
 } from '../../../../../../utils/notifications';
-import { Sale } from '../../models/sales.model';
+import { Sale, SunatStatus } from '../../models/sales.model';
 import { SalesService } from '../../services/sales.service';
 import { SaleFormComponent } from '../form/form.component';
 
@@ -79,6 +79,31 @@ export class SaleListComponent implements OnInit, OnDestroy {
       money: false,
     },
     {
+      header: 'Comprobante',
+      field: 'full_invoice_number',
+      clickable: false,
+      image: false,
+      money: false,
+    },
+    {
+      header: 'SUNAT',
+      field: 'sunat_status',
+      clickable: false,
+      image: false,
+      money: false,
+      tag: true,
+      tagSeverityFn: (value: string | null | undefined) => {
+        switch (value as SunatStatus | null | undefined) {
+          case 'ACCEPTED': return 'success';
+          case 'PENDING':  return 'warning';
+          case 'SENT':     return 'info';
+          case 'REJECTED': return 'danger';
+          case 'VOIDED':   return 'secondary';
+          default:         return 'secondary';
+        }
+      },
+    },
+    {
       header: 'Acción',
       field: 'button',
       clickable: false,
@@ -91,6 +116,22 @@ export class SaleListComponent implements OnInit, OnDestroy {
   page: number = 1;
   search: string = '';
   callToAction: CallToAction<Sale>[] = [
+    {
+      type: 'button',
+      size: 'small',
+      icon: 'pi pi-file-pdf',
+      outlined: true,
+      pTooltip: 'Descargar PDF',
+      tooltipPosition: 'bottom',
+      visible: (rowData: Sale) => rowData.sunat_status === 'ACCEPTED',
+      click: (rowData: Sale) =>
+        this.salesService.downloadInvoicePdf(
+          rowData.id,
+          rowData.full_invoice_number
+            ? `${rowData.full_invoice_number}.pdf`
+            : undefined,
+        ),
+    },
     {
       type: 'button',
       size: 'small',
