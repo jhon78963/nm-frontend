@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -39,6 +40,8 @@ import { PurchaseService } from '../../services/purchase.service';
   providers: [ConfirmationService, MessageService],
 })
 export class PurchaseListComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+
   columns: Column[] = [
     { header: 'ID', field: 'id', clickable: false, image: false, money: false },
     {
@@ -137,28 +140,40 @@ export class PurchaseListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.warehousesService.getAll().subscribe({
-      next: rows => {
-        this.warehouses = rows ?? [];
-      },
-    });
+    this.warehousesService
+      .getAll()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: rows => {
+          this.warehouses = rows ?? [];
+        },
+      });
     this.load();
     this.formGroup
       .get('search')
-      ?.valueChanges.pipe(debounceTime(500))
+      ?.valueChanges.pipe(
+        debounceTime(500),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe(v => {
         this.search = (v ?? '').trim();
         this.page = 1;
         this.load();
       });
-    this.formGroup.get('warehouseId')?.valueChanges.subscribe(() => {
-      this.page = 1;
-      this.load();
-    });
-    this.formGroup.get('status')?.valueChanges.subscribe(() => {
-      this.page = 1;
-      this.load();
-    });
+    this.formGroup
+      .get('warehouseId')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.page = 1;
+        this.load();
+      });
+    this.formGroup
+      .get('status')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.page = 1;
+        this.load();
+      });
   }
 
   load(): void {

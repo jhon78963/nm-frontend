@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnDestroy, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { FormControl, FormGroup } from '@angular/forms';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -7,7 +8,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { PaginatorState } from 'primeng/paginator';
 import { ToastModule } from 'primeng/toast';
-import { debounceTime, Observable } from 'rxjs';
+import { debounceTime, Observable, take } from 'rxjs';
 import {
   CallToAction,
   Column,
@@ -38,6 +39,8 @@ import { SaleFormComponent } from '../form/form.component';
   providers: [ConfirmationService, MessageService, DialogService],
 })
 export class SaleListComponent implements OnInit, OnDestroy {
+  private readonly destroyRef = inject(DestroyRef);
+
   saleModal: DynamicDialogRef | undefined;
   columns: Column[] = [
     {
@@ -138,7 +141,10 @@ export class SaleListComponent implements OnInit, OnDestroy {
     this.getSales(this.limit, this.page, this.search);
     this.formGroup
       .get('search')
-      ?.valueChanges.pipe(debounceTime(600))
+      ?.valueChanges.pipe(
+        debounceTime(600),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe((value: any) => {
         this.search = value ? value : '';
         this.loadingService.sendLoadingState(true);
@@ -209,7 +215,7 @@ export class SaleListComponent implements OnInit, OnDestroy {
       styleClass: 'dialog-custom-form',
     });
 
-    this.saleModal.onClose.subscribe({
+    this.saleModal.onClose.pipe(take(1)).subscribe({
       next: value => {
         value && value?.success
           ? showSuccess(this.messageService, 'Detalle actualizado.')

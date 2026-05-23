@@ -1,10 +1,17 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { permissionGuard } from '../../../auth/guards/permission.guard';
 import { CustomerListComponent } from './pages/list/customers.component';
 
 const routes: Routes = [
-  { path: '', component: CustomerListComponent },
-  { path: '', pathMatch: 'full', redirectTo: 'customers' },
+  {
+    path: '',
+    component: CustomerListComponent,
+    canActivate: [permissionGuard],
+    data: {
+      permissions: ['customer.getAll', 'customer.get'],
+    },
+  },
 ];
 
 @NgModule({

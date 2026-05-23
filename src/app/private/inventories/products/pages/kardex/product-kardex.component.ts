@@ -237,6 +237,7 @@ export class ProductKardexComponent implements OnInit {
   private loadColorsForSize(productId: number, catalogSizeId: number): void {
     this.productSizeColorsService
       .getColors(productId, catalogSizeId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (rows: unknown) => {
           const list = Array.isArray(rows) ? rows : [];
