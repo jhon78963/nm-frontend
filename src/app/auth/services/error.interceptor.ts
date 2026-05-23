@@ -48,9 +48,15 @@ export const errorInterceptor: HttpInterceptorFn = (request, next) => {
       if (status >= 500) {
         const raw = error.error?.message || error.error?.error;
         const backendMessage = Array.isArray(raw) ? raw[0] : raw;
+        console.error('[HTTP 5xx]', {
+          status,
+          url: request.url,
+          backendMessage,
+          error,
+        });
         showError(
           messageService,
-          backendMessage || 'Error interno del servidor',
+          'Error interno del servidor. Por favor, contacte a soporte técnico',
         );
         return throwError(() => error);
       }
