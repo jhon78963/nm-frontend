@@ -131,15 +131,14 @@ async function setupPosApiMocks(page: Page): Promise<void> {
         success: true,
         sale_id: 'E2E-0001',
         // Debe ser origen permitido por PosService.isValidTicketUrl (localhost:8000)
-        ticket_url:
-          'http://localhost:8000/pos/sales/E2E-0001/ticket?expires=9999999999&signature=e2e-mock',
+        ticket_url: 'http://localhost:8000/api/pos/sales/E2E-0001/ticket',
         message: 'Venta registrada correctamente',
       }),
     });
   });
 
-  // Evita errores del iframe de impresión en headless
-  await page.route('**/pos/sales/**/ticket**', async route => {
+  // Ticket autenticado: el POS lo pide vía HttpClient, no iframe directo a la API
+  await page.route('**/api/pos/sales/**/ticket**', async route => {
     await route.fulfill({
       status: 200,
       headers: { 'Content-Type': 'text/html' },

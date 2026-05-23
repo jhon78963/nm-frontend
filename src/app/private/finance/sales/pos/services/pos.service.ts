@@ -2,11 +2,6 @@ import { HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../../../../services/api.service'; // Asegúrate que la ruta sea correcta
-import {
-  BASE_UPLOAD_URL,
-  BASE_URL,
-  BASE_WEB_URL,
-} from '../../../../../utils/constants';
 import { CartItem, Customer, ModalState, Product } from '../models/pos.models';
 
 @Injectable({ providedIn: 'root' })
@@ -27,6 +22,8 @@ export class PosService {
     'EFECTIVO',
   );
   isLoading = signal<boolean>(false);
+  /** Última venta exitosa; botón manual si el diálogo de impresión no aparece (tablets). */
+  lastSaleIdForReprint = signal<number | null>(null);
 
   // --- COMPUTEDS ---
   grandTotal = computed(() =>
@@ -146,8 +143,9 @@ export class PosService {
 
       if (response.success) {
         this.clearCart();
+        this.lastSaleIdForReprint.set(response.sale_id);
         this.showToast(`Venta ${response.sale_id} Exitosa!`, 4_000);
-        void this.printTicket(response.sale_id, response.ticket_url);
+        await this.printTicket(response.sale_id);
       }
     } catch (error: unknown) {
       const fallback = 'Error al procesar venta';
@@ -216,6 +214,7 @@ export class PosService {
     this.modalState.set({ isOpen: false, product: null, isEditing: false });
     this.toastMessage.set(null);
     this.isLoading.set(false);
+    this.lastSaleIdForReprint.set(null);
   }
 
   updateQuantity(cartId: number, delta: number) {
@@ -268,84 +267,69 @@ export class PosService {
     this.paymentMethod.set(method);
   }
 
-  async printTicket(saleId: number, ticketUrl?: string) {
-    let url = ticketUrl;
-    if (!url) {
-      try {
-        const response = await firstValueFrom(
-          this.apiService.get<{ ticket_url: string }>(
-            `pos/sales/${saleId}/ticket-url`,
-          ),
-        );
-        url = response.ticket_url;
-      } catch (error) {
-        console.warn('No se pudo obtener URL del ticket de venta', error);
-        return;
-      }
-    }
-
-    if (!this.isValidTicketUrl(url)) {
-      console.warn('No se pudo imprimir: URL de ticket no válida', url);
-      return;
-    }
-
+  /**
+   * Imprime en la misma pantalla (sin pestañas nuevas).
+   * HTML autenticado vía HttpClient → iframe srcdoc oculto → diálogo print() del navegador.
+   */
+  async printTicket(saleId: number): Promise<void> {
     try {
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.src = url;
-      document.body.appendChild(iframe);
-      iframe.onload = () => {
-        try {
-          iframe.contentWindow?.print();
-        } catch {
-          // Fallo silencioso del diálogo de impresión del navegador
-        }
-        setTimeout(() => {
-          document.body.removeChild(iframe);
-        }, 5000);
-      };
+      const html = await firstValueFrom(
+        this.apiService.getHtml(`pos/sales/${saleId}/ticket`),
+      );
+      this.printHtmlInSamePage(html);
     } catch (error) {
       console.warn('No se pudo imprimir el ticket de venta', error);
+      this.showToast('Venta registrada. Toca «Imprimir ticket» para reintentar.');
     }
   }
 
-  private isValidTicketUrl(url: string): boolean {
-    const normalized = (url ?? '').trim();
-    if (!normalized) {
-      return false;
+  /** Reimpresión manual con gesto de usuario (útil en tablets si el print auto falla). */
+  async reprintLastTicket(): Promise<void> {
+    const saleId = this.lastSaleIdForReprint();
+    if (saleId == null) {
+      return;
     }
-
-    const lower = normalized.toLowerCase();
-    if (
-      lower.startsWith('javascript:') ||
-      lower.startsWith('data:') ||
-      lower.startsWith('vbscript:') ||
-      lower.startsWith('blob:')
-    ) {
-      return false;
-    }
-
-    try {
-      const parsed = new URL(normalized);
-      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-        return false;
-      }
-
-      return this.getAllowedTicketOrigins().has(parsed.origin);
-    } catch {
-      return false;
-    }
+    await this.printTicket(saleId);
   }
 
-  private getAllowedTicketOrigins(): Set<string> {
-    const origins = new Set<string>();
-    for (const base of [BASE_URL, BASE_WEB_URL, BASE_UPLOAD_URL]) {
-      try {
-        origins.add(new URL(base).origin);
-      } catch {
-        // Ignorar entradas de entorno mal formadas
+  private printHtmlInSamePage(html: string): void {
+    this.removePrintFrame();
+
+    const iframe = document.createElement('iframe');
+    iframe.id = 'pos-ticket-print-frame';
+    iframe.setAttribute('title', 'Ticket de venta');
+    iframe.setAttribute(
+      'style',
+      'position:fixed;left:0;top:0;width:80mm;height:100%;border:0;opacity:0;pointer-events:none;z-index:-1',
+    );
+    iframe.srcdoc = html;
+    document.body.appendChild(iframe);
+
+    iframe.onload = () => {
+      const printWindow = iframe.contentWindow;
+      if (!printWindow) {
+        this.showToast('Toca «Imprimir ticket» para reintentar.');
+        this.removePrintFrame();
+        return;
       }
-    }
-    return origins;
+
+      const cleanup = () => this.removePrintFrame();
+      printWindow.addEventListener('afterprint', cleanup, { once: true });
+
+      setTimeout(() => {
+        try {
+          printWindow.focus();
+          printWindow.print();
+        } catch {
+          this.showToast('Toca «Imprimir ticket» para reintentar.');
+        }
+        // Safari/iOS a veces no dispara afterprint
+        setTimeout(cleanup, 15_000);
+      }, 400);
+    };
+  }
+
+  private removePrintFrame(): void {
+    document.getElementById('pos-ticket-print-frame')?.remove();
   }
 }

@@ -47,4 +47,16 @@ export class ApiService {
       params: options?.params,
     });
   }
+
+  /** HTML autenticado (p. ej. ticket POS); pasa por interceptores con withCredentials. */
+  getHtml(path: string, options?: ApiGetOptions) {
+    return this.http.get(`${this.BASE_URL}/${path}`, {
+      responseType: 'text',
+      headers: {
+        Accept: 'text/html',
+        ...options?.headers,
+      },
+      params: options?.params,
+    });
+  }
 }
