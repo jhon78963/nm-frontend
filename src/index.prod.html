@@ -6,13 +6,7 @@
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="¡Moda para toda la familia!" />
-    <!--
-      TODO: Para producción estricta, reemplazar los CDNs externos con assets locales
-      o agregar atributos integrity (SRI) en los recursos de terceros.
-    -->
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' data: https://cdnjs.cloudflare.com https://unpkg.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.novedadesmaritex.net.pe https://upload.novedadesmaritex.net.pe; object-src 'none'; base-uri 'self'; form-action 'self';" />
+    <!-- CSP: configurada en nginx (header Content-Security-Policy), no en meta tag -->
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
     <link
       id="theme-link"
