@@ -3,7 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Observable } from 'rxjs';
-import { formatDateForApi } from '../../../../../utils/dates';
+import { formatDateForApi, formatDateTimeFromLocal } from '../../../../../utils/dates';
 import { User } from '../../../../administration/users/models/users.model';
 import { UsersService } from '../../../../administration/users/services/users.service';
 import { Expense } from '../../models/expenses.model';
@@ -30,7 +30,10 @@ export class ExpenseFormComponent implements OnInit {
     if (this.dynamicDialogConfig.data.id) {
       const id = this.dynamicDialogConfig.data.id;
       this.expensesService.getOne(id).subscribe((response: Expense) => {
-        this.form.patchValue(response);
+        this.form.patchValue({
+          ...response,
+          expenseDate: this.parseExpenseDateForForm(response.expenseDate),
+        });
       });
     }
   }
@@ -125,6 +128,19 @@ export class ExpenseFormComponent implements OnInit {
 
   private cleanUserID(): void {
     this.form.get('userId')?.setValue(null);
+  }
+
+  private parseExpenseDateForForm(expenseDate: string): Date {
+    if (!expenseDate || expenseDate === '---') {
+      return new Date();
+    }
+
+    const normalized = formatDateTimeFromLocal(expenseDate, this.datePipe);
+    if (!normalized) {
+      return new Date();
+    }
+
+    return new Date(normalized.replace(' ', 'T'));
   }
 
   get users(): Observable<User[]> {
