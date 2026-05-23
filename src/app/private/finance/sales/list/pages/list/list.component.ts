@@ -233,8 +233,23 @@ export class SaleListComponent implements OnInit, OnDestroy {
       acceptLabel: 'Sí',
       rejectLabel: 'No',
       accept: () => {
-        this.salesService.delete(id).subscribe(() => {
-          showSuccess(this.messageService, 'La venta ha sido cancelada');
+        this.salesService.delete(id).subscribe({
+          next: () => {
+            showSuccess(this.messageService, 'La venta ha sido cancelada');
+          },
+          error: (err: unknown) => {
+            const raw = (err as { error?: { message?: string | string[] } })
+              ?.error?.message;
+            const message = Array.isArray(raw)
+              ? raw[0]?.trim()
+              : typeof raw === 'string'
+                ? raw.trim()
+                : '';
+            showError(
+              this.messageService,
+              message || 'No se pudo cancelar la venta',
+            );
+          },
         });
       },
       reject: () => {

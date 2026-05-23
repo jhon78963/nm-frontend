@@ -141,11 +141,19 @@ export class PosService {
         this.apiService.post('pos/checkout', payload),
       );
 
-      if (response.success) {
+      if (response?.success) {
         this.clearCart();
         this.lastSaleIdForReprint.set(response.sale_id);
         this.showToast(`Venta ${response.sale_id} Exitosa!`, 4_000);
         await this.printTicket(response.sale_id);
+      } else {
+        const rawMessage = response?.message ?? response?.error;
+        const businessMessage = Array.isArray(rawMessage) ? rawMessage[0] : rawMessage;
+        this.showToast(
+          typeof businessMessage === 'string' && businessMessage.trim()
+            ? businessMessage.trim()
+            : 'La venta no pudo ser procesada',
+        );
       }
     } catch (error: unknown) {
       const fallback = 'Error al procesar venta';

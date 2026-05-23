@@ -6,6 +6,9 @@ import { DropdownModule } from 'primeng/dropdown';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputNumberModule } from 'primeng/inputnumber'; // Importante para el input de precio
 import { InputTextModule } from 'primeng/inputtext';
+import { MessageService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
+import { showError } from '../../../../../../utils/notifications';
 import { PosService } from '../../../pos/services/pos.service';
 import { SalesService } from '../../services/sales.service';
 
@@ -19,8 +22,10 @@ import { SalesService } from '../../services/sales.service';
     ButtonModule,
     DropdownModule,
     InputNumberModule, // Agregado
+    ToastModule,
   ],
   templateUrl: './exchange.component.html',
+  providers: [MessageService],
   styles: [
     `
       :host {
@@ -34,6 +39,7 @@ export class SaleExchangeComponent implements OnInit {
   posService = inject(PosService);
   config = inject(DynamicDialogConfig);
   ref = inject(DynamicDialogRef);
+  private readonly messageService = inject(MessageService);
 
   step = 1;
   loading = true;
@@ -71,8 +77,12 @@ export class SaleExchangeComponent implements OnInit {
         this.loading = false;
         this.step = 1;
       },
-      error: () => {
+      error: (err: unknown) => {
         this.loading = false;
+        showError(
+          this.messageService,
+          this.resolveApiErrorMessage(err, 'No se pudo cargar la venta'),
+        );
         this.ref.close();
       },
     });
@@ -135,7 +145,12 @@ export class SaleExchangeComponent implements OnInit {
       next: () => {
         this.ref.close({ success: true });
       },
-      error: err => console.error(err),
+      error: (err: unknown) => {
+        showError(
+          this.messageService,
+          this.resolveApiErrorMessage(err, 'No se pudo procesar el cambio'),
+        );
+      },
     });
   }
 
@@ -145,5 +160,18 @@ export class SaleExchangeComponent implements OnInit {
 
   objectKeys(obj: any) {
     return Object.keys(obj);
+  }
+
+  private resolveApiErrorMessage(err: unknown, fallback: string): string {
+    const raw = (err as { error?: { message?: string | string[] } })?.error
+      ?.message;
+    if (Array.isArray(raw)) {
+      return raw[0]?.trim() || fallback;
+    }
+    if (typeof raw === 'string' && raw.trim()) {
+      return raw.trim();
+    }
+
+    return fallback;
   }
 }
