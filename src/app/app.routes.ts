@@ -113,7 +113,6 @@ export const routes: Routes = [
           permissions: [
             'cashflow.getDaily',
             'cashflow.getAdminMonthlyReport',
-            'expense.getAll',
           ],
         },
         loadChildren: () =>

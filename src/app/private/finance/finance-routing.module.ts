@@ -1,6 +1,5 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { permissionGuard } from '../../auth/guards/permission.guard';
 
 const routes: Routes = [
   {
@@ -13,14 +12,6 @@ const routes: Routes = [
       import('./cash-movements/cash-movements.module').then(
         m => m.CashMovementsModule,
       ),
-  },
-  {
-    path: 'expenses',
-    title: 'Gastos',
-    canActivate: [permissionGuard],
-    data: { breadcrumb: 'Gastos', permission: 'expense.getAll' },
-    loadChildren: () =>
-      import('./expenses/expenses.module').then(m => m.ExpensesModule),
   },
   { path: '', pathMatch: 'full', redirectTo: 'cash-movements' },
 ];

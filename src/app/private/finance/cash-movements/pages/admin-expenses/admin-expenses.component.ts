@@ -83,6 +83,17 @@ export class AdminExpensesComponent implements OnInit {
     { label: 'Transferencia', value: 'TRANSFER' },
   ];
 
+  expenseCategories = [
+    {
+      label: 'Gasto Administrativo (Sueldos, Servicios, Hosting)',
+      value: 'ADMINISTRATIVE',
+    },
+    {
+      label: 'Gasto de Tienda / Operativo (Varios)',
+      value: 'STORE',
+    },
+  ];
+
   ngOnInit() {
     this.loadExpenses();
   }
@@ -154,9 +165,9 @@ export class AdminExpensesComponent implements OnInit {
     this.expenseForm = {
       description: expense.description,
       amount: expense.amount,
-      date: new Date(expense.date), // Convertimos el string de la BD a Date
-      payment_method: expense.method,
-      category: 'ADMINISTRATIVE',
+      date: new Date(expense.date),
+      payment_method: expense.method ?? expense.payment_method ?? 'CASH',
+      category: expense.category ?? 'ADMINISTRATIVE',
       type: 'EXPENSE',
     };
 
@@ -236,5 +247,13 @@ export class AdminExpensesComponent implements OnInit {
 
   canSaveAdminExpense(): boolean {
     return this.isEditing() ? this.canUpdateCashflow() : this.canStoreCashflow();
+  }
+
+  getCategoryLabel(category: string | undefined): string {
+    return (
+      this.expenseCategories.find(option => option.value === category)?.label ??
+      category ??
+      '—'
+    );
   }
 }

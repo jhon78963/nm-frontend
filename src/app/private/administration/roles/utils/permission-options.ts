@@ -234,7 +234,6 @@ function resolvePermissionPlacement(perm: Permission): MenuPlacement {
     purchase: placement('Compras', 'Compras', 0),
     pos: placement('Ventas', 'POS', 0),
     sale: placement('Ventas', 'Ventas', 1),
-    expense: placement('Gastos', 'Gastos Generales', 1),
   };
 
   if (byPrefix[prefix]) {

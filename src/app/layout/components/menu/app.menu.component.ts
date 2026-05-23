@@ -171,12 +171,6 @@ export class AppMenuComponent implements OnInit {
           routerLink: ['/finance/cash-movements/admin-expenses'],
           permission: 'cashflow.getAdminMonthlyReport',
         },
-        {
-          label: 'Gastos Generales',
-          icon: 'pi pi-fw pi-calculator',
-          routerLink: ['/finance/expenses'],
-          permission: 'expense.getAll',
-        },
       ],
     },
     {
