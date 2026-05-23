@@ -62,8 +62,11 @@ export const routes: Routes = [
       {
         path: 'reports',
         title: 'Reportes',
-        canActivate: [roleGuard],
-        data: { breadcrumb: 'Reportes', roles: [...ADMIN_ROUTE_ROLES] },
+        canActivate: [permissionGuard],
+        data: {
+          breadcrumb: 'Reportes',
+          permissions: ['report.index', 'report.products'],
+        },
         loadChildren: () =>
           import('./private/reports/reports.module').then(m => m.ReportsModule),
       },

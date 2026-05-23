@@ -6,6 +6,7 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { catchError, throwError } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import { showError } from '../../utils/notifications';
 import { AuthService } from './auth.service';
 
@@ -46,14 +47,9 @@ export const errorInterceptor: HttpInterceptorFn = (request, next) => {
       }
 
       if (status >= 500) {
-        const raw = error.error?.message || error.error?.error;
-        const backendMessage = Array.isArray(raw) ? raw[0] : raw;
-        console.error('[HTTP 5xx]', {
-          status,
-          url: request.url,
-          backendMessage,
-          error,
-        });
+        if (environment.production) {
+          console.error('Error interno del servidor');
+        }
         showError(
           messageService,
           'Error interno del servidor. Por favor, contacte a soporte técnico',
