@@ -1,9 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, Input, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  Input,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SelectButtonModule } from 'primeng/selectbutton';
-import { PosService } from '../../services/pos.service';
 import { DocumentType } from '../../../list/models/sales.model';
+import { PosService } from '../../services/pos.service';
 
 interface PaymentMethodState {
   id: string; // 'CASH' | 'YAPE' | 'CARD'
@@ -32,9 +39,9 @@ export class PosFooterComponent {
   posService = inject(PosService);
 
   readonly docTypeOptions: DocTypeOption[] = [
-    { label: 'Boleta',   value: 'BOLETA',          icon: 'pi pi-receipt' },
-    { label: 'Factura',  value: 'FACTURA',          icon: 'pi pi-file' },
-    { label: 'Ticket',   value: 'TICKET_INTERNO',   icon: 'pi pi-tag' },
+    { label: 'Ticket', value: 'TICKET_INTERNO', icon: 'pi pi-tag' },
+    { label: 'Boleta', value: 'BOLETA', icon: 'pi pi-receipt' },
+    { label: 'Factura', value: 'FACTURA', icon: 'pi pi-file' },
   ];
 
   // Estado local de los métodos de pago

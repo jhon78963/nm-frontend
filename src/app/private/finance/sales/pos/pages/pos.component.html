@@ -1,5 +1,7 @@
 <div
   class="flex flex-column h-screen bg-ground font-family overflow-hidden relative bg-white rounded-xl">
+  <!-- Respaldo: oculta la UI del POS si el navegador imprime el viewport principal -->
+  <app-print-receipt aria-hidden="true"></app-print-receipt>
   <!-- Toast Global -->
   @if (posService.toastMessage()) {
     <div

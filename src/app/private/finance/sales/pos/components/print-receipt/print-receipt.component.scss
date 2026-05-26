@@ -1,0 +1,33 @@
+:host {
+  display: none !important;
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.receipt-print {
+  width: 80mm;
+  max-width: 80mm;
+  margin: 0 auto;
+  font-family: sans-serif, system-ui, -apple-system, BlinkMacSystemFont;
+  font-size: 12px;
+  color: #000000;
+  background: #ffffff;
+}
+
+@media print {
+  :host {
+    display: block !important;
+    position: static;
+    width: 80mm;
+    height: auto;
+    overflow: visible;
+  }
+
+  .receipt-print {
+    width: 80mm !important;
+    max-width: 80mm !important;
+  }
+}

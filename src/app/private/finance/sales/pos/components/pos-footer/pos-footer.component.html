@@ -71,7 +71,9 @@
 
   <!-- Selector de tipo de comprobante -->
   <div class="mb-3">
-    <span class="text-xs font-bold text-gray-400 uppercase block mb-1">Tipo de comprobante</span>
+    <span class="text-xs font-bold text-gray-400 uppercase block mb-1"
+      >Tipo de comprobante</span
+    >
     <div class="flex gap-2">
       @for (opt of docTypeOptions; track opt.value) {
         <button
@@ -97,7 +99,9 @@
 
   <button
     class="w-full bg-indigo-700 text-white py-3 border-round-xl font-bold text-lg shadow-3 border-none cursor-pointer hover:bg-indigo-800 active:scale-95 transition-all flex justify-content-center align-items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-    [disabled]="hasNoWarehouse || (activeMethods().length > 1 && remaining() > 0.1)"
+    [disabled]="
+      hasNoWarehouse || (activeMethods().length > 1 && remaining() > 0.1)
+    "
     (click)="handleCheckout()">
     <i class="pi pi-check-circle text-xl"></i>
     <span>COBRAR</span>

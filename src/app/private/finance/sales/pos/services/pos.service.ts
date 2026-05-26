@@ -2,8 +2,9 @@ import { HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../../../../services/api.service'; // Asegúrate que la ruta sea correcta
-import { CartItem, Customer, ModalState, Product } from '../models/pos.models';
 import { DocumentType } from '../../list/models/sales.model';
+import { PrintReceiptComponent } from '../components/print-receipt/print-receipt.component';
+import { CartItem, Customer, ModalState, Product } from '../models/pos.models';
 
 /** Series por defecto por tipo de documento. Configurable por almacén en el futuro. */
 const DEFAULT_SERIE: Record<Exclude<DocumentType, 'TICKET_INTERNO'>, string> = {
@@ -30,7 +31,7 @@ export class PosService {
   );
   isLoading = signal<boolean>(false);
   /** Tipo de comprobante electrónico seleccionado por el cajero. */
-  documentType = signal<DocumentType>('BOLETA');
+  documentType = signal<DocumentType>('TICKET_INTERNO');
   /** Serie derivada automáticamente del tipo de comprobante. */
   serie = computed<string>(() => {
     const type = this.documentType();
@@ -76,9 +77,7 @@ export class PosService {
             break;
           }
           case 500:
-            this.showToast(
-              'Error interno del servidor al buscar el producto',
-            );
+            this.showToast('Error interno del servidor al buscar el producto');
             break;
           default:
             this.showToast('Error de red o conexión');
@@ -164,7 +163,9 @@ export class PosService {
         await this.printTicket(response.sale_id);
       } else {
         const rawMessage = response?.message ?? response?.error;
-        const businessMessage = Array.isArray(rawMessage) ? rawMessage[0] : rawMessage;
+        const businessMessage = Array.isArray(rawMessage)
+          ? rawMessage[0]
+          : rawMessage;
         this.showToast(
           typeof businessMessage === 'string' && businessMessage.trim()
             ? businessMessage.trim()
@@ -235,7 +236,7 @@ export class PosService {
     this.cart.set([]);
     this.currentCustomer.set(null);
     this.paymentMethod.set('EFECTIVO');
-    this.documentType.set('BOLETA');
+    this.documentType.set('TICKET_INTERNO');
     this.modalState.set({ isOpen: false, product: null, isEditing: false });
     this.toastMessage.set(null);
     this.isLoading.set(false);
@@ -293,18 +294,20 @@ export class PosService {
   }
 
   /**
-   * Imprime en la misma pantalla (sin pestañas nuevas).
-   * HTML autenticado vía HttpClient → iframe srcdoc oculto → diálogo print() del navegador.
+   * Ticket aislado en iframe oculto → print() solo del contenido formateado (Android/ESC-POS).
    */
   async printTicket(saleId: number): Promise<void> {
     try {
       const html = await firstValueFrom(
         this.apiService.getHtml(`pos/sales/${saleId}/ticket`),
       );
-      this.printHtmlInSamePage(html);
+      const htmlFormateado = PrintReceiptComponent.prepareForPrint(html);
+      await this.printHtmlInHiddenIframe(htmlFormateado);
     } catch (error) {
       console.warn('No se pudo imprimir el ticket de venta', error);
-      this.showToast('Venta registrada. Toca «Imprimir ticket» para reintentar.');
+      this.showToast(
+        'Venta registrada. Toca «Imprimir ticket» para reintentar.',
+      );
     }
   }
 
@@ -317,7 +320,9 @@ export class PosService {
     await this.printTicket(saleId);
   }
 
-  private printHtmlInSamePage(html: string): void {
+  private createHiddenIframeWithContent(
+    htmlContent: string,
+  ): HTMLIFrameElement {
     this.removePrintFrame();
 
     const iframe = document.createElement('iframe');
@@ -325,33 +330,74 @@ export class PosService {
     iframe.setAttribute('title', 'Ticket de venta');
     iframe.setAttribute(
       'style',
-      'position:fixed;left:0;top:0;width:80mm;height:100%;border:0;opacity:0;pointer-events:none;z-index:-1',
+      'display:none;position:absolute;width:0;height:0;border:0;visibility:hidden;',
     );
-    iframe.srcdoc = html;
     document.body.appendChild(iframe);
 
-    iframe.onload = () => {
-      const printWindow = iframe.contentWindow;
-      if (!printWindow) {
+    const doc = iframe.contentDocument ?? iframe.contentWindow?.document;
+    if (!doc) {
+      throw new Error(
+        'No se pudo acceder al documento del iframe de impresión',
+      );
+    }
+
+    doc.open();
+    doc.write(htmlContent);
+    doc.close();
+
+    return iframe;
+  }
+
+  private printHtmlInHiddenIframe(htmlContent: string): Promise<void> {
+    return new Promise(resolve => {
+      let iframe: HTMLIFrameElement;
+
+      try {
+        iframe = this.createHiddenIframeWithContent(htmlContent);
+      } catch {
         this.showToast('Toca «Imprimir ticket» para reintentar.');
-        this.removePrintFrame();
+        resolve();
         return;
       }
 
-      const cleanup = () => this.removePrintFrame();
-      printWindow.addEventListener('afterprint', cleanup, { once: true });
-
-      setTimeout(() => {
-        try {
-          printWindow.focus();
-          printWindow.print();
-        } catch {
+      const runPrint = () => {
+        const printWindow = iframe.contentWindow;
+        if (!printWindow) {
           this.showToast('Toca «Imprimir ticket» para reintentar.');
+          this.removePrintFrame();
+          resolve();
+          return;
         }
-        // Safari/iOS a veces no dispara afterprint
-        setTimeout(cleanup, 15_000);
-      }, 400);
-    };
+
+        const cleanup = () => {
+          this.removePrintFrame();
+          resolve();
+        };
+
+        printWindow.addEventListener('afterprint', cleanup, { once: true });
+
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            try {
+              printWindow.focus();
+              printWindow.print();
+            } catch {
+              this.showToast('Toca «Imprimir ticket» para reintentar.');
+              cleanup();
+              return;
+            }
+            // Safari/Android a veces no dispara afterprint
+            setTimeout(cleanup, 15_000);
+          }, 300);
+        });
+      };
+
+      if (iframe.contentDocument?.readyState === 'complete') {
+        runPrint();
+      } else {
+        iframe.onload = runPrint;
+      }
+    });
   }
 
   private removePrintFrame(): void {

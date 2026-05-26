@@ -19,6 +19,7 @@ import { showToastWarn } from '../../../../../utils/notifications';
 import { PosFooterComponent } from '../components/pos-footer/pos-footer.component';
 import { PosHeaderComponent } from '../components/pos-header/pos-header.component';
 import { PosSelectorComponent } from '../components/pos-selector/pos-selector.component';
+import { PrintReceiptComponent } from '../components/print-receipt/print-receipt.component';
 import { PosService } from '../services/pos.service';
 
 @Component({
@@ -30,6 +31,7 @@ import { PosService } from '../services/pos.service';
     PosHeaderComponent,
     PosFooterComponent,
     PosSelectorComponent,
+    PrintReceiptComponent,
   ],
   templateUrl: './pos.component.html',
   styleUrl: './pos.component.scss',

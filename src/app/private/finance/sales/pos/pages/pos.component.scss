@@ -1,3 +1,11 @@
+@media print {
+  :host {
+    visibility: hidden !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+}
+
 .fadein-animation {
   animation: fadein 0.3s ease-out;
 }
