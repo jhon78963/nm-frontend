@@ -160,7 +160,14 @@ export class PosService {
         this.clearCart();
         this.lastSaleIdForReprint.set(response.sale_id);
         this.showToast(`Venta ${response.sale_id} Exitosa!`, 4_000);
-        await this.printTicket(response.sale_id);
+        if (this.isMobileBrowser()) {
+          this.showToast(
+            'Toca «Imprimir ticket» para imprimir el comprobante.',
+            6_000,
+          );
+        } else {
+          await this.printTicket(response.sale_id);
+        }
       } else {
         const rawMessage = response?.message ?? response?.error;
         const businessMessage = Array.isArray(rawMessage)
@@ -294,15 +301,25 @@ export class PosService {
   }
 
   /**
-   * Ticket aislado en iframe oculto → print() solo del contenido formateado (Android/ESC-POS).
+   * Android: imprimir desde la app captura el layout (sidebar).
+   * Con gesto de usuario → pestaña nueva abierta al instante, luego se escribe el ticket.
+   * Escritorio sin gesto → iframe fullscreen.
    */
-  async printTicket(saleId: number): Promise<void> {
+  async printTicket(
+    saleId: number,
+    options?: { userGesture?: boolean },
+  ): Promise<void> {
+    if (options?.userGesture) {
+      await this.printTicketWithUserGesture(saleId);
+      return;
+    }
+
     try {
       const html = await firstValueFrom(
         this.apiService.getHtml(`pos/sales/${saleId}/ticket`),
       );
-      const htmlFormateado = PrintReceiptComponent.prepareForPrint(html);
-      await this.printHtmlInHiddenIframe(htmlFormateado);
+      const printDocument = PrintReceiptComponent.prepareForPrint(html, false);
+      await this.printViaFullscreenIframe(printDocument);
     } catch (error) {
       console.warn('No se pudo imprimir el ticket de venta', error);
       this.showToast(
@@ -311,70 +328,143 @@ export class PosService {
     }
   }
 
-  /** Reimpresión manual con gesto de usuario (útil en tablets si el print auto falla). */
+  /** Reimpresión manual: pestaña aislada (gesto de usuario). */
   async reprintLastTicket(): Promise<void> {
     const saleId = this.lastSaleIdForReprint();
     if (saleId == null) {
       return;
     }
-    await this.printTicket(saleId);
+    await this.printTicket(saleId, { userGesture: true });
   }
 
-  private createHiddenIframeWithContent(
-    htmlContent: string,
-  ): HTMLIFrameElement {
-    this.removePrintFrame();
-
-    const iframe = document.createElement('iframe');
-    iframe.id = 'pos-ticket-print-frame';
-    iframe.setAttribute('title', 'Ticket de venta');
-    iframe.setAttribute(
-      'style',
-      'display:none;position:absolute;width:0;height:0;border:0;visibility:hidden;',
-    );
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentDocument ?? iframe.contentWindow?.document;
-    if (!doc) {
-      throw new Error(
-        'No se pudo acceder al documento del iframe de impresión',
+  /**
+   * Abre la pestaña en el mismo tick del clic (antes de await) para que Android no la bloquee.
+   */
+  private async printTicketWithUserGesture(saleId: number): Promise<void> {
+    const tab = window.open('', '_blank');
+    if (!tab) {
+      this.showToast(
+        'Permite ventanas emergentes o vuelve a tocar «Imprimir ticket».',
       );
+      return;
     }
 
-    doc.open();
-    doc.write(htmlContent);
-    doc.close();
+    tab.document.open();
+    tab.document.write(
+      '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:sans-serif;padding:16px">Cargando ticket...</body></html>',
+    );
+    tab.document.close();
 
-    return iframe;
+    try {
+      const html = await firstValueFrom(
+        this.apiService.getHtml(`pos/sales/${saleId}/ticket`),
+      );
+      const printDocument = PrintReceiptComponent.prepareForPrint(html, true);
+      tab.document.open();
+      tab.document.write(printDocument);
+      tab.document.close();
+    } catch (error) {
+      tab.close();
+      console.warn('No se pudo imprimir el ticket de venta', error);
+      this.showToast('No se pudo cargar el ticket. Reintenta.');
+    }
   }
 
-  private printHtmlInHiddenIframe(htmlContent: string): Promise<void> {
+  private isMobileBrowser(): boolean {
+    return /Android|webOS|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  }
+
+  /**
+   * Iframe a pantalla completa con blob URL → imprime SOLO ese documento.
+   * Oculta la app con display:none inline (no depende de @media print).
+   */
+  private printViaFullscreenIframe(fullHtml: string): Promise<void> {
     return new Promise(resolve => {
-      let iframe: HTMLIFrameElement;
+      this.teardownPrintSession();
 
-      try {
-        iframe = this.createHiddenIframeWithContent(htmlContent);
-      } catch {
-        this.showToast('Toca «Imprimir ticket» para reintentar.');
+      const suppressedNodes: Array<{ node: HTMLElement; display: string }> =
+        [];
+
+      const suppressAppChrome = () => {
+        Array.from(document.body.children).forEach(node => {
+          const element = node as HTMLElement;
+          if (element.id === 'pos-ticket-print-frame') {
+            return;
+          }
+          suppressedNodes.push({
+            node: element,
+            display: element.style.display,
+          });
+          element.style.setProperty('display', 'none', 'important');
+        });
+        document.body.style.setProperty('overflow', 'hidden', 'important');
+        document.body.style.setProperty('background', '#ffffff', 'important');
+        document.documentElement.style.setProperty(
+          'background',
+          '#ffffff',
+          'important',
+        );
+      };
+
+      const restoreAppChrome = () => {
+        suppressedNodes.forEach(({ node, display }) => {
+          node.style.display = display;
+        });
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('background');
+        document.documentElement.style.removeProperty('background');
+      };
+
+      const iframe = document.createElement('iframe');
+      iframe.id = 'pos-ticket-print-frame';
+      iframe.setAttribute('title', 'Ticket de venta');
+      iframe.setAttribute(
+        'style',
+        [
+          'position:fixed',
+          'inset:0',
+          'width:100%',
+          'height:100%',
+          'border:0',
+          'margin:0',
+          'padding:0',
+          'z-index:2147483647',
+          'background:#ffffff',
+        ].join(';'),
+      );
+
+      suppressAppChrome();
+      document.body.appendChild(iframe);
+
+      const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+      const blobUrl = URL.createObjectURL(blob);
+      let finished = false;
+
+      const finish = () => {
+        if (finished) {
+          return;
+        }
+        finished = true;
+        URL.revokeObjectURL(blobUrl);
+        iframe.remove();
+        restoreAppChrome();
         resolve();
-        return;
-      }
+      };
 
-      const runPrint = () => {
+      iframe.onerror = () => {
+        this.showToast('Toca «Imprimir ticket» para reintentar.');
+        finish();
+      };
+
+      iframe.onload = () => {
         const printWindow = iframe.contentWindow;
         if (!printWindow) {
           this.showToast('Toca «Imprimir ticket» para reintentar.');
-          this.removePrintFrame();
-          resolve();
+          finish();
           return;
         }
 
-        const cleanup = () => {
-          this.removePrintFrame();
-          resolve();
-        };
-
-        printWindow.addEventListener('afterprint', cleanup, { once: true });
+        printWindow.addEventListener('afterprint', finish, { once: true });
 
         requestAnimationFrame(() => {
           setTimeout(() => {
@@ -383,24 +473,21 @@ export class PosService {
               printWindow.print();
             } catch {
               this.showToast('Toca «Imprimir ticket» para reintentar.');
-              cleanup();
+              finish();
               return;
             }
-            // Safari/Android a veces no dispara afterprint
-            setTimeout(cleanup, 15_000);
-          }, 300);
+            setTimeout(finish, 15_000);
+          }, 500);
         });
       };
 
-      if (iframe.contentDocument?.readyState === 'complete') {
-        runPrint();
-      } else {
-        iframe.onload = runPrint;
-      }
+      iframe.src = blobUrl;
     });
   }
 
-  private removePrintFrame(): void {
+  private teardownPrintSession(): void {
     document.getElementById('pos-ticket-print-frame')?.remove();
+    document.getElementById('pos-ticket-print-host')?.remove();
+    document.body.classList.remove('pos-printing-ticket');
   }
 }

@@ -2895,3 +2895,20 @@ $gutter: 1rem; //for primeflex grid system
 // input {
 //   -webkit-box-shadow: 0 0 0 30px white inset !important;
 // }
+
+/* POS — impresión térmica 80mm: oculta sidebar/layout cuando Android imprime el viewport */
+@media print {
+  body.pos-printing-ticket > *:not(#pos-ticket-print-host) {
+    display: none !important;
+  }
+
+  body.pos-printing-ticket #pos-ticket-print-host {
+    display: block !important;
+    position: static !important;
+    width: 80mm !important;
+    max-width: 80mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+}
