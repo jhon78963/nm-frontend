@@ -2,8 +2,9 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { CalendarModule } from 'primeng/calendar';
 import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -31,6 +32,7 @@ import {
   PayrollDeudaDia,
   PayrollPaymentItem,
   PayrollPeriod,
+  PayrollQuincena,
   PayrollTardanza,
   SaldoSentido,
   TeamPayrollService,
@@ -86,10 +88,11 @@ const MONTH_NAMES_ES = [
     ToastModule,
     TooltipModule,
     DialogModule,
+    ConfirmDialogModule,
     SafeUrlPipe,
     VoucherDropzoneComponent,
   ],
-  providers: [MessageService, DatePipe],
+  providers: [MessageService, ConfirmationService, DatePipe],
   templateUrl: './team-payroll.component.html',
   styleUrl: './team-payroll.component.scss',
 })
@@ -100,6 +103,7 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
   private readonly payrollService = inject(TeamPayrollService);
   private readonly cashflowService = inject(CashflowService);
   private readonly messageService = inject(MessageService);
+  private readonly confirmationService = inject(ConfirmationService);
   private readonly datePipe = inject(DatePipe);
 
   displayPreview = signal(false);
@@ -130,6 +134,7 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
     type: 'PAYMENT' as 'PAYMENT' | 'ADVANCE' | 'DEDUCTION',
     amount: null as number | null,
     date: new Date(),
+    payroll_period: 'q1' as PayrollQuincena,
     description: '',
     payment_method: 'CASH',
     sync_cash_movement: true,
@@ -138,6 +143,25 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
 
   previewItems: string[] = [];
   previewIndex = 0;
+
+  // Edit payment dialog
+  editingPayment: PayrollPaymentItem | null = null;
+  editDialogVisible = false;
+  savingEdit = false;
+  deletingPaymentId: number | null = null;
+  editForm = {
+    type: 'PAYMENT' as 'PAYMENT' | 'ADVANCE' | 'DEDUCTION',
+    amount: 0,
+    date: new Date(),
+    payroll_period: 'q1' as PayrollQuincena,
+    payment_method: 'CASH',
+    description: '',
+  };
+
+  payrollQuincenaOptions = [
+    { label: '1.ª quincena', value: 'q1' as PayrollQuincena },
+    { label: '2.ª quincena', value: 'q2' as PayrollQuincena },
+  ];
 
   paymentTypeOptions = [
     {
@@ -286,6 +310,16 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
     ];
   }
 
+  onPaymentDateChange(): void {
+    this.paymentForm.payroll_period = this.inferQuincenaFromDate(
+      this.paymentForm.date,
+    );
+  }
+
+  inferQuincenaFromDate(date: Date): PayrollQuincena {
+    return date.getDate() <= 15 ? 'q1' : 'q2';
+  }
+
   onPaymentTypeChange(): void {
     if (this.paymentForm.type === 'DEDUCTION') {
       this.paymentForm.sync_cash_movement = false;
@@ -324,6 +358,7 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
         date: dateStr,
         description: this.paymentForm.description,
         payment_method: this.paymentForm.payment_method,
+        payroll_period: this.paymentForm.payroll_period,
         sync_cash_movement: this.paymentForm.sync_cash_movement,
         images: this.paymentVoucherFiles,
       })
@@ -358,6 +393,7 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
       type: 'PAYMENT',
       amount: null,
       date: new Date(),
+      payroll_period: this.inferQuincenaFromDate(new Date()),
       description: '',
       payment_method: 'CASH',
       sync_cash_movement: true,
@@ -372,6 +408,115 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
       method ??
       '—'
     );
+  }
+
+  openEditDialog(item: PayrollPaymentItem): void {
+    this.editingPayment = item;
+    this.editForm = {
+      type: item.type,
+      amount: item.amount,
+      date: new Date(item.date.replace(' ', 'T')),
+      payroll_period: item.payrollPeriod ?? 'q1',
+      payment_method: item.paymentMethod ?? 'CASH',
+      description: item.description ?? '',
+    };
+    this.editDialogVisible = true;
+  }
+
+  closeEditDialog(): void {
+    this.editDialogVisible = false;
+    this.editingPayment = null;
+  }
+
+  saveEditPayment(): void {
+    if (!this.editingPayment || !this.editForm.amount) return;
+
+    const dateStr = this.datePipe.transform(
+      this.editForm.date,
+      'yyyy-MM-dd HH:mm:ss',
+    )!;
+
+    this.savingEdit = true;
+    this.payrollService
+      .updatePayment(this.editingPayment.id, {
+        type: this.editForm.type,
+        amount: this.editForm.amount,
+        date: dateStr,
+        payroll_period: this.editForm.payroll_period,
+        payment_method: this.editForm.payment_method,
+        description: this.editForm.description,
+      })
+      .pipe(finalize(() => (this.savingEdit = false)))
+      .subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Actualizado',
+            detail: 'Movimiento corregido correctamente.',
+          });
+          this.closeEditDialog();
+          this.loadPayroll();
+        },
+        error: () => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'No se pudo actualizar el movimiento.',
+          });
+        },
+      });
+  }
+
+  confirmDeletePayment(item: PayrollPaymentItem): void {
+    const detail = item.syncedToAdmin
+      ? 'Se eliminará de la nómina y del listado de gastos administrativos.'
+      : 'Se eliminará solo de la nómina del colaborador.';
+
+    this.confirmationService.confirm({
+      header: 'Eliminar movimiento',
+      message: `¿Eliminar este registro (S/ ${this.money(item.amount)})? ${detail}`,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Eliminar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => this.deletePayment(item),
+    });
+  }
+
+  deletePayment(item: PayrollPaymentItem): void {
+    this.deletingPaymentId = item.id;
+    this.payrollService
+      .deletePayment(item.id)
+      .pipe(finalize(() => (this.deletingPaymentId = null)))
+      .subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Eliminado',
+            detail: item.syncedToAdmin
+              ? 'Movimiento eliminado de nómina y gastos administrativos.'
+              : 'Movimiento eliminado de la nómina.',
+          });
+          this.loadPayroll();
+        },
+        error: () => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'No se pudo eliminar el movimiento.',
+          });
+        },
+      });
+  }
+
+  isDeletingPayment(id: number): boolean {
+    return this.deletingPaymentId === id;
+  }
+
+  payrollPeriodTagSeverity(
+    period: PayrollQuincena,
+  ): 'info' | 'warning' | 'secondary' {
+    return period === 'q1' ? 'info' : 'warning';
   }
 
   paymentTypeTagSeverity(

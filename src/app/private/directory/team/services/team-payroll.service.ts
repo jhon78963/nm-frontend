@@ -4,6 +4,9 @@ import { ApiService } from '../../../../services/api.service';
 
 export type PayrollPeriod = 'full' | 'q1' | 'q2';
 
+/** Quincena a la que aplica un movimiento (independiente de la fecha de pago). */
+export type PayrollQuincena = 'q1' | 'q2';
+
 export interface PayrollTardanza {
   days: number;
   hours: number;
@@ -74,6 +77,8 @@ export interface PayrollPaymentItem {
   typeLabel: string;
   amount: number;
   date: string;
+  payrollPeriod: PayrollQuincena;
+  payrollPeriodLabel: string;
   description: string | null;
   syncedToAdmin: boolean;
   cashMovementId: number | null;
@@ -171,6 +176,7 @@ export class TeamPayrollService {
     date: string;
     description: string;
     payment_method: string;
+    payroll_period: PayrollQuincena;
     sync_cash_movement: boolean;
     images: File[];
   }): Observable<{ message: string; data: unknown }> {
@@ -179,6 +185,7 @@ export class TeamPayrollService {
     formData.append('type', payload.type);
     formData.append('amount', String(payload.amount));
     formData.append('date', payload.date);
+    formData.append('payroll_period', payload.payroll_period);
     formData.append('description', payload.description ?? '');
     formData.append('payment_method', payload.payment_method);
     formData.append(
@@ -189,6 +196,30 @@ export class TeamPayrollService {
     return this.apiService.post<{ message: string; data: unknown }>(
       'payments',
       formData,
+    );
+  }
+
+  updatePayment(
+    id: number,
+    payload: {
+      date: string;
+      payroll_period: PayrollQuincena;
+      type: 'PAYMENT' | 'ADVANCE' | 'DEDUCTION';
+      amount: number;
+      payment_method: string;
+      description: string;
+    },
+  ): Observable<{ success: boolean; message: string; data: PayrollPaymentItem }> {
+    return this.apiService.patch<{
+      success: boolean;
+      message: string;
+      data: PayrollPaymentItem;
+    }>(`payments/${id}`, payload);
+  }
+
+  deletePayment(id: number): Observable<{ success: boolean; message: string }> {
+    return this.apiService.delete<{ success: boolean; message: string }>(
+      `payments/${id}`,
     );
   }
 }

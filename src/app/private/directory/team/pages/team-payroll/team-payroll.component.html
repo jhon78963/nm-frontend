@@ -1,4 +1,5 @@
 <p-toast position="top-right" />
+<p-confirmDialog></p-confirmDialog>
 <div class="p-3 md:p-4">
   <div
     class="payroll-toolbar flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3 p-3 mb-4">
@@ -126,7 +127,8 @@
                   mode="currency"
                   currency="PEN"
                   locale="es-PE"
-                  styleClass="w-full"></p-inputNumber>
+                  styleClass="w-full"
+                  class="w-full"></p-inputNumber>
               </div>
               <div class="col-12 sm:col-6">
                 <span class="block font-semibold text-900 mb-2"
@@ -142,15 +144,38 @@
               </div>
             </div>
             <div>
-              <span class="block font-semibold text-900 mb-2">Fecha</span>
+              <span class="block font-semibold text-900 mb-2"
+                >Fecha de pago</span
+              >
               <p-calendar
                 [(ngModel)]="paymentForm.date"
+                (ngModelChange)="onPaymentDateChange()"
                 [showTime]="true"
                 hourFormat="12"
                 dateFormat="dd/mm/yy"
                 [showIcon]="true"
                 appendTo="body"
                 styleClass="w-full"></p-calendar>
+              <small class="text-500 text-xs mt-1 block"
+                >Cuándo se realizó el pago (puede ser después del cierre de
+                quincena).</small
+              >
+            </div>
+            <div>
+              <span class="block font-semibold text-900 mb-2"
+                >Quincena que aplica</span
+              >
+              <p-dropdown
+                [options]="payrollQuincenaOptions"
+                [(ngModel)]="paymentForm.payroll_period"
+                optionLabel="label"
+                optionValue="value"
+                styleClass="w-full"
+                appendTo="body"></p-dropdown>
+              <small class="text-500 text-xs mt-1 block"
+                >A qué quincena corresponde este adelanto o pago, aunque lo
+                hayas pagado en otra fecha.</small
+              >
             </div>
             <div>
               <span class="block font-semibold text-900 mb-2"
@@ -626,9 +651,9 @@
           <p class="text-600 text-sm mt-0 mb-3">
             Pagos, adelantos y descuentos del ámbito
             <strong>{{ data.calendar.periodLabel }}</strong
-            >. Si marcaste <strong>«En caja administrativa»</strong>, el
-            movimiento queda vinculado a Gastos administrativos y puedes ver el
-            voucher aquí.
+            >, según la <strong>quincena que aplica</strong> (no la fecha de
+            pago). Si marcaste <strong>«En caja administrativa»</strong>, el
+            movimiento queda vinculado a Gastos administrativos.
           </p>
           @if (!data.paymentItems.length) {
             <p class="text-600 text-sm m-0">
@@ -643,18 +668,27 @@
               responsiveLayout="scroll">
               <ng-template pTemplate="header">
                 <tr>
-                  <th>Fecha</th>
+                  <th>Fecha pago</th>
+                  <th>Quincena</th>
                   <th>Tipo</th>
                   <th class="text-right">Monto</th>
+                  <th>Medio</th>
                   <th>Nota</th>
                   <th class="text-center">Caja admin</th>
                   <th class="text-center">Voucher</th>
+                  <th class="text-center">Acciones</th>
                 </tr>
               </ng-template>
               <ng-template pTemplate="body" let-item>
                 <tr>
                   <td class="text-sm whitespace-nowrap">
                     {{ item.date | date: 'dd/MM/yyyy HH:mm' }}
+                  </td>
+                  <td>
+                    <p-tag
+                      [value]="item.payrollPeriodLabel"
+                      [severity]="payrollPeriodTagSeverity(item.payrollPeriod)"
+                      styleClass="text-xs font-semibold"></p-tag>
                   </td>
                   <td>
                     <p-tag
@@ -666,15 +700,16 @@
                     S/ {{ money(item.amount) }}
                   </td>
                   <td class="text-sm">
+                    <p-tag
+                      [value]="paymentMethodLabel(item.paymentMethod)"
+                      severity="info"
+                      styleClass="text-xs"></p-tag>
+                  </td>
+                  <td class="text-sm">
                     @if (item.description) {
                       {{ item.description }}
                     } @else {
                       <span class="text-500">—</span>
-                    }
-                    @if (item.syncedToAdmin && item.paymentMethod) {
-                      <span class="text-500 text-xs block">
-                        {{ paymentMethodLabel(item.paymentMethod) }}
-                      </span>
                     }
                   </td>
                   <td class="text-center">
@@ -696,13 +731,19 @@
                   </td>
                   <td class="text-center">
                     @if (item.voucherPaths?.length || item.voucherPath) {
-                      <div class="flex align-items-center justify-content-center gap-1">
+                      <div
+                        class="flex align-items-center justify-content-center gap-1">
                         <button
                           pButton
                           type="button"
                           icon="pi pi-eye"
                           class="p-button-rounded p-button-text p-button-sm"
-                          [pTooltip]="'Ver ' + ((item.voucherPaths?.length ?? 1) > 1 ? (item.voucherPaths.length) + ' comprobantes' : 'comprobante')"
+                          [pTooltip]="
+                            'Ver ' +
+                            ((item.voucherPaths?.length ?? 1) > 1
+                              ? item.voucherPaths.length + ' comprobantes'
+                              : 'comprobante')
+                          "
                           tooltipPosition="top"
                           (click)="showPaymentVoucher(item)"></button>
                         @if ((item.voucherPaths?.length ?? 0) > 1) {
@@ -717,6 +758,28 @@
                     } @else {
                       <span class="text-400 text-xs">Sin adjunto</span>
                     }
+                  </td>
+                  <td class="text-center">
+                    <div
+                      class="flex align-items-center justify-content-center gap-1">
+                      <button
+                        pButton
+                        type="button"
+                        icon="pi pi-pencil"
+                        class="p-button-rounded p-button-text p-button-sm p-button-warning"
+                        pTooltip="Corregir fecha / tipo / monto"
+                        tooltipPosition="top"
+                        (click)="openEditDialog(item)"></button>
+                      <button
+                        pButton
+                        type="button"
+                        icon="pi pi-trash"
+                        class="p-button-rounded p-button-text p-button-sm p-button-danger"
+                        pTooltip="Eliminar movimiento"
+                        tooltipPosition="top"
+                        [loading]="isDeletingPayment(item.id)"
+                        (click)="confirmDeletePayment(item)"></button>
+                    </div>
                   </td>
                 </tr>
               </ng-template>
@@ -766,7 +829,7 @@
           [header]="vistaMovimientosCardTitle"
           styleClass="shadow-1 border-round-xl h-full">
           <p class="text-600 text-sm mt-0 mb-2">
-            Filtrado por <strong>fecha del movimiento</strong> dentro de
+            Filtrado por <strong>quincena que aplica</strong> dentro de
             {{ data.calendar.periodLabel }}.
           </p>
           <ul class="list-none p-0 m-0 text-sm">
@@ -810,6 +873,95 @@
     </div>
   }
 </div>
+
+<!-- Dialog: corregir movimiento -->
+<p-dialog
+  [(visible)]="editDialogVisible"
+  (onHide)="closeEditDialog()"
+  [modal]="true"
+  header="Corregir movimiento"
+  [style]="{ width: '420px' }"
+  [draggable]="false"
+  [resizable]="false"
+  appendTo="body">
+  <div class="flex flex-column gap-3 pt-2">
+    <div>
+      <span class="block font-semibold text-900 mb-2">Tipo</span>
+      <p-dropdown
+        [options]="paymentTypeOptions"
+        [(ngModel)]="editForm.type"
+        optionLabel="label"
+        optionValue="value"
+        styleClass="w-full"
+        appendTo="body"></p-dropdown>
+    </div>
+    <div>
+      <span class="block font-semibold text-900 mb-2">Monto (S/)</span>
+      <p-inputNumber
+        [(ngModel)]="editForm.amount"
+        mode="currency"
+        currency="PEN"
+        locale="es-PE"
+        styleClass="w-full"
+        class="w-full"></p-inputNumber>
+    </div>
+    <div>
+      <span class="block font-semibold text-900 mb-2">Fecha de pago</span>
+      <p-calendar
+        [(ngModel)]="editForm.date"
+        [showTime]="true"
+        hourFormat="12"
+        dateFormat="dd/mm/yy"
+        [showIcon]="true"
+        appendTo="body"
+        styleClass="w-full"></p-calendar>
+    </div>
+    <div>
+      <span class="block font-semibold text-900 mb-2">Quincena que aplica</span>
+      <p-dropdown
+        [options]="payrollQuincenaOptions"
+        [(ngModel)]="editForm.payroll_period"
+        optionLabel="label"
+        optionValue="value"
+        styleClass="w-full"
+        appendTo="body"></p-dropdown>
+    </div>
+    <div>
+      <span class="block font-semibold text-900 mb-2">Medio de pago</span>
+      <p-dropdown
+        [options]="paymentMethodOptions"
+        [(ngModel)]="editForm.payment_method"
+        optionLabel="label"
+        optionValue="value"
+        styleClass="w-full"
+        appendTo="body"></p-dropdown>
+    </div>
+    <div>
+      <span class="block font-semibold text-900 mb-2">Nota</span>
+      <input
+        pInputText
+        [(ngModel)]="editForm.description"
+        class="w-full"
+        placeholder="Opcional" />
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      type="button"
+      label="Cancelar"
+      icon="pi pi-times"
+      class="p-button-text"
+      (click)="closeEditDialog()"></button>
+    <button
+      pButton
+      type="button"
+      label="Guardar cambios"
+      icon="pi pi-check"
+      [loading]="savingEdit"
+      (click)="saveEditPayment()"></button>
+  </ng-template>
+</p-dialog>
 
 <p-dialog
   [visible]="displayPreview()"
