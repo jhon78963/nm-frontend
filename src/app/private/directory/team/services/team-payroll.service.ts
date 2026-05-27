@@ -171,7 +171,7 @@ export class TeamPayrollService {
     description: string;
     payment_method: string;
     sync_cash_movement: boolean;
-    image: File | null;
+    images: File[];
   }): Observable<{ message: string; data: unknown }> {
     const formData = new FormData();
     formData.append('team_id', String(payload.teamId));
@@ -184,9 +184,7 @@ export class TeamPayrollService {
       'sync_cash_movement',
       payload.sync_cash_movement ? '1' : '0',
     );
-    if (payload.image) {
-      formData.append('image', payload.image);
-    }
+    payload.images.forEach(f => formData.append('images[]', f));
     return this.apiService.post<{ message: string; data: unknown }>(
       'payments',
       formData,

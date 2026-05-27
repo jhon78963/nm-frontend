@@ -23,6 +23,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { Subscription, finalize } from 'rxjs';
 import { SafeUrlPipe } from '../../../../finance/cash-movements/pipes/safe-url.pipe';
 import { CashflowService } from '../../../../finance/cash-movements/services/cash-movements.service';
+import { VoucherDropzoneComponent } from '../../../../shared/components/voucher-dropzone/voucher-dropzone.component';
 import { ITeam, Team } from '../../models/team.model';
 import {
   PayrollAttendanceSlice,
@@ -86,6 +87,7 @@ const MONTH_NAMES_ES = [
     TooltipModule,
     DialogModule,
     SafeUrlPipe,
+    VoucherDropzoneComponent,
   ],
   providers: [MessageService, DatePipe],
   templateUrl: './team-payroll.component.html',
@@ -132,7 +134,10 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
     payment_method: 'CASH',
     sync_cash_movement: true,
   };
-  paymentVoucherFile: File | null = null;
+  paymentVoucherFiles: File[] = [];
+
+  previewItems: string[] = [];
+  previewIndex = 0;
 
   paymentTypeOptions = [
     {
@@ -289,16 +294,11 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
     }
   }
 
-  onVoucherSelect(event: { files: File[] }): void {
-    this.paymentVoucherFile = event.files?.[0] ?? null;
+  onDropzoneFiles(files: File[]): void {
+    this.paymentVoucherFiles = files;
   }
 
-  clearVoucher(upload: { clear: () => void }): void {
-    this.paymentVoucherFile = null;
-    upload.clear();
-  }
-
-  submitPayment(voucherUpload: { clear: () => void }): void {
+  submitPayment(): void {
     if (
       !this.teamId ||
       !this.paymentForm.amount ||
@@ -325,7 +325,7 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
         description: this.paymentForm.description,
         payment_method: this.paymentForm.payment_method,
         sync_cash_movement: this.paymentForm.sync_cash_movement,
-        image: this.paymentVoucherFile,
+        images: this.paymentVoucherFiles,
       })
       .pipe(finalize(() => (this.savingPayment = false)))
       .subscribe({
@@ -339,7 +339,7 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
                 ? ' y reflejado en gastos administrativos.'
                 : '.'),
           });
-          this.resetPaymentForm(voucherUpload);
+          this.resetPaymentForm();
           this.loadPayroll();
         },
         error: err => {
@@ -353,7 +353,7 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
       });
   }
 
-  private resetPaymentForm(voucherUpload: { clear: () => void }): void {
+  private resetPaymentForm(): void {
     this.paymentForm = {
       type: 'PAYMENT',
       amount: null,
@@ -362,8 +362,7 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
       payment_method: 'CASH',
       sync_cash_movement: true,
     };
-    this.paymentVoucherFile = null;
-    voucherUpload.clear();
+    this.paymentVoucherFiles = [];
   }
 
   paymentMethodLabel(method: string | null | undefined): string {
@@ -390,12 +389,30 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
   }
 
   showPaymentVoucher(item: PayrollPaymentItem): void {
-    const path = item.voucherPath;
-    if (!path) {
-      return;
-    }
+    const paths: string[] = (item as any).voucherPaths?.length
+      ? (item as any).voucherPaths
+      : item.voucherPath
+        ? [item.voucherPath]
+        : [];
+    if (!paths.length) return;
+    this.previewItems = paths;
+    this.previewIndex = 0;
+    this.loadPreviewAt(0);
+  }
 
+  prevPreview(): void {
+    if (this.previewIndex > 0) this.loadPreviewAt(this.previewIndex - 1);
+  }
+
+  nextPreview(): void {
+    if (this.previewIndex < this.previewItems.length - 1)
+      this.loadPreviewAt(this.previewIndex + 1);
+  }
+
+  private loadPreviewAt(index: number): void {
+    const path = this.previewItems[index];
     this.revokePreviewUrl();
+    this.previewIndex = index;
     this.isPdf.set(path.toLowerCase().endsWith('.pdf'));
     this.displayPreview.set(true);
     this.previewLoading.set(true);

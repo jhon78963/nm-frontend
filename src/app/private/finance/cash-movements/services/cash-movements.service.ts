@@ -147,7 +147,7 @@ export class CashflowService {
    */
   registerMovement(
     data: any,
-    file: File | null,
+    files: File[] | File | null,
     currentDate: string, // 'yyyy-MM-dd' para tienda o 'yyyy-MM' para admin
   ): Observable<any[] | void> {
     const formData = new FormData();
@@ -158,7 +158,8 @@ export class CashflowService {
     formData.append('date', data.date);
     formData.append('payment_method', data.payment_method);
 
-    if (file) formData.append('image', file);
+    const fileArray = files instanceof File ? [files] : (files ?? []);
+    fileArray.forEach(f => formData.append('images[]', f));
 
     return this.apiService.post(this.apiUrl, formData).pipe(
       switchMap(() => {
@@ -177,7 +178,7 @@ export class CashflowService {
   updateMovement(
     id: number,
     data: any,
-    file: File | null,
+    files: File[] | File | null,
     currentDate: string,
   ): Observable<any[]> {
     const formData = new FormData();
@@ -192,9 +193,8 @@ export class CashflowService {
     formData.append('date', data.date);
     formData.append('payment_method', data.payment_method);
 
-    if (file) {
-      formData.append('image', file);
-    }
+    const fileArray = files instanceof File ? [files] : (files ?? []);
+    fileArray.forEach(f => formData.append('images[]', f));
 
     return this.apiService
       .post(`${this.apiUrl}/${id}`, formData) // Laravel recibirá esto como PUT /{id}

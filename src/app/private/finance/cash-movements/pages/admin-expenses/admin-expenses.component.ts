@@ -1,5 +1,5 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, OnInit, ViewChild, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 // PrimeNG
@@ -8,7 +8,6 @@ import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { CalendarModule } from 'primeng/calendar';
 import { DropdownModule } from 'primeng/dropdown';
-import { FileUpload, FileUploadModule } from 'primeng/fileupload';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
@@ -17,6 +16,7 @@ import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DialogModule } from 'primeng/dialog';
+import { VoucherDropzoneComponent } from '../../../../shared/components/voucher-dropzone/voucher-dropzone.component';
 import { SafeUrlPipe } from '../../pipes/safe-url.pipe';
 import { AuthService } from '../../../../../auth/services/auth.service';
 import { CashflowService } from '../../services/cash-movements.service';
@@ -32,7 +32,6 @@ import { CashflowService } from '../../services/cash-movements.service';
     InputNumberModule,
     CalendarModule,
     DropdownModule,
-    FileUploadModule,
     TableModule,
     TagModule,
     ToastModule,
@@ -40,13 +39,12 @@ import { CashflowService } from '../../services/cash-movements.service';
     ConfirmDialogModule,
     TooltipModule,
     SafeUrlPipe,
+    VoucherDropzoneComponent,
   ],
-  providers: [MessageService, ConfirmationService, DatePipe, DialogModule],
+  providers: [MessageService, ConfirmationService, DatePipe],
   templateUrl: './admin-expenses.component.html',
 })
 export class AdminExpensesComponent implements OnInit {
-  @ViewChild('fileUpload') fileUpload!: FileUpload;
-
   private readonly authService = inject(AuthService);
 
   selectedMonth: Date = new Date();
@@ -59,13 +57,15 @@ export class AdminExpensesComponent implements OnInit {
   // Estado del componente
   loading = signal(false);
   adminExpenses = signal<any[]>([]);
-  selectedFile: File | null = null;
+  selectedFiles: File[] = [];
 
   // Variables para el Preview
   displayPreview = signal(false);
   previewUrl = signal('');
   isPdf = signal(false);
   previewLoading = signal(false);
+  previewItems: string[] = [];
+  previewIndex = 0;
   private previewObjectUrl: string | null = null;
 
   isEditing = signal(false);
@@ -118,8 +118,30 @@ export class AdminExpensesComponent implements OnInit {
     });
   }
 
-  showVoucher(path: string) {
+  showVoucher(paths: string | string[]) {
+    const items = Array.isArray(paths) ? paths : [paths];
+    this.previewItems = items.filter(Boolean);
+    this.previewIndex = 0;
+    if (!this.previewItems.length) return;
+    this.loadPreviewAt(0);
+  }
+
+  prevPreview(): void {
+    if (this.previewIndex > 0) {
+      this.loadPreviewAt(this.previewIndex - 1);
+    }
+  }
+
+  nextPreview(): void {
+    if (this.previewIndex < this.previewItems.length - 1) {
+      this.loadPreviewAt(this.previewIndex + 1);
+    }
+  }
+
+  private loadPreviewAt(index: number): void {
+    const path = this.previewItems[index];
     this.revokePreviewUrl();
+    this.previewIndex = index;
     this.isPdf.set(path.toLowerCase().endsWith('.pdf'));
     this.displayPreview.set(true);
     this.previewLoading.set(true);
@@ -159,8 +181,8 @@ export class AdminExpensesComponent implements OnInit {
     this.previewUrl.set('');
   }
 
-  onFileSelect(event: any) {
-    this.selectedFile = event.files[0];
+  onDropzoneFiles(files: File[]): void {
+    this.selectedFiles = files;
   }
 
   editExpense(expense: any) {
@@ -197,12 +219,12 @@ export class AdminExpensesComponent implements OnInit {
       ? this.cashService.updateMovement(
           this.editingId!,
           { ...this.expenseForm, date: formattedDate },
-          this.selectedFile,
+          this.selectedFiles.length ? this.selectedFiles : null,
           currentMonthStr,
         )
       : this.cashService.registerMovement(
           { ...this.expenseForm, date: formattedDate },
-          this.selectedFile,
+          this.selectedFiles.length ? this.selectedFiles : null,
           currentMonthStr,
         );
 
@@ -236,10 +258,9 @@ export class AdminExpensesComponent implements OnInit {
       category: 'ADMINISTRATIVE',
       type: 'EXPENSE',
     };
-    this.selectedFile = null;
+    this.selectedFiles = [];
     this.isEditing.set(false);
     this.editingId = null;
-    if (this.fileUpload) this.fileUpload.clear();
   }
 
   canStoreCashflow(): boolean {
