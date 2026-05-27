@@ -214,6 +214,14 @@ export class CashflowService {
     return this.adminExpenses$;
   }
 
+  /**
+   * Reclasifica un movimiento como Compra de Mercadería (INVENTORY_PURCHASE).
+   * Tras la conversión deja de restar en los Gastos Operativos del P&L.
+   */
+  convertToPurchase(id: number): Observable<any> {
+    return this.apiService.post(`${this.apiUrl}/${id}/convert-to-purchase`, {});
+  }
+
   getVoucherPreview(voucherPath: string): Observable<Blob> {
     const params = new HttpParams().set('path', voucherPath);
 

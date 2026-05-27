@@ -70,15 +70,8 @@ export class ReportsComponent implements OnInit {
     ),
   );
 
-  totalYape = computed(() =>
-    this.allTimeMonthlyReport().reduce((acc, row) => acc + (row.yape || 0), 0),
-  );
-
-  totalTarjeta = computed(() =>
-    this.allTimeMonthlyReport().reduce(
-      (acc, row) => acc + (row.tarjeta_transferencia || 0),
-      0,
-    ),
+  totalBancos = computed(() =>
+    this.allTimeMonthlyReport().reduce((acc, row) => acc + (row.bancos || 0), 0),
   );
 
   totalGeneral = computed(() =>

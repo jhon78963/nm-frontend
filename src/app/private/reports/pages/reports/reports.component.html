@@ -238,9 +238,8 @@
               <tr>
                 <th class="bg-blue-50 text-blue-800">Fecha</th>
                 <th class="bg-blue-50 text-blue-800 text-right">Efectivo</th>
-                <th class="bg-blue-50 text-blue-800 text-right">Yape</th>
                 <th class="bg-blue-50 text-blue-800 text-right">
-                  Transf./Tarjeta
+                  Bancos / Digital
                 </th>
                 <th class="bg-indigo-600 text-white text-right font-bold">
                   Total Mensual
@@ -258,11 +257,7 @@
                 </td>
                 <td class="text-right">
                   <span class="text-500 text-xs mr-1">S/</span
-                  >{{ row.yape | number: '1.2-2' }}
-                </td>
-                <td class="text-right">
-                  <span class="text-500 text-xs mr-1">S/</span
-                  >{{ row.tarjeta_transferencia | number: '1.2-2' }}
+                  >{{ row.bancos | number: '1.2-2' }}
                 </td>
                 <td class="text-right font-bold text-indigo-700 bg-indigo-50">
                   <span class="text-xs mr-1">S/</span
@@ -278,10 +273,7 @@
                   S/ {{ totalEfectivo() | number: '1.2-2' }}
                 </td>
                 <td class="text-right bg-gray-100">
-                  S/ {{ totalYape() | number: '1.2-2' }}
-                </td>
-                <td class="text-right bg-gray-100">
-                  S/ {{ totalTarjeta() | number: '1.2-2' }}
+                  S/ {{ totalBancos() | number: '1.2-2' }}
                 </td>
                 <td class="text-right bg-indigo-200 text-indigo-900">
                   S/ {{ totalGeneral() | number: '1.2-2' }}
@@ -291,7 +283,7 @@
 
             <ng-template pTemplate="emptymessage">
               <tr>
-                <td colspan="5" class="text-center p-4 text-500">
+                <td colspan="4" class="text-center p-4 text-500">
                   No hay registros históricos disponibles.
                 </td>
               </tr>

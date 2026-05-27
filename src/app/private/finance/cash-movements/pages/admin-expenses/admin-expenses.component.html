@@ -1,4 +1,5 @@
 <p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
 
 <div class="m-3 flex align-items-center justify-content-center gap-3">
   <span class="block font-bold">Filtrar por Mes</span>
@@ -143,13 +144,24 @@
                     pButton
                     icon="pi pi-pencil"
                     class="p-button-rounded p-button-text p-button-sm p-button-warning"
+                    pTooltip="Editar"
+                    tooltipPosition="top"
                     (click)="editExpense(expense)"></button>
+                  <button
+                    pButton
+                    icon="pi pi-box"
+                    class="p-button-rounded p-button-text p-button-sm p-button-secondary"
+                    pTooltip="Mover a Compras de Mercadería"
+                    tooltipPosition="top"
+                    (click)="onConvertToPurchase(expense)"></button>
                 }
                 @if (expense.voucher_path) {
                   <button
                     pButton
                     icon="pi pi-eye"
                     class="p-button-rounded p-button-text p-button-sm"
+                    pTooltip="Ver comprobante"
+                    tooltipPosition="top"
                     (click)="showVoucher(expense.voucher_path)"></button>
                 } @else {
                   <span class="text-400 text-xs">Sin adjunto</span>

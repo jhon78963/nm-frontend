@@ -3,8 +3,9 @@ import { Component, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 // PrimeNG
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { CalendarModule } from 'primeng/calendar';
 import { DropdownModule } from 'primeng/dropdown';
 import { FileUpload, FileUploadModule } from 'primeng/fileupload';
@@ -13,6 +14,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DialogModule } from 'primeng/dialog';
 import { SafeUrlPipe } from '../../pipes/safe-url.pipe';
@@ -35,9 +37,11 @@ import { CashflowService } from '../../services/cash-movements.service';
     TagModule,
     ToastModule,
     DialogModule,
+    ConfirmDialogModule,
+    TooltipModule,
     SafeUrlPipe,
   ],
-  providers: [MessageService, DatePipe, DialogModule],
+  providers: [MessageService, ConfirmationService, DatePipe, DialogModule],
   templateUrl: './admin-expenses.component.html',
 })
 export class AdminExpensesComponent implements OnInit {
@@ -49,6 +53,7 @@ export class AdminExpensesComponent implements OnInit {
 
   private cashService = inject(CashflowService);
   private messageService = inject(MessageService);
+  private confirmationService = inject(ConfirmationService);
   private datePipe = inject(DatePipe);
 
   // Estado del componente
@@ -247,6 +252,39 @@ export class AdminExpensesComponent implements OnInit {
 
   canSaveAdminExpense(): boolean {
     return this.isEditing() ? this.canUpdateCashflow() : this.canStoreCashflow();
+  }
+
+  onConvertToPurchase(movement: any): void {
+    this.confirmationService.confirm({
+      header: 'Mover a Compras de Mercadería',
+      message:
+        '¿Estás seguro que deseas mover este registro a Compras? Dejará de restar como Gasto Operativo en el Estado de Resultados.',
+      icon: 'pi pi-box',
+      acceptLabel: 'Sí, mover',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-warning',
+      accept: () => {
+        this.loading.set(true);
+        this.cashService.convertToPurchase(movement.id).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Reclasificado',
+              detail: 'El movimiento fue movido a Compras de Mercadería.',
+            });
+            this.loadExpenses();
+          },
+          error: () => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: 'No se pudo reclasificar el movimiento.',
+            });
+            this.loading.set(false);
+          },
+        });
+      },
+    });
   }
 
   getCategoryLabel(category: string | undefined): string {
