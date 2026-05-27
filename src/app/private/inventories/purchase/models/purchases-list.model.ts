@@ -43,6 +43,16 @@ export interface PurchaseDetail extends PurchaseRow {
   cancellationReason: string | null;
   lines: PurchaseLineRow[];
   payloadSnapshot: unknown;
+  linkedPayment?: PurchaseLinkedPayment | null;
+}
+
+export interface PurchaseLinkedPayment {
+  cashMovementId: number;
+  amount: number;
+  paymentMethod: string;
+  description: string;
+  date: string | null;
+  voucherPath: string | null;
 }
 
 export interface PurchaseListResponse {

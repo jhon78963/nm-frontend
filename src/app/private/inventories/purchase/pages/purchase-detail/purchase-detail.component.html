@@ -60,6 +60,35 @@
           }
         </dl>
       </p-card>
+
+      @if (linkedPayment()) {
+        <p-card header="Pago / Voucher vinculado" styleClass="mt-3">
+          <dl class="m-0 text-sm">
+            <dt class="text-600">Monto pagado</dt>
+            <dd class="mt-0 mb-2 font-medium">
+              S/ {{ linkedPayment()!.amount | number: '1.2-2' }}
+              · {{ linkedPayment()!.paymentMethod }}
+            </dd>
+            <dt class="text-600">Descripción</dt>
+            <dd class="mt-0 mb-2">{{ linkedPayment()!.description }}</dd>
+            @if (linkedPayment()!.date) {
+              <dt class="text-600">Fecha pago</dt>
+              <dd class="mt-0 mb-2">{{ linkedPayment()!.date }}</dd>
+            }
+          </dl>
+          @if (linkedPayment()!.voucherPath) {
+            <button
+              pButton
+              type="button"
+              label="Ver comprobante"
+              icon="pi pi-eye"
+              class="p-button-outlined w-full mt-2"
+              (click)="showLinkedVoucher()"></button>
+          } @else {
+            <p class="text-600 text-sm m-0 mt-2">Sin archivo adjunto.</p>
+          }
+        </p-card>
+      }
     </div>
     <div class="col-12 lg:col-8">
       <p-card header="Nota / fecha (solo compras activas)">
@@ -230,3 +259,33 @@
 @if (loading) {
   <p class="text-600 p-4">Cargando…</p>
 }
+
+<p-dialog
+  [visible]="displayPreview()"
+  (visibleChange)="onPreviewVisibleChange($event)"
+  [modal]="true"
+  header="Comprobante de pago"
+  [style]="{ width: '90vw', maxWidth: '800px' }"
+  [contentStyle]="{ height: '80vh' }"
+  [draggable]="false"
+  [resizable]="false">
+  <div class="w-full h-full flex justify-content-center align-items-center">
+    @if (previewLoading()) {
+      <span>Cargando comprobante...</span>
+    } @else if (previewUrl()) {
+      @if (isPdf()) {
+        <iframe
+          [src]="previewUrl() | safeUrl"
+          width="100%"
+          height="100%"
+          style="border: none">
+        </iframe>
+      } @else {
+        <img
+          [src]="previewUrl() | safeUrl"
+          alt="Voucher"
+          style="max-width: 100%; max-height: 100%; object-fit: contain" />
+      }
+    }
+  </div>
+</p-dialog>

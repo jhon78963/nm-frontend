@@ -16,12 +16,30 @@ export class PurchaseService {
 
   constructor(private readonly api: ApiService) {}
 
+  /**
+   * Envía el payload de compra como `multipart/form-data` para poder adjuntar
+   * un voucher opcional. Replica el mismo patrón que usa `CashflowService`:
+   * - `payload`        → JSON string con la estructura de la compra
+   * - `payment_method` → método de pago (CASH, YAPE, CARD, TRANSFER)
+   * - `image`          → archivo de voucher (solo cuando payment_method !== CASH)
+   *
+   * Laravel decodifica `payload` en `PurchaseBulkRequest.prepareForValidation()`,
+   * sube la imagen a Node.js via `NodeUploaderService` y crea el `CashMovement`.
+   */
   registerBulk(
     payload: PurchaseBulkPayload,
+    paymentMethod: string = 'CASH',
+    voucherFile: File | null = null,
   ): Observable<PurchaseRegisterBulkResponse> {
+    const formData = new FormData();
+    formData.append('payload', JSON.stringify(payload));
+    formData.append('payment_method', paymentMethod);
+    if (voucherFile) {
+      formData.append('image', voucherFile);
+    }
     return this.api.post<PurchaseRegisterBulkResponse>(
       `${this.basePath}/bulk`,
-      payload,
+      formData,
     );
   }
 

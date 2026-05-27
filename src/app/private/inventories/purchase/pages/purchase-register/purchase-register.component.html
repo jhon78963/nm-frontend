@@ -80,6 +80,45 @@
               [showClear]="true"
               styleClass="w-full"></p-dropdown>
           </div>
+          <!-- Método de pago -->
+          <div class="flex flex-column gap-2">
+            <label class="font-medium text-sm">Método de pago</label>
+            <p-dropdown
+              [options]="paymentMethods"
+              optionLabel="label"
+              optionValue="value"
+              [ngModel]="selectedPaymentMethod()"
+              (ngModelChange)="selectedPaymentMethod.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+              styleClass="w-full"></p-dropdown>
+            <small class="text-500">
+              Se registrará un egreso de caja por el total de la compra.
+            </small>
+          </div>
+
+          <!-- Voucher: solo visible si el pago NO es en efectivo -->
+          @if (selectedPaymentMethod() !== 'CASH') {
+            <div class="flex flex-column gap-2">
+              <label class="font-medium text-sm">
+                Voucher / Comprobante
+                <span class="text-400 font-normal ml-1">(PDF o Imagen)</span>
+              </label>
+              <p-fileUpload
+                #voucherUpload
+                mode="basic"
+                chooseLabel="Subir Comprobante"
+                accept="image/*,application/pdf"
+                maxFileSize="5242880"
+                (onSelect)="onVoucherSelect($event)"
+                styleClass="w-full">
+              </p-fileUpload>
+              @if (selectedVoucherFile) {
+                <small class="text-green-600 font-bold flex align-items-center gap-1">
+                  <i class="pi pi-check"></i> {{ selectedVoucherFile.name }}
+                </small>
+              }
+            </div>
+          }
         </form>
       </p-card>
     </div>

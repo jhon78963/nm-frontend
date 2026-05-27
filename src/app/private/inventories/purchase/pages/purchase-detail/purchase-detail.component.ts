@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import {
   FormArray,
   FormBuilder,
@@ -12,6 +12,7 @@ import { ButtonModule } from 'primeng/button';
 import { CalendarModule } from 'primeng/calendar';
 import { CardModule } from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { RippleModule } from 'primeng/ripple';
@@ -19,9 +20,12 @@ import { TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
 import { showError, showSuccess } from '../../../../../utils/notifications';
+import { CashflowService } from '../../../../finance/cash-movements/services/cash-movements.service';
+import { SafeUrlPipe } from '../../../../finance/cash-movements/pipes/safe-url.pipe';
 import type {
   PurchaseDetail,
   PurchaseLineRow,
+  PurchaseLinkedPayment,
 } from '../../models/purchases-list.model';
 import { PurchaseService } from '../../services/purchase.service';
 
@@ -41,7 +45,9 @@ import { PurchaseService } from '../../services/purchase.service';
     CalendarModule,
     ToastModule,
     ConfirmDialogModule,
+    DialogModule,
     RippleModule,
+    SafeUrlPipe,
   ],
   templateUrl: './purchase-detail.component.html',
   styleUrl: './purchase-detail.component.scss',
@@ -51,6 +57,13 @@ export class PurchaseDetailComponent implements OnInit {
   purchase: PurchaseDetail | null = null;
   loading = true;
   savingLineId = new Set<number>();
+
+  displayPreview = signal(false);
+  previewUrl = signal('');
+  isPdf = signal(false);
+  previewLoading = signal(false);
+  private previewObjectUrl: string | null = null;
+
   headerForm = this.fb.group({
     documentNote: [''],
     registeredAt: [null as Date | null],
@@ -64,6 +77,7 @@ export class PurchaseDetailComponent implements OnInit {
     private readonly router: Router,
     private readonly fb: FormBuilder,
     private readonly purchaseApi: PurchaseService,
+    private readonly cashflowService: CashflowService,
     private readonly messageService: MessageService,
     private readonly confirmationService: ConfirmationService,
   ) {}
@@ -282,6 +296,50 @@ export class PurchaseDetailComponent implements OnInit {
 
   isLineBusy(lineId: number): boolean {
     return this.savingLineId.has(lineId);
+  }
+
+  linkedPayment(): PurchaseLinkedPayment | null {
+    return this.purchase?.linkedPayment ?? null;
+  }
+
+  showLinkedVoucher(): void {
+    const path = this.linkedPayment()?.voucherPath;
+    if (!path) {
+      return;
+    }
+
+    this.revokePreviewUrl();
+    this.isPdf.set(path.toLowerCase().endsWith('.pdf'));
+    this.displayPreview.set(true);
+    this.previewLoading.set(true);
+
+    this.cashflowService.getVoucherPreview(path).subscribe({
+      next: blob => {
+        this.previewObjectUrl = URL.createObjectURL(blob);
+        this.previewUrl.set(this.previewObjectUrl);
+        this.previewLoading.set(false);
+      },
+      error: () => {
+        this.previewLoading.set(false);
+        this.displayPreview.set(false);
+        showError(this.messageService, 'No se pudo cargar el comprobante.');
+      },
+    });
+  }
+
+  onPreviewVisibleChange(visible: boolean): void {
+    this.displayPreview.set(visible);
+    if (!visible) {
+      this.revokePreviewUrl();
+    }
+  }
+
+  private revokePreviewUrl(): void {
+    if (this.previewObjectUrl) {
+      URL.revokeObjectURL(this.previewObjectUrl);
+      this.previewObjectUrl = null;
+    }
+    this.previewUrl.set('');
   }
 
   confirmCancel(event?: Event): void {

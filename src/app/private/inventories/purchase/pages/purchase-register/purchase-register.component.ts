@@ -35,6 +35,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
 import { DividerModule } from 'primeng/divider';
 import { DropdownModule } from 'primeng/dropdown';
+import { FileUpload, FileUploadModule } from 'primeng/fileupload';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { PanelModule } from 'primeng/panel';
@@ -42,6 +43,7 @@ import { RippleModule } from 'primeng/ripple';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
+import { TooltipModule } from 'primeng/tooltip';
 import { ToolbarModule } from 'primeng/toolbar';
 import {
   catchError,
@@ -114,6 +116,8 @@ const LEGACY_DRAFT_STORAGE_KEYS = [
     ToastModule,
     PanelModule,
     DialogModule,
+    FileUploadModule,
+    TooltipModule,
   ],
   templateUrl: './purchase-register.component.html',
   styleUrl: './purchase-register.component.scss',
@@ -199,6 +203,19 @@ export class PurchaseRegisterComponent implements OnInit {
   filteredVendors: Vendor[] = [];
 
   @ViewChild('colorSearchAc') colorSearchAc?: AutoComplete;
+  @ViewChild('voucherUpload') voucherUpload?: FileUpload;
+
+  /** Método de pago para el egreso de caja generado con la compra. */
+  selectedPaymentMethod = signal<string>('CASH');
+  /** Voucher adjunto (solo visible/requerido cuando el método no es Efectivo). */
+  selectedVoucherFile: File | null = null;
+
+  readonly paymentMethods = [
+    { label: 'Efectivo', value: 'CASH' },
+    { label: 'Yape / Plin', value: 'YAPE' },
+    { label: 'Tarjeta', value: 'CARD' },
+    { label: 'Transferencia', value: 'TRANSFER' },
+  ];
 
   /** Buscador rápido de colores (ngModel standalone; el alta es con Enter o clic). */
   colorCatalogSearch = '';
@@ -1399,7 +1416,11 @@ export class PurchaseRegisterComponent implements OnInit {
             return EMPTY;
           }
           this.lastPayloadJson.set(built.json);
-          return this.purchaseApi.registerBulk(built.payload);
+          return this.purchaseApi.registerBulk(
+            built.payload,
+            this.selectedPaymentMethod(),
+            this.selectedVoucherFile,
+          );
         }),
         catchError(err => {
           const msg =
@@ -1569,7 +1590,16 @@ export class PurchaseRegisterComponent implements OnInit {
     this.useExistingProduct.set(true);
     this.activeNewProductTempId = null;
     this.lastPayloadJson.set(null);
+    this.selectedPaymentMethod.set('CASH');
+    this.selectedVoucherFile = null;
+    if (this.voucherUpload) {
+      this.voucherUpload.clear();
+    }
     this.persistDraftEnabled = true;
+  }
+
+  onVoucherSelect(event: { files: File[] }): void {
+    this.selectedVoucherFile = event.files[0] ?? null;
   }
 
   onUseColorVariantChange(): void {

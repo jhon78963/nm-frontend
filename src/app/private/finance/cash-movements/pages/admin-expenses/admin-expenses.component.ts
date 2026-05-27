@@ -254,31 +254,43 @@ export class AdminExpensesComponent implements OnInit {
     return this.isEditing() ? this.canUpdateCashflow() : this.canStoreCashflow();
   }
 
-  onConvertToPurchase(movement: any): void {
+  /** ID de compra a vincular por fila (input simple). */
+  linkPurchaseInputs: Record<number, number | null> = {};
+
+  onLinkToPurchase(movement: any): void {
+    const purchaseId = Number(this.linkPurchaseInputs[movement.id]);
+    if (!Number.isFinite(purchaseId) || purchaseId < 1) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'ID requerido',
+        detail: 'Escribe el ID numérico de la compra (ej. 48).',
+      });
+      return;
+    }
+
     this.confirmationService.confirm({
-      header: 'Mover a Compras de Mercadería',
-      message:
-        '¿Estás seguro que deseas mover este registro a Compras? Dejará de restar como Gasto Operativo en el Estado de Resultados.',
-      icon: 'pi pi-box',
-      acceptLabel: 'Sí, mover',
+      header: 'Vincular con compra',
+      message: `¿Vincular este gasto con la compra #${purchaseId}? El voucher aparecerá en el detalle de esa compra y dejará de listarse aquí como gasto operativo.`,
+      icon: 'pi pi-link',
+      acceptLabel: 'Vincular',
       rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-warning',
       accept: () => {
         this.loading.set(true);
-        this.cashService.convertToPurchase(movement.id).subscribe({
+        this.cashService.linkToPurchase(movement.id, purchaseId).subscribe({
           next: () => {
             this.messageService.add({
               severity: 'success',
-              summary: 'Reclasificado',
-              detail: 'El movimiento fue movido a Compras de Mercadería.',
+              summary: 'Vinculado',
+              detail: `Gasto vinculado a compra #${purchaseId}.`,
             });
+            delete this.linkPurchaseInputs[movement.id];
             this.loadExpenses();
           },
           error: () => {
             this.messageService.add({
               severity: 'error',
               summary: 'Error',
-              detail: 'No se pudo reclasificar el movimiento.',
+              detail: 'No se pudo vincular. Verifica que la compra exista.',
             });
             this.loading.set(false);
           },

@@ -141,7 +141,7 @@ export class PurchaseCatalogService {
   }
 
   /** Catálogo global de tallas filtradas por tipo (independiente del producto). */
-  getSizesBySizeType(sizeTypeId: number, limit = 500): Observable<Size[]> {
+  getSizesBySizeType(sizeTypeId: number, limit = 100): Observable<Size[]> {
     return this.api
       .get<SizeListResponse>(
         `sizes?limit=${limit}&page=1&sizeTypeId=${sizeTypeId}`,
