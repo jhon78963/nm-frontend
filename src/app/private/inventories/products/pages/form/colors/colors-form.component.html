@@ -164,11 +164,23 @@
           class="flex flex-column md:flex-row gap-3 mb-3 p-3 bg-white border-round-xl shadow-1 border-1 border-100">
           <div class="p-inputgroup flex-1">
             <span class="p-inputgroup-addon"><i class="pi pi-search"></i></span>
-            <input
-              pInputText
-              placeholder="Buscar color..."
-              [ngModel]="searchTerm()"
-              (ngModelChange)="searchTerm.set($event)" />
+            <p-autoComplete
+              #colorJumpAc
+              [(ngModel)]="colorJumpSearch"
+              [ngModelOptions]="{ standalone: true }"
+              [suggestions]="colorJumpSuggestions"
+              (completeMethod)="onColorJumpComplete($event)"
+              (onSelect)="onColorJumpSelect($event)"
+              (keydown)="onColorJumpKeydown($event)"
+              field="description"
+              [forceSelection]="false"
+              [minLength]="0"
+              [completeOnFocus]="true"
+              placeholder="Ir a color… Enter o clic para ubicarlo en la tabla"
+              styleClass="w-full color-jump-autocomplete"
+              inputStyleClass="w-full"
+              [disabled]="!selectedSize || catalogColorsPending()">
+            </p-autoComplete>
           </div>
           <p-selectButton
             [options]="[
@@ -183,6 +195,12 @@
             styleClass="white-space-nowrap text-center">
           </p-selectButton>
         </div>
+        @if (selectedSize && !catalogColorsPending()) {
+          <p class="text-xs text-600 mt-0 mb-3 line-height-3">
+            Escribí un color, elegilo con Enter o clic y el buscador se limpia
+            solo para que puedas ubicar otro al instante.
+          </p>
+        }
 
         @if (selectedSize && !catalogColorsPending() && !isStockBalanced()) {
           <div
@@ -235,12 +253,15 @@
 
               <ng-template pTemplate="body" let-color>
                 <tr
+                  [attr.id]="'color-row-' + color.id"
                   [ngClass]="{
                     'bg-blue-50/30': color.variantAttached,
                     'opacity-60': !color.variantAttached,
                     'color-row-zero-stock':
                       color.variantAttached &&
                       (color.stock === 0 || color.stock === '0'),
+                    'color-row-jump-highlight':
+                      highlightedColorId() === color.id,
                   }">
                   <td class="text-center align-top pt-3">
                     <p-checkbox

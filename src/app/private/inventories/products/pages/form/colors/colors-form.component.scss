@@ -119,3 +119,24 @@
 ::ng-deep .color-row-zero-stock .stock-input-wrap input:focus {
   box-shadow: 0 0 0 2px #fecaca;
 }
+
+::ng-deep .p-datatable .color-row-jump-highlight {
+  animation: color-row-jump-pulse 2.5s ease-out;
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+}
+
+@keyframes color-row-jump-pulse {
+  0%,
+  15% {
+    background-color: #dbeafe;
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+::ng-deep .color-jump-autocomplete .p-autocomplete-input {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}

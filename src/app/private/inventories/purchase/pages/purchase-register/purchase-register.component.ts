@@ -726,9 +726,7 @@ export class PurchaseRegisterComponent implements OnInit {
       return;
     }
     this.addCatalogColorToQueue(opt, 1);
-    this.colorCatalogSearch = '';
-    this.filteredColorsForPicker = [];
-    this.scheduleFocusColorSearch();
+    this.resetColorCatalogSearch();
   }
 
   onColorSearchKeydown(ev: KeyboardEvent): void {
@@ -752,9 +750,16 @@ export class PurchaseRegisterComponent implements OnInit {
     ev.preventDefault();
     ev.stopPropagation();
     this.addCatalogColorToQueue(pick, 1);
+    this.resetColorCatalogSearch();
+  }
+
+  private resetColorCatalogSearch(): void {
     this.colorCatalogSearch = '';
     this.filteredColorsForPicker = [];
-    this.scheduleFocusColorSearch();
+    queueMicrotask(() => {
+      this.colorSearchAc?.clear();
+      this.scheduleFocusColorSearch();
+    });
   }
 
   private scheduleFocusColorSearch(): void {

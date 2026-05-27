@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, OnInit, signal } from '@angular/core';
+import { Component, computed, OnInit, signal, ViewChild } from '@angular/core';
 import {
   FormControl,
   FormGroup,
@@ -8,6 +8,12 @@ import {
 } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import {
+  AutoComplete,
+  AutoCompleteCompleteEvent,
+  AutoCompleteModule,
+  AutoCompleteSelectEvent,
+} from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ColorPickerModule } from 'primeng/colorpicker';
@@ -45,6 +51,7 @@ type CatalogColorRow = Record<string, unknown> & {
   selector: 'app-colors-form',
   standalone: true,
   imports: [
+    AutoCompleteModule,
     ButtonModule,
     CheckboxModule,
     CommonModule,
@@ -92,8 +99,14 @@ export class ColorsFormComponent implements OnInit {
     this.panelStockSourceEpoch.update(n => n + 1);
   }
 
-  searchTerm = signal<string>('');
   filterStatus = signal<'all' | 'active' | 'inactive'>('all');
+  highlightedColorId = signal<number | null>(null);
+
+  /** Buscador rápido: ubica la fila en la tabla y se limpia tras elegir. */
+  colorJumpSearch = '';
+  colorJumpSuggestions: CatalogColorRow[] = [];
+
+  @ViewChild('colorJumpAc') colorJumpAc?: AutoComplete;
 
   attachedColors = computed(() =>
     this.colors().filter((c: CatalogColorRow) => c.variantAttached),
@@ -191,14 +204,10 @@ export class ColorsFormComponent implements OnInit {
   });
 
   filteredColors = computed(() => {
-    const term = this.searchTerm().toLowerCase();
     const status = this.filterStatus();
 
     return this.colors()
       .filter(c => {
-        const matchesSearch = String(c.description ?? '')
-          .toLowerCase()
-          .includes(term);
         const stockNum = Number(c.stock) || 0;
         const matchesStatus =
           status === 'all'
@@ -206,7 +215,7 @@ export class ColorsFormComponent implements OnInit {
             : status === 'active'
               ? !!c.variantAttached && stockNum > 0
               : !!c.variantAttached && stockNum === 0;
-        return matchesSearch && matchesStatus;
+        return matchesStatus;
       })
       .sort((a, b) => {
         const wa = Number(a.stock) || 0;
@@ -514,6 +523,91 @@ export class ColorsFormComponent implements OnInit {
     );
     color.stock = stockNum;
     this.colors.update(currentColors => [...currentColors]);
+  }
+
+  onColorJumpComplete(ev: AutoCompleteCompleteEvent): void {
+    const q = (ev.query ?? '').trim().toLowerCase();
+    const rows = this.colors();
+    if (!q) {
+      this.colorJumpSuggestions = rows.slice(0, 50);
+      return;
+    }
+    this.colorJumpSuggestions = rows
+      .filter(c => String(c.description ?? '').toLowerCase().includes(q))
+      .slice(0, 60);
+  }
+
+  onColorJumpSelect(ev: AutoCompleteSelectEvent): void {
+    const color = ev.value as CatalogColorRow | null;
+    if (!color?.id) {
+      return;
+    }
+    this.focusColorInTable(color);
+  }
+
+  onColorJumpKeydown(ev: KeyboardEvent): void {
+    if (ev.key !== 'Enter') {
+      return;
+    }
+    const q = this.colorJumpSearch.trim().toLowerCase();
+    if (!q) {
+      return;
+    }
+    const rows = this.colors();
+    const exact = rows.find(
+      c => String(c.description ?? '').trim().toLowerCase() === q,
+    );
+    const single =
+      this.colorJumpSuggestions.length === 1
+        ? this.colorJumpSuggestions[0]
+        : null;
+    const pick = exact ?? single;
+    if (!pick?.id) {
+      return;
+    }
+    ev.preventDefault();
+    ev.stopPropagation();
+    this.focusColorInTable(pick);
+  }
+
+  private focusColorInTable(color: CatalogColorRow): void {
+    if (this.filterStatus() !== 'all') {
+      this.filterStatus.set('all');
+    }
+    this.scrollToColorRow(color);
+    this.resetColorJumpSearch();
+  }
+
+  private scrollToColorRow(color: CatalogColorRow): void {
+    this.highlightedColorId.set(color.id);
+    // setTimeout permite que Angular corra change detection y re-renderice
+    // la tabla (especialmente si se cambió filterStatus justo antes).
+    setTimeout(() => {
+      document.getElementById(`color-row-${color.id}`)?.scrollIntoView({
+        block: 'nearest',
+        behavior: 'smooth',
+      });
+    }, 60);
+    setTimeout(() => {
+      if (this.highlightedColorId() === color.id) {
+        this.highlightedColorId.set(null);
+      }
+    }, 2500);
+  }
+
+  private resetColorJumpSearch(): void {
+    this.colorJumpSearch = '';
+    this.colorJumpSuggestions = [];
+    queueMicrotask(() => {
+      this.colorJumpAc?.clear();
+      // 'focusInput' no es parte del tipo público; se accede de forma segura
+      const ac = this.colorJumpAc as unknown as {
+        focusInput?: () => void;
+        inputEL?: { nativeElement?: HTMLElement };
+      };
+      ac?.focusInput?.();
+      ac?.inputEL?.nativeElement?.focus();
+    });
   }
 
   createColor() {
