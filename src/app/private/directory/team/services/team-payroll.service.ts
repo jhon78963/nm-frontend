@@ -68,6 +68,20 @@ export interface PayrollMovements {
   deductions: number;
 }
 
+export interface PayrollPaymentItem {
+  id: number;
+  type: 'PAYMENT' | 'ADVANCE' | 'DEDUCTION';
+  typeLabel: string;
+  amount: number;
+  date: string;
+  description: string | null;
+  syncedToAdmin: boolean;
+  cashMovementId: number | null;
+  paymentMethod: string | null;
+  voucherPath: string | null;
+  adminExpenseDescription: string | null;
+}
+
 export interface PayrollEstimates {
   salarioBase: number;
   descuentoAsistenciaMesCompleto: number;
@@ -117,6 +131,7 @@ export interface PayrollData {
   movementsQuincena1: PayrollMovements;
   movementsQuincena2: PayrollMovements;
   movementsVistaPeriodo: PayrollMovements;
+  paymentItems: PayrollPaymentItem[];
   estimates: PayrollEstimates;
   liquidacionPeriodo?: PayrollLiquidacionPeriodo;
 }

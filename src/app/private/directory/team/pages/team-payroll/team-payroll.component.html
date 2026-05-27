@@ -638,6 +638,104 @@
       </div>
     </div>
 
+    <div class="grid mb-3">
+      <div class="col-12">
+        <p-card
+          header="Historial de movimientos registrados"
+          styleClass="shadow-1 border-round-xl">
+          <p class="text-600 text-sm mt-0 mb-3">
+            Pagos, adelantos y descuentos del ámbito
+            <strong>{{ data.calendar.periodLabel }}</strong
+            >. Si marcaste <strong>«En caja administrativa»</strong>, el
+            movimiento queda vinculado a Gastos administrativos y puedes ver el
+            voucher aquí.
+          </p>
+          @if (!data.paymentItems.length) {
+            <p class="text-600 text-sm m-0">
+              No hay movimientos registrados en este período.
+            </p>
+          } @else {
+            <p-table
+              [value]="data.paymentItems"
+              [paginator]="true"
+              [rows]="8"
+              styleClass="p-datatable-sm p-datatable-striped"
+              responsiveLayout="scroll">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th class="text-right">Monto</th>
+                  <th>Nota</th>
+                  <th class="text-center">Caja admin</th>
+                  <th class="text-center">Voucher</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-item>
+                <tr>
+                  <td class="text-sm whitespace-nowrap">
+                    {{ item.date | date: 'dd/MM/yyyy HH:mm' }}
+                  </td>
+                  <td>
+                    <p-tag
+                      [value]="item.typeLabel"
+                      [severity]="paymentTypeTagSeverity(item.type)"
+                      styleClass="text-xs"></p-tag>
+                  </td>
+                  <td class="text-right font-bold">
+                    S/ {{ money(item.amount) }}
+                  </td>
+                  <td class="text-sm">
+                    @if (item.description) {
+                      {{ item.description }}
+                    } @else {
+                      <span class="text-500">—</span>
+                    }
+                    @if (item.syncedToAdmin && item.paymentMethod) {
+                      <span class="text-500 text-xs block">
+                        {{ paymentMethodLabel(item.paymentMethod) }}
+                      </span>
+                    }
+                  </td>
+                  <td class="text-center">
+                    @if (item.syncedToAdmin) {
+                      <p-tag
+                        value="Vinculado"
+                        severity="success"
+                        styleClass="text-xs"
+                        [pTooltip]="
+                          item.adminExpenseDescription || 'Gasto administrativo'
+                        "
+                        tooltipPosition="top"></p-tag>
+                    } @else {
+                      <p-tag
+                        value="Solo nómina"
+                        severity="secondary"
+                        styleClass="text-xs"></p-tag>
+                    }
+                  </td>
+                  <td class="text-center">
+                    @if (item.voucherPath) {
+                      <button
+                        pButton
+                        type="button"
+                        icon="pi pi-eye"
+                        class="p-button-rounded p-button-text p-button-sm"
+                        pTooltip="Ver comprobante"
+                        tooltipPosition="top"
+                        (click)="showPaymentVoucher(item)"></button>
+                    } @else {
+                      <span class="text-400 text-xs">Sin adjunto</span>
+                    }
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          }
+        </p-card>
+      </div>
+    </div>
+
     <div class="grid">
       <div class="col-12 lg:col-6">
         <p-card
@@ -722,3 +820,33 @@
     </div>
   }
 </div>
+
+<p-dialog
+  [visible]="displayPreview()"
+  (visibleChange)="onPreviewVisibleChange($event)"
+  [modal]="true"
+  header="Comprobante de pago"
+  [style]="{ width: '90vw', maxWidth: '800px' }"
+  [contentStyle]="{ height: '80vh' }"
+  [draggable]="false"
+  [resizable]="false">
+  <div class="w-full h-full flex justify-content-center align-items-center">
+    @if (previewLoading()) {
+      <span>Cargando comprobante...</span>
+    } @else if (previewUrl()) {
+      @if (isPdf()) {
+        <iframe
+          [src]="previewUrl() | safeUrl"
+          width="100%"
+          height="100%"
+          style="border: none">
+        </iframe>
+      } @else {
+        <img
+          [src]="previewUrl() | safeUrl"
+          alt="Voucher"
+          style="max-width: 100%; max-height: 100%; object-fit: contain" />
+      }
+    }
+  </div>
+</p-dialog>

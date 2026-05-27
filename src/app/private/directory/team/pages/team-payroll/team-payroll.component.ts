@@ -1,5 +1,5 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
@@ -7,6 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { CalendarModule } from 'primeng/calendar';
 import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
+import { DialogModule } from 'primeng/dialog';
 import { DividerModule } from 'primeng/divider';
 import { DropdownModule } from 'primeng/dropdown';
 import { FileUploadModule } from 'primeng/fileupload';
@@ -20,11 +21,14 @@ import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { Subscription, finalize } from 'rxjs';
+import { SafeUrlPipe } from '../../../../finance/cash-movements/pipes/safe-url.pipe';
+import { CashflowService } from '../../../../finance/cash-movements/services/cash-movements.service';
 import { ITeam, Team } from '../../models/team.model';
 import {
   PayrollAttendanceSlice,
   PayrollData,
   PayrollDeudaDia,
+  PayrollPaymentItem,
   PayrollPeriod,
   PayrollTardanza,
   SaldoSentido,
@@ -80,6 +84,8 @@ const MONTH_NAMES_ES = [
     TableModule,
     ToastModule,
     TooltipModule,
+    DialogModule,
+    SafeUrlPipe,
   ],
   providers: [MessageService, DatePipe],
   templateUrl: './team-payroll.component.html',
@@ -90,8 +96,15 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly teamService = inject(TeamService);
   private readonly payrollService = inject(TeamPayrollService);
+  private readonly cashflowService = inject(CashflowService);
   private readonly messageService = inject(MessageService);
   private readonly datePipe = inject(DatePipe);
+
+  displayPreview = signal(false);
+  previewUrl = signal('');
+  isPdf = signal(false);
+  previewLoading = signal(false);
+  private previewObjectUrl: string | null = null;
 
   private routeSub?: Subscription;
 
@@ -105,8 +118,8 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
 
   periodOptions = [
     { label: 'Mes completo', value: 'full' as PayrollPeriod },
-    { label: '1.ª quincena (1–15)', value: 'q1' as PayrollPeriod },
-    { label: '2.ª quincena (16–fin)', value: 'q2' as PayrollPeriod },
+    { label: '1.ª quincena (1-15)', value: 'q1' as PayrollPeriod },
+    { label: '2.ª quincena (16-fin)', value: 'q2' as PayrollPeriod },
   ];
 
   /** Registro de movimiento de nómina (team_payments + opcional caja admin). */
@@ -164,6 +177,7 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.routeSub?.unsubscribe();
+    this.revokePreviewUrl();
   }
 
   get monthTitle(): string {
@@ -352,6 +366,73 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
     voucherUpload.clear();
   }
 
+  paymentMethodLabel(method: string | null | undefined): string {
+    return (
+      this.paymentMethodOptions.find(option => option.value === method)
+        ?.label ??
+      method ??
+      '—'
+    );
+  }
+
+  paymentTypeTagSeverity(
+    type: PayrollPaymentItem['type'],
+  ): 'success' | 'info' | 'warning' | 'danger' | 'secondary' {
+    const map: Record<
+      PayrollPaymentItem['type'],
+      'success' | 'info' | 'warning' | 'danger' | 'secondary'
+    > = {
+      PAYMENT: 'info',
+      ADVANCE: 'warning',
+      DEDUCTION: 'danger',
+    };
+    return map[type] ?? 'secondary';
+  }
+
+  showPaymentVoucher(item: PayrollPaymentItem): void {
+    const path = item.voucherPath;
+    if (!path) {
+      return;
+    }
+
+    this.revokePreviewUrl();
+    this.isPdf.set(path.toLowerCase().endsWith('.pdf'));
+    this.displayPreview.set(true);
+    this.previewLoading.set(true);
+
+    this.cashflowService.getVoucherPreview(path).subscribe({
+      next: blob => {
+        this.previewObjectUrl = URL.createObjectURL(blob);
+        this.previewUrl.set(this.previewObjectUrl);
+        this.previewLoading.set(false);
+      },
+      error: () => {
+        this.previewLoading.set(false);
+        this.displayPreview.set(false);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo cargar el comprobante.',
+        });
+      },
+    });
+  }
+
+  onPreviewVisibleChange(visible: boolean): void {
+    this.displayPreview.set(visible);
+    if (!visible) {
+      this.revokePreviewUrl();
+    }
+  }
+
+  private revokePreviewUrl(): void {
+    if (this.previewObjectUrl) {
+      URL.revokeObjectURL(this.previewObjectUrl);
+      this.previewObjectUrl = null;
+    }
+    this.previewUrl.set('');
+  }
+
   money(n: number | null | undefined): string {
     const x = Number(n ?? 0);
     return new Intl.NumberFormat('es-PE', {
@@ -495,7 +576,10 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
       .subscribe({
         next: res => {
           if (res?.success && res.data) {
-            this.data = res.data;
+            this.data = {
+              ...res.data,
+              paymentItems: res.data.paymentItems ?? [],
+            };
           } else {
             this.data = null;
             this.messageService.add({
