@@ -389,8 +389,8 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
   }
 
   showPaymentVoucher(item: PayrollPaymentItem): void {
-    const paths: string[] = (item as any).voucherPaths?.length
-      ? (item as any).voucherPaths
+    const paths: string[] = item.voucherPaths?.length
+      ? item.voucherPaths
       : item.voucherPath
         ? [item.voucherPath]
         : [];

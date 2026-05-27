@@ -79,6 +79,7 @@ export interface PayrollPaymentItem {
   cashMovementId: number | null;
   paymentMethod: string | null;
   voucherPath: string | null;
+  voucherPaths: string[];
   adminExpenseDescription: string | null;
 }
 

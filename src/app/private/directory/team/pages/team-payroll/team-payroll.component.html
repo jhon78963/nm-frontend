@@ -695,15 +695,25 @@
                     }
                   </td>
                   <td class="text-center">
-                    @if (item.voucherPath) {
-                      <button
-                        pButton
-                        type="button"
-                        icon="pi pi-eye"
-                        class="p-button-rounded p-button-text p-button-sm"
-                        pTooltip="Ver comprobante"
-                        tooltipPosition="top"
-                        (click)="showPaymentVoucher(item)"></button>
+                    @if (item.voucherPaths?.length || item.voucherPath) {
+                      <div class="flex align-items-center justify-content-center gap-1">
+                        <button
+                          pButton
+                          type="button"
+                          icon="pi pi-eye"
+                          class="p-button-rounded p-button-text p-button-sm"
+                          [pTooltip]="'Ver ' + ((item.voucherPaths?.length ?? 1) > 1 ? (item.voucherPaths.length) + ' comprobantes' : 'comprobante')"
+                          tooltipPosition="top"
+                          (click)="showPaymentVoucher(item)"></button>
+                        @if ((item.voucherPaths?.length ?? 0) > 1) {
+                          <p-tag
+                            [value]="item.voucherPaths.length + ''"
+                            severity="info"
+                            styleClass="text-xs"
+                            pTooltip="Múltiples comprobantes"
+                            tooltipPosition="top"></p-tag>
+                        }
+                      </div>
                     } @else {
                       <span class="text-400 text-xs">Sin adjunto</span>
                     }
