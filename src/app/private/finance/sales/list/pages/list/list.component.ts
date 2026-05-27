@@ -9,6 +9,7 @@ import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { PaginatorState } from 'primeng/paginator';
 import { ToastModule } from 'primeng/toast';
 import { debounceTime, Observable, take } from 'rxjs';
+import { AuthService } from '../../../../../../auth/services/auth.service';
 import {
   CallToAction,
   Column,
@@ -119,18 +120,12 @@ export class SaleListComponent implements OnInit, OnDestroy {
     {
       type: 'button',
       size: 'small',
-      icon: 'pi pi-file-pdf',
+      icon: 'pi pi-eye',
       outlined: true,
-      pTooltip: 'Descargar PDF',
+      pTooltip: 'Ver ticket (imprimir o guardar PDF)',
       tooltipPosition: 'bottom',
-      visible: (rowData: Sale) => rowData.sunat_status === 'ACCEPTED',
-      click: (rowData: Sale) =>
-        this.salesService.downloadInvoicePdf(
-          rowData.id,
-          rowData.full_invoice_number
-            ? `${rowData.full_invoice_number}.pdf`
-            : undefined,
-        ),
+      visible: () => true,
+      click: (rowData: Sale) => this.buttonPreviewTicket(rowData.id),
     },
     {
       type: 'button',
@@ -139,7 +134,9 @@ export class SaleListComponent implements OnInit, OnDestroy {
       outlined: true,
       pTooltip: 'Ver detalle',
       tooltipPosition: 'bottom',
-      visible: (rowData: Sale) => rowData.status === 'CANCELED',
+      visible: (rowData: Sale) =>
+        rowData.status === 'CANCELED' &&
+        this.authService.hasAnyPermission(['sale.update', 'sale.get']),
       click: (rowData: Sale) => this.buttonEditSale(rowData.id),
     },
     {
@@ -149,7 +146,9 @@ export class SaleListComponent implements OnInit, OnDestroy {
       outlined: true,
       pTooltip: 'Editar',
       tooltipPosition: 'bottom',
-      visible: (rowData: Sale) => rowData.status !== 'CANCELED',
+      visible: (rowData: Sale) =>
+        rowData.status !== 'CANCELED' &&
+        this.authService.hasPermission('sale.update'),
       click: (rowData: Sale) => this.buttonEditSale(rowData.id),
     },
     {
@@ -159,7 +158,9 @@ export class SaleListComponent implements OnInit, OnDestroy {
       outlined: true,
       pTooltip: 'Eliminar',
       tooltipPosition: 'bottom',
-      visible: (rowData: Sale) => rowData.status !== 'CANCELED',
+      visible: (rowData: Sale) =>
+        rowData.status !== 'CANCELED' &&
+        this.authService.hasPermission('sale.delete'),
       click: (rowData: Sale, event?: Event) =>
         this.buttonDeleteSale(rowData.id, event!),
     },
@@ -175,6 +176,7 @@ export class SaleListComponent implements OnInit, OnDestroy {
     private readonly confirmationService: ConfirmationService,
     private readonly loadingService: LoadingService,
     private readonly salesService: SalesService,
+    private readonly authService: AuthService,
   ) {}
 
   ngOnInit(): void {
@@ -247,6 +249,15 @@ export class SaleListComponent implements OnInit, OnDestroy {
 
   get total(): Observable<number> {
     return this.salesService.getTotal();
+  }
+
+  buttonPreviewTicket(id: number): void {
+    void this.salesService.openTicketPreview(id).catch(() => {
+      showError(
+        this.messageService,
+        'No se pudo abrir el ticket. Permite ventanas emergentes e intenta de nuevo.',
+      );
+    });
   }
 
   buttonEditSale(id: number): void {

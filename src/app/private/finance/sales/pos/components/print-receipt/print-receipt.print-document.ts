@@ -143,3 +143,82 @@ export function buildReceiptPrintHostMarkup(rawHtml: string): string {
     <div class="receipt-print">${body}</div>
   `;
 }
+
+const PREVIEW_TOOLBAR_CSS = `
+  .receipt-preview-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 9999;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: #1e293b;
+    color: #f8fafc;
+    font-family: sans-serif, system-ui, -apple-system, BlinkMacSystemFont;
+    font-size: 13px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.25);
+  }
+
+  .receipt-preview-toolbar__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .receipt-preview-toolbar button {
+    border: 0;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .receipt-preview-toolbar button.primary {
+    background: #2563eb;
+    color: #ffffff;
+  }
+
+  .receipt-preview-toolbar button.secondary {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  @media print {
+    .receipt-preview-toolbar {
+      display: none !important;
+    }
+  }
+`;
+
+const PREVIEW_TOOLBAR_HTML = `
+<div class="receipt-preview-toolbar">
+  <span>Vista previa del ticket</span>
+  <div class="receipt-preview-toolbar__actions">
+    <button type="button" class="primary" onclick="window.focus(); window.print();">Imprimir / PDF</button>
+    <button type="button" class="secondary" onclick="window.close();">Cerrar</button>
+  </div>
+</div>`;
+
+/** Documento de ticket con barra de previsualización (sin auto-impresión). */
+export function prepareReceiptHtmlForPreview(rawHtml: string): string {
+  const printable = prepareReceiptHtmlForPrint(rawHtml, false);
+
+  if (/<body[^>]*>/i.test(printable)) {
+    return printable.replace(
+      /<body([^>]*)>/i,
+      `<body$1>${PREVIEW_TOOLBAR_HTML}`,
+    ).replace(
+      /<style id="pos-receipt-print-isolation">/i,
+      `<style id="pos-receipt-print-isolation">${PREVIEW_TOOLBAR_CSS}`,
+    );
+  }
+
+  return prepareReceiptHtmlForPrint(
+    `${PREVIEW_TOOLBAR_HTML}<div class="receipt-print">${rawHtml}</div>`,
+    false,
+  );
+}

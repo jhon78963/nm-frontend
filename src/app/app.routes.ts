@@ -97,7 +97,7 @@ export const routes: Routes = [
         canActivate: [permissionGuard],
         data: {
           breadcrumb: 'Ventas',
-          permissions: ['sale.getAll', 'sale.get', 'sale.update'],
+          permissions: ['sale.getAll', 'sale.get'],
         },
         loadChildren: () =>
           import('./private/finance/sales/list/sales-list.module').then(

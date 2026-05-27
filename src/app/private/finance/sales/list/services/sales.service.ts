@@ -1,7 +1,11 @@
 import { Injectable } from '@angular/core';
 import { Sale, SaleListResponse } from '../models/sales.model';
-import { BehaviorSubject, map, Observable, switchMap } from 'rxjs';
+import { BehaviorSubject, firstValueFrom, map, Observable, switchMap } from 'rxjs';
 import { ApiService } from '../../../../../services/api.service';
+import {
+  prepareReceiptHtmlForPreview,
+  prepareReceiptHtmlForPrint,
+} from '../../pos/components/print-receipt/print-receipt.print-document';
 
 // 1. Interfaz del estado
 export interface SaleFilterState {
@@ -118,25 +122,137 @@ export class SalesService {
     );
   }
 
-  /**
-   * Descarga la representación impresa del comprobante electrónico como PDF.
-   * El backend devuelve un Blob binario con Content-Disposition: attachment.
-   * Este método obtiene el Blob y fuerza la descarga sin abrir nueva pestaña.
-   */
-  downloadInvoicePdf(saleId: number, filename?: string): void {
-    this.apiService.getBlob(`sales/${saleId}/pdf`).subscribe({
-      next: (blob: Blob) => {
-        const url  = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href  = url;
-        link.download = filename ?? `comprobante-${saleId}.pdf`;
-        link.click();
-        // Liberar la URL de objeto para no acumular memoria
-        setTimeout(() => URL.revokeObjectURL(url), 60_000);
-      },
-      error: () => {
-        console.error(`No se pudo descargar el PDF de la venta #${saleId}`);
-      },
+  /** Abre el ticket térmico en una pestaña con vista previa e impresión / guardar PDF. */
+  async openTicketPreview(saleId: number): Promise<void> {
+    const tab = window.open('', '_blank');
+    if (!tab) {
+      throw new Error(
+        'Permite ventanas emergentes para ver el ticket de la venta.',
+      );
+    }
+
+    tab.document.open();
+    tab.document.write(
+      '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:sans-serif;padding:16px">Cargando ticket...</body></html>',
+    );
+    tab.document.close();
+
+    try {
+      const html = await firstValueFrom(
+        this.apiService.getHtml(`pos/sales/${saleId}/ticket`),
+      );
+      const previewDocument = prepareReceiptHtmlForPreview(html);
+      tab.document.open();
+      tab.document.write(previewDocument);
+      tab.document.close();
+    } catch (error) {
+      tab.close();
+      throw error;
+    }
+  }
+
+  /** Imprime el ticket térmico directamente (sin abrir vista previa). */
+  async printTicket(saleId: number): Promise<void> {
+    const html = await firstValueFrom(
+      this.apiService.getHtml(`pos/sales/${saleId}/ticket`),
+    );
+    const printDocument = prepareReceiptHtmlForPrint(html, true);
+    await this.printViaFullscreenIframe(printDocument);
+  }
+
+  private printViaFullscreenIframe(fullHtml: string): Promise<void> {
+    return new Promise(resolve => {
+      document.getElementById('sales-ticket-print-frame')?.remove();
+
+      const suppressedNodes: Array<{ node: HTMLElement; display: string }> =
+        [];
+
+      const suppressAppChrome = () => {
+        Array.from(document.body.children).forEach(node => {
+          const element = node as HTMLElement;
+          if (element.id === 'sales-ticket-print-frame') {
+            return;
+          }
+          suppressedNodes.push({
+            node: element,
+            display: element.style.display,
+          });
+          element.style.setProperty('display', 'none', 'important');
+        });
+        document.body.style.setProperty('overflow', 'hidden', 'important');
+        document.body.style.setProperty('background', '#ffffff', 'important');
+      };
+
+      const restoreAppChrome = () => {
+        suppressedNodes.forEach(({ node, display }) => {
+          node.style.display = display;
+        });
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('background');
+      };
+
+      const iframe = document.createElement('iframe');
+      iframe.id = 'sales-ticket-print-frame';
+      iframe.setAttribute('title', 'Ticket de venta');
+      iframe.setAttribute(
+        'style',
+        [
+          'position:fixed',
+          'inset:0',
+          'width:100%',
+          'height:100%',
+          'border:0',
+          'margin:0',
+          'padding:0',
+          'z-index:2147483647',
+          'background:#ffffff',
+        ].join(';'),
+      );
+
+      suppressAppChrome();
+      document.body.appendChild(iframe);
+
+      const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+      const blobUrl = URL.createObjectURL(blob);
+      let finished = false;
+
+      const finish = () => {
+        if (finished) {
+          return;
+        }
+        finished = true;
+        URL.revokeObjectURL(blobUrl);
+        iframe.remove();
+        restoreAppChrome();
+        resolve();
+      };
+
+      iframe.onerror = finish;
+
+      iframe.onload = () => {
+        const printWindow = iframe.contentWindow;
+        if (!printWindow) {
+          finish();
+          return;
+        }
+
+        printWindow.addEventListener('afterprint', finish, { once: true });
+
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            try {
+              printWindow.focus();
+              printWindow.print();
+            } catch {
+              finish();
+              return;
+            }
+            setTimeout(finish, 15_000);
+          }, 500);
+        });
+      };
+
+      iframe.src = blobUrl;
     });
   }
 
