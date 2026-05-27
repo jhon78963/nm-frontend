@@ -116,10 +116,18 @@
               >
             </div>
             <div class="flex justify-content-between mb-2 text-red-500">
-              <span>(-) Gastos Operativos</span>
+              <span>(-) Gastos Administrativos</span>
               <span
                 >S/
-                {{ financials().operating_expenses | number: '1.2-2' }}</span
+                {{
+                  financials().administrative_expenses | number: '1.2-2'
+                }}</span
+              >
+            </div>
+            <div class="flex justify-content-between mb-2 text-red-500">
+              <span>(-) Gastos de Tienda</span>
+              <span
+                >S/ {{ financials().store_expenses | number: '1.2-2' }}</span
               >
             </div>
             <div
