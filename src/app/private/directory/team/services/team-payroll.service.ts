@@ -30,6 +30,8 @@ export interface PayrollDeudaDia {
 
 export interface PayrollAttendanceSlice {
   falta: number;
+  /** Faltas injustificadas (sin aviso). Cada una equivale a 2 días en nómina. */
+  faltaInjustificada: number;
   valdeo: number;
   recuperacion: number;
   faltasEquivalentes: number;
@@ -40,9 +42,9 @@ export interface PayrollAttendanceSlice {
   descuentoPorTiempoNoCumplido: number;
   /** Ausencias + tiempo no cumplido (total que resta del pago). */
   descuentoPorFaltas: number;
-  /** Días con retraso a entrada después de la tolerancia. */
+  /** Días con retraso a entrada (estado TARDE o entrada después de tolerancia). */
   diasConRetraso: number;
-  /** Retraso respecto a las 8:11 (tras 10 min de tolerancia desde las 8:00). */
+  /** Retraso a entrada: TARDE desde las 8:00; otros casos tras tolerancia (8:10). */
   deudaEntradaTardeMinutos: number;
   /** Tiempo no cumplido por salir antes de las 19:30 (cierre oficial). */
   deudaSalidaAnticipadaMinutos: number;

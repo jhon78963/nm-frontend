@@ -694,6 +694,11 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
       TARDE: 'warning',
       TOLERANCIA: 'info',
       RECUPERACION: 'secondary',
+      FALTA: 'danger',
+      FALTA_INJUSTIFICADA: 'danger',
+      VALDEO: 'info',
+      DESCANSO: 'secondary',
+      VACACIONES: 'secondary',
     };
     return map[status] ?? 'secondary';
   }

@@ -24,7 +24,8 @@
             <span class="mx-2">·</span>
           }
           Descuentos por ausencias (Falta/Valdeo) y por
-          <strong>tiempo no cumplido</strong> (retraso tras tolerancia, salida
+          <strong>tiempo no cumplido</strong> (retraso desde las 8:00 si el estado
+          es TARDE, salida
           anticipada), balance de tiempo informativo y movimientos del mes.
         </p>
       </div>
@@ -299,8 +300,10 @@
           <p class="text-600 text-sm mt-0 mb-3">
             <strong>Falta</strong> y <strong>Valdeo</strong> descuentan un día
             cada uno (valor día = sueldo ÷ 30). La
-            <strong>tardanza</strong> (después de 8:10) y salir antes de 19:30
-            generan minutos de deuda sobre una jornada de referencia de
+            <strong>Tolerancia</strong> (8:01–8:10) no genera deuda de retraso.
+            <strong>Tardanza</strong> (estado TARDE) cuenta todos los minutos
+            desde las 8:00; salir antes de 19:30 genera minutos de deuda sobre
+            una jornada de referencia de
             <strong>11 h 30 min</strong> (8:00–19:30). El monto por esos minutos
             es siempre <strong>(minutos ÷ 690) × valor día</strong> (valor día =
             sueldo ÷ 30); la vista quincenal solo filtra qué días
@@ -313,6 +316,15 @@
                 <div class="value text-red-600">
                   {{ data.attendanceVista.falta }}
                 </div>
+              </div>
+            </div>
+            <div class="col-6 sm:col-4 md:col-2">
+              <div class="metric-tile">
+                <div class="label">F. injustificadas</div>
+                <div class="value text-red-900">
+                  {{ data.attendanceVista.faltaInjustificada }}
+                </div>
+                <div class="hint">×2 en nómina</div>
               </div>
             </div>
             <div class="col-6 sm:col-4 md:col-2">
@@ -337,7 +349,7 @@
                 <div class="value text-900">
                   {{ data.attendanceVista.faltasEquivalentes }}
                 </div>
-                <div class="hint">Faltas + Valdeo</div>
+                <div class="hint">Faltas + F.Injust.×2 + Valdeo</div>
               </div>
             </div>
             <div class="col-6 sm:col-4 md:col-2">
@@ -355,7 +367,7 @@
                 <div class="value text-amber-700">
                   {{ data.attendanceVista.diasConRetraso || 0 }}
                 </div>
-                <div class="hint">Entrada después 8:10</div>
+                <div class="hint">Estado TARDE o entrada después 8:10</div>
               </div>
             </div>
             <div class="col-12 sm:col-6 md:col-4">
@@ -385,9 +397,10 @@
           <p-divider />
           <div class="slice-title mb-2">Balance de tiempo (transparente)</div>
           <p class="text-600 text-sm m-0 mb-2">
-            <strong>Debe:</strong> retraso después de las
-            <strong>8:11</strong> (10 min de tolerancia tras las 8:00) y salida
-            antes de las <strong>19:30</strong> (cierre oficial).
+            <strong>Debe:</strong> estado <strong>TARDE</strong> (retraso desde las
+            <strong>8:00</strong>) o, en otros casos, entrada después de las
+            <strong>8:10</strong> (fin de tolerancia), y salida antes de las
+            <strong>19:30</strong> (cierre oficial).
             <strong>A favor:</strong> llegada antes de las 8:00 y salida después
             de las 19:30.
             <span class="block mt-1"
@@ -597,6 +610,10 @@
                 <div class="label">Faltas a descontar (mes)</div>
                 <div class="value">
                   {{ data.attendanceMesCompleto.faltasADescontar }}
+                </div>
+                <div class="hint">
+                  Injust.
+                  {{ data.attendanceMesCompleto.faltaInjustificada }} ×2
                 </div>
               </div>
             </div>

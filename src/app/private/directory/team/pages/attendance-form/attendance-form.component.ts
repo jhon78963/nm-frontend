@@ -103,6 +103,7 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
     tolerancia: 0,
     tarde: 0,
     falta: 0,
+    faltaInjustificada: 0,
     descanso: 0,
     vacaciones: 0,
     recuperacion: 0,
@@ -133,6 +134,7 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
     { label: 'Presente (tolerancia 8:00–8:10)', value: 'TOLERANCIA' },
     { label: 'Tardanza', value: 'TARDE' },
     { label: 'Falta', value: 'FALTA' },
+    { label: 'Falta injustificada (doble descuento)', value: 'FALTA_INJUSTIFICADA' },
     { label: 'Descanso', value: 'DESCANSO' },
     { label: 'Vacaciones', value: 'VACACIONES' },
     { label: 'Día recuperado', value: 'RECUPERACION' },
@@ -483,6 +485,7 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
       tolerancia: 0,
       tarde: 0,
       falta: 0,
+      faltaInjustificada: 0,
       descanso: 0,
       vacaciones: 0,
       recuperacion: 0,
@@ -517,6 +520,8 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
         this.stats.tarde++;
       } else if (st === 'FALTA') {
         this.stats.falta++;
+      } else if (st === 'FALTA_INJUSTIFICADA') {
+        this.stats.faltaInjustificada++;
       } else if (st === 'DESCANSO') {
         this.stats.descanso++;
       } else if (st === 'VACACIONES') {
