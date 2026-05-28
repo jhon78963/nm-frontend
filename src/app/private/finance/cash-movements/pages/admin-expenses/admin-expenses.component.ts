@@ -3,9 +3,8 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 // PrimeNG
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { CalendarModule } from 'primeng/calendar';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputNumberModule } from 'primeng/inputnumber';
@@ -36,12 +35,11 @@ import { CashflowService } from '../../services/cash-movements.service';
     TagModule,
     ToastModule,
     DialogModule,
-    ConfirmDialogModule,
     TooltipModule,
     SafeUrlPipe,
     VoucherDropzoneComponent,
   ],
-  providers: [MessageService, ConfirmationService, DatePipe],
+  providers: [MessageService, DatePipe],
   templateUrl: './admin-expenses.component.html',
 })
 export class AdminExpensesComponent implements OnInit {
@@ -51,7 +49,6 @@ export class AdminExpensesComponent implements OnInit {
 
   private cashService = inject(CashflowService);
   private messageService = inject(MessageService);
-  private confirmationService = inject(ConfirmationService);
   private datePipe = inject(DatePipe);
 
   // Estado del componente
@@ -273,51 +270,6 @@ export class AdminExpensesComponent implements OnInit {
 
   canSaveAdminExpense(): boolean {
     return this.isEditing() ? this.canUpdateCashflow() : this.canStoreCashflow();
-  }
-
-  /** ID de compra a vincular por fila (input simple). */
-  linkPurchaseInputs: Record<number, number | null> = {};
-
-  onLinkToPurchase(movement: any): void {
-    const purchaseId = Number(this.linkPurchaseInputs[movement.id]);
-    if (!Number.isFinite(purchaseId) || purchaseId < 1) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'ID requerido',
-        detail: 'Escribe el ID numérico de la compra (ej. 48).',
-      });
-      return;
-    }
-
-    this.confirmationService.confirm({
-      header: 'Vincular con compra',
-      message: `¿Vincular este gasto con la compra #${purchaseId}? El voucher aparecerá en el detalle de esa compra y dejará de listarse aquí como gasto operativo.`,
-      icon: 'pi pi-link',
-      acceptLabel: 'Vincular',
-      rejectLabel: 'Cancelar',
-      accept: () => {
-        this.loading.set(true);
-        this.cashService.linkToPurchase(movement.id, purchaseId).subscribe({
-          next: () => {
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Vinculado',
-              detail: `Gasto vinculado a compra #${purchaseId}.`,
-            });
-            delete this.linkPurchaseInputs[movement.id];
-            this.loadExpenses();
-          },
-          error: () => {
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Error',
-              detail: 'No se pudo vincular. Verifica que la compra exista.',
-            });
-            this.loading.set(false);
-          },
-        });
-      },
-    });
   }
 
   getCategoryLabel(category: string | undefined): string {

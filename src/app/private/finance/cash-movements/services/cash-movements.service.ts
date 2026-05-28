@@ -214,12 +214,6 @@ export class CashflowService {
     return this.adminExpenses$;
   }
 
-  linkToPurchase(id: number, purchaseId: number): Observable<any> {
-    return this.apiService.post(`${this.apiUrl}/${id}/link-purchase`, {
-      purchase_id: purchaseId,
-    });
-  }
-
   getVoucherPreview(voucherPath: string): Observable<Blob> {
     const params = new HttpParams().set('path', voucherPath);
 

@@ -1,5 +1,4 @@
 <p-toast></p-toast>
-<p-confirmDialog></p-confirmDialog>
 
 <div class="m-3 flex align-items-center justify-content-center gap-3">
   <span class="block font-bold">Filtrar por Mes</span>
@@ -113,7 +112,6 @@
             <th>Descripción</th>
             <th>Método</th>
             <th class="text-right">Monto</th>
-            <th class="text-center" style="min-width: 8rem">Vincular compra</th>
             <th class="text-center">Voucher</th>
           </tr>
         </ng-template>
@@ -125,26 +123,6 @@
             <td><p-tag [value]="expense.method" severity="info"></p-tag></td>
             <td class="text-right font-bold text-red-600">
               S/ {{ expense.amount | number: '1.2-2' }}
-            </td>
-            <td class="text-center">
-              @if (canUpdateCashflow()) {
-                <div class="flex align-items-center justify-content-center gap-1">
-                  <input
-                    pInputText
-                    type="number"
-                    min="1"
-                    class="w-5rem text-sm"
-                    placeholder="ID"
-                    [(ngModel)]="linkPurchaseInputs[expense.id]" />
-                  <button
-                    pButton
-                    icon="pi pi-link"
-                    class="p-button-rounded p-button-text p-button-sm p-button-help"
-                    pTooltip="Vincular voucher a compra"
-                    tooltipPosition="top"
-                    (click)="onLinkToPurchase(expense)"></button>
-                </div>
-              }
             </td>
             <td class="text-center">
               <div class="flex justify-content-center gap-1">
