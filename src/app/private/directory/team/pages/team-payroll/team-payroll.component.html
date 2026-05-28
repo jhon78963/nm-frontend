@@ -256,12 +256,12 @@
             </li>
             <li
               class="flex justify-content-between py-2 border-bottom-1 surface-border">
-              <span class="text-600">Días del mes</span>
+              <span class="text-600">Días base (nómina)</span>
               <span class="font-semibold">{{ data.calendar.daysInMonth }}</span>
             </li>
             <li
               class="flex justify-content-between py-2 border-bottom-1 surface-border">
-              <span class="text-600">Valor día (sueldo ÷ días)</span>
+              <span class="text-600">Valor día (sueldo ÷ 30)</span>
               <span class="font-semibold"
                 >S/ {{ money(data.rates.dailyRate) }}</span
               >
@@ -276,7 +276,7 @@
           <p class="text-xs text-600 m-0 mt-2 line-height-3">
             Al filtrar por quincena, el <strong>importe base</strong> de la
             liquidación es este 50 % (coincide con «referencia media quincena»),
-            no el sueldo ÷ días del mes × 15.
+            no el sueldo ÷ 30 × 15.
           </p>
         </p-card>
       </div>
@@ -298,12 +298,12 @@
           </ng-template>
           <p class="text-600 text-sm mt-0 mb-3">
             <strong>Falta</strong> y <strong>Valdeo</strong> descuentan un día
-            cada uno (valor día = sueldo ÷ días del mes). La
+            cada uno (valor día = sueldo ÷ 30). La
             <strong>tardanza</strong> (después de 8:10) y salir antes de 19:30
             generan minutos de deuda sobre una jornada de referencia de
             <strong>11 h 30 min</strong> (8:00–19:30). El monto por esos minutos
             es siempre <strong>(minutos ÷ 690) × valor día</strong> (valor día =
-            sueldo ÷ días del mes); la vista quincenal solo filtra qué días
+            sueldo ÷ 30); la vista quincenal solo filtra qué días
             cuentan. La recuperación resta ausencias, no minutos.
           </p>
           <div class="grid">
