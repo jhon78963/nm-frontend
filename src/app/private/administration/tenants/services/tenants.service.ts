@@ -7,7 +7,11 @@ import {
   switchMap,
 } from 'rxjs';
 import { ApiService } from '../../../../services/api.service';
-import { Tenant, TenantListResponse } from '../models/tenants.model';
+import {
+  Tenant,
+  TenantListResponse,
+  TenantSetting,
+} from '../models/tenants.model';
 
 @Injectable({ providedIn: 'root' })
 export class TenantsService {
@@ -54,6 +58,15 @@ export class TenantsService {
       .pipe(switchMap(() => this.callGetList()));
   }
 
+  /** Crea el tenant y devuelve la entidad creada (para luego guardar settings). */
+  createAndReturn(data: Pick<Tenant, 'name'>): Observable<Tenant> {
+    return this.apiService.post<Tenant>('tenants', data).pipe(
+      switchMap((tenant: Tenant) =>
+        this.callGetList().pipe(map(() => tenant)),
+      ),
+    );
+  }
+
   edit(id: number, data: Pick<Tenant, 'name'>): Observable<void> {
     return this.apiService
       .patch(`tenants/${id}`, data)
@@ -65,6 +78,21 @@ export class TenantsService {
       .delete(`tenants/${id}`)
       .pipe(switchMap(() => this.callGetList()));
   }
+
+  // ── Settings ────────────────────────────────────────────────────────────────
+
+  getSettings(tenantId: number): Observable<TenantSetting> {
+    return this.apiService.get<TenantSetting>(`tenants/${tenantId}/settings`);
+  }
+
+  saveSettings(tenantId: number, data: TenantSetting): Observable<TenantSetting> {
+    return this.apiService.put<TenantSetting>(
+      `tenants/${tenantId}/settings`,
+      data,
+    );
+  }
+
+  // ── Internos ────────────────────────────────────────────────────────────────
 
   private updateList(v: Tenant[]): void {
     this.tenants = v;

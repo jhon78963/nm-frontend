@@ -22,6 +22,12 @@
     </div>
   </div>
 
+  @if (showsCurrentMonthOnlyHint) {
+    <p class="text-sm text-600 mt-0 mb-3 line-height-3">
+      Mostrando ventas de <strong>{{ currentMonthLabel }}</strong>.
+    </p>
+  }
+
   <app-table-pagination
     [data]="(sales | async) ?? []"
     [columns]="columns"

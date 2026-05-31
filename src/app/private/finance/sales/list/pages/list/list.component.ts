@@ -263,6 +263,24 @@ export class SaleListComponent implements OnInit, OnDestroy {
     return this.salesService.getTotal();
   }
 
+  /** Vendedora/Vendedor ven solo el mes en curso (filtro en backend). */
+  get showsCurrentMonthOnlyHint(): boolean {
+    const roles = this.authService.currentUser()?.roles ?? [];
+    const privileged = roles.some(
+      role => role === 'Super Admin' || role === 'Admin',
+    );
+    const storeSeller = roles.some(
+      role => role === 'Vendedora' || role === 'Vendedor',
+    );
+
+    return storeSeller && !privileged;
+  }
+
+  readonly currentMonthLabel = new Intl.DateTimeFormat('es-PE', {
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date());
+
   buttonPreviewTicket(id: number): void {
     void this.salesService.openTicketPreview(id).catch(() => {
       showError(

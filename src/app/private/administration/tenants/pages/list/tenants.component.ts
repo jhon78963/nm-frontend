@@ -126,12 +126,13 @@ export class TenantsListComponent implements OnInit, OnDestroy {
   openCreate(): void {
     this.modal = this.dialogService.open(TenantsFormComponent, {
       data: {},
-      header: 'Nuevo cliente (tenant)',
-      width: '26rem',
+      header: 'Nuevo tenant',
+      width: '52rem',
+      maximizable: true,
     });
     this.modal.onClose.subscribe(v => {
       if (v?.success) {
-        this.toast('success', 'Tenant creado.');
+        this.toast('success', v.warn ?? 'Tenant creado.');
       } else if (v?.error) {
         this.toast('error', v.error);
       }
@@ -142,11 +143,12 @@ export class TenantsListComponent implements OnInit, OnDestroy {
     this.modal = this.dialogService.open(TenantsFormComponent, {
       data: { id },
       header: 'Editar tenant',
-      width: '26rem',
+      width: '52rem',
+      maximizable: true,
     });
     this.modal.onClose.subscribe(v => {
       if (v?.success) {
-        this.toast('success', 'Tenant actualizado.');
+        this.toast('success', v.warn ?? 'Tenant actualizado.');
       } else if (v?.error) {
         this.toast('error', v.error);
       }
