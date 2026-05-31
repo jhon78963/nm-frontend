@@ -5,6 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
+import { DividerModule } from 'primeng/divider';
 import { TenantsRoutingModule } from './tenants-routing.module';
 import { TenantsListComponent } from './pages/list/tenants.component';
 import { TenantsFormComponent } from './pages/form/tenants-form.component';
@@ -23,6 +24,7 @@ import { SharedModule } from '../../../shared/shared.module';
     InputTextModule,
     ConfirmDialogModule,
     ToastModule,
+    DividerModule,
   ],
   providers: [DialogService],
 })
