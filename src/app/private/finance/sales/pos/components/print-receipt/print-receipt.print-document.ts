@@ -1,3 +1,5 @@
+import { sanitizeReceiptFragment } from '../../../../../../utils/receipt-sanitizer';
+
 /** Estilos ESC-POS / térmica 80mm inyectados en el host de impresión del DOM. */
 export const RECEIPT_PRINT_CSS = `
   @page {
@@ -42,13 +44,14 @@ export interface ReceiptPrintFragment {
 
 /** Extrae estilos y contenido del body de un documento HTML completo. */
 export function extractReceiptFragment(rawHtml: string): ReceiptPrintFragment {
-  const sanitized = stripAutoPrintScripts(rawHtml.trim());
-  const styleMatches = sanitized.match(/<style[^>]*>[\s\S]*?<\/style>/gi) ?? [];
-  const bodyMatch = sanitized.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  const stripped = stripAutoPrintScripts(rawHtml.trim());
+  const styleMatches = stripped.match(/<style[^>]*>[\s\S]*?<\/style>/gi) ?? [];
+  const bodyMatch = stripped.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  const rawBody = bodyMatch?.[1]?.trim() ?? stripped;
 
   return {
     styles: styleMatches.join('\n'),
-    body: bodyMatch?.[1]?.trim() ?? sanitized,
+    body: sanitizeReceiptFragment(rawBody),
   };
 }
 
@@ -63,30 +66,11 @@ export function prepareReceiptHtmlForPrint(
   rawHtml: string,
   autoPrint = false,
 ): string {
-  const sanitized = stripAutoPrintScripts(rawHtml.trim());
+  const { styles, body } = extractReceiptFragment(rawHtml);
   const metaBlock =
     '<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">';
   const styleBlock = `<style id="pos-receipt-print-isolation">${RECEIPT_PRINT_CSS}</style>`;
   const printScript = autoPrint ? AUTO_PRINT_SCRIPT : '';
-
-  if (/<html[\s>]/i.test(sanitized)) {
-    let html = sanitized;
-
-    if (/<\/head>/i.test(html)) {
-      html = html.replace(/<\/head>/i, `${metaBlock}${styleBlock}</head>`);
-    } else {
-      html = html.replace(
-        /<html([^>]*)>/i,
-        `<html$1><head>${metaBlock}${styleBlock}</head>`,
-      );
-    }
-
-    if (printScript && /<\/body>/i.test(html)) {
-      html = html.replace(/<\/body>/i, `${printScript}</body>`);
-    }
-
-    return html;
-  }
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -94,9 +78,10 @@ export function prepareReceiptHtmlForPrint(
   ${metaBlock}
   <title>Ticket</title>
   ${styleBlock}
+  ${styles}
 </head>
 <body>
-  <div class="receipt-print">${sanitized}</div>
+  <div class="receipt-print">${body}</div>
   ${printScript}
 </body>
 </html>`;
