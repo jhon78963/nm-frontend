@@ -4,8 +4,22 @@
 
 | Entorno | Dónde vive la CSP |
 |---------|-------------------|
-| Desarrollo (`ng serve`) | `src/index.html` — meta `http-equiv` (ver SEC-022) |
+| Desarrollo (`ng serve`) | `src/index.html` — meta `http-equiv` (SEC-022) |
 | Producción (`ng build`) | `deploy/nginx.conf.example` — header `Content-Security-Policy` |
+
+### CSP en desarrollo (SEC-022)
+
+`src/index.html` aplica la misma política base que nginx, con estas diferencias:
+
+| Directiva | Dev | Prod (nginx) |
+|-----------|-----|----------------|
+| `upgrade-insecure-requests` | No (API/uploads locales en HTTP) | Sí |
+| `img-src` | Sin `https:` global; hosts de `environment.ts` + API/upload prod | `'self' data: blob: https:` (catálogo externo) |
+| `connect-src` | `localhost:8000`, `127.0.0.1:3050`, HMR `ws://localhost:4200` | Solo API/upload HTTPS |
+
+`style-src 'unsafe-inline'` es obligatorio en ambos entornos mientras Angular/PrimeNG inyecten estilos en línea (ver sección abajo).
+
+Si usas API en LAN (`environment.ts` con IP), añade ese origen a `connect-src` e `img-src` en tu copia local o documenta el host en el meta.
 
 `src/index.prod.html` deja un comentario a propósito: en build de producción no hay meta CSP; el servidor debe aplicarla.
 
@@ -73,9 +87,11 @@ Debe incluir **exactamente** los orígenes que usa `HttpClient` y cookies Sanctu
 
 Si añades staging u otro API, agrega el host aquí y en `environment.*.ts`.
 
-### CDNs en `index.prod.html`
+### CDNs en `index.html` / `index.prod.html` (SEC-021)
 
-Font Awesome y Phosphor se cargan desde CDN (ver comentarios TODO en HTML). La CSP los permite explícitamente. **Plan de endurecimiento:** servir ambos desde `assets/` y eliminar `cdnjs.cloudflare.com` y `unpkg.com` de la política.
+Font Awesome 6.4.0 (cdnjs) y Phosphor Icons `@2.1.2` (unpkg) incluyen **SRI** (`integrity` + `crossorigin="anonymous"`). La CSP los permite en `style-src` / `script-src` / `font-src`.
+
+**Plan opcional:** self-host en `assets/` y quitar `cdnjs.cloudflare.com` y `unpkg.com` de la política.
 
 ---
 
@@ -83,7 +99,7 @@ Font Awesome y Phosphor se cargan desde CDN (ver comentarios TODO en HTML). La C
 
 | Fase | Acción | Impacto |
 |------|--------|---------|
-| 1 | Localizar Font Awesome y Phosphor en `assets/` + SRI | Menos dominios en `style-src` / `font-src` |
+| 1 | ~~SRI en CDN~~ (hecho SEC-021) o self-host en `assets/` | Menos dominios en `style-src` / `font-src` |
 | 2 | Auditar estilos inline críticos (PrimeNG theme, `styles.scss`) | Base para nonces o hashes |
 | 3 | Evaluar CSP con **nonce** en nginx (`style-src 'nonce-…'`) + build Angular experimental | Permite quitar `'unsafe-inline'` global |
 | 4 | Endurecer `img-src` a hosts de uploads conocidos | Menor superficie XSS vía imágenes |
