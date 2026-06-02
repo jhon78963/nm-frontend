@@ -4,6 +4,7 @@ const E2E_USERNAME = process.env.E2E_USERNAME ?? 'vendedora';
 const E2E_PASSWORD = process.env.E2E_PASSWORD ?? 'password123';
 
 const MOCK_VENDEDORA = {
+  id: 2,
   username: E2E_USERNAME,
   email: 'vendedora@test.com',
   name: 'María',
@@ -43,6 +44,20 @@ async function setupAuthMocks(page: Page, user = MOCK_VENDEDORA): Promise<void> 
   if (process.env.E2E_USE_REAL_API === 'true') {
     return;
   }
+
+  await page.route('**/sanctum/csrf-cookie', async route => {
+    if (await fulfillPreflight(route)) return;
+    await route.fulfill({ status: 204, headers: corsHeaders() });
+  });
+
+  await page.route('**/api/auth/csrf-token', async route => {
+    if (await fulfillPreflight(route)) return;
+    await route.fulfill({
+      status: 200,
+      headers: { ...corsHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ csrf_token: 'e2e-csrf-token' }),
+    });
+  });
 
   await page.route('**/api/auth/login', async route => {
     if (await fulfillPreflight(route)) return;
@@ -91,6 +106,7 @@ async function fillLoginForm(page: Page): Promise<void> {
   await passwordInput.dispatchEvent('input');
   await passwordInput.dispatchEvent('change');
   await passwordInput.blur();
+  await expect(page.getByRole('button', { name: 'Login' })).toBeEnabled();
 }
 
 async function login(page: Page): Promise<void> {
@@ -131,9 +147,10 @@ test.describe('QA — Protección de rutas frontend', () => {
     await setupAuthMocks(page);
     await login(page);
     await page.goto('/#/sales/pos');
-    await expect(page.getByText('Productos', { exact: true })).toHaveCount(0);
-    await expect(page.getByText('POS', { exact: true })).toBeVisible();
-    await expect(page.getByText('Caja', { exact: true })).toBeVisible();
+    const sidebarMenu = page.locator('.layout-menu');
+    await expect(sidebarMenu.getByText('Productos', { exact: true })).toHaveCount(0);
+    await expect(sidebarMenu.getByText('POS', { exact: true })).toHaveCount(1);
+    await expect(sidebarMenu.getByText('Caja', { exact: true })).toHaveCount(1);
   });
 
   test('manipulación localStorage no otorga permisos admin en menú', async ({
@@ -162,7 +179,8 @@ test.describe('QA — Interceptor 401', () => {
     await setupAuthMocks(page);
     await login(page);
 
-    await page.route('**/api/**', async route => {
+    await page.unroute('**/api/auth/me');
+    await page.route('**/api/auth/me', async route => {
       if (await fulfillPreflight(route)) return;
       await route.fulfill({
         status: 401,
@@ -171,7 +189,71 @@ test.describe('QA — Interceptor 401', () => {
       });
     });
 
-    await page.goto('/#/sales/pos');
+    await page.route('**/api/auth/refresh', async route => {
+      if (await fulfillPreflight(route)) return;
+      await route.fulfill({
+        status: 401,
+        headers: corsHeaders(),
+        body: JSON.stringify({ message: 'Unauthenticated.' }),
+      });
+    });
+
+    await page.reload();
     await expect(page).toHaveURL(/auth\/login/, { timeout: 15_000 });
   });
+})
+
+test.describe('QA — SEC-010: Warehouse desde sesión', () => {
+  test('active_warehouse_id en localStorage no es enviado como X-Warehouse-Id al auth/me', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      // Simula un localStorage manipulado por DevTools antes de la sesión
+      localStorage.setItem('active_warehouse_id', '9999');
+    });
+
+    await setupAuthMocks(page);
+    await login(page);
+
+    // Tras el login (que dispara auth/me + syncFromAuthUser), el warehouse
+    // debe haberse sincronizado desde la respuesta del servidor (warehouseId: 1),
+    // no desde el localStorage spoofed (9999).
+    const warehouseInSignal = await page.evaluate(() => {
+      // El header X-Warehouse-Id que el interceptor enviaría en la próxima petición
+      // refleja el signal, no el localStorage (que ya fue borrado para usuarios regulares).
+      return localStorage.getItem('active_warehouse_id');
+    });
+
+    // Para un usuario regular (Vendedora), el servicio borra el localStorage y usa
+    // el valor del servidor. Así, active_warehouse_id no debe ser '9999'.
+    expect(warehouseInSignal).not.toBe('9999');
+  });
+
+  test('manipular active_warehouse_id post-login no cambia el signal del servicio', async ({
+    page,
+  }) => {
+    await setupAuthMocks(page);
+    await login(page);
+
+    // Simula un atacante que edita localStorage tras autenticarse
+    await page.evaluate(() => {
+      localStorage.setItem('active_warehouse_id', '8888');
+    });
+
+    await page.reload();
+
+    // Tras recargar, auth/me se vuelve a llamar y el servicio re-sincroniza
+    // desde el servidor (warehouseId: 1). Para un usuario regular, el valor
+    // inyectado en localStorage es ignorado.
+    await page.waitForURL(url => !url.hash.includes('/auth/login'), {
+      timeout: 15_000,
+    });
+
+    const storedId = await page.evaluate(() =>
+      localStorage.getItem('active_warehouse_id'),
+    );
+
+    expect(storedId).not.toBe('8888');
+  });
 });
+

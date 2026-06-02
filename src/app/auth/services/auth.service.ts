@@ -22,6 +22,7 @@ import { ApiService } from '../../services/api.service';
 import { CsrfTokenService } from './csrf-token.service';
 import { PurchaseRegisterDraftService } from '../../private/inventories/purchase/services/purchase-register-draft.service';
 import { Router } from '@angular/router';
+import { ActiveWarehouseService } from '../../services/active-warehouse.service';
 
 @Injectable({
   providedIn: 'root',
@@ -73,6 +74,7 @@ export class AuthService {
     private readonly csrfTokenService: CsrfTokenService,
     private readonly router: Router,
     private readonly purchaseRegisterDraft: PurchaseRegisterDraftService,
+    private readonly activeWarehouse: ActiveWarehouseService,
   ) {}
 
   /**
@@ -109,6 +111,7 @@ export class AuthService {
     const userInMemory = { ...this.normalizeUser(user) };
     delete (userInMemory as { password?: string }).password;
     this.currentUser.set(userInMemory);
+    this.activeWarehouse.syncFromAuthUser(userInMemory);
     this.sessionLoadRequest$ = undefined;
     this.persistSessionFlag(true);
   }
@@ -234,6 +237,7 @@ export class AuthService {
    */
   clearLocalSession(): void {
     this.currentUser.set(null);
+    this.activeWarehouse.clearWarehouse();
     this.sessionLoadRequest$ = undefined;
     this.csrfTokenService.clear();
     this.persistSessionFlag(false);

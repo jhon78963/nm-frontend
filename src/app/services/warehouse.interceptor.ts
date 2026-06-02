@@ -8,6 +8,7 @@ const WAREHOUSE_SKIP_URL_PARTS = [
   '/sanctum/csrf-cookie',
   '/auth/csrf-token',
   '/auth/login',
+  '/auth/me',
   '/auth/refresh',
   '/auth/logout',
 ];
