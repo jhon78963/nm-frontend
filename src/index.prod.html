@@ -13,14 +13,18 @@
       rel="stylesheet"
       type="text/css"
       href="assets/layout/styles/theme/theme-light/yellow/theme.css" />
-    <!-- TODO: Para producción estricta, reemplazar los CDNs externos con assets locales o agregar atributos integrity (SRI) -->
+    <!-- SEC-021 — SRI en CDN (versión fijada; alineado con nginx script-src/style-src) -->
     <link
       rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0"
+      crossorigin="anonymous" />
   </head>
   <body>
     <app-root></app-root>
-    <!-- TODO: Para producción estricta, reemplazar los CDNs externos con assets locales o agregar atributos integrity (SRI) -->
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script
+      src="https://unpkg.com/@phosphor-icons/web@2.1.2"
+      integrity="sha384-J7cw2fbG1T4C5MirTVUxsZGaMfw2m0XsCgOQEqUvB1OF9VIsHWuZF1GmyVRzs7eu"
+      crossorigin="anonymous"></script>
   </body>
 </html>

@@ -1,0 +1,14 @@
+# SEC-024 — Actualizaciones semanales de dependencias npm (seguridad)
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - security
+    commit-message:
+      prefix: deps
