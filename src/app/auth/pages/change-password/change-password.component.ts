@@ -13,6 +13,10 @@ import { ToastModule } from 'primeng/toast';
 import { finalize } from 'rxjs';
 import { showError, showSuccess } from '../../../utils/notifications';
 import { AuthService } from '../../services/auth.service';
+import {
+  newPasswordValidators,
+  passwordValidationMessage,
+} from '../../validators/password.validators';
 
 @Component({
   selector: 'app-change-password',
@@ -36,10 +40,34 @@ export class ChangePasswordComponent {
   loading = false;
 
   readonly form: FormGroup = this.fb.group({
-    currentPassword: [null, [Validators.required, Validators.minLength(8)]],
-    password: [null, [Validators.required, Validators.minLength(8)]],
-    passwordConfirmation: [null, [Validators.required, Validators.minLength(8)]],
+    currentPassword: [null, [Validators.required]],
+    password: [null, newPasswordValidators],
+    passwordConfirmation: [null, newPasswordValidators],
   });
+
+  fieldError(controlName: string): string | null {
+    const control = this.form.get(controlName);
+    if (!control || !(control.touched || control.dirty) || !control.invalid) {
+      return null;
+    }
+
+    if (controlName === 'currentPassword' && control.errors?.['required']) {
+      return 'La contraseña actual es obligatoria.';
+    }
+
+    if (
+      controlName === 'password' ||
+      controlName === 'passwordConfirmation'
+    ) {
+      return passwordValidationMessage(control);
+    }
+
+    return null;
+  }
+
+  passwordHint(): string {
+    return 'Mínimo 12 caracteres, con mayúsculas, minúsculas, números y símbolos.';
+  }
 
   submit(): void {
     if (this.form.invalid || this.loading) {
