@@ -174,6 +174,69 @@ test.describe('QA — Protección de rutas frontend', () => {
   });
 });
 
+/**
+ * SEC-025 — E2E ampliado: warehouse / admin / payroll
+ *
+ * Credenciales semilla (backend RoleAndPermissionSeeder):
+ *   - vendedora / password123  →  Role: Vendedora  (sin admin, sin team.getPaymentByMonth)
+ *   - superadmin / password123 →  Role: Super Admin (todos los permisos)
+ *
+ * Para correr contra el backend real: E2E_USE_REAL_API=true
+ * Variables de entorno: E2E_USERNAME, E2E_PASSWORD, E2E_BASE_URL
+ */
+test.describe('QA — Seguridad warehouse / admin / payroll (SEC-025)', () => {
+  test('warehouse_id arbitrario en localStorage no otorga acceso a inventario', async ({
+    page,
+  }) => {
+    // vendedora no tiene product.getAll → permissionGuard bloquea /inventories/products
+    // incluso si el atacante manipula active_warehouse_id para apuntar a otro warehouse
+    await setupAuthMocks(page);
+    await login(page);
+
+    await page.evaluate(() => {
+      localStorage.setItem('active_warehouse_id', '9999');
+    });
+
+    await page.goto('/#/inventories/products');
+
+    // permissionGuard redirige al dashboard — la URL nunca debe quedar en /inventories/products
+    await expect(page).not.toHaveURL(/inventories\/products/, { timeout: 10_000 });
+  });
+
+  test('usuario sin rol admin no puede acceder a /administration', async ({ page }) => {
+    // vendedora (role: Vendedora) no tiene Admin ni Super Admin → roleGuard redirige
+    await setupAuthMocks(page);
+    await login(page);
+
+    await page.goto('/#/administration');
+
+    await expect(page).not.toHaveURL(/administration/, { timeout: 10_000 });
+  });
+
+  test('usuario sin permiso team.getPaymentByMonth no puede acceder a payroll', async ({
+    page,
+  }) => {
+    // Usuario con acceso básico a team (team.getAll) pero sin team.getPaymentByMonth
+    const userWithTeamButNoPayroll = {
+      ...MOCK_VENDEDORA,
+      permissions: [
+        ...MOCK_VENDEDORA.permissions,
+        'team.getAll',
+        'team.get',
+        // team.getPaymentByMonth omitido deliberadamente
+      ],
+    };
+
+    await setupAuthMocks(page, userWithTeamButNoPayroll);
+    await login(page);
+
+    await page.goto('/#/directory/team/pagos/1');
+
+    // permissionGuard bloquea la ruta y redirige al dashboard
+    await expect(page).not.toHaveURL(/directory\/team\/pagos/, { timeout: 10_000 });
+  });
+});
+
 test.describe('QA — Interceptor 401', () => {
   test('401 en API limpia sesión y redirige a login', async ({ page }) => {
     await setupAuthMocks(page);
