@@ -303,11 +303,13 @@ test.describe('QA — SEC-010: Warehouse desde sesión', () => {
       localStorage.setItem('active_warehouse_id', '8888');
     });
 
+    const meAfterReload = page.waitForResponse(
+      resp => resp.url().includes('auth/me') && resp.status() === 200,
+    );
     await page.reload();
+    await meAfterReload;
 
-    // Tras recargar, auth/me se vuelve a llamar y el servicio re-sincroniza
-    // desde el servidor (warehouseId: 1). Para un usuario regular, el valor
-    // inyectado en localStorage es ignorado.
+    // Tras recargar, auth/me re-sincroniza desde el servidor (warehouseId: 1).
     await page.waitForURL(url => !url.hash.includes('/auth/login'), {
       timeout: 15_000,
     });
