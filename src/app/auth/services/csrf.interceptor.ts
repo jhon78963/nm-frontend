@@ -37,7 +37,7 @@ export const csrfInterceptor: HttpInterceptorFn = (request, next) => {
     return next(attachHeader(existing));
   }
 
-  return csrfTokenService.ensureToken().pipe(
-    switchMap(token => next(attachHeader(token))),
-  );
+  return csrfTokenService
+    .ensureToken()
+    .pipe(switchMap(token => next(attachHeader(token))));
 };

@@ -55,10 +55,7 @@ export class ChangePasswordComponent {
       return 'La contraseña actual es obligatoria.';
     }
 
-    if (
-      controlName === 'password' ||
-      controlName === 'passwordConfirmation'
-    ) {
+    if (controlName === 'password' || controlName === 'passwordConfirmation') {
       return passwordValidationMessage(control);
     }
 

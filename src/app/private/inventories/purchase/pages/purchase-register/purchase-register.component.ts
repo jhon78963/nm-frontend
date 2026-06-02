@@ -385,14 +385,18 @@ export class PurchaseRegisterComponent implements OnInit {
           const firstType =
             Array.isArray(types) && types.length > 0 ? Number(types[0]) : null;
 
-          if (firstType != null && Number.isFinite(firstType) && firstType > 0) {
+          if (
+            firstType != null &&
+            Number.isFinite(firstType) &&
+            firstType > 0
+          ) {
             this.lineDraft.patchValue(
               { selectedSizeTypeId: firstType },
               { emitEvent: false },
             );
-            return this.catalog.getSizesBySizeType(firstType).pipe(
-              catchError(() => of([] as Size[])),
-            );
+            return this.catalog
+              .getSizesBySizeType(firstType)
+              .pipe(catchError(() => of([] as Size[])));
           }
 
           this.lineDraft.patchValue(
@@ -1825,7 +1829,11 @@ export class PurchaseRegisterComponent implements OnInit {
           const firstType =
             Array.isArray(types) && types.length > 0 ? Number(types[0]) : null;
 
-          if (firstType != null && Number.isFinite(firstType) && firstType > 0) {
+          if (
+            firstType != null &&
+            Number.isFinite(firstType) &&
+            firstType > 0
+          ) {
             this.lineDraft.patchValue(
               { selectedSizeTypeId: firstType },
               { emitEvent: false },
@@ -1898,7 +1906,9 @@ export class PurchaseRegisterComponent implements OnInit {
    * Rehidrata la Sección 2 sin `patchValue` ciego sobre el `FormArray`:
    * vacía la cola, aplica escalares con coerción y vuelve a crear cada fila.
    */
-  private applyLineDraftFromSnapshot(rawLineDraft: Record<string, unknown>): void {
+  private applyLineDraftFromSnapshot(
+    rawLineDraft: Record<string, unknown>,
+  ): void {
     const qRaw = rawLineDraft['draftColorQueue'];
     const queueSnapshot: Record<string, unknown>[] = Array.isArray(qRaw)
       ? (qRaw as Record<string, unknown>[])

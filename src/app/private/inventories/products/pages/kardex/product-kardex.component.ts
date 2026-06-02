@@ -213,9 +213,13 @@ export class ProductKardexComponent implements OnInit {
           this.product.set(p);
           const typeIds =
             p.sizeTypeId && p.sizeTypeId.length > 0 ? p.sizeTypeId : [1];
-          return this.sizesSelectedService.callGetList(id, typeIds).pipe(
-            switchMap(() => this.sizesSelectedService.getList().pipe(take(1))),
-          );
+          return this.sizesSelectedService
+            .callGetList(id, typeIds)
+            .pipe(
+              switchMap(() =>
+                this.sizesSelectedService.getList().pipe(take(1)),
+              ),
+            );
         }),
         catchError(() => {
           this.loadingSizes.set(false);

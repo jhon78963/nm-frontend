@@ -82,8 +82,11 @@
           </div>
           <!-- Método de pago -->
           <div class="flex flex-column gap-2">
-            <label class="font-medium text-sm">Método de pago</label>
+            <label for="payment-method" class="font-medium text-sm"
+              >Método de pago</label
+            >
             <p-dropdown
+              inputId="payment-method"
               [options]="paymentMethods"
               optionLabel="label"
               optionValue="value"
@@ -99,11 +102,12 @@
           <!-- Voucher: solo visible si el pago NO es en efectivo -->
           @if (selectedPaymentMethod() !== 'CASH') {
             <div class="flex flex-column gap-2">
-              <label class="font-medium text-sm">
+              <label for="purchase-voucher" class="font-medium text-sm">
                 Voucher / Comprobante
                 <span class="text-400 font-normal ml-1">(PDF o Imagen)</span>
               </label>
               <p-fileUpload
+                inputId="purchase-voucher"
                 #voucherUpload
                 mode="basic"
                 chooseLabel="Subir Comprobante"
@@ -113,7 +117,8 @@
                 styleClass="w-full">
               </p-fileUpload>
               @if (selectedVoucherFile) {
-                <small class="text-green-600 font-bold flex align-items-center gap-1">
+                <small
+                  class="text-green-600 font-bold flex align-items-center gap-1">
                   <i class="pi pi-check"></i> {{ selectedVoucherFile.name }}
                 </small>
               }

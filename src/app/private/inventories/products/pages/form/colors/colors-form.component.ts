@@ -533,7 +533,11 @@ export class ColorsFormComponent implements OnInit {
       return;
     }
     this.colorJumpSuggestions = rows
-      .filter(c => String(c.description ?? '').toLowerCase().includes(q))
+      .filter(c =>
+        String(c.description ?? '')
+          .toLowerCase()
+          .includes(q),
+      )
       .slice(0, 60);
   }
 
@@ -555,7 +559,10 @@ export class ColorsFormComponent implements OnInit {
     }
     const rows = this.colors();
     const exact = rows.find(
-      c => String(c.description ?? '').trim().toLowerCase() === q,
+      c =>
+        String(c.description ?? '')
+          .trim()
+          .toLowerCase() === q,
     );
     const single =
       this.colorJumpSuggestions.length === 1

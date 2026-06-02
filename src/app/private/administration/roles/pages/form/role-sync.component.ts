@@ -189,16 +189,21 @@ export class RoleSyncComponent implements OnInit {
     }
 
     this.saving = true;
-    this.rolesService.syncPermissions(this.roleId, [...this.selected]).subscribe({
-      next: () => {
-        showSuccess(this.messageService, 'Permisos sincronizados.');
-        void this.router.navigate(['/administration/roles']);
-      },
-      error: () => {
-        this.saving = false;
-        showError(this.messageService, 'No se pudieron sincronizar permisos.');
-      },
-    });
+    this.rolesService
+      .syncPermissions(this.roleId, [...this.selected])
+      .subscribe({
+        next: () => {
+          showSuccess(this.messageService, 'Permisos sincronizados.');
+          void this.router.navigate(['/administration/roles']);
+        },
+        error: () => {
+          this.saving = false;
+          showError(
+            this.messageService,
+            'No se pudieron sincronizar permisos.',
+          );
+        },
+      });
   }
 
   private applySearch(): void {

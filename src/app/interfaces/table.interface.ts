@@ -22,7 +22,9 @@ export interface Column {
    */
   tag?: boolean;
   /** Mapea el valor del campo a una severity de p-tag. */
-  tagSeverityFn?: (value: string | null | undefined) => 'success' | 'info' | 'warning' | 'danger' | 'secondary' | 'contrast';
+  tagSeverityFn?: (
+    value: string | null | undefined,
+  ) => 'success' | 'info' | 'warning' | 'danger' | 'secondary' | 'contrast';
 }
 
 export interface Paginate {

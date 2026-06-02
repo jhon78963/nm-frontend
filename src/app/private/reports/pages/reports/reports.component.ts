@@ -71,7 +71,10 @@ export class ReportsComponent implements OnInit {
   );
 
   totalBancos = computed(() =>
-    this.allTimeMonthlyReport().reduce((acc, row) => acc + (row.bancos || 0), 0),
+    this.allTimeMonthlyReport().reduce(
+      (acc, row) => acc + (row.bancos || 0),
+      0,
+    ),
   );
 
   totalGeneral = computed(() =>

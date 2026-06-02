@@ -8,7 +8,9 @@
       class="fixed top-0 left-50 border-round-2xl mt-4 px-4 py-3 shadow-6 z-5 bg-gray-900 text-white flex align-items-center gap-2 fadein-animation"
       style="transform: translateX(-50%); max-width: 95vw">
       <i class="pi pi-info-circle text-lg"></i>
-      <span class="font-bold text-sm" data-testid="pos-toast">{{ posService.toastMessage() }}</span>
+      <span class="font-bold text-sm" data-testid="pos-toast">{{
+        posService.toastMessage()
+      }}</span>
     </div>
   }
 
@@ -146,6 +148,8 @@
     }
   </main>
 
-  <app-pos-footer class="z-2" [hasNoWarehouse]="hasNoWarehouse"></app-pos-footer>
+  <app-pos-footer
+    class="z-2"
+    [hasNoWarehouse]="hasNoWarehouse"></app-pos-footer>
   <app-pos-selector class="z-3"></app-pos-selector>
 </div>

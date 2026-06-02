@@ -1,6 +1,5 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
 import { BASE_URL, BASE_WEB_URL } from '../utils/constants';
 
 export type ApiGetOptions = {

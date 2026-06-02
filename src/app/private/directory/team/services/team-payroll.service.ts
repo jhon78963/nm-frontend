@@ -211,7 +211,11 @@ export class TeamPayrollService {
       payment_method: string;
       description: string;
     },
-  ): Observable<{ success: boolean; message: string; data: PayrollPaymentItem }> {
+  ): Observable<{
+    success: boolean;
+    message: string;
+    data: PayrollPaymentItem;
+  }> {
     return this.apiService.patch<{
       success: boolean;
       message: string;

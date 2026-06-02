@@ -263,7 +263,6 @@ export class InventoryReconciliationComponent
             meta.name?.trim() ||
             (meta.barcode ? String(meta.barcode) : '') ||
             String(id);
-
         },
         error: err => {
           this.toast('error', this.parseHttpError(err));

@@ -1,6 +1,12 @@
 import { Injectable } from '@angular/core';
 import { Sale, SaleListResponse } from '../models/sales.model';
-import { BehaviorSubject, firstValueFrom, map, Observable, switchMap } from 'rxjs';
+import {
+  BehaviorSubject,
+  firstValueFrom,
+  map,
+  Observable,
+  switchMap,
+} from 'rxjs';
 import { ApiService } from '../../../../../services/api.service';
 import {
   prepareReceiptHtmlForPreview,
@@ -115,11 +121,9 @@ export class SalesService {
   }
 
   processExchange(payload: any): Observable<void> {
-    return (
-      this.apiService
-        .post('sales/exchange', payload)
-        .pipe(switchMap(() => this.reloadWithCurrentState()))
-    );
+    return this.apiService
+      .post('sales/exchange', payload)
+      .pipe(switchMap(() => this.reloadWithCurrentState()));
   }
 
   /** Abre el ticket térmico en una pestaña con vista previa e impresión / guardar PDF. */
@@ -164,8 +168,7 @@ export class SalesService {
     return new Promise(resolve => {
       document.getElementById('sales-ticket-print-frame')?.remove();
 
-      const suppressedNodes: Array<{ node: HTMLElement; display: string }> =
-        [];
+      const suppressedNodes: Array<{ node: HTMLElement; display: string }> = [];
 
       const suppressAppChrome = () => {
         Array.from(document.body.children).forEach(node => {

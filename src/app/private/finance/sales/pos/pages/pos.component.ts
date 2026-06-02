@@ -59,10 +59,7 @@ export class PosComponent implements AfterViewChecked, OnDestroy, OnInit {
       });
 
     this.barcodeSubject
-      .pipe(
-        debounceTime(300),
-        takeUntilDestroyed(this.destroyRef),
-      )
+      .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
       .subscribe(valor => {
         if (valor && !this.hasNoWarehouse) {
           this.onScan();
@@ -70,7 +67,9 @@ export class PosComponent implements AfterViewChecked, OnDestroy, OnInit {
       });
   }
 
-  private applyWarehouseGate(user: ReturnType<AuthService['currentUser']>): void {
+  private applyWarehouseGate(
+    user: ReturnType<AuthService['currentUser']>,
+  ): void {
     const shouldBlock = userRequiresWarehouseAssignment(user);
     if (!shouldBlock) {
       this.hasNoWarehouse = false;

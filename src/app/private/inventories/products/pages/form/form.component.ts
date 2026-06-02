@@ -125,7 +125,9 @@ export class StepperFormComponent implements OnInit {
   updateQueryParam(): void {
     this.router.events
       .pipe(
-        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        filter(
+          (event): event is NavigationEnd => event instanceof NavigationEnd,
+        ),
         switchMap(navEnd => {
           const url = navEnd.urlAfterRedirects || navEnd.url;
           const childRoute = this.route.firstChild;

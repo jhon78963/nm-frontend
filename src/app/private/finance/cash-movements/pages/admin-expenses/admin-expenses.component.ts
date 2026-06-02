@@ -269,7 +269,9 @@ export class AdminExpensesComponent implements OnInit {
   }
 
   canSaveAdminExpense(): boolean {
-    return this.isEditing() ? this.canUpdateCashflow() : this.canStoreCashflow();
+    return this.isEditing()
+      ? this.canUpdateCashflow()
+      : this.canStoreCashflow();
   }
 
   getCategoryLabel(category: string | undefined): string {

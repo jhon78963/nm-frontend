@@ -217,6 +217,8 @@ export class CashflowService {
   getVoucherPreview(voucherPath: string): Observable<Blob> {
     const params = new HttpParams().set('path', voucherPath);
 
-    return this.apiService.getBlob(`${this.apiUrl}/vouchers/preview`, { params });
+    return this.apiService.getBlob(`${this.apiUrl}/vouchers/preview`, {
+      params,
+    });
   }
 }

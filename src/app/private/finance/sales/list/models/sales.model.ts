@@ -1,4 +1,9 @@
-export type SunatStatus = 'PENDING' | 'SENT' | 'ACCEPTED' | 'REJECTED' | 'VOIDED';
+export type SunatStatus =
+  | 'PENDING'
+  | 'SENT'
+  | 'ACCEPTED'
+  | 'REJECTED'
+  | 'VOIDED';
 export type DocumentType = 'BOLETA' | 'FACTURA' | 'TICKET_INTERNO';
 
 export interface ISale {

@@ -54,7 +54,8 @@ import { TooltipModule } from 'primeng/tooltip';
                     ? 'pi pi-file-pdf text-red-500'
                     : 'pi pi-image text-blue-500'
                 "></i>
-              <span class="white-space-nowrap overflow-hidden text-overflow-ellipsis text-900">
+              <span
+                class="white-space-nowrap overflow-hidden text-overflow-ellipsis text-900">
                 {{ file.name }}
               </span>
               <p-tag

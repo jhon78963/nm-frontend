@@ -13,86 +13,88 @@
 </div>
 <div class="grid p-fluid">
   @if (canStoreCashflow() || canUpdateCashflow()) {
-  <div class="col-12 lg:col-4">
-    <div class="surface-card p-4 shadow-2 border-round-xl">
-      <h2 class="text-xl font-bold mb-4 text-900">
-        {{ isEditing() ? 'Editar Gasto' : 'Registrar Gasto' }}
-      </h2>
+    <div class="col-12 lg:col-4">
+      <div class="surface-card p-4 shadow-2 border-round-xl">
+        <h2 class="text-xl font-bold mb-4 text-900">
+          {{ isEditing() ? 'Editar Gasto' : 'Registrar Gasto' }}
+        </h2>
 
-      <div class="flex flex-column gap-3">
-        <div>
-          <span class="block font-bold mb-2">Categoría</span>
-          <p-dropdown
-            [options]="expenseCategories"
-            optionLabel="label"
-            optionValue="value"
-            [(ngModel)]="expenseForm.category"
-            placeholder="Seleccione una categoría"
-            styleClass="w-full"></p-dropdown>
-        </div>
-
-        <div>
-          <span class="block font-bold mb-2">Descripción</span>
-          <input
-            pInputText
-            [(ngModel)]="expenseForm.description"
-            placeholder="Ej: Pago de hosting mayo" />
-        </div>
-
-        <div class="grid">
-          <div class="col-6">
-            <span class="block font-bold mb-2">Monto (S/)</span>
-            <p-inputNumber
-              [(ngModel)]="expenseForm.amount"
-              mode="currency"
-              currency="PEN"
-              locale="es-PE"></p-inputNumber>
-          </div>
-          <div class="col-6">
-            <span class="block font-bold mb-2">Método</span>
+        <div class="flex flex-column gap-3">
+          <div>
+            <span class="block font-bold mb-2">Categoría</span>
             <p-dropdown
-              [options]="paymentMethods"
-              [(ngModel)]="expenseForm.payment_method"></p-dropdown>
+              [options]="expenseCategories"
+              optionLabel="label"
+              optionValue="value"
+              [(ngModel)]="expenseForm.category"
+              placeholder="Seleccione una categoría"
+              styleClass="w-full"></p-dropdown>
           </div>
-        </div>
 
-        <div>
-          <span class="block font-bold mb-2">Fecha</span>
-          <p-calendar
-            [(ngModel)]="expenseForm.date"
-            [showTime]="true"
-            hourFormat="12"
-            dateFormat="dd/mm/yy"
-            [showIcon]="true"></p-calendar>
-        </div>
+          <div>
+            <span class="block font-bold mb-2">Descripción</span>
+            <input
+              pInputText
+              [(ngModel)]="expenseForm.description"
+              placeholder="Ej: Pago de hosting mayo" />
+          </div>
 
-        <div>
-          <span class="block font-bold mb-2">Comprobantes (PDF o Imagen)</span>
-          <app-voucher-dropzone
-            (filesChange)="onDropzoneFiles($event)"></app-voucher-dropzone>
-        </div>
+          <div class="grid">
+            <div class="col-6">
+              <span class="block font-bold mb-2">Monto (S/)</span>
+              <p-inputNumber
+                [(ngModel)]="expenseForm.amount"
+                mode="currency"
+                currency="PEN"
+                locale="es-PE"></p-inputNumber>
+            </div>
+            <div class="col-6">
+              <span class="block font-bold mb-2">Método</span>
+              <p-dropdown
+                [options]="paymentMethods"
+                [(ngModel)]="expenseForm.payment_method"></p-dropdown>
+            </div>
+          </div>
 
-        @if (isEditing()) {
-          <button
-            pButton
-            label="Cancelar"
-            icon="pi pi-times"
-            class="p-button-secondary py-3 font-bold"
-            (click)="resetForm()"></button>
-        }
-        @if (canSaveAdminExpense()) {
-          <button
-            pButton
-            [label]="isEditing() ? 'Actualizar Gasto' : 'Registrar Gasto'"
-            [icon]="isEditing() ? 'pi pi-refresh' : 'pi pi-check'"
-            [class]="isEditing() ? 'p-button-warning' : 'p-button-help'"
-            class="flex-1 py-3 font-bold"
-            [loading]="loading()"
-            (click)="saveExpense()"></button>
-        }
+          <div>
+            <span class="block font-bold mb-2">Fecha</span>
+            <p-calendar
+              [(ngModel)]="expenseForm.date"
+              [showTime]="true"
+              hourFormat="12"
+              dateFormat="dd/mm/yy"
+              [showIcon]="true"></p-calendar>
+          </div>
+
+          <div>
+            <span class="block font-bold mb-2"
+              >Comprobantes (PDF o Imagen)</span
+            >
+            <app-voucher-dropzone
+              (filesChange)="onDropzoneFiles($event)"></app-voucher-dropzone>
+          </div>
+
+          @if (isEditing()) {
+            <button
+              pButton
+              label="Cancelar"
+              icon="pi pi-times"
+              class="p-button-secondary py-3 font-bold"
+              (click)="resetForm()"></button>
+          }
+          @if (canSaveAdminExpense()) {
+            <button
+              pButton
+              [label]="isEditing() ? 'Actualizar Gasto' : 'Registrar Gasto'"
+              [icon]="isEditing() ? 'pi pi-refresh' : 'pi pi-check'"
+              [class]="isEditing() ? 'p-button-warning' : 'p-button-help'"
+              class="flex-1 py-3 font-bold"
+              [loading]="loading()"
+              (click)="saveExpense()"></button>
+          }
+        </div>
       </div>
     </div>
-  </div>
   }
 
   <div class="col-12 lg:col-8">
@@ -135,15 +137,26 @@
                     tooltipPosition="top"
                     (click)="editExpense(expense)"></button>
                 }
-                @if ((expense.voucher_paths?.length || expense.voucher_path)) {
+                @if (expense.voucher_paths?.length || expense.voucher_path) {
                   <div class="flex align-items-center gap-1">
                     <button
                       pButton
                       icon="pi pi-eye"
                       class="p-button-rounded p-button-text p-button-sm"
-                      [pTooltip]="'Ver ' + (expense.voucher_paths?.length > 1 ? expense.voucher_paths.length + ' comprobantes' : 'comprobante')"
+                      [pTooltip]="
+                        'Ver ' +
+                        (expense.voucher_paths?.length > 1
+                          ? expense.voucher_paths.length + ' comprobantes'
+                          : 'comprobante')
+                      "
                       tooltipPosition="top"
-                      (click)="showVoucher(expense.voucher_paths?.length ? expense.voucher_paths : expense.voucher_path)"></button>
+                      (click)="
+                        showVoucher(
+                          expense.voucher_paths?.length
+                            ? expense.voucher_paths
+                            : expense.voucher_path
+                        )
+                      "></button>
                     @if (expense.voucher_paths?.length > 1) {
                       <p-tag
                         [value]="expense.voucher_paths.length + ''"
@@ -168,21 +181,28 @@
   [visible]="displayPreview()"
   (visibleChange)="onPreviewVisibleChange($event)"
   [modal]="true"
-  [header]="previewItems.length > 1 ? 'Comprobante ' + (previewIndex + 1) + ' de ' + previewItems.length : 'Vista Previa del Comprobante'"
+  [header]="
+    previewItems.length > 1
+      ? 'Comprobante ' + (previewIndex + 1) + ' de ' + previewItems.length
+      : 'Vista Previa del Comprobante'
+  "
   [style]="{ width: '90vw', maxWidth: '800px' }"
   [contentStyle]="{ height: '80vh' }"
   [draggable]="false"
   [resizable]="false">
   <div class="w-full h-full flex flex-column">
     @if (previewItems.length > 1) {
-      <div class="flex align-items-center justify-content-between px-2 pb-2 flex-shrink-0">
+      <div
+        class="flex align-items-center justify-content-between px-2 pb-2 flex-shrink-0">
         <button
           pButton
           icon="pi pi-chevron-left"
           class="p-button-text p-button-sm"
           [disabled]="previewIndex === 0"
           (click)="prevPreview()"></button>
-        <span class="text-sm text-500">{{ previewIndex + 1 }} / {{ previewItems.length }}</span>
+        <span class="text-sm text-500"
+          >{{ previewIndex + 1 }} / {{ previewItems.length }}</span
+        >
         <button
           pButton
           icon="pi pi-chevron-right"

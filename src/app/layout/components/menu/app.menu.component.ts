@@ -208,7 +208,10 @@ export class AppMenuComponent implements OnInit {
 
   /** Comprueba un permiso Spatie contra el usuario en memoria. Super Admin siempre pasa. */
   hasPermission(requiredPermission: string): boolean {
-    return userHasPermission(this.authService.currentUser(), requiredPermission);
+    return userHasPermission(
+      this.authService.currentUser(),
+      requiredPermission,
+    );
   }
 
   private buildMenu(): void {

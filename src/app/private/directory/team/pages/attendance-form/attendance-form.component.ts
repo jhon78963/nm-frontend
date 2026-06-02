@@ -134,7 +134,10 @@ export class AttendanceFormComponent implements OnInit, OnDestroy {
     { label: 'Presente (tolerancia 8:00–8:10)', value: 'TOLERANCIA' },
     { label: 'Tardanza', value: 'TARDE' },
     { label: 'Falta', value: 'FALTA' },
-    { label: 'Falta injustificada (doble descuento)', value: 'FALTA_INJUSTIFICADA' },
+    {
+      label: 'Falta injustificada (doble descuento)',
+      value: 'FALTA_INJUSTIFICADA',
+    },
     { label: 'Descanso', value: 'DESCANSO' },
     { label: 'Vacaciones', value: 'VACACIONES' },
     { label: 'Día recuperado', value: 'RECUPERACION' },

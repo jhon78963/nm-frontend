@@ -1,7 +1,13 @@
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { TooltipModule } from 'primeng/tooltip';
-import { Component, DestroyRef, inject, OnDestroy, OnInit } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  inject,
+  OnDestroy,
+  OnInit,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { debounceTime, Observable } from 'rxjs';
@@ -217,26 +223,24 @@ export class TeamListComponent implements OnInit, OnDestroy {
       header: 'Crear',
     });
 
-    this.teamModal.onClose
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: value => {
-          if (value?.success && value?.login) {
-            const L = value.login as {
-              email: string;
-              username: string;
-            };
-            this.showSuccess(
-              `Colaborador creado. Usuario vendedora: ${L.email}`,
-              3000,
-            );
-          } else if (value?.success) {
-            this.showSuccess('Colaborador creado.');
-          } else if (value?.error) {
-            this.showError(value.error);
-          }
-        },
-      });
+    this.teamModal.onClose.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: value => {
+        if (value?.success && value?.login) {
+          const L = value.login as {
+            email: string;
+            username: string;
+          };
+          this.showSuccess(
+            `Colaborador creado. Usuario vendedora: ${L.email}`,
+            3000,
+          );
+        } else if (value?.success) {
+          this.showSuccess('Colaborador creado.');
+        } else if (value?.error) {
+          this.showError(value.error);
+        }
+      },
+    });
   }
 
   buttonEditTeam(id: number): void {
@@ -247,17 +251,15 @@ export class TeamListComponent implements OnInit, OnDestroy {
       header: 'Editar',
     });
 
-    this.teamModal.onClose
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: value => {
-          value && value?.success
-            ? this.showSuccess('Colaborador actualizado.')
-            : value?.error
-              ? this.showError(value?.error)
-              : null;
-        },
-      });
+    this.teamModal.onClose.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: value => {
+        value && value?.success
+          ? this.showSuccess('Colaborador actualizado.')
+          : value?.error
+            ? this.showError(value?.error)
+            : null;
+      },
+    });
   }
 
   buttonAttendanceTeam(rowData: Team): void {

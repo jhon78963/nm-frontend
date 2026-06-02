@@ -1,4 +1,10 @@
-import { Component, DestroyRef, inject, OnDestroy, OnInit } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  inject,
+  OnDestroy,
+  OnInit,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -172,17 +178,15 @@ export class UserListComponent implements OnInit, OnDestroy {
       styleClass: 'dialog-custom-form',
     });
 
-    this.userModal.onClose
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: value => {
-          value && value?.success
-            ? showSuccess(this.messageService, 'Usuario Creado.')
-            : value?.error
-              ? showError(this.messageService, value?.error)
-              : null;
-        },
-      });
+    this.userModal.onClose.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: value => {
+        value && value?.success
+          ? showSuccess(this.messageService, 'Usuario Creado.')
+          : value?.error
+            ? showError(this.messageService, value?.error)
+            : null;
+      },
+    });
   }
 
   buttonEditUSer(id: number): void {
@@ -192,17 +196,15 @@ export class UserListComponent implements OnInit, OnDestroy {
       styleClass: 'dialog-custom-form',
     });
 
-    this.userModal.onClose
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: value => {
-          value && value?.success
-            ? showSuccess(this.messageService, 'Usuario actualizado.')
-            : value?.error
-              ? showError(this.messageService, value?.error)
-              : null;
-        },
-      });
+    this.userModal.onClose.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: value => {
+        value && value?.success
+          ? showSuccess(this.messageService, 'Usuario actualizado.')
+          : value?.error
+            ? showError(this.messageService, value?.error)
+            : null;
+      },
+    });
   }
 
   buttonDeleteUser(id: number, event: Event): void {

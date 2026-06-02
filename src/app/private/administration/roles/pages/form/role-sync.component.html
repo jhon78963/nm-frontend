@@ -107,7 +107,9 @@
                             (onChange)="
                               toggleSubmodule(submodule, $event.checked)
                             "
-                            [inputId]="'submodule-' + submodule.id"></p-checkbox>
+                            [inputId]="
+                              'submodule-' + submodule.id
+                            "></p-checkbox>
                           <label [for]="'submodule-' + submodule.id">
                             {{ submodule.label }}
                           </label>

@@ -160,9 +160,9 @@ export class AuthService {
   }
 
   me(): Observable<User> {
-    return this.apiService.post<User | { data: User }>('auth/me', {}).pipe(
-      map(response => this.normalizeUser(response)),
-    );
+    return this.apiService
+      .post<User | { data: User }>('auth/me', {})
+      .pipe(map(response => this.normalizeUser(response)));
   }
 
   /**
@@ -209,9 +209,9 @@ export class AuthService {
    * Invocado automáticamente por el interceptor ante un 401.
    */
   refreshSession(): Observable<void> {
-    return this.apiService.post<{ message: string }>('auth/refresh', {}).pipe(
-      map(() => undefined),
-    );
+    return this.apiService
+      .post<{ message: string }>('auth/refresh', {})
+      .pipe(map(() => undefined));
   }
 
   changePassword(body: {

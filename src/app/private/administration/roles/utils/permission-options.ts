@@ -65,7 +65,11 @@ export function buildPermissionTree(perms: Permission[]): PermissionModule[] {
       moduleOrder: number;
       submodules: Map<
         string,
-        { label: string; submoduleOrder: number; permissions: PermissionOption[] }
+        {
+          label: string;
+          submoduleOrder: number;
+          permissions: PermissionOption[];
+        }
       >;
     }
   >();
@@ -107,9 +111,7 @@ export function buildPermissionTree(perms: Permission[]): PermissionModule[] {
       submodules: [...moduleEntry.submodules.values()]
         .sort((a, b) => {
           const byOrder = a.submoduleOrder - b.submoduleOrder;
-          return byOrder !== 0
-            ? byOrder
-            : a.label.localeCompare(b.label, 'es');
+          return byOrder !== 0 ? byOrder : a.label.localeCompare(b.label, 'es');
         })
         .map(submoduleEntry => ({
           id: slugify(`${moduleEntry.label}-${submoduleEntry.label}`),
@@ -224,7 +226,11 @@ function resolvePermissionPlacement(perm: Permission): MenuPlacement {
     vendor: placement('Directorio', 'Proveedores', 2),
     product: placement('Inventario', 'Productos', 0),
     productSize: placement('Inventario', 'Productos · Tallas', 1),
-    productSizeColor: placement('Inventario', 'Productos · Colores por talla', 2),
+    productSizeColor: placement(
+      'Inventario',
+      'Productos · Colores por talla',
+      2,
+    ),
     productHistory: placement('Inventario', 'Productos · Historial', 3),
     inventoryKardex: placement('Inventario', 'Productos · Kardex', 4),
     size: placement('Inventario', 'Tallas', 5),

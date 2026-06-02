@@ -43,7 +43,9 @@
           @if (getFieldValue(col.field, rowData); as tagValue) {
             <p-tag
               [value]="tagValue"
-              [severity]="col.tagSeverityFn ? col.tagSeverityFn(tagValue) : 'secondary'">
+              [severity]="
+                col.tagSeverityFn ? col.tagSeverityFn(tagValue) : 'secondary'
+              ">
             </p-tag>
           } @else {
             <span class="text-color-secondary text-sm">—</span>

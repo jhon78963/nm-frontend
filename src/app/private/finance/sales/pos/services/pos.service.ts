@@ -382,8 +382,7 @@ export class PosService {
     return new Promise(resolve => {
       this.teardownPrintSession();
 
-      const suppressedNodes: Array<{ node: HTMLElement; display: string }> =
-        [];
+      const suppressedNodes: Array<{ node: HTMLElement; display: string }> = [];
 
       const suppressAppChrome = () => {
         Array.from(document.body.children).forEach(node => {

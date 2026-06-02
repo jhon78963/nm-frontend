@@ -193,13 +193,12 @@ export function prepareReceiptHtmlForPreview(rawHtml: string): string {
   const printable = prepareReceiptHtmlForPrint(rawHtml, false);
 
   if (/<body[^>]*>/i.test(printable)) {
-    return printable.replace(
-      /<body([^>]*)>/i,
-      `<body$1>${PREVIEW_TOOLBAR_HTML}`,
-    ).replace(
-      /<style id="pos-receipt-print-isolation">/i,
-      `<style id="pos-receipt-print-isolation">${PREVIEW_TOOLBAR_CSS}`,
-    );
+    return printable
+      .replace(/<body([^>]*)>/i, `<body$1>${PREVIEW_TOOLBAR_HTML}`)
+      .replace(
+        /<style id="pos-receipt-print-isolation">/i,
+        `<style id="pos-receipt-print-isolation">${PREVIEW_TOOLBAR_CSS}`,
+      );
   }
 
   return prepareReceiptHtmlForPrint(

@@ -89,7 +89,9 @@ export const routes: Routes = [
         canActivate: [permissionGuard],
         data: { breadcrumb: 'POS', permission: 'pos.checkout' },
         loadChildren: () =>
-          import('./private/finance/sales/pos/pos.module').then(m => m.PosModule),
+          import('./private/finance/sales/pos/pos.module').then(
+            m => m.PosModule,
+          ),
       },
       {
         path: 'sales',
@@ -110,10 +112,7 @@ export const routes: Routes = [
         canActivate: [permissionGuard],
         data: {
           breadcrumb: 'Módulo Financiero',
-          permissions: [
-            'cashflow.getDaily',
-            'cashflow.getAdminMonthlyReport',
-          ],
+          permissions: ['cashflow.getDaily', 'cashflow.getAdminMonthlyReport'],
         },
         loadChildren: () =>
           import('./private/finance/finance.module').then(m => m.FinanceModule),
@@ -127,9 +126,9 @@ export const routes: Routes = [
           permission: 'financialSummary.getSummary',
         },
         loadChildren: () =>
-          import('./private/finance/financial-summary/financial-summary.module').then(
-            m => m.FinancialSummaryModule,
-          ),
+          import(
+            './private/finance/financial-summary/financial-summary.module'
+          ).then(m => m.FinancialSummaryModule),
       },
       {
         path: 'dashboard',

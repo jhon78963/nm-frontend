@@ -64,26 +64,26 @@ export class SaleFormComponent implements OnInit {
         .getOne(id)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe((response: any) => {
-        this.isCanceled.set(response.status === 'CANCELED');
+          this.isCanceled.set(response.status === 'CANCELED');
 
-        if (response.datetime_iso) {
-          this.form.patchValue({
-            creationTime: new Date(response.datetime_iso),
-          });
-        }
+          if (response.datetime_iso) {
+            this.form.patchValue({
+              creationTime: new Date(response.datetime_iso),
+            });
+          }
 
-        // 2. Items
-        this.initItems(response.items);
+          // 2. Items
+          this.initItems(response.items);
 
-        // 3. Pagos (Cargar los existentes)
-        this.initPayments(response.payments);
+          // 3. Pagos (Cargar los existentes)
+          this.initPayments(response.payments);
 
-        this.recalculateTotals();
+          this.recalculateTotals();
 
-        if (this.isCanceled()) {
-          this.form.disable();
-        }
-      });
+          if (this.isCanceled()) {
+            this.form.disable();
+          }
+        });
     }
   }
 
@@ -229,8 +229,8 @@ export class SaleFormComponent implements OnInit {
           next: () => this.dynamicDialogRef.close(true),
           error: (err: unknown) => {
             const message =
-              (err as { error?: { message?: string }; message?: string })
-                ?.error?.message ??
+              (err as { error?: { message?: string }; message?: string })?.error
+                ?.message ??
               (err as { message?: string })?.message ??
               'Error al guardar la venta.';
             showError(this.messageService, message);
@@ -245,37 +245,39 @@ export class SaleFormComponent implements OnInit {
       width: '60vw',
     });
 
-    ref.onClose.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((res: any) => {
-      if (res) {
-        const itemsArray = this.form.get('items') as FormArray;
-        const row = itemsArray.at(index);
+    ref.onClose
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res: any) => {
+        if (res) {
+          const itemsArray = this.form.get('items') as FormArray;
+          const row = itemsArray.at(index);
 
-        // MAPEAMOS MANUALMENTE: res -> formulario
-        row.patchValue({
-          product_size_id: res.product_size_id,
-          color_id: res.color_id,
-          product_name: res.name, // res tiene 'name', form tiene 'product_name'
-          unit_price: res.sale_price, // res tiene 'sale_price', form tiene 'unit_price'
-          description_full: `${res.name} (${res.size_name} | ${res.colorName})`,
-          // Mantenemos la cantidad que ya estaba o la reseteamos a 1
-          quantity: row.get('quantity')?.value || 1,
-        });
+          // MAPEAMOS MANUALMENTE: res -> formulario
+          row.patchValue({
+            product_size_id: res.product_size_id,
+            color_id: res.color_id,
+            product_name: res.name, // res tiene 'name', form tiene 'product_name'
+            unit_price: res.sale_price, // res tiene 'sale_price', form tiene 'unit_price'
+            description_full: `${res.name} (${res.size_name} | ${res.colorName})`,
+            // Mantenemos la cantidad que ya estaba o la reseteamos a 1
+            quantity: row.get('quantity')?.value || 1,
+          });
 
-        // Forzamos el cálculo de subtotal de esa fila
-        const qty = row.get('quantity')?.value;
-        const price = res.sale_price;
-        row.get('subtotal')?.setValue(qty * price);
+          // Forzamos el cálculo de subtotal de esa fila
+          const qty = row.get('quantity')?.value;
+          const price = res.sale_price;
+          row.get('subtotal')?.setValue(qty * price);
 
-        // Recalculamos totales generales de la venta
-        this.recalculateTotals();
+          // Recalculamos totales generales de la venta
+          this.recalculateTotals();
 
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Producto Actualizado',
-          detail: 'Se aplicó el cambio de mercadería localmente.',
-        });
-      }
-    });
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Producto Actualizado',
+            detail: 'Se aplicó el cambio de mercadería localmente.',
+          });
+        }
+      });
   }
 
   fixOverpayment() {

@@ -1,5 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, OnDestroy, OnInit, inject } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  OnDestroy,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { FormControl, FormGroup } from '@angular/forms';
@@ -95,12 +101,18 @@ export class SaleListComponent implements OnInit, OnDestroy {
       tag: true,
       tagSeverityFn: (value: string | null | undefined) => {
         switch (value as SunatStatus | null | undefined) {
-          case 'ACCEPTED': return 'success';
-          case 'PENDING':  return 'warning';
-          case 'SENT':     return 'info';
-          case 'REJECTED': return 'danger';
-          case 'VOIDED':   return 'secondary';
-          default:         return 'secondary';
+          case 'ACCEPTED':
+            return 'success';
+          case 'PENDING':
+            return 'warning';
+          case 'SENT':
+            return 'info';
+          case 'REJECTED':
+            return 'danger';
+          case 'VOIDED':
+            return 'secondary';
+          default:
+            return 'secondary';
         }
       },
     },
