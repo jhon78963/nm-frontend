@@ -28,35 +28,32 @@
   }
   .cash-date-nav {
     flex-wrap: nowrap;
-    min-height: 2.75rem;
+    min-height: 3.25rem;
     max-width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
 
     &__center {
       flex: 1 1 auto;
       justify-content: center;
-      white-space: nowrap;
-      min-width: max-content;
+      text-align: center;
+      min-width: 0;
     }
 
     &__tag {
-      flex-shrink: 0;
       font-size: 0.625rem;
       font-weight: 700;
       letter-spacing: 0.04em;
       text-transform: uppercase;
       color: var(--text-color-secondary);
+      line-height: 1.2;
     }
 
     &__date {
-      flex-shrink: 0;
       font-size: clamp(0.72rem, 2.4vw, 0.95rem);
       font-weight: 700;
-      line-height: 1.2;
+      line-height: 1.25;
       color: var(--text-color);
       white-space: nowrap;
+      text-align: center;
     }
   }
 }

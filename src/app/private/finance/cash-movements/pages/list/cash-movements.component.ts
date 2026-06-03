@@ -173,7 +173,7 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
     const cap = (value: string) =>
       value.charAt(0).toLocaleUpperCase('es-PE') + value.slice(1);
 
-    return `${cap(weekday)} ${day} de ${month}, ${d.getFullYear()}`;
+    return `${cap(weekday)} ${day} de ${cap(month)}, ${d.getFullYear()}`;
   }
 
   // Filtrado visual local
