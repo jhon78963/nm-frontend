@@ -162,6 +162,20 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
     this.refreshData();
   }
 
+  /** Ej.: Miércoles 03 de junio, 2026 */
+  get formattedViewDate(): string {
+    const d = this.currentDate;
+    const weekday = new Intl.DateTimeFormat('es-PE', {
+      weekday: 'long',
+    }).format(d);
+    const month = new Intl.DateTimeFormat('es-PE', { month: 'long' }).format(d);
+    const day = String(d.getDate()).padStart(2, '0');
+    const cap = (value: string) =>
+      value.charAt(0).toLocaleUpperCase('es-PE') + value.slice(1);
+
+    return `${cap(weekday)} ${day} de ${month}, ${d.getFullYear()}`;
+  }
+
   // Filtrado visual local
   filteredList(type: 'sales' | 'incomes' | 'expenses') {
     const list = this.lists()[type] || [];
