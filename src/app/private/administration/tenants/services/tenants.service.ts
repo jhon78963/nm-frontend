@@ -60,11 +60,13 @@ export class TenantsService {
 
   /** Crea el tenant y devuelve la entidad creada (para luego guardar settings). */
   createAndReturn(data: Pick<Tenant, 'name'>): Observable<Tenant> {
-    return this.apiService.post<Tenant>('tenants', data).pipe(
-      switchMap((tenant: Tenant) =>
-        this.callGetList().pipe(map(() => tenant)),
-      ),
-    );
+    return this.apiService
+      .post<Tenant>('tenants', data)
+      .pipe(
+        switchMap((tenant: Tenant) =>
+          this.callGetList().pipe(map(() => tenant)),
+        ),
+      );
   }
 
   edit(id: number, data: Pick<Tenant, 'name'>): Observable<void> {
@@ -85,7 +87,10 @@ export class TenantsService {
     return this.apiService.get<TenantSetting>(`tenants/${tenantId}/settings`);
   }
 
-  saveSettings(tenantId: number, data: TenantSetting): Observable<TenantSetting> {
+  saveSettings(
+    tenantId: number,
+    data: TenantSetting,
+  ): Observable<TenantSetting> {
     return this.apiService.put<TenantSetting>(
       `tenants/${tenantId}/settings`,
       data,

@@ -1,10 +1,16 @@
 <div [formGroup]="form" class="flex flex-column gap-3 p-2">
-
   <!-- ── Nombre del tenant ──────────────────────────────────────────────── -->
   <div class="field mb-0">
-    <label class="font-semibold" for="name">Nombre del tenant / sucursal *</label>
-    <input id="name" type="text" pInputText class="w-full mt-1"
-           formControlName="name" placeholder="Ej. Novedades Maritex" />
+    <label class="font-semibold" for="name"
+      >Nombre del tenant / sucursal *</label
+    >
+    <input
+      id="name"
+      type="text"
+      pInputText
+      class="w-full mt-1"
+      formControlName="name"
+      placeholder="Ej. Novedades Maritex" />
   </div>
 
   <p-divider align="left">
@@ -14,18 +20,34 @@
   <div class="grid">
     <div class="col-12 sm:col-4 field mb-0">
       <label for="ruc">RUC</label>
-      <input id="ruc" type="text" pInputText class="w-full mt-1"
-             formControlName="ruc" placeholder="20XXXXXXXXX" maxlength="11" />
+      <input
+        id="ruc"
+        type="text"
+        pInputText
+        class="w-full mt-1"
+        formControlName="ruc"
+        placeholder="20XXXXXXXXX"
+        maxlength="11" />
     </div>
     <div class="col-12 sm:col-8 field mb-0">
       <label for="legalName">Razón social</label>
-      <input id="legalName" type="text" pInputText class="w-full mt-1"
-             formControlName="legalName" placeholder="Empresa S.A.C." />
+      <input
+        id="legalName"
+        type="text"
+        pInputText
+        class="w-full mt-1"
+        formControlName="legalName"
+        placeholder="Empresa S.A.C." />
     </div>
     <div class="col-12 field mb-0">
       <label for="tradeName">Nombre comercial</label>
-      <input id="tradeName" type="text" pInputText class="w-full mt-1"
-             formControlName="tradeName" placeholder="Nombre que aparece en el ticket" />
+      <input
+        id="tradeName"
+        type="text"
+        pInputText
+        class="w-full mt-1"
+        formControlName="tradeName"
+        placeholder="Nombre que aparece en el ticket" />
     </div>
   </div>
 
@@ -36,23 +58,43 @@
   <div class="grid">
     <div class="col-12 field mb-0">
       <label for="address">Dirección</label>
-      <input id="address" type="text" pInputText class="w-full mt-1"
-             formControlName="address" placeholder="Calle / Av. / Mercado y número" />
+      <input
+        id="address"
+        type="text"
+        pInputText
+        class="w-full mt-1"
+        formControlName="address"
+        placeholder="Calle / Av. / Mercado y número" />
     </div>
     <div class="col-12 sm:col-4 field mb-0">
       <label for="district">Distrito</label>
-      <input id="district" type="text" pInputText class="w-full mt-1"
-             formControlName="district" placeholder="Trujillo" />
+      <input
+        id="district"
+        type="text"
+        pInputText
+        class="w-full mt-1"
+        formControlName="district"
+        placeholder="Trujillo" />
     </div>
     <div class="col-12 sm:col-4 field mb-0">
       <label for="province">Provincia</label>
-      <input id="province" type="text" pInputText class="w-full mt-1"
-             formControlName="province" placeholder="Trujillo" />
+      <input
+        id="province"
+        type="text"
+        pInputText
+        class="w-full mt-1"
+        formControlName="province"
+        placeholder="Trujillo" />
     </div>
     <div class="col-12 sm:col-4 field mb-0">
       <label for="department">Departamento</label>
-      <input id="department" type="text" pInputText class="w-full mt-1"
-             formControlName="department" placeholder="La Libertad" />
+      <input
+        id="department"
+        type="text"
+        pInputText
+        class="w-full mt-1"
+        formControlName="department"
+        placeholder="La Libertad" />
     </div>
   </div>
 
@@ -63,18 +105,33 @@
   <div class="grid">
     <div class="col-12 sm:col-4 field mb-0">
       <label for="phone">Teléfono / Celular</label>
-      <input id="phone" type="text" pInputText class="w-full mt-1"
-             formControlName="phone" placeholder="944 000 000" />
+      <input
+        id="phone"
+        type="text"
+        pInputText
+        class="w-full mt-1"
+        formControlName="phone"
+        placeholder="944 000 000" />
     </div>
     <div class="col-12 sm:col-8 field mb-0">
       <label for="email">Correo</label>
-      <input id="email" type="email" pInputText class="w-full mt-1"
-             formControlName="email" placeholder="contacto@empresa.com" />
+      <input
+        id="email"
+        type="email"
+        pInputText
+        class="w-full mt-1"
+        formControlName="email"
+        placeholder="contacto@empresa.com" />
     </div>
     <div class="col-12 field mb-0">
       <label for="website">Página web</label>
-      <input id="website" type="url" pInputText class="w-full mt-1"
-             formControlName="website" placeholder="https://www.empresa.com" />
+      <input
+        id="website"
+        type="url"
+        pInputText
+        class="w-full mt-1"
+        formControlName="website"
+        placeholder="https://www.empresa.com" />
     </div>
   </div>
 
@@ -87,22 +144,35 @@
       <label for="facebook">
         <i class="pi pi-facebook mr-1"></i>Facebook
       </label>
-      <input id="facebook" type="text" pInputText class="w-full mt-1"
-             formControlName="facebook" placeholder="/NombreDePagina" />
+      <input
+        id="facebook"
+        type="text"
+        pInputText
+        class="w-full mt-1"
+        formControlName="facebook"
+        placeholder="/NombreDePagina" />
     </div>
     <div class="col-12 sm:col-4 field mb-0">
       <label for="instagram">
         <i class="pi pi-instagram mr-1"></i>Instagram
       </label>
-      <input id="instagram" type="text" pInputText class="w-full mt-1"
-             formControlName="instagram" placeholder="@usuario" />
+      <input
+        id="instagram"
+        type="text"
+        pInputText
+        class="w-full mt-1"
+        formControlName="instagram"
+        placeholder="@usuario" />
     </div>
     <div class="col-12 sm:col-4 field mb-0">
-      <label for="tiktok">
-        <i class="pi pi-tiktok mr-1"></i>TikTok
-      </label>
-      <input id="tiktok" type="text" pInputText class="w-full mt-1"
-             formControlName="tiktok" placeholder="@usuario" />
+      <label for="tiktok"> <i class="pi pi-tiktok mr-1"></i>TikTok </label>
+      <input
+        id="tiktok"
+        type="text"
+        pInputText
+        class="w-full mt-1"
+        formControlName="tiktok"
+        placeholder="@usuario" />
     </div>
   </div>
 
@@ -113,25 +183,35 @@
   <div class="grid">
     <div class="col-12 field mb-0">
       <label for="logoUrl">URL del logo</label>
-      <input id="logoUrl" type="url" pInputText class="w-full mt-1"
-             formControlName="logoUrl"
-             placeholder="https://cdn.mitienda.com/logo.png" />
-      <small class="text-500">URL pública de la imagen (JPG/PNG, fondo blanco recomendado).</small>
+      <input
+        id="logoUrl"
+        type="url"
+        pInputText
+        class="w-full mt-1"
+        formControlName="logoUrl"
+        placeholder="https://cdn.mitienda.com/logo.png" />
+      <small class="text-500"
+        >URL pública de la imagen (JPG/PNG, fondo blanco recomendado).</small
+      >
     </div>
     <div class="col-12 field mb-0">
       <label for="ticketFooterNote">Nota al pie del ticket</label>
-      <input id="ticketFooterNote" type="text" pInputText class="w-full mt-1"
-             formControlName="ticketFooterNote"
-             placeholder="No se aceptan cambios ni devoluciones" />
+      <input
+        id="ticketFooterNote"
+        type="text"
+        pInputText
+        class="w-full mt-1"
+        formControlName="ticketFooterNote"
+        placeholder="No se aceptan cambios ni devoluciones" />
     </div>
   </div>
 
   <!-- ── Acciones ───────────────────────────────────────────────────────── -->
   <div class="flex justify-content-end gap-2 mt-2">
-    <p-button label="Cancelar" [text]="true"
-              (click)="dynamicDialogRef.close()"></p-button>
-    <p-button label="Guardar" [disabled]="!isValid"
-              (click)="save()"></p-button>
+    <p-button
+      label="Cancelar"
+      [text]="true"
+      (click)="dynamicDialogRef.close()"></p-button>
+    <p-button label="Guardar" [disabled]="!isValid" (click)="save()"></p-button>
   </div>
-
 </div>
