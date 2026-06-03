@@ -1,4 +1,46 @@
+import { environment } from '../../../../../../../environments/environment';
 import { sanitizeReceiptFragment } from '../../../../../../utils/receipt-sanitizer';
+
+/** Rutas relativas en img src no resuelven en documentos blob:/about:blank. */
+function absolutizeReceiptAssetUrls(html: string): string {
+  const bases = [
+    environment.baseWebUrl,
+    environment.apiUrl.replace(/\/api\/?$/, ''),
+    environment.baseUploadUrl,
+  ].filter((base): base is string => Boolean(base?.trim()));
+
+  return html.replace(
+    /(<img\b[^>]*\ssrc=")(?!https?:|data:|blob:)([^"]+)"/gi,
+    (_match, prefix: string, src: string) => {
+      for (const base of bases) {
+        try {
+          const normalizedBase = base.endsWith('/') ? base : `${base}/`;
+          return `${prefix}${new URL(src, normalizedBase).href}"`;
+        } catch {
+          continue;
+        }
+      }
+      return `${prefix}${src}"`;
+    },
+  );
+}
+
+/** Escribe HTML en iframe (about:blank) — las imágenes externas cargan; blob: URL las rompe. */
+export function loadHtmlIntoIframe(
+  iframe: HTMLIFrameElement,
+  fullHtml: string,
+): Window | null {
+  const printWindow = iframe.contentWindow;
+  const doc = printWindow?.document;
+  if (!doc) {
+    return null;
+  }
+
+  doc.open();
+  doc.write(fullHtml);
+  doc.close();
+  return printWindow;
+}
 
 /** Estilos ESC-POS / térmica 80mm inyectados en el host de impresión del DOM. */
 export const RECEIPT_PRINT_CSS = `
@@ -66,7 +108,9 @@ export function prepareReceiptHtmlForPrint(
   rawHtml: string,
   autoPrint = false,
 ): string {
-  const { styles, body } = extractReceiptFragment(rawHtml);
+  const { styles, body } = extractReceiptFragment(
+    absolutizeReceiptAssetUrls(rawHtml),
+  );
   const metaBlock =
     '<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">';
   const styleBlock = `<style id="pos-receipt-print-isolation">${RECEIPT_PRINT_CSS}</style>`;

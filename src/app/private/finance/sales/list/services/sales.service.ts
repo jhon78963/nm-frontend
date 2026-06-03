@@ -11,6 +11,7 @@ import { ApiService } from '../../../../../services/api.service';
 import {
   prepareReceiptHtmlForPreview,
   prepareReceiptHtmlForPrint,
+  loadHtmlIntoIframe,
 } from '../../pos/components/print-receipt/print-receipt.print-document';
 
 // 1. Interfaz del estado
@@ -214,9 +215,8 @@ export class SalesService {
 
       suppressAppChrome();
       document.body.appendChild(iframe);
+      iframe.src = 'about:blank';
 
-      const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
-      const blobUrl = URL.createObjectURL(blob);
       let finished = false;
 
       const finish = () => {
@@ -224,16 +224,13 @@ export class SalesService {
           return;
         }
         finished = true;
-        URL.revokeObjectURL(blobUrl);
         iframe.remove();
         restoreAppChrome();
         resolve();
       };
 
-      iframe.onerror = finish;
-
       iframe.onload = () => {
-        const printWindow = iframe.contentWindow;
+        const printWindow = loadHtmlIntoIframe(iframe, fullHtml);
         if (!printWindow) {
           finish();
           return;
@@ -254,8 +251,6 @@ export class SalesService {
           }, 500);
         });
       };
-
-      iframe.src = blobUrl;
     });
   }
 

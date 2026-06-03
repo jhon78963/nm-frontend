@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../../../../services/api.service'; // Asegúrate que la ruta sea correcta
 import { DocumentType } from '../../list/models/sales.model';
 import { PrintReceiptComponent } from '../components/print-receipt/print-receipt.component';
+import { loadHtmlIntoIframe } from '../components/print-receipt/print-receipt.print-document';
 import { CartItem, Customer, ModalState, Product } from '../models/pos.models';
 
 /** Series por defecto por tipo de documento. Configurable por almacén en el futuro. */
@@ -434,9 +435,8 @@ export class PosService {
 
       suppressAppChrome();
       document.body.appendChild(iframe);
+      iframe.src = 'about:blank';
 
-      const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
-      const blobUrl = URL.createObjectURL(blob);
       let finished = false;
 
       const finish = () => {
@@ -444,19 +444,13 @@ export class PosService {
           return;
         }
         finished = true;
-        URL.revokeObjectURL(blobUrl);
         iframe.remove();
         restoreAppChrome();
         resolve();
       };
 
-      iframe.onerror = () => {
-        this.showToast('Toca «Imprimir ticket» para reintentar.');
-        finish();
-      };
-
-      iframe.onload = () => {
-        const printWindow = iframe.contentWindow;
+      const triggerPrint = () => {
+        const printWindow = loadHtmlIntoIframe(iframe, fullHtml);
         if (!printWindow) {
           this.showToast('Toca «Imprimir ticket» para reintentar.');
           finish();
@@ -480,7 +474,7 @@ export class PosService {
         });
       };
 
-      iframe.src = blobUrl;
+      iframe.onload = () => triggerPrint();
     });
   }
 
