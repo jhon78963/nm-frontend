@@ -134,7 +134,8 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
     type: 'PAYMENT' as 'PAYMENT' | 'ADVANCE' | 'DEDUCTION',
     amount: null as number | null,
     date: new Date(),
-    payroll_period: 'q1' as PayrollQuincena,
+    accounting_month: new Date(),
+    payroll_period: 'q2' as PayrollQuincena,
     description: '',
     payment_method: 'CASH',
     sync_cash_movement: true,
@@ -153,14 +154,15 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
     type: 'PAYMENT' as 'PAYMENT' | 'ADVANCE' | 'DEDUCTION',
     amount: 0,
     date: new Date(),
+    accounting_month: new Date(),
     payroll_period: 'q1' as PayrollQuincena,
     payment_method: 'CASH',
     description: '',
   };
 
   payrollQuincenaOptions = [
-    { label: '1.ª quincena', value: 'q1' as PayrollQuincena },
-    { label: '2.ª quincena', value: 'q2' as PayrollQuincena },
+    { label: 'Cierre 1–15 del mes', value: 'q1' as PayrollQuincena },
+    { label: 'Cierre 16–fin de mes (30/31)', value: 'q2' as PayrollQuincena },
   ];
 
   paymentTypeOptions = [
@@ -310,14 +312,23 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
     ];
   }
 
-  onPaymentDateChange(): void {
-    this.paymentForm.payroll_period = this.inferQuincenaFromDate(
-      this.paymentForm.date,
-    );
+  /** Mes de nómina al que aplica el movimiento (YYYY-MM). */
+  toAccountingMonthStr(monthDate: Date): string {
+    const y = monthDate.getFullYear();
+    const m = String(monthDate.getMonth() + 1).padStart(2, '0');
+    return `${y}-${m}`;
   }
 
-  inferQuincenaFromDate(date: Date): PayrollQuincena {
-    return date.getDate() <= 15 ? 'q1' : 'q2';
+  accountingMonthFromView(): Date {
+    return new Date(this.viewYear, this.viewMonth, 1);
+  }
+
+  parseAccountingMonth(value: string | null | undefined): Date {
+    if (!value || !/^\d{4}-\d{2}$/.test(value)) {
+      return this.accountingMonthFromView();
+    }
+    const [y, m] = value.split('-').map(Number);
+    return new Date(y, m - 1, 1);
   }
 
   onPaymentTypeChange(): void {
@@ -359,6 +370,9 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
         description: this.paymentForm.description,
         payment_method: this.paymentForm.payment_method,
         payroll_period: this.paymentForm.payroll_period,
+        accounting_month: this.toAccountingMonthStr(
+          this.paymentForm.accounting_month,
+        ),
         sync_cash_movement: this.paymentForm.sync_cash_movement,
         images: this.paymentVoucherFiles,
       })
@@ -393,7 +407,8 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
       type: 'PAYMENT',
       amount: null,
       date: new Date(),
-      payroll_period: this.inferQuincenaFromDate(new Date()),
+      accounting_month: this.accountingMonthFromView(),
+      payroll_period: this.period === 'q1' ? 'q1' : 'q2',
       description: '',
       payment_method: 'CASH',
       sync_cash_movement: true,
@@ -417,6 +432,7 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
       amount: item.amount,
       date: new Date(item.date.replace(' ', 'T')),
       payroll_period: item.payrollPeriod ?? 'q1',
+      accounting_month: this.parseAccountingMonth(item.accountingMonth),
       payment_method: item.paymentMethod ?? 'CASH',
       description: item.description ?? '',
     };
@@ -443,6 +459,9 @@ export class TeamPayrollComponent implements OnInit, OnDestroy {
         amount: this.editForm.amount,
         date: dateStr,
         payroll_period: this.editForm.payroll_period,
+        accounting_month: this.toAccountingMonthStr(
+          this.editForm.accounting_month,
+        ),
         payment_method: this.editForm.payment_method,
         description: this.editForm.description,
       })

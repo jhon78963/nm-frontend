@@ -57,13 +57,48 @@
           </div>
 
           <div>
-            <span class="block font-bold mb-2">Fecha</span>
+            <span class="block font-bold mb-2">Fecha de pago</span>
             <p-calendar
               [(ngModel)]="expenseForm.date"
               [showTime]="true"
               hourFormat="12"
               dateFormat="dd/mm/yy"
               [showIcon]="true"></p-calendar>
+            <small class="text-500 text-xs mt-1 block"
+              >Cuándo salió el dinero de caja (puede ser otro día que el período
+              contable).</small
+            >
+          </div>
+
+          <div class="surface-100 border-round-lg p-3">
+            <span class="block font-bold mb-2">Período contable</span>
+            <div class="flex flex-column gap-3">
+              <div>
+                <span class="block text-sm font-medium mb-2">Mes</span>
+                <p-calendar
+                  [(ngModel)]="expenseForm.accounting_month"
+                  view="month"
+                  dateFormat="mm/yy"
+                  [readonlyInput]="true"
+                  [showIcon]="true"
+                  styleClass="w-full"></p-calendar>
+              </div>
+              <div>
+                <span class="block text-sm font-medium mb-2">Cierre</span>
+                <p-dropdown
+                  [options]="payrollPeriodOptions"
+                  [(ngModel)]="expenseForm.payroll_period"
+                  optionLabel="label"
+                  optionValue="value"
+                  placeholder="Opcional"
+                  styleClass="w-full"></p-dropdown>
+              </div>
+            </div>
+            <small class="text-500 text-xs mt-2 block"
+              >El gasto aparece en «Filtrar por mes» según este mes, no la fecha
+              de pago. Ej.: pago 3/jun del cierre 31/may → mes
+              <strong>mayo</strong>, cierre <strong>16–fin</strong>.</small
+            >
           </div>
 
           <div>
@@ -109,7 +144,8 @@
         [loading]="loading()">
         <ng-template pTemplate="header">
           <tr>
-            <th>Fecha</th>
+            <th>Fecha pago</th>
+            <th>Período</th>
             <th>Categoría</th>
             <th>Descripción</th>
             <th>Método</th>
@@ -120,6 +156,9 @@
         <ng-template pTemplate="body" let-expense>
           <tr>
             <td class="text-sm">{{ expense.date | date: 'dd/MM HH:mm' }}</td>
+            <td class="text-sm">
+              {{ expense.accounting_period_label || '—' }}
+            </td>
             <td class="text-sm">{{ getCategoryLabel(expense.category) }}</td>
             <td class="font-bold">{{ expense.description }}</td>
             <td><p-tag [value]="expense.method" severity="info"></p-tag></td>

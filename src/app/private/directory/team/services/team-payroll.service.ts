@@ -81,6 +81,8 @@ export interface PayrollPaymentItem {
   date: string;
   payrollPeriod: PayrollQuincena;
   payrollPeriodLabel: string;
+  accountingMonth: string | null;
+  accountingPeriodLabel: string | null;
   description: string | null;
   syncedToAdmin: boolean;
   cashMovementId: number | null;
@@ -179,6 +181,7 @@ export class TeamPayrollService {
     description: string;
     payment_method: string;
     payroll_period: PayrollQuincena;
+    accounting_month: string;
     sync_cash_movement: boolean;
     images: File[];
   }): Observable<{ message: string; data: unknown }> {
@@ -188,6 +191,7 @@ export class TeamPayrollService {
     formData.append('amount', String(payload.amount));
     formData.append('date', payload.date);
     formData.append('payroll_period', payload.payroll_period);
+    formData.append('accounting_month', payload.accounting_month);
     formData.append('description', payload.description ?? '');
     formData.append('payment_method', payload.payment_method);
     formData.append(
@@ -206,6 +210,7 @@ export class TeamPayrollService {
     payload: {
       date: string;
       payroll_period: PayrollQuincena;
+      accounting_month: string;
       type: 'PAYMENT' | 'ADVANCE' | 'DEDUCTION';
       amount: number;
       payment_method: string;

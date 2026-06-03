@@ -156,6 +156,12 @@ export class CashflowService {
     formData.append('amount', data.amount.toString());
     formData.append('description', data.description);
     formData.append('date', data.date);
+    if (data.accounting_month) {
+      formData.append('accounting_month', data.accounting_month);
+    }
+    if (data.payroll_period) {
+      formData.append('payroll_period', data.payroll_period);
+    }
     formData.append('payment_method', data.payment_method);
 
     const fileArray = files instanceof File ? [files] : (files ?? []);
@@ -191,6 +197,12 @@ export class CashflowService {
     formData.append('amount', data.amount.toString());
     formData.append('description', data.description);
     formData.append('date', data.date);
+    if (data.accounting_month) {
+      formData.append('accounting_month', data.accounting_month);
+    }
+    if (data.payroll_period) {
+      formData.append('payroll_period', data.payroll_period);
+    }
     formData.append('payment_method', data.payment_method);
 
     const fileArray = files instanceof File ? [files] : (files ?? []);

@@ -150,7 +150,6 @@
               >
               <p-calendar
                 [(ngModel)]="paymentForm.date"
-                (ngModelChange)="onPaymentDateChange()"
                 [showTime]="true"
                 hourFormat="12"
                 dateFormat="dd/mm/yy"
@@ -162,20 +161,37 @@
                 quincena).</small
               >
             </div>
-            <div>
+            <div class="surface-100 border-round-lg p-3">
               <span class="block font-semibold text-900 mb-2"
-                >Quincena que aplica</span
+                >Período de nómina (a qué corresponde)</span
               >
-              <p-dropdown
-                [options]="payrollQuincenaOptions"
-                [(ngModel)]="paymentForm.payroll_period"
-                optionLabel="label"
-                optionValue="value"
-                styleClass="w-full"
-                appendTo="body"></p-dropdown>
-              <small class="text-500 text-xs mt-1 block"
-                >A qué quincena corresponde este adelanto o pago, aunque lo
-                hayas pagado en otra fecha.</small
+              <div class="flex flex-column gap-3">
+                <div>
+                  <span class="block text-sm font-medium mb-2">Mes</span>
+                  <p-calendar
+                    [(ngModel)]="paymentForm.accounting_month"
+                    view="month"
+                    dateFormat="mm/yy"
+                    [readonlyInput]="true"
+                    [showIcon]="true"
+                    appendTo="body"
+                    styleClass="w-full"></p-calendar>
+                </div>
+                <div>
+                  <span class="block text-sm font-medium mb-2">Cierre</span>
+                  <p-dropdown
+                    [options]="payrollQuincenaOptions"
+                    [(ngModel)]="paymentForm.payroll_period"
+                    optionLabel="label"
+                    optionValue="value"
+                    styleClass="w-full"
+                    appendTo="body"></p-dropdown>
+                </div>
+              </div>
+              <small class="text-500 text-xs mt-2 block"
+                >Ej.: pagaste el 3 de junio el cierre del <strong>31 de mayo</strong>
+                → mes <strong>mayo</strong> y cierre
+                <strong>16–fin de mes</strong>.</small
               >
             </div>
             <div>
@@ -686,7 +702,7 @@
               <ng-template pTemplate="header">
                 <tr>
                   <th>Fecha pago</th>
-                  <th>Quincena</th>
+                  <th>Período nómina</th>
                   <th>Tipo</th>
                   <th class="text-right">Monto</th>
                   <th>Medio</th>
@@ -701,11 +717,11 @@
                   <td class="text-sm whitespace-nowrap">
                     {{ item.date | date: 'dd/MM/yyyy HH:mm' }}
                   </td>
-                  <td>
-                    <p-tag
-                      [value]="item.payrollPeriodLabel"
-                      [severity]="payrollPeriodTagSeverity(item.payrollPeriod)"
-                      styleClass="text-xs font-semibold"></p-tag>
+                  <td class="text-sm">
+                    {{
+                      item.accountingPeriodLabel ||
+                        item.payrollPeriodLabel
+                    }}
                   </td>
                   <td>
                     <p-tag
@@ -934,7 +950,18 @@
         styleClass="w-full"></p-calendar>
     </div>
     <div>
-      <span class="block font-semibold text-900 mb-2">Quincena que aplica</span>
+      <span class="block font-semibold text-900 mb-2">Mes de nómina</span>
+      <p-calendar
+        [(ngModel)]="editForm.accounting_month"
+        view="month"
+        dateFormat="mm/yy"
+        [readonlyInput]="true"
+        [showIcon]="true"
+        appendTo="body"
+        styleClass="w-full"></p-calendar>
+    </div>
+    <div>
+      <span class="block font-semibold text-900 mb-2">Cierre</span>
       <p-dropdown
         [options]="payrollQuincenaOptions"
         [(ngModel)]="editForm.payroll_period"

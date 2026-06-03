@@ -73,10 +73,18 @@ export class AdminExpensesComponent implements OnInit {
     description: '',
     amount: null,
     date: new Date(),
+    accounting_month: new Date(),
+    payroll_period: 'q2' as 'q1' | 'q2' | null,
     payment_method: 'CASH',
     category: 'ADMINISTRATIVE',
     type: 'EXPENSE',
   };
+
+  payrollPeriodOptions = [
+    { label: 'Cierre 1–15 del mes', value: 'q1' as const },
+    { label: 'Cierre 16–fin de mes (30/31)', value: 'q2' as const },
+    { label: 'Sin cierre quincenal', value: null },
+  ];
 
   paymentMethods = [
     { label: 'Efectivo', value: 'CASH' },
@@ -186,10 +194,16 @@ export class AdminExpensesComponent implements OnInit {
     this.isEditing.set(true);
     this.editingId = expense.id;
 
+    const accountingMonth = expense.accounting_month
+      ? this.parseAccountingMonth(expense.accounting_month)
+      : new Date(expense.date);
+
     this.expenseForm = {
       description: expense.description,
       amount: expense.amount,
       date: new Date(expense.date),
+      accounting_month: accountingMonth,
+      payroll_period: expense.payroll_period ?? null,
       payment_method: expense.method ?? expense.payment_method ?? 'CASH',
       category: expense.category ?? 'ADMINISTRATIVE',
       type: 'EXPENSE',
@@ -207,20 +221,31 @@ export class AdminExpensesComponent implements OnInit {
       this.expenseForm.date,
       'yyyy-MM-dd HH:mm:ss',
     )!;
+    const accountingMonth = this.datePipe.transform(
+      this.expenseForm.accounting_month,
+      'yyyy-MM',
+    )!;
     const currentMonthStr = this.datePipe.transform(
       this.selectedMonth,
       'yyyy-MM',
     )!;
 
+    const payload = {
+      ...this.expenseForm,
+      date: formattedDate,
+      accounting_month: accountingMonth,
+      payroll_period: this.expenseForm.payroll_period,
+    };
+
     const request$ = this.isEditing()
       ? this.cashService.updateMovement(
           this.editingId!,
-          { ...this.expenseForm, date: formattedDate },
+          payload,
           this.selectedFiles.length ? this.selectedFiles : null,
           currentMonthStr,
         )
       : this.cashService.registerMovement(
-          { ...this.expenseForm, date: formattedDate },
+          payload,
           this.selectedFiles.length ? this.selectedFiles : null,
           currentMonthStr,
         );
@@ -251,6 +276,8 @@ export class AdminExpensesComponent implements OnInit {
       description: '',
       amount: null,
       date: new Date(),
+      accounting_month: new Date(this.selectedMonth),
+      payroll_period: 'q2',
       payment_method: 'CASH',
       category: 'ADMINISTRATIVE',
       type: 'EXPENSE',
@@ -272,6 +299,11 @@ export class AdminExpensesComponent implements OnInit {
     return this.isEditing()
       ? this.canUpdateCashflow()
       : this.canStoreCashflow();
+  }
+
+  parseAccountingMonth(value: string): Date {
+    const [y, m] = value.split('-').map(Number);
+    return new Date(y, m - 1, 1);
   }
 
   getCategoryLabel(category: string | undefined): string {
