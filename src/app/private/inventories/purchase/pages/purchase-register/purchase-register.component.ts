@@ -33,6 +33,7 @@ import { CalendarModule } from 'primeng/calendar';
 import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
+import { MessageModule } from 'primeng/message';
 import { DividerModule } from 'primeng/divider';
 import { DropdownModule } from 'primeng/dropdown';
 import { VoucherDropzoneComponent } from '../../../../shared/components/voucher-dropzone/voucher-dropzone.component';
@@ -85,6 +86,7 @@ import {
   PurchaseRegisterDraftService,
   PurchaseRegisterDraftSnapshot,
 } from '../../services/purchase-register-draft.service';
+import { CashflowService } from '../../../../finance/cash-movements/services/cash-movements.service';
 import { PurchaseService } from '../../services/purchase.service';
 
 const LEGACY_DRAFT_STORAGE_KEYS = [
@@ -116,6 +118,7 @@ const LEGACY_DRAFT_STORAGE_KEYS = [
     ToastModule,
     PanelModule,
     DialogModule,
+    MessageModule,
     TooltipModule,
     VoucherDropzoneComponent,
   ],
@@ -205,7 +208,7 @@ export class PurchaseRegisterComponent implements OnInit {
   @ViewChild('colorSearchAc') colorSearchAc?: AutoComplete;
   @ViewChild('voucherDropzone') voucherDropzone?: VoucherDropzoneComponent;
 
-  /** Método de pago para el egreso de caja generado con la compra. */
+  /** Método de pago del egreso autogenerado en Cuenta Acumulada. */
   selectedPaymentMethod = signal<string>('CASH');
   /** Comprobantes de pago adjuntos (PDF o imagen). */
   selectedVoucherFiles: File[] = [];
@@ -220,6 +223,8 @@ export class PurchaseRegisterComponent implements OnInit {
   /** Buscador rápido de colores (ngModel standalone; el alta es con Enter o clic). */
   colorCatalogSearch = '';
   filteredColorsForPicker: ProductColorOption[] = [];
+
+  private readonly cashflowService = inject(CashflowService);
 
   constructor(
     private readonly fb: FormBuilder,
@@ -1449,7 +1454,21 @@ export class PurchaseRegisterComponent implements OnInit {
       )
       .subscribe({
         next: (res: PurchaseRegisterBulkResponse) => {
-          showSuccess(this.messageService, 'Ingreso registrado correctamente.');
+          const registeredAt =
+            this.header.value.registeredAt instanceof Date
+              ? this.header.value.registeredAt
+              : new Date();
+
+          showSuccess(
+            this.messageService,
+            'Compra registrada con éxito. El monto se ha descontado de la Cuenta Acumulada.',
+          );
+
+          this.cashflowService
+            .refreshAccumulatedExpensesForPurchaseDate(registeredAt)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe();
+
           this.resetAll();
           const pid = res?.purchaseId;
           if (pid != null && Number(pid) > 0) {

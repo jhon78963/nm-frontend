@@ -70,7 +70,8 @@
           </h2>
           <p class="text-500 text-sm mt-1 mb-0">
             Tras cada cierre de mes, actualiza manualmente cuánto tienes en el
-            fondo (efectivo y bancos/digital).
+            fondo. Los egresos registrados (incluidas compras de mercadería) se
+            descuentan automáticamente del saldo según su método de pago.
           </p>
         </div>
         <div class="text-right">
@@ -128,23 +129,271 @@
   }
 </div>
 
+@if (isInitialized()) {
+  <div class="m-3 month-end-transfer">
+    <div
+      class="surface-card shadow-2 border-round-xl overflow-hidden month-end-transfer__card">
+      <div
+        class="month-end-transfer__header flex align-items-center justify-content-between flex-wrap gap-3 p-4">
+        <div class="flex align-items-start gap-3">
+          <div class="month-end-transfer__icon flex align-items-center justify-content-center">
+            <i class="pi pi-wallet text-xl"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold m-0 text-900">
+              Cierre mensual — Traspaso a Cuenta Acumulada
+            </h2>
+            <p class="text-500 text-sm mt-2 mb-0 line-height-3">
+              Al terminar el mes, mueve el excedente de la
+              <strong>caja operativa</strong> (ventas − gastos administrativos)
+              hacia tu fondo de capital. Este movimiento no altera los reportes
+              del mes ni genera un gasto adicional.
+            </p>
+          </div>
+        </div>
+        @if (transferPreview()?.monthLabel; as monthLabel) {
+          <p-tag
+            [value]="monthLabel"
+            severity="warning"
+            styleClass="text-sm font-semibold"></p-tag>
+        }
+      </div>
+
+      <p-divider styleClass="m-0"></p-divider>
+
+      <div class="p-4">
+        @if (transferLoading()) {
+          <div class="grid">
+            @for (i of [1, 2, 3]; track i) {
+              <div class="col-12 md:col-4">
+                <p-skeleton height="8rem" styleClass="mb-2"></p-skeleton>
+              </div>
+            }
+          </div>
+        } @else if (transferPreview()) {
+          @if (transferPreview()?.alreadyTransferred && transferPreview()?.existingTransfer; as done) {
+            <div
+              class="month-end-transfer__done border-round-lg p-4 flex flex-column md:flex-row align-items-start md:align-items-center justify-content-between gap-3">
+              <div class="flex align-items-start gap-3">
+                <i class="pi pi-check-circle text-3xl text-green-500 mt-1"></i>
+                <div>
+                  <span class="font-bold text-900 block mb-1"
+                    >Traspaso registrado para {{ done.monthLabel }}</span
+                  >
+                  <span class="text-600 text-sm block">
+                    S/ {{ done.totalAmount | number: '1.2-2' }} · Efectivo S/
+                    {{ done.cashAmount | number: '1.2-2' }} · Digital S/
+                    {{ done.digitalAmount | number: '1.2-2' }}
+                  </span>
+                  @if (done.note) {
+                    <span class="text-500 text-sm block mt-1">{{ done.note }}</span>
+                  }
+                  @if (done.createdAt) {
+                    <span class="text-400 text-xs block mt-1">{{
+                      done.createdAt | date: 'dd/MM/yyyy HH:mm'
+                    }}</span>
+                  }
+                </div>
+              </div>
+              <p-tag value="Cierre completado" severity="success"></p-tag>
+            </div>
+          } @else {
+            @if (transferPreview(); as tp) {
+            <div class="grid p-fluid">
+              <div class="col-12 lg:col-4">
+                <div class="month-end-transfer__panel h-full">
+                  <span class="month-end-transfer__step">Paso 1</span>
+                  <h3 class="font-bold text-900 mt-2 mb-3">
+                    Excedente caja operativa
+                  </h3>
+                  <div class="flex flex-column gap-2 text-sm">
+                    <div class="flex justify-content-between">
+                      <span class="text-600">Efectivo</span>
+                      <span class="font-semibold"
+                        >S/
+                        {{ tp.operational.cash | number: '1.2-2' }}</span
+                      >
+                    </div>
+                    <div class="flex justify-content-between">
+                      <span class="text-600">Bancos / Digital</span>
+                      <span class="font-semibold"
+                        >S/
+                        {{ tp.operational.digital | number: '1.2-2' }}</span
+                      >
+                    </div>
+                    <p-divider styleClass="my-2"></p-divider>
+                    <div class="flex justify-content-between">
+                      <span class="font-bold">Total del mes</span>
+                      <span class="font-bold text-primary"
+                        >S/
+                        {{ tp.operational.total | number: '1.2-2' }}</span
+                      >
+                    </div>
+                  </div>
+                  <p class="text-xs text-500 mt-3 mb-0">
+                    Calculado desde ventas y movimientos operativos (mismo criterio
+                    que «Ventas Mensuales por Método de Pago»).
+                  </p>
+                </div>
+              </div>
+
+              <div class="col-12 lg:col-4">
+                <div class="month-end-transfer__panel h-full">
+                  <span class="month-end-transfer__step">Paso 2</span>
+                  <div
+                    class="flex align-items-center justify-content-between mt-2 mb-3">
+                    <h3 class="font-bold text-900 m-0">Monto a traspasar</h3>
+                    <button
+                      pButton
+                      type="button"
+                      label="Usar sugerido"
+                      icon="pi pi-sync"
+                      class="p-button-text p-button-sm"
+                      (click)="applySuggestedTransfer()"></button>
+                  </div>
+                  <div class="flex flex-column gap-3">
+                    <div>
+                      <span class="block font-medium text-sm mb-2"
+                        >Efectivo (S/)</span
+                      >
+                      <p-inputNumber
+                        [(ngModel)]="transferForm.cashAmount"
+                        mode="currency"
+                        currency="PEN"
+                        locale="es-PE"
+                        [min]="0"
+                        styleClass="w-full"></p-inputNumber>
+                    </div>
+                    <div>
+                      <span class="block font-medium text-sm mb-2"
+                        >Bancos / Digital (S/)</span
+                      >
+                      <p-inputNumber
+                        [(ngModel)]="transferForm.digitalAmount"
+                        mode="currency"
+                        currency="PEN"
+                        locale="es-PE"
+                        [min]="0"
+                        styleClass="w-full"></p-inputNumber>
+                    </div>
+                    <div>
+                      <span class="block font-medium text-sm mb-2"
+                        >Nota (opcional)</span
+                      >
+                      <textarea
+                        pInputTextarea
+                        [(ngModel)]="transferForm.note"
+                        rows="2"
+                        class="w-full"
+                        placeholder="Ej: Cierre junio — utilidades a fondo"></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-12 lg:col-4">
+                <div
+                  class="month-end-transfer__panel month-end-transfer__panel--impact h-full">
+                  <span class="month-end-transfer__step">Paso 3</span>
+                  <h3 class="font-bold text-900 mt-2 mb-3">
+                    Impacto en Cuenta Acumulada
+                  </h3>
+                  <div class="flex flex-column gap-3">
+                    <div>
+                      <span class="text-500 text-xs uppercase font-semibold"
+                        >Saldo actual</span
+                      >
+                      <div class="font-bold text-lg mt-1">
+                        S/ {{ currentBalance().total | number: '1.2-2' }}
+                      </div>
+                    </div>
+                    <div class="month-end-transfer__arrow text-center">
+                      <i class="pi pi-arrow-down text-orange-500"></i>
+                      <span class="block text-orange-600 font-bold mt-1"
+                        >+ S/ {{ transferTotal() | number: '1.2-2' }}</span
+                      >
+                    </div>
+                    <div>
+                      <span class="text-500 text-xs uppercase font-semibold"
+                        >Nuevo saldo estimado</span
+                      >
+                      <div class="font-bold text-2xl text-orange-600 mt-1">
+                        S/ {{ transferBalanceAfter().total | number: '1.2-2' }}
+                      </div>
+                      <div class="text-xs text-500 mt-1">
+                        Efectivo S/
+                        {{ transferBalanceAfter().cash | number: '1.2-2' }} ·
+                        Digital S/
+                        {{ transferBalanceAfter().digital | number: '1.2-2' }}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    pButton
+                    type="button"
+                    label="Confirmar traspaso"
+                    icon="pi pi-send"
+                    class="w-full mt-4 py-3 font-bold"
+                    [disabled]="transferTotal() <= 0"
+                    (click)="openTransferConfirm()"></button>
+                </div>
+              </div>
+            </div>
+            }
+          }
+        } @else {
+          <p-message
+            severity="warn"
+            styleClass="w-full"
+            text="No se pudo cargar la vista previa del cierre mensual."></p-message>
+        }
+
+        @if (transferHistory().length > 0) {
+          <p-divider styleClass="my-4"></p-divider>
+          <div>
+            <h4 class="font-bold text-900 mt-0 mb-3 text-sm uppercase text-500">
+              Últimos traspasos
+            </h4>
+            <div class="flex flex-column gap-2">
+              @for (item of transferHistory(); track item.id) {
+                <div
+                  class="month-end-transfer__history-row flex align-items-center justify-content-between flex-wrap gap-2 px-3 py-2 border-round-lg">
+                  <div>
+                    <span class="font-semibold text-sm">{{ item.monthLabel }}</span>
+                    @if (item.note) {
+                      <span class="text-500 text-xs block">{{ item.note }}</span>
+                    }
+                  </div>
+                  <span class="font-bold text-orange-600"
+                    >+ S/ {{ item.totalAmount | number: '1.2-2' }}</span
+                  >
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}
+
 <div
   class="m-3 flex align-items-center justify-content-between flex-wrap gap-3">
   <div class="flex align-items-center gap-3">
     <span class="block font-bold">Filtrar por Mes</span>
     <p-calendar
       class="text-center"
-      [(ngModel)]="selectedMonth"
+      [ngModel]="selectedMonth()"
+      (ngModelChange)="onSelectedMonthChange($event)"
       view="month"
       dateFormat="mm/yy"
-      [readonlyInput]="true"
-      (onSelect)="loadExpenses()">
+      [readonlyInput]="true">
     </p-calendar>
   </div>
   <div class="text-right">
     <span class="text-500 text-sm block">Total del mes (Cuenta Acumulada)</span>
     <span class="text-xl font-bold text-orange-600"
-      >S/ {{ totalMonthly() | number: '1.2-2' }}</span
+      >S/ {{ displayedTotal() | number: '1.2-2' }}</span
     >
   </div>
 </div>
@@ -234,7 +483,7 @@
       </h2>
 
       <p-table
-        [value]="accumulatedExpenses()"
+        [value]="displayedExpenses()"
         [rows]="5"
         [paginator]="true"
         responsiveLayout="scroll"
@@ -368,4 +617,63 @@
       }
     </div>
   </div>
+</p-dialog>
+
+<p-dialog
+  [visible]="transferConfirmVisible()"
+  (visibleChange)="transferConfirmVisible.set($event)"
+  [modal]="true"
+  header="Confirmar traspaso mensual"
+  [style]="{ width: '92vw', maxWidth: '520px' }"
+  [draggable]="false"
+  [resizable]="false">
+  <div class="flex flex-column gap-3 pt-1">
+    <p class="m-0 text-600 line-height-3">
+      Vas a incrementar la <strong>Cuenta Acumulada</strong> con el excedente de
+      la caja operativa de
+      <strong>{{ transferPreview()?.monthLabel }}</strong>. Este movimiento queda
+      registrado una sola vez por mes.
+    </p>
+    <div class="surface-ground border-round-lg p-3">
+      <div class="flex justify-content-between mb-2">
+        <span>Efectivo</span>
+        <span class="font-bold"
+          >S/ {{ transferForm.cashAmount | number: '1.2-2' }}</span
+        >
+      </div>
+      <div class="flex justify-content-between mb-2">
+        <span>Digital</span>
+        <span class="font-bold"
+          >S/ {{ transferForm.digitalAmount | number: '1.2-2' }}</span
+        >
+      </div>
+      <p-divider styleClass="my-2"></p-divider>
+      <div class="flex justify-content-between">
+        <span class="font-bold">Total a traspasar</span>
+        <span class="font-bold text-orange-600 text-xl"
+          >S/ {{ transferTotal() | number: '1.2-2' }}</span
+        >
+      </div>
+    </div>
+    <p class="text-sm text-500 m-0">
+      Nuevo saldo del fondo: S/
+      {{ transferBalanceAfter().total | number: '1.2-2' }}
+    </p>
+  </div>
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      type="button"
+      label="Cancelar"
+      class="p-button-text"
+      (click)="transferConfirmVisible.set(false)"></button>
+    <button
+      pButton
+      type="button"
+      label="Sí, traspasar"
+      icon="pi pi-check"
+      class="p-button-warning font-bold"
+      [loading]="transferSubmitting()"
+      (click)="submitMonthEndTransfer()"></button>
+  </ng-template>
 </p-dialog>

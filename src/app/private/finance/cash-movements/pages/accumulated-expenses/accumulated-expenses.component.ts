@@ -1,5 +1,13 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { MessageService } from 'primeng/api';
@@ -13,12 +21,19 @@ import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { DialogModule } from 'primeng/dialog';
+import { DividerModule } from 'primeng/divider';
 import { MessageModule } from 'primeng/message';
+import { SkeletonModule } from 'primeng/skeleton';
+import { InputTextareaModule } from 'primeng/inputtextarea';
 
 import { VoucherDropzoneComponent } from '../../../../shared/components/voucher-dropzone/voucher-dropzone.component';
 import { SafeUrlPipe } from '../../pipes/safe-url.pipe';
 import { AuthService } from '../../../../../auth/services/auth.service';
 import { CashflowService } from '../../services/cash-movements.service';
+import type {
+  MonthEndTransferPreview,
+  MonthEndTransferRecord,
+} from '../../models/month-end-transfer.model';
 
 @Component({
   selector: 'app-accumulated-expenses',
@@ -35,18 +50,23 @@ import { CashflowService } from '../../services/cash-movements.service';
     TagModule,
     ToastModule,
     DialogModule,
+    DividerModule,
     TooltipModule,
     MessageModule,
+    SkeletonModule,
+    InputTextareaModule,
     SafeUrlPipe,
     VoucherDropzoneComponent,
   ],
   providers: [MessageService, DatePipe],
   templateUrl: './accumulated-expenses.component.html',
+  styleUrl: './accumulated-expenses.component.scss',
 })
 export class AccumulatedExpensesComponent implements OnInit {
   private readonly authService = inject(AuthService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  selectedMonth: Date = new Date();
+  selectedMonth = signal(new Date());
 
   private cashService = inject(CashflowService);
   private messageService = inject(MessageService);
@@ -54,8 +74,26 @@ export class AccumulatedExpensesComponent implements OnInit {
 
   loading = signal(false);
   balanceLoading = signal(false);
-  accumulatedExpenses = signal<any[]>([]);
-  totalMonthly = signal(0);
+
+  readonly selectedMonthKey = computed(() => this.toMonthKey(this.selectedMonth()));
+
+  private readonly loadedMonthKey = signal<string | null>(null);
+  private readonly loadedExpenses = signal<any[]>([]);
+  private readonly loadedTotal = signal(0);
+
+  /** Egresos del mes seleccionado (estado local; evita mezclar meses en caché compartido). */
+  readonly displayedExpenses = computed(() =>
+    this.loadedMonthKey() === this.selectedMonthKey()
+      ? this.loadedExpenses()
+      : [],
+  );
+
+  readonly displayedTotal = computed(() =>
+    this.loadedMonthKey() === this.selectedMonthKey()
+      ? this.loadedTotal()
+      : 0,
+  );
+
   selectedFiles: File[] = [];
 
   balanceForm = {
@@ -105,9 +143,39 @@ export class AccumulatedExpensesComponent implements OnInit {
     { label: 'Transferencia', value: 'TRANSFER' },
   ];
 
+  transferPreview = signal<MonthEndTransferPreview | null>(null);
+  transferHistory = signal<MonthEndTransferRecord[]>([]);
+  transferLoading = signal(false);
+  transferSubmitting = signal(false);
+  transferConfirmVisible = signal(false);
+
+  transferForm = {
+    cashAmount: 0,
+    digitalAmount: 0,
+    note: '',
+  };
+
+  readonly transferTotal = computed(
+    () =>
+      Math.round((this.transferForm.cashAmount + this.transferForm.digitalAmount) * 100) /
+      100,
+  );
+
+  readonly transferBalanceAfter = computed(() => {
+    const current = this.currentBalance();
+    return {
+      cash: Math.round((current.cash + this.transferForm.cashAmount) * 100) / 100,
+      digital:
+        Math.round((current.digital + this.transferForm.digitalAmount) * 100) / 100,
+      total: Math.round((current.total + this.transferTotal()) * 100) / 100,
+    };
+  });
+
   ngOnInit() {
     this.loadBalanceSettings();
     this.loadExpenses();
+    this.loadTransferPreview();
+    this.loadTransferHistory();
   }
 
   loadBalanceSettings() {
@@ -135,6 +203,9 @@ export class AccumulatedExpensesComponent implements OnInit {
           total: settings.current_total,
         });
         this.balanceLoading.set(false);
+        if (settings.is_initialized) {
+          this.loadTransferPreview();
+        }
       },
       error: () => this.balanceLoading.set(false),
     });
@@ -175,6 +246,8 @@ export class AccumulatedExpensesComponent implements OnInit {
                 ? this.parseTrackingMonth(data.tracking_start_month)
                 : this.initForm.tracking_start_month,
             };
+            this.loadTransferPreview();
+            this.loadTransferHistory();
           }
           this.balanceLoading.set(false);
         },
@@ -240,22 +313,149 @@ export class AccumulatedExpensesComponent implements OnInit {
     return new Date(y, m - 1, 1);
   }
 
-  loadExpenses() {
-    this.loading.set(true);
-    const monthStr = this.datePipe.transform(this.selectedMonth, 'yyyy-MM')!;
+  onSelectedMonthChange(date: Date): void {
+    this.selectedMonth.set(date);
+    this.loadExpenses(true);
+    this.loadTransferPreview();
+  }
 
-    this.cashService.loadMonthlyAccumulatedExpenses(monthStr).subscribe({
-      next: result => {
-        this.accumulatedExpenses.set(result.expenses);
-        this.totalMonthly.set(result.total);
-      },
-      error: () => {
-        this.accumulatedExpenses.set([]);
-        this.totalMonthly.set(0);
-        this.loading.set(false);
-      },
-      complete: () => this.loading.set(false),
-    });
+  loadTransferPreview(): void {
+    if (!this.isInitialized()) {
+      return;
+    }
+
+    const monthStr = this.selectedMonthKey();
+    this.transferLoading.set(true);
+
+    this.cashService
+      .loadMonthEndTransferPreview(monthStr)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: preview => {
+          this.transferPreview.set(preview);
+          if (!preview.alreadyTransferred) {
+            this.transferForm.cashAmount = preview.suggested.cash;
+            this.transferForm.digitalAmount = preview.suggested.digital;
+          }
+          this.transferLoading.set(false);
+        },
+        error: () => {
+          this.transferPreview.set(null);
+          this.transferLoading.set(false);
+        },
+      });
+  }
+
+  loadTransferHistory(): void {
+    this.cashService
+      .listMonthEndTransfers(undefined, 6)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: rows => this.transferHistory.set(rows),
+        error: () => this.transferHistory.set([]),
+      });
+  }
+
+  applySuggestedTransfer(): void {
+    const preview = this.transferPreview();
+    if (!preview) {
+      return;
+    }
+    this.transferForm.cashAmount = preview.suggested.cash;
+    this.transferForm.digitalAmount = preview.suggested.digital;
+  }
+
+  openTransferConfirm(): void {
+    if (this.transferTotal() <= 0) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Monto requerido',
+        detail: 'Indica cuánto deseas traspasar en efectivo o digital.',
+      });
+      return;
+    }
+    this.transferConfirmVisible.set(true);
+  }
+
+  submitMonthEndTransfer(): void {
+    const monthStr = this.selectedMonthKey();
+    this.transferSubmitting.set(true);
+
+    this.cashService
+      .recordMonthEndTransfer({
+        transfer_month: monthStr,
+        cash_amount: this.transferForm.cashAmount,
+        digital_amount: this.transferForm.digitalAmount,
+        note: this.transferForm.note.trim() || null,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: result => {
+          this.transferConfirmVisible.set(false);
+          this.transferPreview.set(result.preview);
+          this.currentBalance.set({
+            cash: result.settings.current_cash ?? 0,
+            digital: result.settings.current_digital ?? 0,
+            total: result.settings.current_total ?? 0,
+          });
+          this.balanceForm.cash_balance = result.settings.cash_balance ?? 0;
+          this.balanceForm.digital_balance = result.settings.digital_balance ?? 0;
+          this.transferForm.note = '';
+          this.loadTransferHistory();
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Traspaso registrado',
+            detail: `S/ ${this.transferTotal().toFixed(2)} pasaron de la caja operativa al fondo acumulado.`,
+            life: 5000,
+          });
+          this.transferSubmitting.set(false);
+        },
+        error: err => {
+          this.transferSubmitting.set(false);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'No se pudo traspasar',
+            detail:
+              err?.error?.errors?.transfer_month?.[0] ??
+              err?.error?.errors?.cash_amount?.[0] ??
+              err?.error?.message ??
+              'Revisa los montos e intenta de nuevo.',
+          });
+        },
+      });
+  }
+
+  private toMonthKey(date: Date): string {
+    return this.datePipe.transform(date, 'yyyy-MM') ?? '';
+  }
+
+  loadExpenses(forceReload = false): void {
+    const monthStr = this.selectedMonthKey();
+
+    if (!forceReload && this.loadedMonthKey() === monthStr) {
+      return;
+    }
+
+    this.loading.set(true);
+
+    this.cashService
+      .loadMonthlyAccumulatedExpenses(monthStr)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: result => {
+          this.loadedMonthKey.set(monthStr);
+          this.loadedExpenses.set(result.expenses);
+          this.loadedTotal.set(result.total);
+          this.loadBalanceSettings();
+        },
+        error: () => {
+          this.loadedMonthKey.set(monthStr);
+          this.loadedExpenses.set([]);
+          this.loadedTotal.set(0);
+          this.loading.set(false);
+        },
+        complete: () => this.loading.set(false),
+      });
   }
 
   showVoucher(paths: string | string[]) {
@@ -349,10 +549,7 @@ export class AccumulatedExpensesComponent implements OnInit {
       this.expenseForm.date,
       'yyyy-MM-dd HH:mm:ss',
     )!;
-    const currentMonthStr = this.datePipe.transform(
-      this.selectedMonth,
-      'yyyy-MM',
-    )!;
+    const currentMonthStr = this.selectedMonthKey();
 
     const payload = {
       ...this.expenseForm,
@@ -383,7 +580,7 @@ export class AccumulatedExpensesComponent implements OnInit {
             : 'Egreso registrado desde Cuenta Acumulada',
         });
         this.resetForm();
-        this.loadExpenses();
+        this.loadExpenses(true);
       },
       error: () => {
         this.messageService.add({

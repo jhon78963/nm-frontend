@@ -1,8 +1,19 @@
-import { Injectable, inject } from '@angular/core';
+import { computed, Injectable, inject, signal } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map, switchMap, tap } from 'rxjs/operators';
 import { ApiService } from '../../../../services/api.service';
+import type {
+  MonthEndTransferPayload,
+  MonthEndTransferPreview,
+  MonthEndTransferRecord,
+} from '../models/month-end-transfer.model';
+
+export interface AccumulatedExpensesSnapshot {
+  month: string;
+  expenses: any[];
+  total: number;
+}
 
 type SummaryMovementCategory =
   | string
@@ -47,6 +58,23 @@ export class CashflowService {
   // --- STATE 3: Egresos Cuenta Acumulada ---
   private accumulatedExpensesSubject = new BehaviorSubject<any[]>([]);
   accumulatedExpenses$ = this.accumulatedExpensesSubject.asObservable();
+
+  private readonly accumulatedExpensesSnapshot = signal<AccumulatedExpensesSnapshot>(
+    { month: '', expenses: [], total: 0 },
+  );
+
+  /** Egresos del mes cargado (reactivo vía Signals). */
+  readonly accumulatedExpenses = computed(
+    () => this.accumulatedExpensesSnapshot().expenses,
+  );
+
+  readonly accumulatedExpensesTotal = computed(
+    () => this.accumulatedExpensesSnapshot().total,
+  );
+
+  readonly accumulatedExpensesMonth = computed(
+    () => this.accumulatedExpensesSnapshot().month,
+  );
 
   constructor() {}
 
@@ -94,8 +122,44 @@ export class CashflowService {
           total: response.data?.total_monthly_accumulated ?? 0,
         };
       }),
-      tap(result => this.accumulatedExpensesSubject.next(result.expenses)),
+      tap(result => this.publishAccumulatedExpenses(month, result)),
     );
+  }
+
+  /**
+   * Refresca el historial de egresos de la Cuenta Acumulada para el mes de una compra.
+   * Llamar tras registrar compra para que la vista de egresos refleje el movimiento al navegar.
+   */
+  refreshAccumulatedExpensesForPurchaseDate(
+    date: Date | string,
+  ): Observable<AccumulatedExpensesSnapshot> {
+    const month = this.resolveYearMonth(date);
+    return this.loadMonthlyAccumulatedExpenses(month).pipe(
+      map(result => ({
+        month,
+        expenses: result.expenses,
+        total: result.total,
+      })),
+    );
+  }
+
+  private publishAccumulatedExpenses(
+    month: string,
+    result: { expenses: any[]; total: number },
+  ): void {
+    this.accumulatedExpensesSubject.next(result.expenses);
+    this.accumulatedExpensesSnapshot.set({
+      month,
+      expenses: result.expenses,
+      total: result.total,
+    });
+  }
+
+  private resolveYearMonth(date: Date | string): string {
+    const parsed = date instanceof Date ? date : new Date(date);
+    const year = parsed.getFullYear();
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}`;
   }
 
   registerSummaryMovement(
@@ -310,5 +374,110 @@ export class CashflowService {
     tracking_start_month: string | null;
   }): Observable<any> {
     return this.apiService.put('accumulated-account/settings', data);
+  }
+
+  loadMonthEndTransferPreview(
+    month: string,
+  ): Observable<MonthEndTransferPreview> {
+    return this.apiService
+      .get<any>(`accumulated-account/month-end-transfer/preview?month=${month}`)
+      .pipe(map(response => this.normalizeTransferPreview(response?.data)));
+  }
+
+  listMonthEndTransfers(
+    month?: string,
+    limit = 12,
+  ): Observable<MonthEndTransferRecord[]> {
+    let url = `accumulated-account/month-end-transfers?limit=${limit}`;
+    if (month) {
+      url += `&month=${encodeURIComponent(month)}`;
+    }
+    return this.apiService.get<any>(url).pipe(
+      map(response =>
+        (response?.data ?? []).map((row: Record<string, unknown>) =>
+          this.normalizeTransferRecord(row),
+        ),
+      ),
+    );
+  }
+
+  recordMonthEndTransfer(payload: MonthEndTransferPayload): Observable<{
+    preview: MonthEndTransferPreview;
+    settings: {
+      cash_balance: number;
+      digital_balance: number;
+      current_cash: number;
+      current_digital: number;
+      current_total: number;
+    };
+  }> {
+    return this.apiService
+      .post<any>('accumulated-account/month-end-transfer', payload)
+      .pipe(
+        map(response => ({
+          preview: this.normalizeTransferPreview(response?.data?.preview),
+          settings: response?.data?.settings ?? {},
+        })),
+      );
+  }
+
+  private normalizeTransferPreview(data: Record<string, unknown> | null | undefined): MonthEndTransferPreview {
+    const operational = (data?.['operational'] as Record<string, number>) ?? {};
+    const suggested = (data?.['suggested'] as Record<string, number>) ?? {};
+    const balances = (data?.['balances'] as Record<string, Record<string, number>>) ?? {};
+    const current = balances['current'] ?? {};
+    const afterSuggested = balances['after_suggested'] ?? balances['afterSuggested'] ?? {};
+
+    return {
+      month: String(data?.['month'] ?? ''),
+      monthLabel: String(data?.['month_label'] ?? data?.['monthLabel'] ?? ''),
+      operational: {
+        cash: Number(operational['cash'] ?? 0),
+        digital: Number(operational['digital'] ?? 0),
+        total: Number(operational['total'] ?? 0),
+      },
+      suggested: {
+        cash: Number(suggested['cash'] ?? 0),
+        digital: Number(suggested['digital'] ?? 0),
+        total: Number(suggested['total'] ?? 0),
+      },
+      alreadyTransferred: Boolean(data?.['already_transferred'] ?? data?.['alreadyTransferred']),
+      existingTransfer: data?.['existing_transfer'] ?? data?.['existingTransfer']
+        ? this.normalizeTransferRecord(
+            (data?.['existing_transfer'] ?? data?.['existingTransfer']) as Record<string, unknown>,
+          )
+        : null,
+      balances: {
+        current: {
+          cash: Number(current['cash'] ?? 0),
+          digital: Number(current['digital'] ?? 0),
+          total: Number(current['total'] ?? 0),
+        },
+        afterSuggested: {
+          cash: Number(afterSuggested['cash'] ?? 0),
+          digital: Number(afterSuggested['digital'] ?? 0),
+          total: Number(afterSuggested['total'] ?? 0),
+        },
+      },
+    };
+  }
+
+  private normalizeTransferRecord(row: Record<string, unknown>): MonthEndTransferRecord {
+    return {
+      id: Number(row['id'] ?? 0),
+      transferMonth: String(row['transferMonth'] ?? row['transfer_month'] ?? ''),
+      monthLabel: String(row['monthLabel'] ?? row['month_label'] ?? ''),
+      cashAmount: Number(row['cashAmount'] ?? row['cash_amount'] ?? 0),
+      digitalAmount: Number(row['digitalAmount'] ?? row['digital_amount'] ?? 0),
+      totalAmount: Number(row['totalAmount'] ?? row['total_amount'] ?? 0),
+      operationalCashSnapshot: Number(
+        row['operationalCashSnapshot'] ?? row['operational_cash_snapshot'] ?? 0,
+      ),
+      operationalDigitalSnapshot: Number(
+        row['operationalDigitalSnapshot'] ?? row['operational_digital_snapshot'] ?? 0,
+      ),
+      note: (row['note'] as string | null) ?? null,
+      createdAt: (row['createdAt'] as string | null) ?? (row['created_at'] as string | null) ?? null,
+    };
   }
 }

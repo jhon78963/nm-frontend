@@ -95,9 +95,15 @@
               [ngModelOptions]="{ standalone: true }"
               styleClass="w-full"></p-dropdown>
             <small class="text-500">
-              Se registrará un egreso de caja por el total de la compra.
+              El egreso se registrará en la Cuenta Acumulada según el método
+              elegido (efectivo o digital).
             </small>
           </div>
+
+          <p-message
+            severity="info"
+            styleClass="w-full text-sm"
+            text="Nota: El pago de esta compra se debitará automáticamente de su Cuenta Acumulada para no afectar la caja del mes."></p-message>
 
           <div class="flex flex-column gap-2">
             <span class="font-medium text-sm">Comprobantes (PDF o Imagen)</span>

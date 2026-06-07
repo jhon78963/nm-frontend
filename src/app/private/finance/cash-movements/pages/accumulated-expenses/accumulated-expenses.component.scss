@@ -1,0 +1,59 @@
+.month-end-transfer__card {
+  border: 1px solid var(--surface-border);
+}
+
+.month-end-transfer__header {
+  background: linear-gradient(
+    135deg,
+    rgba(249, 115, 22, 0.08) 0%,
+    rgba(255, 255, 255, 0) 55%
+  );
+}
+
+.month-end-transfer__icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
+  background: rgba(249, 115, 22, 0.12);
+  color: #ea580c;
+  flex-shrink: 0;
+}
+
+.month-end-transfer__panel {
+  background: var(--surface-ground);
+  border: 1px solid var(--surface-border);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+}
+
+.month-end-transfer__panel--impact {
+  background: linear-gradient(
+    180deg,
+    rgba(249, 115, 22, 0.06) 0%,
+    var(--surface-ground) 100%
+  );
+  border-color: rgba(249, 115, 22, 0.25);
+}
+
+.month-end-transfer__step {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #ea580c;
+}
+
+.month-end-transfer__done {
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.month-end-transfer__history-row {
+  background: var(--surface-ground);
+  border: 1px solid var(--surface-border);
+}
+
+.month-end-transfer__arrow {
+  padding: 0.35rem 0;
+}

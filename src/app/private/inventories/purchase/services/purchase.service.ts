@@ -24,7 +24,7 @@ export class PurchaseService {
    * - `images[]`       → comprobantes (PDF o imagen, hasta 10)
    *
    * Laravel decodifica `payload` en `PurchaseBulkRequest.prepareForValidation()`,
-   * sube los archivos a Node.js via `NodeUploaderService` y crea el `CashMovement`.
+   * sube los comprobantes a Node.js y crea el egreso en Cuenta Acumulada (ACCUMULATED).
    */
   registerBulk(
     payload: PurchaseBulkPayload,
