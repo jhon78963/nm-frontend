@@ -171,6 +171,12 @@ export class AppMenuComponent implements OnInit {
           routerLink: ['/finance/cash-movements/admin-expenses'],
           permission: 'cashflow.getAdminMonthlyReport',
         },
+        {
+          label: 'Egresos Cuenta Acumulada',
+          icon: 'pi pi-fw pi-wallet',
+          routerLink: ['/finance/cash-movements/accumulated-expenses'],
+          permission: 'cashflow.getAccumulatedExpensesReport',
+        },
       ],
     },
     {

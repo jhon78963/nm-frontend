@@ -300,5 +300,122 @@
         </div>
       </div>
     </div>
+
+    <div class="grid mt-4">
+      <div class="col-12">
+        <div class="surface-card shadow-2 border-round-xl p-4">
+          <div
+            class="flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+            <div>
+              <h3 class="text-lg font-bold text-700 m-0">
+                <i class="pi pi-wallet mr-2 text-orange-500"></i>
+                Cuenta Acumulada — Crecimiento Mensual
+              </h3>
+              <p class="text-500 text-sm mt-1 mb-0">
+                Referencia histórica (cierres − egresos del fondo). Saldo actual
+                manual:
+                <strong
+                  >S/
+                  {{
+                    accumulatedAccountSummary().current?.total | number: '1.2-2'
+                  }}</strong
+                >
+              </p>
+            </div>
+            <span class="text-500 text-sm">Histórico del fondo</span>
+          </div>
+
+          <p-table
+            [value]="accumulatedAccountMonthlyReport()"
+            responsiveLayout="scroll"
+            styleClass="p-datatable-striped p-datatable-sm">
+            <ng-template pTemplate="header">
+              <tr>
+                <th class="bg-orange-50 text-orange-800">Fecha</th>
+                <th class="bg-orange-50 text-orange-800 text-right">
+                  Efectivo
+                </th>
+                <th class="bg-orange-50 text-orange-800 text-right">
+                  Bancos / Digital
+                </th>
+                <th class="bg-orange-600 text-white text-right font-bold">
+                  Total Mensual
+                </th>
+                <th class="bg-orange-50 text-orange-800 text-right">
+                  Saldo Efectivo
+                </th>
+                <th class="bg-orange-50 text-orange-800 text-right">
+                  Saldo Digital
+                </th>
+                <th class="bg-orange-700 text-white text-right font-bold">
+                  Saldo Total
+                </th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-row>
+              <tr class="hover:surface-100 transition-duration-150">
+                <td class="font-bold text-700">
+                  {{ row.fecha }}
+                </td>
+                <td class="text-right">
+                  <span class="text-500 text-xs mr-1">S/</span
+                  >{{ row.efectivo | number: '1.2-2' }}
+                </td>
+                <td class="text-right">
+                  <span class="text-500 text-xs mr-1">S/</span
+                  >{{ row.bancos | number: '1.2-2' }}
+                </td>
+                <td class="text-right font-bold text-orange-700 bg-orange-50">
+                  <span class="text-xs mr-1">S/</span
+                  >{{ row.total_mensual | number: '1.2-2' }}
+                </td>
+                <td class="text-right text-700">
+                  <span class="text-500 text-xs mr-1">S/</span
+                  >{{ row.saldo_efectivo | number: '1.2-2' }}
+                </td>
+                <td class="text-right text-700">
+                  <span class="text-500 text-xs mr-1">S/</span
+                  >{{ row.saldo_bancos | number: '1.2-2' }}
+                </td>
+                <td class="text-right font-bold text-orange-800 bg-orange-100">
+                  <span class="text-xs mr-1">S/</span
+                  >{{ row.saldo_total | number: '1.2-2' }}
+                </td>
+              </tr>
+            </ng-template>
+
+            <ng-template pTemplate="footer">
+              <tr class="font-bold">
+                <td class="bg-gray-100">TOTALES NETOS</td>
+                <td class="text-right bg-gray-100">
+                  S/ {{ accumulatedTotalEfectivo() | number: '1.2-2' }}
+                </td>
+                <td class="text-right bg-gray-100">
+                  S/ {{ accumulatedTotalBancos() | number: '1.2-2' }}
+                </td>
+                <td class="text-right bg-orange-200 text-orange-900">
+                  S/ {{ accumulatedTotalGeneral() | number: '1.2-2' }}
+                </td>
+                <td class="text-right bg-gray-100" colspan="3">
+                  Saldo actual: S/
+                  {{
+                    accumulatedAccountSummary().current?.total | number: '1.2-2'
+                  }}
+                </td>
+              </tr>
+            </ng-template>
+
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="7" class="text-center p-4 text-500">
+                  Configura los saldos iniciales en Gastos → Egresos Cuenta
+                  Acumulada para ver el histórico.
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      </div>
+    </div>
   }
 </div>

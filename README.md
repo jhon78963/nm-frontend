@@ -34,13 +34,13 @@ CI runs lint, unit tests, production build, `npm audit --audit-level=high`, and 
 
 ### Variables de entorno E2E
 
-| Variable | Uso | Default local | Secret en CI |
-|----------|-----|---------------|--------------|
-| `E2E_USERNAME` | Usuario de login | `vendedora` | Opcional (mock no lo requiere) |
-| `E2E_PASSWORD` | Contraseña de login | `password123` | Opcional (mock no lo requiere) |
-| `E2E_USE_REAL_API` | `true` = API Laravel real en lugar de mocks | _(vacío)_ | Solo si ejecutas E2E contra backend |
-| `E2E_BASE_URL` | URL base de la app | `http://localhost:4200` | Opcional |
-| `E2E_PORT` | Puerto de `ng serve` en Playwright | `4200` | Opcional |
+| Variable           | Uso                                         | Default local           | Secret en CI                        |
+| ------------------ | ------------------------------------------- | ----------------------- | ----------------------------------- |
+| `E2E_USERNAME`     | Usuario de login                            | `vendedora`             | Opcional (mock no lo requiere)      |
+| `E2E_PASSWORD`     | Contraseña de login                         | `password123`           | Opcional (mock no lo requiere)      |
+| `E2E_USE_REAL_API` | `true` = API Laravel real en lugar de mocks | _(vacío)_               | Solo si ejecutas E2E contra backend |
+| `E2E_BASE_URL`     | URL base de la app                          | `http://localhost:4200` | Opcional                            |
+| `E2E_PORT`         | Puerto de `ng serve` en Playwright          | `4200`                  | Opcional                            |
 
 Para pruebas contra API real (`E2E_USE_REAL_API=true`), configura en GitHub **Settings → Secrets and variables → Actions** al menos `E2E_USERNAME` y `E2E_PASSWORD` con credenciales del seeder del backend (`SEEDER_DEFAULT_PASSWORD`).
 

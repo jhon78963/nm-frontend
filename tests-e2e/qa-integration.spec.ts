@@ -28,7 +28,8 @@ function corsHeaders(): Record<string, string> {
     'Access-Control-Allow-Origin': 'http://localhost:4200',
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Allow-Headers':
+      'Content-Type, Authorization, X-Requested-With',
   };
 }
 
@@ -40,7 +41,10 @@ async function fulfillPreflight(route: Route): Promise<boolean> {
   return false;
 }
 
-async function setupAuthMocks(page: Page, user = MOCK_VENDEDORA): Promise<void> {
+async function setupAuthMocks(
+  page: Page,
+  user = MOCK_VENDEDORA,
+): Promise<void> {
   if (process.env.E2E_USE_REAL_API === 'true') {
     return;
   }
@@ -148,7 +152,9 @@ test.describe('QA — Protección de rutas frontend', () => {
     await login(page);
     await page.goto('/#/sales/pos');
     const sidebarMenu = page.locator('.layout-menu');
-    await expect(sidebarMenu.getByText('Productos', { exact: true })).toHaveCount(0);
+    await expect(
+      sidebarMenu.getByText('Productos', { exact: true }),
+    ).toHaveCount(0);
     await expect(sidebarMenu.getByText('POS', { exact: true })).toHaveCount(1);
     await expect(sidebarMenu.getByText('Caja', { exact: true })).toHaveCount(1);
   });
@@ -164,7 +170,10 @@ test.describe('QA — Protección de rutas frontend', () => {
         JSON.stringify({
           role: 'Admin',
           roles: ['Admin'],
-          permissions: ['cashflow.getAdminMonthlyReport', 'purchase.registerBulk'],
+          permissions: [
+            'cashflow.getAdminMonthlyReport',
+            'purchase.registerBulk',
+          ],
         }),
       );
     });
@@ -200,10 +209,14 @@ test.describe('QA — Seguridad warehouse / admin / payroll (SEC-025)', () => {
     await page.goto('/#/inventories/products');
 
     // permissionGuard redirige al dashboard — la URL nunca debe quedar en /inventories/products
-    await expect(page).not.toHaveURL(/inventories\/products/, { timeout: 10_000 });
+    await expect(page).not.toHaveURL(/inventories\/products/, {
+      timeout: 10_000,
+    });
   });
 
-  test('usuario sin rol admin no puede acceder a /administration', async ({ page }) => {
+  test('usuario sin rol admin no puede acceder a /administration', async ({
+    page,
+  }) => {
     // vendedora (role: Vendedora) no tiene Admin ni Super Admin → roleGuard redirige
     await setupAuthMocks(page);
     await login(page);
@@ -233,7 +246,9 @@ test.describe('QA — Seguridad warehouse / admin / payroll (SEC-025)', () => {
     await page.goto('/#/directory/team/pagos/1');
 
     // permissionGuard bloquea la ruta y redirige al dashboard
-    await expect(page).not.toHaveURL(/directory\/team\/pagos/, { timeout: 10_000 });
+    await expect(page).not.toHaveURL(/directory\/team\/pagos/, {
+      timeout: 10_000,
+    });
   });
 });
 
@@ -264,7 +279,7 @@ test.describe('QA — Interceptor 401', () => {
     await page.reload();
     await expect(page).toHaveURL(/auth\/login/, { timeout: 15_000 });
   });
-})
+});
 
 test.describe('QA — SEC-010: Warehouse desde sesión', () => {
   test('active_warehouse_id en localStorage no es enviado como X-Warehouse-Id al auth/me', async ({
@@ -321,4 +336,3 @@ test.describe('QA — SEC-010: Warehouse desde sesión', () => {
     expect(storedId).not.toBe('8888');
   });
 });
-

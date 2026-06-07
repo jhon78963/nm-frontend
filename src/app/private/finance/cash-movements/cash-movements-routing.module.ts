@@ -21,6 +21,15 @@ const routes: Routes = [
         c => c.AdminExpensesComponent,
       ),
   },
+  {
+    path: 'accumulated-expenses',
+    canActivate: [permissionGuard],
+    data: { permission: 'cashflow.getAccumulatedExpensesReport' },
+    loadComponent: () =>
+      import(
+        './pages/accumulated-expenses/accumulated-expenses.component'
+      ).then(c => c.AccumulatedExpensesComponent),
+  },
 ];
 
 @NgModule({

@@ -58,6 +58,11 @@ export class ReportsComponent implements OnInit {
   financials = signal<any>({});
   // --- NUEVO SIGNAL PARA EL REPORTE HISTÓRICO ---
   allTimeMonthlyReport = signal<any[]>([]);
+  accumulatedAccountMonthlyReport = signal<any[]>([]);
+  accumulatedAccountSummary = signal<any>({
+    opening: { cash: 0, digital: 0, total: 0 },
+    current: { cash: 0, digital: 0, total: 0 },
+  });
 
   // Configuración Gráfico
   chartData: any;
@@ -79,6 +84,27 @@ export class ReportsComponent implements OnInit {
 
   totalGeneral = computed(() =>
     this.allTimeMonthlyReport().reduce(
+      (acc, row) => acc + (row.total_mensual || 0),
+      0,
+    ),
+  );
+
+  accumulatedTotalEfectivo = computed(() =>
+    this.accumulatedAccountMonthlyReport().reduce(
+      (acc, row) => acc + (row.efectivo || 0),
+      0,
+    ),
+  );
+
+  accumulatedTotalBancos = computed(() =>
+    this.accumulatedAccountMonthlyReport().reduce(
+      (acc, row) => acc + (row.bancos || 0),
+      0,
+    ),
+  );
+
+  accumulatedTotalGeneral = computed(() =>
+    this.accumulatedAccountMonthlyReport().reduce(
       (acc, row) => acc + (row.total_mensual || 0),
       0,
     ),
@@ -125,6 +151,15 @@ export class ReportsComponent implements OnInit {
 
           // --- CARGAMOS EL REPORTE HISTÓRICO AQUÍ ---
           this.allTimeMonthlyReport.set(res.data.all_time_monthly_report || []);
+          this.accumulatedAccountMonthlyReport.set(
+            res.data.accumulated_account_monthly_report || [],
+          );
+          this.accumulatedAccountSummary.set(
+            res.data.accumulated_account_summary || {
+              opening: { cash: 0, digital: 0, total: 0 },
+              current: { cash: 0, digital: 0, total: 0 },
+            },
+          );
 
           this.setupChart(res.data.financials.chart_data);
         }

@@ -35,7 +35,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
 import { DividerModule } from 'primeng/divider';
 import { DropdownModule } from 'primeng/dropdown';
-import { FileUpload, FileUploadModule } from 'primeng/fileupload';
+import { VoucherDropzoneComponent } from '../../../../shared/components/voucher-dropzone/voucher-dropzone.component';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { PanelModule } from 'primeng/panel';
@@ -116,8 +116,8 @@ const LEGACY_DRAFT_STORAGE_KEYS = [
     ToastModule,
     PanelModule,
     DialogModule,
-    FileUploadModule,
     TooltipModule,
+    VoucherDropzoneComponent,
   ],
   templateUrl: './purchase-register.component.html',
   styleUrl: './purchase-register.component.scss',
@@ -203,12 +203,12 @@ export class PurchaseRegisterComponent implements OnInit {
   filteredVendors: Vendor[] = [];
 
   @ViewChild('colorSearchAc') colorSearchAc?: AutoComplete;
-  @ViewChild('voucherUpload') voucherUpload?: FileUpload;
+  @ViewChild('voucherDropzone') voucherDropzone?: VoucherDropzoneComponent;
 
   /** Método de pago para el egreso de caja generado con la compra. */
   selectedPaymentMethod = signal<string>('CASH');
-  /** Voucher adjunto (solo visible/requerido cuando el método no es Efectivo). */
-  selectedVoucherFile: File | null = null;
+  /** Comprobantes de pago adjuntos (PDF o imagen). */
+  selectedVoucherFiles: File[] = [];
 
   readonly paymentMethods = [
     { label: 'Efectivo', value: 'CASH' },
@@ -1428,7 +1428,7 @@ export class PurchaseRegisterComponent implements OnInit {
           return this.purchaseApi.registerBulk(
             built.payload,
             this.selectedPaymentMethod(),
-            this.selectedVoucherFile,
+            this.selectedVoucherFiles.length ? this.selectedVoucherFiles : null,
           );
         }),
         catchError(err => {
@@ -1600,15 +1600,13 @@ export class PurchaseRegisterComponent implements OnInit {
     this.activeNewProductTempId = null;
     this.lastPayloadJson.set(null);
     this.selectedPaymentMethod.set('CASH');
-    this.selectedVoucherFile = null;
-    if (this.voucherUpload) {
-      this.voucherUpload.clear();
-    }
+    this.selectedVoucherFiles = [];
+    this.voucherDropzone?.clear();
     this.persistDraftEnabled = true;
   }
 
-  onVoucherSelect(event: { files: File[] }): void {
-    this.selectedVoucherFile = event.files[0] ?? null;
+  onDropzoneFiles(files: File[]): void {
+    this.selectedVoucherFiles = files;
   }
 
   onUseColorVariantChange(): void {

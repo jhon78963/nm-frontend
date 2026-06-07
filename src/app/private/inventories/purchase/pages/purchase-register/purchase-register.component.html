@@ -99,31 +99,12 @@
             </small>
           </div>
 
-          <!-- Voucher: solo visible si el pago NO es en efectivo -->
-          @if (selectedPaymentMethod() !== 'CASH') {
-            <div class="flex flex-column gap-2">
-              <label for="purchase-voucher" class="font-medium text-sm">
-                Voucher / Comprobante
-                <span class="text-400 font-normal ml-1">(PDF o Imagen)</span>
-              </label>
-              <p-fileUpload
-                inputId="purchase-voucher"
-                #voucherUpload
-                mode="basic"
-                chooseLabel="Subir Comprobante"
-                accept="image/*,application/pdf"
-                maxFileSize="5242880"
-                (onSelect)="onVoucherSelect($event)"
-                styleClass="w-full">
-              </p-fileUpload>
-              @if (selectedVoucherFile) {
-                <small
-                  class="text-green-600 font-bold flex align-items-center gap-1">
-                  <i class="pi pi-check"></i> {{ selectedVoucherFile.name }}
-                </small>
-              }
-            </div>
-          }
+          <div class="flex flex-column gap-2">
+            <span class="font-medium text-sm">Comprobantes (PDF o Imagen)</span>
+            <app-voucher-dropzone
+              #voucherDropzone
+              (filesChange)="onDropzoneFiles($event)"></app-voucher-dropzone>
+          </div>
         </form>
       </p-card>
     </div>

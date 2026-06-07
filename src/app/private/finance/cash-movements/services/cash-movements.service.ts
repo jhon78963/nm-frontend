@@ -21,7 +21,7 @@ export interface SummaryMovementInput {
 
 interface CashflowStorePayload {
   type: 'INCOME' | 'EXPENSE';
-  category: 'STORE' | 'ADMINISTRATIVE';
+  category: 'STORE' | 'ADMINISTRATIVE' | 'ACCUMULATED';
   amount: number;
   description: string;
   date: string;
@@ -43,6 +43,10 @@ export class CashflowService {
   // --- STATE 2: Gastos Administrativos Mensuales ---
   private adminExpensesSubject = new BehaviorSubject<any[]>([]);
   adminExpenses$ = this.adminExpensesSubject.asObservable();
+
+  // --- STATE 3: Egresos Cuenta Acumulada ---
+  private accumulatedExpensesSubject = new BehaviorSubject<any[]>([]);
+  accumulatedExpenses$ = this.accumulatedExpensesSubject.asObservable();
 
   constructor() {}
 
@@ -73,6 +77,24 @@ export class CashflowService {
         return response.data?.expenses ?? [];
       }),
       tap(expenses => this.adminExpensesSubject.next(expenses)),
+    );
+  }
+
+  loadMonthlyAccumulatedExpenses(
+    month: string,
+  ): Observable<{ expenses: any[]; total: number }> {
+    const url = `${this.apiUrl}/accumulated/monthly?month=${month}`;
+    return this.apiService.get<any>(url).pipe(
+      map(response => {
+        if (!response?.success) {
+          return { expenses: [], total: 0 };
+        }
+        return {
+          expenses: response.data?.expenses ?? [],
+          total: response.data?.total_monthly_accumulated ?? 0,
+        };
+      }),
+      tap(result => this.accumulatedExpensesSubject.next(result.expenses)),
     );
   }
 
@@ -169,14 +191,17 @@ export class CashflowService {
 
     return this.apiService.post(this.apiUrl, formData).pipe(
       switchMap(() => {
-        // REFRESCO INTELIGENTE:
-        // Si es administrativo, refresca la lista mensual, si no, la diaria.
         if (data.category === 'ADMINISTRATIVE') {
-          const month = currentDate.substring(0, 7); // Extrae 'YYYY-MM'
+          const month = currentDate.substring(0, 7);
           return this.loadMonthlyAdminExpenses(month);
-        } else {
-          return this.loadDailyReport(currentDate);
         }
+        if (data.category === 'ACCUMULATED') {
+          const month = currentDate.substring(0, 7);
+          return this.loadMonthlyAccumulatedExpenses(month).pipe(
+            map(() => undefined),
+          );
+        }
+        return this.loadDailyReport(currentDate);
       }),
     );
   }
@@ -186,6 +211,7 @@ export class CashflowService {
     data: any,
     files: File[] | File | null,
     currentDate: string,
+    category: 'ADMINISTRATIVE' | 'ACCUMULATED' = 'ADMINISTRATIVE',
   ): Observable<any[]> {
     const formData = new FormData();
 
@@ -208,14 +234,17 @@ export class CashflowService {
     const fileArray = files instanceof File ? [files] : (files ?? []);
     fileArray.forEach(f => formData.append('images[]', f));
 
-    return this.apiService
-      .post(`${this.apiUrl}/${id}`, formData) // Laravel recibirá esto como PUT /{id}
-      .pipe(
-        switchMap(() => {
-          const month = currentDate.substring(0, 7);
-          return this.loadMonthlyAdminExpenses(month);
-        }),
-      );
+    return this.apiService.post(`${this.apiUrl}/${id}`, formData).pipe(
+      switchMap(() => {
+        const month = currentDate.substring(0, 7);
+        if (category === 'ACCUMULATED') {
+          return this.loadMonthlyAccumulatedExpenses(month).pipe(
+            map(result => result.expenses),
+          );
+        }
+        return this.loadMonthlyAdminExpenses(month);
+      }),
+    );
   }
 
   // Getters para los observables
@@ -226,11 +255,60 @@ export class CashflowService {
     return this.adminExpenses$;
   }
 
+  getAccumulatedExpenses() {
+    return this.accumulatedExpenses$;
+  }
+
   getVoucherPreview(voucherPath: string): Observable<Blob> {
     const params = new HttpParams().set('path', voucherPath);
 
     return this.apiService.getBlob(`${this.apiUrl}/vouchers/preview`, {
       params,
     });
+  }
+
+  loadAccumulatedAccountSettings(): Observable<{
+    cash_balance: number;
+    digital_balance: number;
+    initial_cash: number;
+    initial_digital: number;
+    is_initialized: boolean;
+    tracking_start_month: string | null;
+    current_cash: number;
+    current_digital: number;
+    current_total: number;
+  }> {
+    return this.apiService.get<any>('accumulated-account/settings').pipe(
+      map(
+        response =>
+          response?.data ?? {
+            cash_balance: 0,
+            digital_balance: 0,
+            initial_cash: 0,
+            initial_digital: 0,
+            is_initialized: false,
+            tracking_start_month: null,
+            current_cash: 0,
+            current_digital: 0,
+            current_total: 0,
+          },
+      ),
+    );
+  }
+
+  initializeAccumulatedAccountSettings(data: {
+    initial_cash: number;
+    initial_digital: number;
+    tracking_start_month: string;
+  }): Observable<any> {
+    return this.apiService.post('accumulated-account/initialize', data);
+  }
+
+  updateAccumulatedAccountSettings(data: {
+    cash_balance: number;
+    digital_balance: number;
+    tracking_start_month: string | null;
+  }): Observable<any> {
+    return this.apiService.put('accumulated-account/settings', data);
   }
 }

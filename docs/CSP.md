@@ -2,20 +2,20 @@
 
 **SEC-005.** La CSP de producción se envía por **header HTTP en nginx**, no por `<meta>` en HTML.
 
-| Entorno | Dónde vive la CSP |
-|---------|-------------------|
-| Desarrollo (`ng serve`) | `src/index.html` — meta `http-equiv` (SEC-022) |
+| Entorno                 | Dónde vive la CSP                                              |
+| ----------------------- | -------------------------------------------------------------- |
+| Desarrollo (`ng serve`) | `src/index.html` — meta `http-equiv` (SEC-022)                 |
 | Producción (`ng build`) | `deploy/nginx.conf.example` — header `Content-Security-Policy` |
 
 ### CSP en desarrollo (SEC-022)
 
 `src/index.html` aplica la misma política base que nginx, con estas diferencias:
 
-| Directiva | Dev | Prod (nginx) |
-|-----------|-----|----------------|
-| `upgrade-insecure-requests` | No (API/uploads locales en HTTP) | Sí |
-| `img-src` | Sin `https:` global; hosts de `environment.ts` + API/upload prod | `'self' data: blob: https:` (catálogo externo) |
-| `connect-src` | `localhost:8000`, `127.0.0.1:3050`, HMR `ws://localhost:4200` | Solo API/upload HTTPS |
+| Directiva                   | Dev                                                              | Prod (nginx)                                   |
+| --------------------------- | ---------------------------------------------------------------- | ---------------------------------------------- |
+| `upgrade-insecure-requests` | No (API/uploads locales en HTTP)                                 | Sí                                             |
+| `img-src`                   | Sin `https:` global; hosts de `environment.ts` + API/upload prod | `'self' data: blob: https:` (catálogo externo) |
+| `connect-src`               | `localhost:8000`, `127.0.0.1:3050`, HMR `ws://localhost:4200`    | Solo API/upload HTTPS                          |
 
 `style-src 'unsafe-inline'` es obligatorio en ambos entornos mientras Angular/PrimeNG inyecten estilos en línea (ver sección abajo).
 
@@ -47,16 +47,16 @@ O usa la variable `$nm_csp` del ejemplo completo en `deploy/nginx.conf.example`.
 
 Recursos externos declarados en producción:
 
-| Recurso | Origen | Directiva |
-|---------|--------|-----------|
-| Bundles Angular (JS) | `'self'` | `script-src` |
-| Phosphor Icons | `https://unpkg.com` | `script-src`, `font-src` |
-| Font Awesome 6 CSS | `https://cdnjs.cloudflare.com` | `style-src`, `font-src` |
-| Tema PrimeNG / layout | `'self'` (`assets/...`) | `style-src` |
-| API Laravel Sanctum | `https://api.novedadesmaritex.net.pe` | `connect-src` |
-| Servicio de uploads | `https://upload.novedadesmaritex.net.pe` | `connect-src` |
-| Imágenes de productos/CDN | `https:` | `img-src` |
-| Vista previa / impresión POS (blob, iframe) | `blob:` | `img-src`, `frame-src` |
+| Recurso                                     | Origen                                   | Directiva                |
+| ------------------------------------------- | ---------------------------------------- | ------------------------ |
+| Bundles Angular (JS)                        | `'self'`                                 | `script-src`             |
+| Phosphor Icons                              | `https://unpkg.com`                      | `script-src`, `font-src` |
+| Font Awesome 6 CSS                          | `https://cdnjs.cloudflare.com`           | `style-src`, `font-src`  |
+| Tema PrimeNG / layout                       | `'self'` (`assets/...`)                  | `style-src`              |
+| API Laravel Sanctum                         | `https://api.novedadesmaritex.net.pe`    | `connect-src`            |
+| Servicio de uploads                         | `https://upload.novedadesmaritex.net.pe` | `connect-src`            |
+| Imágenes de productos/CDN                   | `https:`                                 | `img-src`                |
+| Vista previa / impresión POS (blob, iframe) | `blob:`                                  | `img-src`, `frame-src`   |
 
 Variables de entorno de referencia: `src/environments/environment.prod.ts`.
 
@@ -97,12 +97,12 @@ Font Awesome 6.4.0 (cdnjs) y Phosphor Icons `@2.1.2` (unpkg) incluyen **SRI** (`
 
 ## Plan para reducir `'unsafe-inline'` en estilos
 
-| Fase | Acción | Impacto |
-|------|--------|---------|
-| 1 | ~~SRI en CDN~~ (hecho SEC-021) o self-host en `assets/` | Menos dominios en `style-src` / `font-src` |
-| 2 | Auditar estilos inline críticos (PrimeNG theme, `styles.scss`) | Base para nonces o hashes |
-| 3 | Evaluar CSP con **nonce** en nginx (`style-src 'nonce-…'`) + build Angular experimental | Permite quitar `'unsafe-inline'` global |
-| 4 | Endurecer `img-src` a hosts de uploads conocidos | Menor superficie XSS vía imágenes |
+| Fase | Acción                                                                                  | Impacto                                    |
+| ---- | --------------------------------------------------------------------------------------- | ------------------------------------------ |
+| 1    | ~~SRI en CDN~~ (hecho SEC-021) o self-host en `assets/`                                 | Menos dominios en `style-src` / `font-src` |
+| 2    | Auditar estilos inline críticos (PrimeNG theme, `styles.scss`)                          | Base para nonces o hashes                  |
+| 3    | Evaluar CSP con **nonce** en nginx (`style-src 'nonce-…'`) + build Angular experimental | Permite quitar `'unsafe-inline'` global    |
+| 4    | Endurecer `img-src` a hosts de uploads conocidos                                        | Menor superficie XSS vía imágenes          |
 
 Mientras las fases 3–4 no estén hechas, mantener `'unsafe-inline'` en `style-src` es el compromiso documentado y aceptado para esta app.
 

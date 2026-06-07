@@ -37,7 +37,7 @@ Call log:
   22  |   warehouseId: 1,
   23  |   mustChangePassword: false,
   24  | };
-  25  | 
+  25  |
   26  | function corsHeaders(): Record<string, string> {
   27  |   return {
   28  |     'Access-Control-Allow-Origin': 'http://localhost:4200',
@@ -46,7 +46,7 @@ Call log:
   31  |     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
   32  |   };
   33  | }
-  34  | 
+  34  |
   35  | async function fulfillPreflight(route: Route): Promise<boolean> {
   36  |   if (route.request().method() === 'OPTIONS') {
   37  |     await route.fulfill({ status: 204, headers: corsHeaders() });
@@ -54,17 +54,17 @@ Call log:
   39  |   }
   40  |   return false;
   41  | }
-  42  | 
+  42  |
   43  | async function setupAuthMocks(page: Page, user = MOCK_VENDEDORA): Promise<void> {
   44  |   if (process.env.E2E_USE_REAL_API === 'true') {
   45  |     return;
   46  |   }
-  47  | 
+  47  |
   48  |   await page.route('**/sanctum/csrf-cookie', async route => {
   49  |     if (await fulfillPreflight(route)) return;
   50  |     await route.fulfill({ status: 204, headers: corsHeaders() });
   51  |   });
-  52  | 
+  52  |
   53  |   await page.route('**/api/auth/csrf-token', async route => {
   54  |     if (await fulfillPreflight(route)) return;
   55  |     await route.fulfill({
@@ -73,7 +73,7 @@ Call log:
   58  |       body: JSON.stringify({ csrf_token: 'e2e-csrf-token' }),
   59  |     });
   60  |   });
-  61  | 
+  61  |
   62  |   await page.route('**/api/auth/login', async route => {
   63  |     if (await fulfillPreflight(route)) return;
   64  |     await route.fulfill({
@@ -82,7 +82,7 @@ Call log:
   67  |       body: JSON.stringify(user),
   68  |     });
   69  |   });
-  70  | 
+  70  |
   71  |   await page.route('**/api/auth/me', async route => {
   72  |     if (await fulfillPreflight(route)) return;
   73  |     await route.fulfill({
@@ -91,7 +91,7 @@ Call log:
   76  |       body: JSON.stringify(user),
   77  |     });
   78  |   });
-  79  | 
+  79  |
   80  |   await page.route('**/api/auth/logout', async route => {
   81  |     if (await fulfillPreflight(route)) return;
   82  |     await route.fulfill({
@@ -100,7 +100,7 @@ Call log:
   85  |       body: JSON.stringify({ message: 'Logout successfully' }),
   86  |     });
   87  |   });
-  88  | 
+  88  |
   89  |   await page.route('**/api/**', async route => {
   90  |     if (await fulfillPreflight(route)) return;
   91  |     const url = route.request().url();
@@ -112,7 +112,7 @@ Call log:
   97  |     });
   98  |   });
   99  | }
-  100 | 
+  100 |
   101 | async function fillLoginForm(page: Page): Promise<void> {
   102 |   await page.getByTestId('login-username').fill(E2E_USERNAME);
   103 |   const passwordInput = page.locator('#login-password-input');
@@ -123,7 +123,7 @@ Call log:
   108 |   await passwordInput.blur();
   109 |   await expect(page.getByRole('button', { name: 'Login' })).toBeEnabled();
   110 | }
-  111 | 
+  111 |
   112 | async function login(page: Page): Promise<void> {
 > 113 |   await page.goto('/#/auth/login');
       |              ^ TimeoutError: page.goto: Timeout 30000ms exceeded.
@@ -134,20 +134,20 @@ Call log:
   118 |     timeout: 15_000,
   119 |   });
   120 | }
-  121 | 
+  121 |
   122 | test.describe('QA — Protección de rutas frontend', () => {
   123 |   test('ruta protegida redirige a login sin sesión', async ({ page }) => {
   124 |     await page.goto('/#/inventories/products');
   125 |     await expect(page).toHaveURL(/auth\/login/, { timeout: 10_000 });
   126 |   });
-  127 | 
+  127 |
   128 |   test('vendedora puede acceder a POS con permiso', async ({ page }) => {
   129 |     await setupAuthMocks(page);
   130 |     await login(page);
   131 |     await page.goto('/#/sales/pos');
   132 |     await expect(page).not.toHaveURL(/auth\/login/);
   133 |   });
-  134 | 
+  134 |
   135 |   test('vendedora no puede acceder al registro de compras sin permiso', async ({
   136 |     page,
   137 |   }) => {
@@ -158,7 +158,7 @@ Call log:
   142 |       timeout: 10_000,
   143 |     });
   144 |   });
-  145 | 
+  145 |
   146 |   test('vendedora no ve inventario de productos en menú', async ({ page }) => {
   147 |     await setupAuthMocks(page);
   148 |     await login(page);
@@ -168,7 +168,7 @@ Call log:
   152 |     await expect(sidebarMenu.getByText('POS', { exact: true })).toHaveCount(1);
   153 |     await expect(sidebarMenu.getByText('Caja', { exact: true })).toHaveCount(1);
   154 |   });
-  155 | 
+  155 |
   156 |   test('manipulación localStorage no otorga permisos admin en menú', async ({
   157 |     page,
   158 |   }) => {
@@ -189,7 +189,7 @@ Call log:
   173 |     await expect(page).not.toHaveURL(/auth\/login/);
   174 |   });
   175 | });
-  176 | 
+  176 |
   177 | /**
   178 |  * SEC-025 — E2E ampliado: warehouse / admin / payroll
   179 |  *
@@ -208,23 +208,23 @@ Call log:
   192 |     // incluso si el atacante manipula active_warehouse_id para apuntar a otro warehouse
   193 |     await setupAuthMocks(page);
   194 |     await login(page);
-  195 | 
+  195 |
   196 |     await page.evaluate(() => {
   197 |       localStorage.setItem('active_warehouse_id', '9999');
   198 |     });
-  199 | 
+  199 |
   200 |     await page.goto('/#/inventories/products');
-  201 | 
+  201 |
   202 |     // permissionGuard redirige al dashboard — la URL nunca debe quedar en /inventories/products
   203 |     await expect(page).not.toHaveURL(/inventories\/products/, { timeout: 10_000 });
   204 |   });
-  205 | 
+  205 |
   206 |   test('usuario sin rol admin no puede acceder a /administration', async ({ page }) => {
   207 |     // vendedora (role: Vendedora) no tiene Admin ni Super Admin → roleGuard redirige
   208 |     await setupAuthMocks(page);
   209 |     await login(page);
-  210 | 
+  210 |
   211 |     await page.goto('/#/administration');
-  212 | 
+  212 |
   213 |     await expect(page).not.toHaveURL(/administration/, { timeout: 10_000 });
 ```

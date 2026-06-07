@@ -194,6 +194,15 @@ function resolvePermissionPlacement(perm: Permission): MenuPlacement {
     };
   }
 
+  if (name === 'cashflow.getAccumulatedExpensesReport') {
+    return {
+      module: 'Gastos',
+      submodule: 'Egresos Cuenta Acumulada',
+      moduleOrder: moduleOrderIndex('Gastos'),
+      submoduleOrder: 1,
+    };
+  }
+
   if (prefix === 'cashflow') {
     return {
       module: 'Ventas',

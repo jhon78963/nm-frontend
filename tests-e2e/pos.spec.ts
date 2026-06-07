@@ -50,7 +50,8 @@ function corsHeaders(): Record<string, string> {
     'Access-Control-Allow-Origin': 'http://localhost:4200',
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Allow-Headers':
+      'Content-Type, Authorization, X-Requested-With',
   };
 }
 
@@ -214,9 +215,12 @@ test.describe('Flujo crítico POS — cajero', () => {
       .poll(async () => readSessionFlag(page), { timeout: 5_000 })
       .toBe(true);
 
-    await page.waitForURL(currentUrl => !currentUrl.hash.includes('/auth/login'), {
-      timeout: 15_000,
-    });
+    await page.waitForURL(
+      currentUrl => !currentUrl.hash.includes('/auth/login'),
+      {
+        timeout: 15_000,
+      },
+    );
 
     await page.goto('/#/sales/pos');
     await expect(page.getByPlaceholder('Escanear código...')).toBeVisible();
@@ -225,7 +229,9 @@ test.describe('Flujo crítico POS — cajero', () => {
     await scannerInput.fill(E2E_POS_SKU);
     await page.locator('button .pi-barcode').locator('..').click();
 
-    await expect(page.getByText(MOCK_PRODUCT.name)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(MOCK_PRODUCT.name)).toBeVisible({
+      timeout: 10_000,
+    });
     await page.getByText('Toca para agregar').first().click();
     await page.getByRole('button', { name: 'AGREGAR AL CARRITO' }).click();
 
@@ -260,8 +266,11 @@ test.describe('Flujo crítico POS — cajero', () => {
     });
 
     // Señal fiable #2: toast de éxito (data-testid, no desaparece por errores de impresión)
-    await expect(page.getByTestId('pos-toast')).toContainText(/Venta .+ Exitosa!/, {
-      timeout: 5_000,
-    });
+    await expect(page.getByTestId('pos-toast')).toContainText(
+      /Venta .+ Exitosa!/,
+      {
+        timeout: 5_000,
+      },
+    );
   });
 });
