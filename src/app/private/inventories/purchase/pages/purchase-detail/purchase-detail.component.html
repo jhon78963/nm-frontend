@@ -61,32 +61,85 @@
         </dl>
       </p-card>
 
-      @if (linkedPayment()) {
-        <p-card header="Pago / Voucher vinculado" styleClass="mt-3">
-          <dl class="m-0 text-sm">
-            <dt class="text-600">Monto pagado</dt>
-            <dd class="mt-0 mb-2 font-medium">
-              S/ {{ linkedPayment()!.amount | number: '1.2-2' }} ·
-              {{ linkedPayment()!.paymentMethod }}
-            </dd>
-            <dt class="text-600">Descripción</dt>
-            <dd class="mt-0 mb-2">{{ linkedPayment()!.description }}</dd>
-            @if (linkedPayment()!.date) {
-              <dt class="text-600">Fecha pago</dt>
-              <dd class="mt-0 mb-2">{{ linkedPayment()!.date }}</dd>
-            }
-          </dl>
-          @if (linkedPayment()!.voucherPath) {
-            <button
-              pButton
-              type="button"
-              label="Ver comprobante"
-              icon="pi pi-eye"
-              class="p-button-outlined w-full mt-2"
-              (click)="showLinkedVoucher()"></button>
+      @if (linkedPayment() || purchase.status === 'ACTIVE') {
+        <p-card header="Pago / Comprobantes" styleClass="mt-3">
+          @if (linkedPayment()) {
+            <dl class="m-0 text-sm">
+              <dt class="text-600">Monto pagado</dt>
+              <dd class="mt-0 mb-2 font-medium">
+                S/ {{ linkedPayment()!.amount | number: '1.2-2' }} ·
+                {{ linkedPayment()!.paymentMethod }}
+              </dd>
+              <dt class="text-600">Descripción</dt>
+              <dd class="mt-0 mb-2">{{ linkedPayment()!.description }}</dd>
+              @if (linkedPayment()!.date) {
+                <dt class="text-600">Fecha pago</dt>
+                <dd class="mt-0 mb-2">{{ linkedPayment()!.date }}</dd>
+              }
+            </dl>
           } @else {
-            <p class="text-600 text-sm m-0 mt-2">Sin archivo adjunto.</p>
+            <p class="text-600 text-sm m-0 mb-2">
+              Sin movimiento de caja vinculado. Podés adjuntar comprobantes y se
+              registrará el egreso.
+            </p>
           }
+
+          <div class="mt-3">
+            <span class="block font-medium text-sm mb-2">Comprobantes</span>
+            @if (linkedVoucherPaths().length > 0) {
+              <div class="flex flex-wrap gap-2 mb-2">
+                <button
+                  pButton
+                  type="button"
+                  [label]="
+                    linkedVoucherPaths().length > 1
+                      ? 'Ver ' + linkedVoucherPaths().length + ' comprobantes'
+                      : 'Ver comprobante'
+                  "
+                  icon="pi pi-eye"
+                  class="p-button-outlined p-button-sm"
+                  (click)="showLinkedVoucher()"></button>
+                @if (linkedVoucherPaths().length > 1) {
+                  <p-tag
+                    [value]="linkedVoucherPaths().length + ' archivos'"
+                    severity="info"
+                    styleClass="text-xs"></p-tag>
+                }
+              </div>
+            } @else {
+              <p class="text-600 text-sm m-0 mb-2">
+                Sin comprobantes adjuntos.
+              </p>
+            }
+
+            @if (canAddVouchers()) {
+              <app-voucher-dropzone
+                #voucherDropzone
+                [maxFiles]="remainingVoucherSlots()"
+                (filesChange)="onDropzoneFiles($event)"></app-voucher-dropzone>
+              <small class="text-500 block mt-1">
+                Podés agregar hasta {{ remainingVoucherSlots() }} archivo(s)
+                más.
+              </small>
+              <button
+                pButton
+                type="button"
+                label="Agregar comprobantes"
+                icon="pi pi-upload"
+                class="w-full mt-2"
+                [loading]="savingVouchers()"
+                [disabled]="selectedVoucherFiles.length === 0"
+                (click)="saveVouchers()"></button>
+            } @else if (purchase.status !== 'ACTIVE') {
+              <p class="text-600 text-sm m-0 mt-2">
+                Compra no activa: comprobantes solo lectura.
+              </p>
+            } @else {
+              <p class="text-600 text-sm m-0 mt-2">
+                Límite de 10 comprobantes alcanzado.
+              </p>
+            }
+          </div>
         </p-card>
       }
     </div>
@@ -264,28 +317,54 @@
   [visible]="displayPreview()"
   (visibleChange)="onPreviewVisibleChange($event)"
   [modal]="true"
-  header="Comprobante de pago"
+  [header]="
+    previewItems.length > 1
+      ? 'Comprobante ' + (previewIndex + 1) + ' de ' + previewItems.length
+      : 'Comprobante de pago'
+  "
   [style]="{ width: '90vw', maxWidth: '800px' }"
   [contentStyle]="{ height: '80vh' }"
   [draggable]="false"
   [resizable]="false">
-  <div class="w-full h-full flex justify-content-center align-items-center">
-    @if (previewLoading()) {
-      <span>Cargando comprobante...</span>
-    } @else if (previewUrl()) {
-      @if (isPdf()) {
-        <iframe
-          [src]="previewUrl() | safeUrl"
-          width="100%"
-          height="100%"
-          style="border: none">
-        </iframe>
-      } @else {
-        <img
-          [src]="previewUrl() | safeUrl"
-          alt="Voucher"
-          style="max-width: 100%; max-height: 100%; object-fit: contain" />
-      }
+  <div class="w-full h-full flex flex-column">
+    @if (previewItems.length > 1) {
+      <div
+        class="flex align-items-center justify-content-between px-2 pb-2 flex-shrink-0">
+        <button
+          pButton
+          icon="pi pi-chevron-left"
+          class="p-button-text p-button-sm"
+          [disabled]="previewIndex === 0"
+          (click)="prevPreview()"></button>
+        <span class="text-sm text-500"
+          >{{ previewIndex + 1 }} / {{ previewItems.length }}</span
+        >
+        <button
+          pButton
+          icon="pi pi-chevron-right"
+          class="p-button-text p-button-sm"
+          [disabled]="previewIndex === previewItems.length - 1"
+          (click)="nextPreview()"></button>
+      </div>
     }
+    <div class="flex-1 flex justify-content-center align-items-center">
+      @if (previewLoading()) {
+        <span>Cargando comprobante...</span>
+      } @else if (previewUrl()) {
+        @if (isPdf()) {
+          <iframe
+            [src]="previewUrl() | safeUrl"
+            width="100%"
+            height="100%"
+            style="border: none">
+          </iframe>
+        } @else {
+          <img
+            [src]="previewUrl() | safeUrl"
+            alt="Voucher"
+            style="max-width: 100%; max-height: 100%; object-fit: contain" />
+        }
+      }
+    </div>
   </div>
 </p-dialog>

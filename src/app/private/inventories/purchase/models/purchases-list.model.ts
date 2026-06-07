@@ -53,6 +53,7 @@ export interface PurchaseLinkedPayment {
   description: string;
   date: string | null;
   voucherPath: string | null;
+  voucherPaths?: string[];
 }
 
 export interface PurchaseListResponse {

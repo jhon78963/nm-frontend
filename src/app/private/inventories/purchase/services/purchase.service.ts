@@ -78,6 +78,18 @@ export class PurchaseService {
     return this.api.patch<{ message: string }>(`${this.basePath}/${id}`, body);
   }
 
+  addVouchers(
+    purchaseId: number,
+    files: File[],
+  ): Observable<{ message: string }> {
+    const formData = new FormData();
+    files.forEach(f => formData.append('images[]', f));
+    return this.api.post<{ message: string }>(
+      `${this.basePath}/${purchaseId}/vouchers`,
+      formData,
+    );
+  }
+
   updateLine(
     purchaseId: number,
     lineId: number,

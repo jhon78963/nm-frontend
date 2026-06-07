@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, ViewChild } from '@angular/core';
 import {
   FormArray,
   FormBuilder,
@@ -17,11 +17,14 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { RippleModule } from 'primeng/ripple';
 import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
+import { TooltipModule } from 'primeng/tooltip';
 import { showError, showSuccess } from '../../../../../utils/notifications';
-import { CashflowService } from '../../../../finance/cash-movements/services/cash-movements.service';
 import { SafeUrlPipe } from '../../../../finance/cash-movements/pipes/safe-url.pipe';
+import { CashflowService } from '../../../../finance/cash-movements/services/cash-movements.service';
+import { VoucherDropzoneComponent } from '../../../../shared/components/voucher-dropzone/voucher-dropzone.component';
 import type {
   PurchaseDetail,
   PurchaseLineRow,
@@ -48,6 +51,9 @@ import { PurchaseService } from '../../services/purchase.service';
     DialogModule,
     RippleModule,
     SafeUrlPipe,
+    TagModule,
+    TooltipModule,
+    VoucherDropzoneComponent,
   ],
   templateUrl: './purchase-detail.component.html',
   styleUrl: './purchase-detail.component.scss',
@@ -62,7 +68,16 @@ export class PurchaseDetailComponent implements OnInit {
   previewUrl = signal('');
   isPdf = signal(false);
   previewLoading = signal(false);
+  previewItems: string[] = [];
+  previewIndex = 0;
   private previewObjectUrl: string | null = null;
+
+  selectedVoucherFiles: File[] = [];
+  savingVouchers = signal(false);
+
+  @ViewChild('voucherDropzone') voucherDropzone?: VoucherDropzoneComponent;
+
+  readonly maxVouchers = 10;
 
   headerForm = this.fb.group({
     documentNote: [''],
@@ -302,13 +317,96 @@ export class PurchaseDetailComponent implements OnInit {
     return this.purchase?.linkedPayment ?? null;
   }
 
-  showLinkedVoucher(): void {
-    const path = this.linkedPayment()?.voucherPath;
-    if (!path) {
+  linkedVoucherPaths(): string[] {
+    const payment = this.linkedPayment();
+    if (!payment) {
+      return [];
+    }
+    if (payment.voucherPaths?.length) {
+      return payment.voucherPaths;
+    }
+    return payment.voucherPath ? [payment.voucherPath] : [];
+  }
+
+  canAddVouchers(): boolean {
+    return (
+      this.purchase?.status === 'ACTIVE' &&
+      this.linkedVoucherPaths().length < this.maxVouchers
+    );
+  }
+
+  remainingVoucherSlots(): number {
+    return Math.max(0, this.maxVouchers - this.linkedVoucherPaths().length);
+  }
+
+  onDropzoneFiles(files: File[]): void {
+    const slots = this.remainingVoucherSlots();
+    this.selectedVoucherFiles = slots > 0 ? files.slice(0, slots) : [];
+  }
+
+  saveVouchers(): void {
+    if (!this.purchase || !this.canAddVouchers()) {
+      return;
+    }
+    if (this.selectedVoucherFiles.length === 0) {
+      showError(this.messageService, 'Selecciona al menos un comprobante.');
       return;
     }
 
+    this.savingVouchers.set(true);
+    this.purchaseApi
+      .addVouchers(this.purchase.id, this.selectedVoucherFiles)
+      .subscribe({
+        next: () => {
+          this.savingVouchers.set(false);
+          this.selectedVoucherFiles = [];
+          this.voucherDropzone?.clear();
+          showSuccess(this.messageService, 'Comprobantes agregados.');
+          this.loadPurchase(this.purchase!.id);
+        },
+        error: err => {
+          this.savingVouchers.set(false);
+          const msg =
+            err?.error?.message ?? 'No se pudieron agregar los comprobantes.';
+          showError(this.messageService, String(msg));
+        },
+      });
+  }
+
+  showVoucher(paths: string | string[]): void {
+    const items = (Array.isArray(paths) ? paths : [paths]).filter(Boolean);
+    this.previewItems = items;
+    this.previewIndex = 0;
+    if (!this.previewItems.length) {
+      return;
+    }
+    this.loadPreviewAt(0);
+  }
+
+  showLinkedVoucher(): void {
+    const paths = this.linkedVoucherPaths();
+    if (!paths.length) {
+      return;
+    }
+    this.showVoucher(paths);
+  }
+
+  prevPreview(): void {
+    if (this.previewIndex > 0) {
+      this.loadPreviewAt(this.previewIndex - 1);
+    }
+  }
+
+  nextPreview(): void {
+    if (this.previewIndex < this.previewItems.length - 1) {
+      this.loadPreviewAt(this.previewIndex + 1);
+    }
+  }
+
+  private loadPreviewAt(index: number): void {
+    const path = this.previewItems[index];
     this.revokePreviewUrl();
+    this.previewIndex = index;
     this.isPdf.set(path.toLowerCase().endsWith('.pdf'));
     this.displayPreview.set(true);
     this.previewLoading.set(true);
