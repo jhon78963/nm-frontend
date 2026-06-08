@@ -36,7 +36,7 @@
     "dompurify": "^3.4.7",
     "ngx-color": "^9.0.0",
     "ngx-color-picker": "^17.0.0",
-    "primeflex": "^3.3.1",
+    "primeflex": "^4.0.0",
     "primeicons": "^7.0.0",
     "primeng": "^17.15.0",
     "rxjs": "~7.8.2",
