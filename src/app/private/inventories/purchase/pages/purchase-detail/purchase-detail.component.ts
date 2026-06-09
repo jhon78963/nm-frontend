@@ -1,13 +1,20 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal, ViewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormArray,
   FormBuilder,
   FormGroup,
+  FormsModule,
   ReactiveFormsModule,
 } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import {
+  AutoCompleteCompleteEvent,
+  AutoCompleteModule,
+  AutoCompleteSelectEvent,
+} from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { CalendarModule } from 'primeng/calendar';
 import { CardModule } from 'primeng/card';
@@ -21,7 +28,9 @@ import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
+import { of, switchMap, tap } from 'rxjs';
 import { showError, showSuccess } from '../../../../../utils/notifications';
+import { Vendor } from '../../../../directory/vendors/models/vendors.model';
 import { SafeUrlPipe } from '../../../../finance/cash-movements/pipes/safe-url.pipe';
 import { CashflowService } from '../../../../finance/cash-movements/services/cash-movements.service';
 import { VoucherDropzoneComponent } from '../../../../shared/components/voucher-dropzone/voucher-dropzone.component';
@@ -30,6 +39,7 @@ import type {
   PurchaseLineRow,
   PurchaseLinkedPayment,
 } from '../../models/purchases-list.model';
+import { PurchaseCatalogService } from '../../services/purchase-catalog.service';
 import { PurchaseService } from '../../services/purchase.service';
 
 @Component({
@@ -37,8 +47,10 @@ import { PurchaseService } from '../../services/purchase.service';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     RouterLink,
     ReactiveFormsModule,
+    AutoCompleteModule,
     ToolbarModule,
     CardModule,
     ButtonModule,
@@ -60,9 +72,15 @@ import { PurchaseService } from '../../services/purchase.service';
   providers: [ConfirmationService, MessageService],
 })
 export class PurchaseDetailComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+
   purchase: PurchaseDetail | null = null;
   loading = true;
   savingLineId = new Set<number>();
+  savingHeader = signal(false);
+  filteredVendors: Vendor[] = [];
+  /** Si el usuario eligió proveedor de la lista: al editar el texto se limpia `vendorId`. */
+  private supplierNameLockedForVendorId: string | null = null;
 
   displayPreview = signal(false);
   previewUrl = signal('');
@@ -80,6 +98,8 @@ export class PurchaseDetailComponent implements OnInit {
   readonly maxVouchers = 10;
 
   headerForm = this.fb.group({
+    supplierName: ['', { validators: [] }],
+    vendorId: [null as number | null],
     documentNote: [''],
     registeredAt: [null as Date | null],
   });
@@ -92,6 +112,7 @@ export class PurchaseDetailComponent implements OnInit {
     private readonly router: Router,
     private readonly fb: FormBuilder,
     private readonly purchaseApi: PurchaseService,
+    private readonly catalog: PurchaseCatalogService,
     private readonly cashflowService: CashflowService,
     private readonly messageService: MessageService,
     private readonly confirmationService: ConfirmationService,
@@ -104,6 +125,17 @@ export class PurchaseDetailComponent implements OnInit {
       return;
     }
     this.loadPurchase(id);
+
+    this.headerForm
+      .get('supplierName')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(val => {
+        const lock = this.supplierNameLockedForVendorId;
+        if (lock != null && String(val ?? '').trim() !== lock) {
+          this.headerForm.patchValue({ vendorId: null }, { emitEvent: false });
+          this.supplierNameLockedForVendorId = null;
+        }
+      });
   }
 
   private loadPurchase(id: number): void {
@@ -122,7 +154,11 @@ export class PurchaseDetailComponent implements OnInit {
 
   private applyPurchase(p: PurchaseDetail): void {
     this.purchase = p;
+    this.supplierNameLockedForVendorId =
+      p.vendorId != null && p.vendorId > 0 ? String(p.supplierName ?? '').trim() : null;
     this.headerForm.patchValue({
+      supplierName: p.supplierName ?? '',
+      vendorId: p.vendorId ?? null,
       documentNote: p.documentNote ?? '',
       registeredAt: p.registeredAt
         ? new Date(p.registeredAt + 'T12:00:00')
@@ -192,23 +228,102 @@ export class PurchaseDetailComponent implements OnInit {
       .join(', ');
   }
 
+  searchVendors(ev: AutoCompleteCompleteEvent): void {
+    const q = (ev.query ?? '').trim();
+    if (q.length < 2) {
+      this.filteredVendors = [];
+      return;
+    }
+    this.catalog
+      .searchVendors(q, 20)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: rows => {
+          this.filteredVendors = rows ?? [];
+        },
+      });
+  }
+
+  onSupplierSelect(ev: AutoCompleteSelectEvent): void {
+    const v = ev.value as Vendor | string | null | undefined;
+    if (v && typeof v === 'object' && 'name' in v) {
+      const row = v as Vendor & { id?: number };
+      const id = Number(row.id);
+      const nm = String(row.name ?? '').trim();
+      if (Number.isFinite(id) && id > 0) {
+        this.headerForm.patchValue({ supplierName: nm, vendorId: id });
+        this.supplierNameLockedForVendorId = nm;
+      } else {
+        this.headerForm.patchValue({ supplierName: nm, vendorId: null });
+        this.supplierNameLockedForVendorId = null;
+      }
+    }
+  }
+
   saveHeader(): void {
     if (!this.purchase || this.purchase.status !== 'ACTIVE') {
       return;
     }
-    const v = this.headerForm.getRawValue();
-    const reg =
-      v.registeredAt instanceof Date
-        ? v.registeredAt.toISOString().slice(0, 10)
-        : null;
-    this.purchaseApi
-      .patchHeader(this.purchase.id, {
-        documentNote: v.documentNote?.trim() || null,
-        registeredAt: reg,
-      })
+
+    const supplierTrim = String(this.headerForm.value.supplierName ?? '').trim();
+    if (!supplierTrim) {
+      showError(this.messageService, 'Indica el nombre del proveedor.');
+      return;
+    }
+
+    this.savingHeader.set(true);
+
+    const existingVid = this.headerForm.getRawValue().vendorId;
+    of(null)
+      .pipe(
+        switchMap(() => {
+          if (existingVid != null && Number(existingVid) > 0) {
+            return of(void 0);
+          }
+          return this.catalog.resolveOrCreateVendor(supplierTrim).pipe(
+            tap(vendor => {
+              const nm = String(vendor.name ?? supplierTrim).trim();
+              this.headerForm.patchValue(
+                { vendorId: vendor.id, supplierName: nm },
+                { emitEvent: false },
+              );
+              this.supplierNameLockedForVendorId = nm;
+            }),
+          );
+        }),
+        switchMap(() => {
+          const raw = this.headerForm.getRawValue();
+          const reg =
+            raw.registeredAt instanceof Date
+              ? raw.registeredAt.toISOString().slice(0, 10)
+              : null;
+          return this.purchaseApi.patchHeader(this.purchase!.id, {
+            supplierName: String(raw.supplierName ?? '').trim(),
+            vendorId:
+              raw.vendorId != null && Number(raw.vendorId) > 0
+                ? Number(raw.vendorId)
+                : null,
+            documentNote: raw.documentNote?.trim() || null,
+            registeredAt: reg,
+          });
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe({
-        next: () => showSuccess(this.messageService, 'Datos guardados.'),
-        error: () => showError(this.messageService, 'No se pudo guardar.'),
+        next: () => {
+          this.savingHeader.set(false);
+          showSuccess(this.messageService, 'Datos guardados.');
+          this.loadPurchase(this.purchase!.id);
+        },
+        error: (err: unknown) => {
+          this.savingHeader.set(false);
+          const e = err as { error?: { message?: string; errors?: Record<string, string[]> } };
+          const msg =
+            e?.error?.message ??
+            e?.error?.errors?.['supplierName']?.[0] ??
+            'No se pudo guardar.';
+          showError(this.messageService, String(msg));
+        },
       });
   }
 

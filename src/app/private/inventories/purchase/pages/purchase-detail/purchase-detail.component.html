@@ -144,8 +144,38 @@
       }
     </div>
     <div class="col-12 lg:col-8">
-      <p-card header="Nota / fecha (solo compras activas)">
+      <p-card header="Cabecera (solo compras activas)">
         <form [formGroup]="headerForm" class="flex flex-column gap-3">
+          <div class="flex flex-column gap-2">
+            <label class="text-sm font-medium" for="supplierName"
+              >Proveedor</label
+            >
+            <p-autoComplete
+              inputId="supplierName"
+              formControlName="supplierName"
+              [suggestions]="filteredVendors"
+              (completeMethod)="searchVendors($event)"
+              field="name"
+              [forceSelection]="false"
+              [dropdown]="true"
+              placeholder="Buscar proveedor o escribir nombre"
+              styleClass="w-full"
+              inputStyleClass="w-full"
+              (onSelect)="onSupplierSelect($event)">
+              <ng-template let-v pTemplate="item">
+                <div class="flex flex-column">
+                  <span class="font-medium">{{ v.name }}</span>
+                  @if (v.phone) {
+                    <small class="text-600">{{ v.phone }}</small>
+                  }
+                </div>
+              </ng-template>
+            </p-autoComplete>
+            <small class="text-600">
+              Elegí de la lista o escribí el nombre: si no existe en el
+              directorio, se creará al guardar.
+            </small>
+          </div>
           <div class="flex flex-column gap-2">
             <label class="text-sm font-medium" for="docNote"
               >Nota de documento</label
@@ -174,6 +204,7 @@
               type="button"
               label="Guardar cambios"
               icon="pi pi-save"
+              [loading]="savingHeader()"
               (click)="saveHeader()"></button>
           }
         </form>

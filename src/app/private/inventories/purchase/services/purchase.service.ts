@@ -73,7 +73,12 @@ export class PurchaseService {
 
   patchHeader(
     id: number,
-    body: { documentNote?: string | null; registeredAt?: string | null },
+    body: {
+      documentNote?: string | null;
+      registeredAt?: string | null;
+      supplierName?: string;
+      vendorId?: number | null;
+    },
   ): Observable<{ message: string }> {
     return this.api.patch<{ message: string }>(`${this.basePath}/${id}`, body);
   }
