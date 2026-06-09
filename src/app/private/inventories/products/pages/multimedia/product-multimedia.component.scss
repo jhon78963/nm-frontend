@@ -1,0 +1,21 @@
+.product-multimedia {
+  .product-thumb,
+  .thumb-placeholder {
+    width: 3rem;
+    height: 3rem;
+    object-fit: cover;
+  }
+
+  .thumb-placeholder {
+    background: var(--surface-ground);
+    border: 1px solid var(--surface-border);
+  }
+
+  .row-selected {
+    background: var(--primary-50, #f0f7ff);
+  }
+
+  .selected-product-bar {
+    border: 1px solid var(--surface-border);
+  }
+}

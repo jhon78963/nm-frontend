@@ -17,26 +17,29 @@ import { TooltipModule } from 'primeng/tooltip';
   template: `
     <!-- Drop zone -->
     <div
-      class="voucher-dropzone border-2 border-dashed border-round-xl p-3 text-center cursor-pointer transition-colors transition-duration-150"
+      class="voucher-dropzone border-2 border-dashed border-round-xl p-3 text-center transition-colors transition-duration-150"
       [class.drag-over]="isDragOver"
+      [class.cursor-pointer]="!disabled"
+      [class.opacity-60]="disabled"
       (dragover)="onDragOver($event)"
       (dragleave)="onDragLeave()"
       (drop)="onDrop($event)"
-      (click)="fileInput.click()">
+      (click)="!disabled && fileInput.click()">
       <i class="pi pi-cloud-upload text-3xl text-400 mb-2 block"></i>
       <p class="m-0 text-600 text-sm">
-        Arrastra aquí tus comprobantes o
+        Arrastra aquí tus {{ subjectLabel }} o
         <span class="text-primary font-semibold">selecciona archivos</span>
       </p>
       <p class="m-0 mt-1 text-400 text-xs">
-        PDF o imagen · máx. {{ maxFileSizeMb }} MB c/u · hasta
+        {{ formatsHint }} · máx. {{ maxFileSizeMb }} MB c/u · hasta
         {{ maxFiles }} archivos
       </p>
       <input
         #fileInput
         type="file"
-        [multiple]="true"
+        [multiple]="multiple"
         [accept]="accept"
+        [disabled]="disabled"
         style="display:none"
         (change)="onFileInputChange($event)" />
     </div>
@@ -94,6 +97,10 @@ export class VoucherDropzoneComponent implements OnDestroy {
   @Input() maxFiles = 10;
   @Input() maxFileSizeMb = 5;
   @Input() accept = 'image/*,application/pdf';
+  @Input() multiple = true;
+  @Input() disabled = false;
+  @Input() subjectLabel = 'comprobantes';
+  @Input() formatsHint = 'PDF o imagen';
 
   /** Los archivos seleccionados actualmente */
   @Output() filesChange = new EventEmitter<File[]>();
@@ -106,6 +113,9 @@ export class VoucherDropzoneComponent implements OnDestroy {
   }
 
   onDragOver(event: DragEvent): void {
+    if (this.disabled) {
+      return;
+    }
     event.preventDefault();
     this.isDragOver = true;
   }
@@ -115,6 +125,9 @@ export class VoucherDropzoneComponent implements OnDestroy {
   }
 
   onDrop(event: DragEvent): void {
+    if (this.disabled) {
+      return;
+    }
     event.preventDefault();
     this.isDragOver = false;
     const items = event.dataTransfer?.files;

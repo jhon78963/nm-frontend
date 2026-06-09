@@ -1,0 +1,114 @@
+<div class="card product-multimedia">
+  <div class="flex flex-column gap-2 mb-4">
+    <h2 class="m-0 text-xl font-semibold">Multimedia de productos</h2>
+    <p class="m-0 text-600 text-sm">
+      Busca por nombre o código de barras, selecciona un producto y gestiona sus
+      imágenes para la tienda online.
+    </p>
+  </div>
+
+  <div
+    class="flex flex-column md:flex-row align-items-center justify-content-between gap-3 mb-3">
+    <div class="w-full md:w-5">
+      <app-input-search
+        class="w-full"
+        [formGroup]="formGroup"
+        controlName="search"
+        placeholder="Buscar por nombre o código de barras"
+        (clearFilter)="clearFilter()">
+      </app-input-search>
+    </div>
+    <div class="w-full md:w-auto flex justify-content-end">
+      <p-button
+        [outlined]="true"
+        severity="secondary"
+        pTooltip="Limpiar búsqueda"
+        tooltipPosition="top"
+        (click)="clearFilter()">
+        <i class="pi pi-filter-slash"></i>
+      </p-button>
+    </div>
+  </div>
+
+  <p-table
+    [value]="products"
+    [rowHover]="true"
+    styleClass="p-datatable-sm"
+    responsiveLayout="scroll">
+    <ng-template pTemplate="header">
+      <tr>
+        <th style="width: 4rem">#</th>
+        <th style="width: 5rem">Foto</th>
+        <th>Nombre</th>
+        <th>Código de barras</th>
+        <th style="width: 7rem">Imágenes</th>
+        <th style="width: 8rem">Acción</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-product>
+      <tr [class.row-selected]="isSelected(product)">
+        <td>{{ product.id }}</td>
+        <td>
+          <span
+            class="thumb-placeholder border-round flex align-items-center justify-content-center">
+            <i class="pi pi-image text-400"></i>
+          </span>
+        </td>
+        <td>{{ product.name }}</td>
+        <td>{{ product.barcode || '—' }}</td>
+        <td>
+          <p-tag
+            [value]="mediaCount(product).toString()"
+            [severity]="mediaCount(product) > 0 ? 'success' : 'warning'" />
+        </td>
+        <td>
+          <button
+            pButton
+            type="button"
+            [label]="isSelected(product) ? 'Cerrar' : 'Gestionar'"
+            [icon]="isSelected(product) ? 'pi pi-times' : 'pi pi-images'"
+            class="p-button-sm"
+            [outlined]="!isSelected(product)"
+            (click)="selectProduct(product)"></button>
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="6" class="text-center py-4 text-500">
+          No se encontraron productos con ese criterio.
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  <div class="flex justify-content-end mt-3">
+    <p-paginator
+      [rows]="limit"
+      [totalRecords]="total"
+      [first]="(page - 1) * limit"
+      [rowsPerPageOptions]="[10, 20, 50]"
+      (onPageChange)="onPageChange($event)" />
+  </div>
+
+  @if (selectedProduct) {
+    <div class="mt-4">
+      <div class="selected-product-bar flex align-items-center gap-2 mb-3 p-3 border-round surface-100">
+        <i class="pi pi-box text-primary"></i>
+        <div>
+          <div class="font-semibold">{{ selectedProduct.name }}</div>
+          <div class="text-sm text-600">
+            ID {{ selectedProduct.id }}
+            @if (selectedProduct.barcode) {
+              · Código {{ selectedProduct.barcode }}
+            }
+          </div>
+        </div>
+      </div>
+
+      <app-product-gallery [productId]="selectedProduct.id" />
+    </div>
+  }
+</div>
+
+<p-toast />

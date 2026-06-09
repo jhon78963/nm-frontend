@@ -1,0 +1,68 @@
+<p-toast />
+
+<section class="product-gallery surface-card border-round p-3">
+  <h3 class="text-lg font-semibold m-0 mb-3">Galería del producto</h3>
+
+  <app-voucher-dropzone
+    #mediaDropzone
+    [maxFiles]="maxFiles"
+    [maxFileSizeMb]="maxFileSizeMb"
+    [accept]="accept"
+    subjectLabel="imágenes"
+    formatsHint="JPEG, PNG o WebP"
+    [disabled]="dropzoneDisabled"
+    (filesChange)="onDropzoneFiles($event)" />
+
+  <button
+    pButton
+    type="button"
+    label="Subir imágenes"
+    icon="pi pi-upload"
+    class="w-full mt-2"
+    [loading]="isUploading"
+    [disabled]="!canUpload"
+    (click)="uploadPendingFiles()"></button>
+
+  @if (mediaItems.length === 0 && !isLoading) {
+    <p class="text-600 text-sm m-0 mt-3 text-center">
+      Este producto aún no tiene imágenes. Hasta que subas al menos una,
+      permanecerá en borrador en WooCommerce.
+    </p>
+  }
+
+  @if (isLoading) {
+    <div class="flex justify-content-center py-5">
+      <p-progressSpinner strokeWidth="4" styleClass="w-3rem h-3rem" />
+    </div>
+  }
+
+  @if (!isLoading && mediaItems.length > 0) {
+    <div class="grid mt-3">
+      @for (item of mediaItems; track item.id) {
+        <div class="col-12 sm:col-6 md:col-4 lg:col-3">
+          <div
+            class="gallery-card border-1 border-round surface-border overflow-hidden relative">
+            <img
+              [src]="displayUrl(item.id) ?? ''"
+              [alt]="item.fileName ?? 'Imagen del producto'"
+              class="gallery-image w-full block"
+              loading="lazy" />
+
+            <button
+              pButton
+              type="button"
+              icon="pi pi-trash"
+              class="delete-btn p-button-rounded p-button-danger p-button-sm"
+              pTooltip="Eliminar imagen"
+              tooltipPosition="top"
+              [loading]="isDeletingItem(item.id)"
+              [disabled]="
+                isUploading || (isDeleting && !isDeletingItem(item.id))
+              "
+              (click)="deleteImage(item.id)"></button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>

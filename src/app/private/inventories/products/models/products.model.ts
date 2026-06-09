@@ -1,4 +1,6 @@
 /** Saldo desde `inventory_balances` (API ProductResource / tallas). */
+import { ProductMediaItem } from './product-media.model';
+
 export interface ProductVariantInventory {
   available_quantity: number;
   warehouse_id: number;
@@ -45,6 +47,9 @@ export interface Product {
   cashDiscount: number;
   warehouseId: number;
   inventory?: ProductVariantInventory;
+  thumbnail?: string | null;
+  gallery?: string[];
+  media?: ProductMediaItem[];
 }
 
 export interface Paginate {

@@ -1,0 +1,18 @@
+.product-gallery {
+  .gallery-card {
+    aspect-ratio: 1 / 1;
+    background: var(--surface-ground);
+  }
+
+  .gallery-image {
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .delete-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+}

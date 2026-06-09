@@ -127,6 +127,19 @@ export class ProductsService {
     return this.apiService.get(`products/${id}`);
   }
 
+  searchProducts(
+    limit = 10,
+    page = 1,
+    search = '',
+  ): Observable<ProductListResponse> {
+    let url = `products?limit=${limit}&page=${page}`;
+    const term = search.trim();
+    if (term) {
+      url += `&search=${encodeURIComponent(term)}`;
+    }
+    return this.apiService.get<ProductListResponse>(url);
+  }
+
   getHistory(id: number): Observable<any> {
     return this.apiService.get(`products/${id}/history`);
   }

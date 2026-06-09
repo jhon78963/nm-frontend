@@ -62,6 +62,19 @@ const routes: Routes = [
       import('./colors/colors.module').then(m => m.ColorsModule),
   },
   {
+    path: 'multimedia',
+    title: 'Multimedia',
+    canActivate: [permissionGuard],
+    data: {
+      breadcrumb: 'Multimedia',
+      permission: 'product.update',
+    },
+    loadComponent: () =>
+      import('./products/pages/multimedia/product-multimedia.component').then(
+        m => m.ProductMultimediaComponent,
+      ),
+  },
+  {
     path: 'purchase',
     title: 'Compras',
     canActivate: [permissionGuard],
