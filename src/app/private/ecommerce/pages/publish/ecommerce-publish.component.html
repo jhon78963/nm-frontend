@@ -2,86 +2,227 @@
   <div class="flex flex-column gap-2 mb-4">
     <h2 class="m-0 text-xl font-semibold">Publicar productos en WordPress</h2>
     <p class="m-0 text-600 text-sm">
-      Selecciona un producto de tu almacén, configura oferta y estado, sube
-      imágenes y sincronízalo con WooCommerce.
+      Busca un producto del almacén o crea uno nuevo con tallas y colores,
+      configura oferta, sube imágenes y sincroniza con WooCommerce.
     </p>
   </div>
 
-  <div
-    class="flex flex-column md:flex-row align-items-center justify-content-between gap-3 mb-3">
-    <div class="w-full md:w-5">
-      <app-input-search
-        class="w-full"
-        [formGroup]="searchForm"
-        controlName="search"
-        placeholder="Buscar por nombre o código de barras"
-        (clearFilter)="clearFilter()" />
-    </div>
-    <div class="w-full md:w-auto flex justify-content-end">
-      <p-button
-        [outlined]="true"
-        severity="secondary"
-        pTooltip="Limpiar búsqueda"
-        tooltipPosition="top"
-        (click)="clearFilter()">
-        <i class="pi pi-filter-slash"></i>
-      </p-button>
-    </div>
-  </div>
+  <p-selectButton
+    class="mb-4"
+    [options]="viewModeOptions"
+    [(ngModel)]="viewMode"
+    optionLabel="label"
+    optionValue="value"
+    (ngModelChange)="onViewModeChange($event)" />
 
-  <p-table
-    [value]="products"
-    [rowHover]="true"
-    styleClass="p-datatable-sm"
-    responsiveLayout="scroll">
-    <ng-template pTemplate="header">
-      <tr>
-        <th style="width: 4rem">#</th>
-        <th>Nombre</th>
-        <th>Código</th>
-        <th style="width: 7rem">Imágenes</th>
-        <th style="width: 8rem">Acción</th>
-      </tr>
-    </ng-template>
-    <ng-template pTemplate="body" let-product>
-      <tr [class.row-selected]="isSelected(product)">
-        <td>{{ product.id }}</td>
-        <td>{{ product.name }}</td>
-        <td>{{ product.barcode || '—' }}</td>
-        <td>
-          <p-tag
-            [value]="mediaCountFor(product).toString()"
-            [severity]="mediaCountFor(product) > 0 ? 'success' : 'warning'" />
-        </td>
-        <td>
-          <button
-            pButton
-            type="button"
-            [label]="isSelected(product) ? 'Cerrar' : 'Configurar'"
-            [icon]="isSelected(product) ? 'pi pi-times' : 'pi pi-shop'"
-            class="p-button-sm"
-            [outlined]="!isSelected(product)"
-            (click)="selectProduct(product)"></button>
-        </td>
-      </tr>
-    </ng-template>
-    <ng-template pTemplate="emptymessage">
-      <tr>
-        <td colspan="5" class="text-center py-4 text-500">
-          No se encontraron productos.
-        </td>
-      </tr>
-    </ng-template>
-  </p-table>
+  @if (viewMode === 'search') {
+    <div
+      class="flex flex-column md:flex-row align-items-center justify-content-between gap-3 mb-3">
+      <div class="w-full md:w-5">
+        <app-input-search
+          class="w-full"
+          [formGroup]="searchForm"
+          controlName="search"
+          placeholder="Buscar por nombre o código de barras"
+          (clearFilter)="clearFilter()" />
+      </div>
+      <div class="w-full md:w-auto flex justify-content-end">
+        <p-button
+          [outlined]="true"
+          severity="secondary"
+          pTooltip="Limpiar búsqueda"
+          tooltipPosition="top"
+          (click)="clearFilter()">
+          <i class="pi pi-filter-slash"></i>
+        </p-button>
+      </div>
+    </div>
 
-  <div class="flex justify-content-end mt-3">
-    <p-paginator
-      [rows]="limit"
-      [totalRecords]="total"
-      [first]="(page - 1) * limit"
-      [rowsPerPageOptions]="[10, 20, 50]"
-      (onPageChange)="onPageChange($event)" />
-  </div>
+    <p-table
+      [value]="products"
+      [rowHover]="true"
+      styleClass="p-datatable-sm"
+      responsiveLayout="scroll">
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 4rem">#</th>
+          <th>Nombre</th>
+          <th>Código</th>
+          <th style="width: 7rem">Imágenes</th>
+          <th style="width: 8rem">Acción</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-product>
+        <tr [class.row-selected]="isSelected(product)">
+          <td>{{ product.id }}</td>
+          <td>{{ product.name }}</td>
+          <td>{{ product.barcode || '—' }}</td>
+          <td>
+            <p-tag
+              [value]="mediaCountFor(product).toString()"
+              [severity]="mediaCountFor(product) > 0 ? 'success' : 'warning'" />
+          </td>
+          <td>
+            <button
+              pButton
+              type="button"
+              [label]="isSelected(product) ? 'Cerrar' : 'Configurar'"
+              [icon]="isSelected(product) ? 'pi pi-times' : 'pi pi-shop'"
+              class="p-button-sm"
+              [outlined]="!isSelected(product)"
+              (click)="selectProduct(product)"></button>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="5" class="text-center py-4 text-500">
+            No se encontraron productos.
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+
+    <div class="flex justify-content-end mt-3">
+      <p-paginator
+        [rows]="limit"
+        [totalRecords]="total"
+        [first]="(page - 1) * limit"
+        [rowsPerPageOptions]="[10, 20, 50]"
+        (onPageChange)="onPageChange($event)" />
+    </div>
+  }
+
+  @if (viewMode === 'create') {
+    <form [formGroup]="createForm" class="create-panel border-round surface-100 p-3 mb-4">
+      <h3 class="text-lg font-semibold mt-0 mb-3">Nuevo producto</h3>
+
+      <div class="p-fluid p-formgrid grid">
+        <div class="field col-12 md:col-6">
+          <app-input-select
+            label="Género"
+            controlName="genderId"
+            placeholder="Seleccione género"
+            [options]="genders"
+            optionLabel="description"
+            optionValue="id" />
+        </div>
+        <div class="field col-12 md:col-6">
+          <app-input-select
+            label="Almacén"
+            controlName="warehouseId"
+            placeholder="Seleccione almacén"
+            [options]="warehouses"
+            optionLabel="name"
+            optionValue="id" />
+        </div>
+        <div class="field col-12 md:col-8">
+          <app-input-text
+            label="Nombre"
+            controlName="name"
+            placeholder="Nombre del producto" />
+        </div>
+        <div class="field col-12 md:col-4">
+          <app-input-text
+            label="Código de barras"
+            controlName="barcode"
+            placeholder="Opcional" />
+        </div>
+        <div class="field col-12">
+          <app-input-textarea
+            label="Descripción"
+            controlName="description"
+            placeholder="Descripción para la tienda (opcional)" />
+        </div>
+      </div>
+
+      <div class="flex align-items-center justify-content-between mb-2">
+        <h4 class="m-0 text-base font-semibold">Variantes (talla × color)</h4>
+        <button
+          pButton
+          type="button"
+          label="Agregar variante"
+          icon="pi pi-plus"
+          class="p-button-sm p-button-outlined"
+          (click)="addVariantRow()"></button>
+      </div>
+
+      <p class="text-600 text-sm mt-0 mb-3">
+        WooCommerce requiere al menos una combinación de talla y color con precio.
+      </p>
+
+      <div formArrayName="variants" class="flex flex-column gap-3">
+        @for (variant of variants.controls; track i; let i = $index) {
+          <div
+            [formGroupName]="i"
+            class="variant-row border-1 border-round surface-border p-3">
+            <div class="p-fluid p-formgrid grid">
+              <div class="field col-12 md:col-3">
+                <app-input-select
+                  label="Talla"
+                  controlName="sizeId"
+                  placeholder="Talla"
+                  [options]="catalogSizes"
+                  optionLabel="description"
+                  optionValue="id" />
+              </div>
+              <div class="field col-12 md:col-3">
+                <app-input-select
+                  label="Color"
+                  controlName="colorId"
+                  placeholder="Color"
+                  [options]="catalogColors"
+                  optionLabel="description"
+                  optionValue="id" />
+              </div>
+              <div class="field col-12 md:col-2">
+                <app-input-text
+                  label="Precio venta"
+                  controlName="salePrice"
+                  placeholder="0.00"
+                  pKeyFilter="num" />
+              </div>
+              <div class="field col-12 md:col-2">
+                <app-input-text
+                  label="Precio mín."
+                  controlName="minSalePrice"
+                  placeholder="Oferta"
+                  pKeyFilter="num" />
+              </div>
+              <div class="field col-12 md:col-2">
+                <app-input-text
+                  label="Stock"
+                  controlName="stock"
+                  placeholder="0"
+                  pKeyFilter="int" />
+              </div>
+            </div>
+            @if (variants.length > 1) {
+              <div class="flex justify-content-end">
+                <button
+                  pButton
+                  type="button"
+                  label="Quitar"
+                  icon="pi pi-trash"
+                  class="p-button-sm p-button-danger p-button-text"
+                  (click)="removeVariantRow(i)"></button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="flex justify-content-end mt-3">
+        <button
+          pButton
+          type="button"
+          label="Crear producto"
+          icon="pi pi-plus"
+          [loading]="isCreating"
+          (click)="createProduct()"></button>
+      </div>
+    </form>
+  }
 
   @if (selectedProduct) {
     <div class="mt-4 publish-panel border-round surface-100 p-3">

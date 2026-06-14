@@ -20,10 +20,10 @@ const routes: Routes = [
     path: 'products',
     title: 'Publicar productos',
     canActivate: [permissionGuard],
-    data: {
-      breadcrumb: 'Publicar productos',
-      permission: 'product.update',
-    },
+        data: {
+          breadcrumb: 'Publicar productos',
+          permissions: ['product.update', 'product.create'],
+        },
     loadComponent: () =>
       import('./pages/publish/ecommerce-publish.component').then(
         m => m.EcommercePublishComponent,

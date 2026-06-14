@@ -3,8 +3,10 @@ import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
+  FormArray,
   FormBuilder,
   FormGroup,
+  FormsModule,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
@@ -14,26 +16,70 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { KeyFilterModule } from 'primeng/keyfilter';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { RadioButtonModule } from 'primeng/radiobutton';
+import { SelectButtonModule } from 'primeng/selectbutton';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import {
+  concatMap,
   debounceTime,
   distinctUntilChanged,
   finalize,
+  forkJoin,
+  from,
+  map,
   switchMap,
   tap,
+  toArray,
 } from 'rxjs';
 
+import { Gender } from '../../../../models/gender.interface';
+import { Warehouse } from '../../../../models/warehouse.interface';
+import { ApiService } from '../../../../services/api.service';
+import { GendersService } from '../../../../services/genders.service';
 import { LoadingService } from '../../../../services/loading.service';
+import { WarehousesService } from '../../../../services/warehouse.service';
 import { SharedModule } from '../../../../shared/shared.module';
-import { showError } from '../../../../utils/notifications';
+import { showError, showSuccess } from '../../../../utils/notifications';
 import { notifyWooCommerceSyncResult } from '../../../../utils/woo-commerce-sync-feedback';
+import { ColorListResponse } from '../../../inventories/colors/models/colors.model';
 import { ProductGalleryComponent } from '../../../inventories/products/components/product-gallery/product-gallery.component';
-import { Product, ProductListResponse, ProductSave } from '../../../inventories/products/models/products.model';
+import { ProductSizeColorSave } from '../../../inventories/products/models/colors.interface';
+import {
+  Product,
+  ProductListResponse,
+  ProductSave,
+} from '../../../inventories/products/models/products.model';
+import { ProductSizeSave } from '../../../inventories/products/models/sizes.interface';
+import { ProductSizeColorsService } from '../../../inventories/products/services/productColors.service';
+import { ProductSizesService } from '../../../inventories/products/services/productSizes.service';
 import { ProductsService } from '../../../inventories/products/services/products.service';
-import { ProductWooCommerceService, ProductWooCommerceSyncResponse } from '../../services/product-woocommerce.service';
+import { SizeListResponse } from '../../../inventories/sizes/models/sizes.model';
+import {
+  ProductWooCommerceService,
+  ProductWooCommerceSyncResponse,
+} from '../../services/product-woocommerce.service';
+
+type ViewMode = 'search' | 'create';
+
+interface CatalogColor {
+  id: number;
+  description: string;
+}
+
+interface CatalogSize {
+  id: number;
+  description: string;
+}
+
+interface VariantFormValue {
+  sizeId: number | null;
+  colorId: number | null;
+  salePrice: string | number;
+  minSalePrice: string | number;
+  stock: number;
+}
 
 @Component({
   selector: 'app-ecommerce-publish',
@@ -41,10 +87,12 @@ import { ProductWooCommerceService, ProductWooCommerceSyncResponse } from '../..
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     SharedModule,
     ButtonModule,
     CheckboxModule,
     RadioButtonModule,
+    SelectButtonModule,
     TableModule,
     PaginatorModule,
     TagModule,
@@ -67,10 +115,31 @@ export class EcommercePublishComponent implements OnInit {
   searchTerm = '';
   selectedProduct: Product | null = null;
   isSaving = false;
+  isCreating = false;
   mediaCount = 0;
+
+  viewMode: ViewMode = 'search';
+  genders: Gender[] = [];
+  warehouses: Warehouse[] = [];
+  catalogSizes: CatalogSize[] = [];
+  catalogColors: CatalogColor[] = [];
+
+  readonly viewModeOptions = [
+    { label: 'Buscar en almacén', value: 'search' as ViewMode },
+    { label: 'Crear producto', value: 'create' as ViewMode },
+  ];
 
   searchForm = this.formBuilder.group({
     search: [''],
+  });
+
+  createForm: FormGroup = this.formBuilder.group({
+    name: ['', Validators.required],
+    barcode: [''],
+    description: [''],
+    genderId: [null as number | null, Validators.required],
+    warehouseId: [null as number | null, Validators.required],
+    variants: this.formBuilder.array([this.buildVariantGroup()]),
   });
 
   publishForm: FormGroup = this.formBuilder.group({
@@ -89,12 +158,18 @@ export class EcommercePublishComponent implements OnInit {
   constructor(
     private readonly formBuilder: FormBuilder,
     private readonly productsService: ProductsService,
+    private readonly productSizesService: ProductSizesService,
+    private readonly productSizeColorsService: ProductSizeColorsService,
     private readonly productWooCommerceService: ProductWooCommerceService,
+    private readonly gendersService: GendersService,
+    private readonly warehousesService: WarehousesService,
+    private readonly apiService: ApiService,
     private readonly loadingService: LoadingService,
     private readonly messageService: MessageService,
   ) {}
 
   ngOnInit(): void {
+    this.loadCatalogs();
     this.loadProducts();
 
     this.searchForm
@@ -110,6 +185,38 @@ export class EcommercePublishComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
+  }
+
+  get variants(): FormArray {
+    return this.createForm.get('variants') as FormArray;
+  }
+
+  buildVariantGroup(): FormGroup {
+    return this.formBuilder.group({
+      sizeId: [null as number | null, Validators.required],
+      colorId: [null as number | null, Validators.required],
+      salePrice: ['', Validators.required],
+      minSalePrice: [''],
+      stock: [0],
+    });
+  }
+
+  addVariantRow(): void {
+    this.variants.push(this.buildVariantGroup());
+  }
+
+  removeVariantRow(index: number): void {
+    if (this.variants.length <= 1) {
+      return;
+    }
+    this.variants.removeAt(index);
+  }
+
+  onViewModeChange(mode: ViewMode): void {
+    this.viewMode = mode;
+    if (mode === 'create') {
+      this.selectedProduct = null;
+    }
   }
 
   clearFilter(): void {
@@ -131,6 +238,7 @@ export class EcommercePublishComponent implements OnInit {
       return;
     }
 
+    this.viewMode = 'search';
     this.selectedProduct = product;
     this.mediaCount = product.media?.length ?? 0;
     this.loadProductDetails(product.id);
@@ -146,6 +254,70 @@ export class EcommercePublishComponent implements OnInit {
 
   onMediaCountChange(count: number): void {
     this.mediaCount = count;
+  }
+
+  createProduct(): void {
+    if (this.createForm.invalid || this.isCreating) {
+      this.createForm.markAllAsTouched();
+      return;
+    }
+
+    this.isCreating = true;
+    const raw = this.createForm.getRawValue();
+    const variants = (raw.variants ?? []) as VariantFormValue[];
+
+    this.productsService
+      .create(
+        new ProductSave({
+          name: raw.name,
+          barcode: raw.barcode,
+          description: raw.description,
+          genderId: raw.genderId,
+          warehouseId: raw.warehouseId,
+          status: 'AVAILABLE',
+        }),
+      )
+      .pipe(
+        switchMap(response => {
+          const productId = response.productId;
+          return from(variants).pipe(
+            concatMap(variant =>
+              this.attachVariant(productId, variant, String(raw.barcode ?? '')),
+            ),
+            toArray(),
+            map(() => productId),
+          );
+        }),
+        switchMap(productId => this.productsService.getOne(productId)),
+        finalize(() => {
+          this.isCreating = false;
+        }),
+      )
+      .subscribe({
+        next: (product: Product) => {
+          showSuccess(
+            this.messageService,
+            'Producto creado. Completa la publicación en WordPress abajo.',
+          );
+          this.viewMode = 'search';
+          this.selectedProduct = product;
+          this.mediaCount = product.media?.length ?? 0;
+          this.publishForm.patchValue({
+            isFeatured: false,
+            isOnSale: false,
+            percentageDiscount: '',
+            cashDiscount: '',
+            wooStatus: 'draft',
+          });
+          this.loadProducts();
+        },
+        error: (err: { error?: { message?: string } }) => {
+          showError(
+            this.messageService,
+            err?.error?.message ?? 'No se pudo crear el producto.',
+          );
+        },
+      });
   }
 
   saveAndSync(): void {
@@ -204,6 +376,80 @@ export class EcommercePublishComponent implements OnInit {
           );
         },
       });
+  }
+
+  private attachVariant(
+    productId: number,
+    variant: VariantFormValue,
+    productBarcode: string,
+  ) {
+    const sizeId = Number(variant.sizeId);
+    const colorId = Number(variant.colorId);
+    const salePrice = Number(variant.salePrice);
+    const minSalePrice = Number(variant.minSalePrice || variant.salePrice);
+    const stock = Number(variant.stock ?? 0);
+
+    const sizePayload: ProductSizeSave = {
+      barcode: productBarcode ? Number(productBarcode) || 0 : 0,
+      stock,
+      purchasePrice: 0,
+      salePrice,
+      minSalePrice,
+    };
+
+    const colorPayload: ProductSizeColorSave = { stock };
+
+    return this.productSizesService.add(productId, sizeId, sizePayload).pipe(
+      switchMap(() =>
+        this.apiService.get<{ productSizeId: number }>(
+          `products/${productId}/size/${sizeId}`,
+        ),
+      ),
+      switchMap(res =>
+        this.productSizeColorsService.add(
+          res.productSizeId,
+          colorId,
+          colorPayload,
+        ),
+      ),
+    );
+  }
+
+  private loadCatalogs(): void {
+    forkJoin({
+      genders: this.gendersService.getAll(),
+      warehouses: this.warehousesService.getAll(),
+      sizes: this.apiService.get<SizeListResponse>('sizes?limit=500&page=1'),
+      colors: this.apiService.get<ColorListResponse>('colors?limit=500&page=1'),
+    }).subscribe({
+      next: ({ genders, warehouses, sizes, colors }) => {
+        this.genders = genders;
+        this.warehouses = warehouses;
+        this.catalogSizes = (sizes.data ?? []).map(size => ({
+          id: size.id,
+          description: size.description,
+        }));
+        this.catalogColors = (colors.data ?? []).map(color => ({
+          id: color.id,
+          description: color.description,
+        }));
+
+        const defaultWarehouse =
+          warehouses.find(w => w.id === 1) ?? warehouses[0] ?? null;
+        const defaultGender = genders[0] ?? null;
+
+        this.createForm.patchValue({
+          warehouseId: defaultWarehouse?.id ?? null,
+          genderId: defaultGender?.id ?? null,
+        });
+      },
+      error: () => {
+        showError(
+          this.messageService,
+          'No se pudieron cargar catálogos de tallas, colores o almacenes.',
+        );
+      },
+    });
   }
 
   private loadProducts(): void {

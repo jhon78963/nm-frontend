@@ -127,7 +127,7 @@ export class AppMenuComponent implements OnInit {
           label: 'Publicar productos',
           icon: 'pi pi-fw pi-cloud-upload',
           routerLink: ['/ecommerce/products'],
-          permission: 'product.update',
+          permissions: ['product.update', 'product.create'],
         },
         {
           label: 'Multimedia',

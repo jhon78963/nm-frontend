@@ -3,7 +3,12 @@
     background: var(--primary-50, #f0f7ff);
   }
 
+.create-panel,
   .publish-panel {
     border: 1px solid var(--surface-border);
+  }
+
+  .variant-row {
+    background: var(--surface-card);
   }
 }
