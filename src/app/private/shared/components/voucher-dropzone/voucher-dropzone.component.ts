@@ -39,6 +39,7 @@ import { TooltipModule } from 'primeng/tooltip';
         type="file"
         [multiple]="multiple"
         [accept]="accept"
+        [attr.capture]="capture"
         [disabled]="disabled"
         style="display:none"
         (change)="onFileInputChange($event)" />
@@ -101,6 +102,8 @@ export class VoucherDropzoneComponent implements OnDestroy {
   @Input() disabled = false;
   @Input() subjectLabel = 'comprobantes';
   @Input() formatsHint = 'PDF o imagen';
+  /** Atributo HTML capture (p. ej. "environment" para cámara trasera en móvil). */
+  @Input() capture: string | null = null;
 
   /** Los archivos seleccionados actualmente */
   @Output() filesChange = new EventEmitter<File[]>();

@@ -49,10 +49,17 @@
       <tr [class.row-selected]="isSelected(product)">
         <td>{{ product.id }}</td>
         <td>
-          <span
-            class="thumb-placeholder border-round flex align-items-center justify-content-center">
-            <i class="pi pi-image text-400"></i>
-          </span>
+          @if (thumbUrl(product); as url) {
+            <img
+              [src]="url"
+              [alt]="product.name"
+              class="product-thumb border-round block" />
+          } @else {
+            <span
+              class="thumb-placeholder border-round flex align-items-center justify-content-center">
+              <i class="pi pi-image text-400"></i>
+            </span>
+          }
         </td>
         <td>{{ product.name }}</td>
         <td>{{ product.barcode || '—' }}</td>
@@ -106,7 +113,9 @@
         </div>
       </div>
 
-      <app-product-gallery [productId]="selectedProduct.id" />
+      <app-product-gallery
+        [productId]="selectedProduct.id"
+        (mediaCountChange)="onMediaCountChange($event)" />
     </div>
   }
 </div>

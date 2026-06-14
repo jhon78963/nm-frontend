@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { TableModule } from 'primeng/table';
@@ -12,6 +13,7 @@ import {
   debounceTime,
   distinctUntilChanged,
   finalize,
+  forkJoin,
   switchMap,
   tap,
 } from 'rxjs';
@@ -20,6 +22,7 @@ import { LoadingService } from '../../../../../services/loading.service';
 import { SharedModule } from '../../../../../shared/shared.module';
 import { ProductGalleryComponent } from '../../components/product-gallery/product-gallery.component';
 import { Product } from '../../models/products.model';
+import { ProductMediaService } from '../../services/product-media.service';
 import { ProductsService } from '../../services/products.service';
 
 @Component({
@@ -39,6 +42,7 @@ import { ProductsService } from '../../services/products.service';
   ],
   templateUrl: './product-multimedia.component.html',
   styleUrl: './product-multimedia.component.scss',
+  providers: [MessageService],
 })
 export class ProductMultimediaComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -49,6 +53,8 @@ export class ProductMultimediaComponent implements OnInit {
   page = 1;
   searchTerm = '';
   selectedProduct: Product | null = null;
+  thumbUrls = new Map<number, string>();
+  private mediaCountOverrides = new Map<number, number>();
 
   formGroup = new FormGroup({
     search: new FormControl<string>(''),
@@ -56,8 +62,11 @@ export class ProductMultimediaComponent implements OnInit {
 
   constructor(
     private readonly productsService: ProductsService,
+    private readonly productMediaService: ProductMediaService,
     private readonly loadingService: LoadingService,
-  ) {}
+  ) {
+    this.destroyRef.onDestroy(() => this.revokeThumbUrls());
+  }
 
   ngOnInit(): void {
     this.loadProducts();
@@ -100,7 +109,24 @@ export class ProductMultimediaComponent implements OnInit {
   }
 
   mediaCount(product: Product): number {
+    const override = this.mediaCountOverrides.get(product.id);
+    if (override !== undefined) {
+      return override;
+    }
+
     return product.media?.length ?? product.gallery?.length ?? 0;
+  }
+
+  thumbUrl(product: Product): string | null {
+    return this.thumbUrls.get(product.id) ?? null;
+  }
+
+  onMediaCountChange(count: number): void {
+    if (!this.selectedProduct) {
+      return;
+    }
+
+    this.mediaCountOverrides.set(this.selectedProduct.id, count);
   }
 
   private loadProducts(): void {
@@ -120,8 +146,41 @@ export class ProductMultimediaComponent implements OnInit {
             this.products.find(p => p.id === selectedId) ??
             this.selectedProduct;
         }
+
+        this.loadThumbnails(this.products);
       }),
       finalize(() => this.loadingService.sendLoadingState(false)),
     );
+  }
+
+  private loadThumbnails(products: Product[]): void {
+    this.revokeThumbUrls();
+
+    const withMedia = products.filter(
+      product => (product.media?.length ?? 0) > 0,
+    );
+
+    if (withMedia.length === 0) {
+      return;
+    }
+
+    forkJoin(
+      withMedia.map(product =>
+        this.productMediaService
+          .getPreviewBlob(product.id, product.media![0].id)
+          .pipe(
+            tap(blob =>
+              this.thumbUrls.set(product.id, URL.createObjectURL(blob)),
+            ),
+          ),
+      ),
+    ).subscribe();
+  }
+
+  private revokeThumbUrls(): void {
+    for (const url of this.thumbUrls.values()) {
+      URL.revokeObjectURL(url);
+    }
+    this.thumbUrls.clear();
   }
 }

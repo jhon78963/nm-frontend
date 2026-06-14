@@ -1,10 +1,12 @@
 import { CommonModule } from '@angular/common';
 import {
   Component,
+  EventEmitter,
   Input,
   OnChanges,
   OnDestroy,
   OnInit,
+  Output,
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
@@ -17,14 +19,12 @@ import { TooltipModule } from 'primeng/tooltip';
 import { concatMap, finalize, forkJoin, from, tap, toArray } from 'rxjs';
 
 import { VoucherDropzoneComponent } from '../../../../shared/components/voucher-dropzone/voucher-dropzone.component';
-import {
-  showError,
-  showSuccess,
-  showToastWarn,
-} from '../../../../../utils/notifications';
+import { showError } from '../../../../../utils/notifications';
+import { notifyWooCommerceSyncResult } from '../../../../../utils/woo-commerce-sync-feedback';
 import {
   ProductMediaItem,
   ProductMediaUploadResponse,
+  WooCommerceSyncResult,
 } from '../../models/product-media.model';
 import { ProductMediaService } from '../../services/product-media.service';
 import { ProductsService } from '../../services/products.service';
@@ -46,6 +46,7 @@ import { ProductsService } from '../../services/products.service';
 })
 export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
   @Input({ required: true }) productId!: number;
+  @Output() mediaCountChange = new EventEmitter<number>();
 
   @ViewChild('mediaDropzone') mediaDropzone?: VoucherDropzoneComponent;
 
@@ -60,6 +61,7 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
   readonly maxFileSizeMb = 5;
   readonly maxFiles = 10;
   readonly accept = 'image/jpeg,image/png,image/webp';
+  readonly cameraCapture = 'environment';
 
   constructor(
     private readonly productsService: ProductsService,
@@ -112,6 +114,7 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
         this.mediaItems = product.media ?? [];
         this.isLoading = false;
         this.loadDisplayUrls();
+        this.emitMediaCount();
       },
       error: () => {
         this.isLoading = false;
@@ -133,7 +136,7 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     this.isUploading = true;
-    let hadSyncDelay = false;
+    let worstSync: WooCommerceSyncResult | undefined;
     const uploaded: ProductMediaItem[] = [];
 
     from(this.pendingFiles)
@@ -141,9 +144,10 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
         concatMap(file =>
           this.productMediaService.uploadImage(this.productId, file).pipe(
             tap((response: HttpResponse<ProductMediaUploadResponse>) => {
-              if (response.status === 207) {
-                hadSyncDelay = true;
-              }
+              worstSync = this.mergeSyncResults(
+                worstSync,
+                response.body?.wooCommerceSync,
+              );
               if (response.body?.media) {
                 uploaded.push(response.body.media);
               }
@@ -161,6 +165,7 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
             const novel = uploaded.filter(m => !existingIds.has(m.id));
             this.mediaItems = [...this.mediaItems, ...novel];
             this.loadDisplayUrlsForItems(novel);
+            this.emitMediaCount();
           }
 
           if (uploaded.length === 0) {
@@ -168,19 +173,15 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
             return;
           }
 
-          if (hadSyncDelay) {
-            showToastWarn(
-              this.messageService,
-              'Imagen subida correctamente, pero hubo un retraso sincronizando con la tienda online.',
-            );
-          } else {
-            showSuccess(
-              this.messageService,
-              uploaded.length === 1
-                ? 'Imagen subida correctamente.'
-                : `${uploaded.length} imágenes subidas correctamente.`,
-            );
-          }
+          const baseMessage =
+            uploaded.length === 1
+              ? 'Imagen subida correctamente.'
+              : `${uploaded.length} imágenes subidas correctamente.`;
+          notifyWooCommerceSyncResult(
+            this.messageService,
+            worstSync,
+            baseMessage,
+          );
         }),
       )
       .subscribe({
@@ -205,20 +206,15 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
       next: response => {
         this.deletingMediaId = null;
 
-        if (response.status === 207) {
-          showToastWarn(
-            this.messageService,
-            'Imagen eliminada, pero hubo un retraso sincronizando con la tienda online.',
-          );
-        } else {
-          showSuccess(
-            this.messageService,
-            response.body?.message ?? 'Imagen eliminada correctamente.',
-          );
-        }
+        notifyWooCommerceSyncResult(
+          this.messageService,
+          response.body?.wooCommerceSync,
+          response.body?.message ?? 'Imagen eliminada correctamente.',
+        );
 
         this.revokeDisplayUrl(mediaId);
         this.mediaItems = this.mediaItems.filter(item => item.id !== mediaId);
+        this.emitMediaCount();
       },
       error: err => {
         this.deletingMediaId = null;
@@ -232,6 +228,41 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
 
   isDeletingItem(mediaId: number): boolean {
     return this.deletingMediaId === mediaId;
+  }
+
+  private emitMediaCount(): void {
+    this.mediaCountChange.emit(this.mediaItems.length);
+  }
+
+  private mergeSyncResults(
+    current: WooCommerceSyncResult | undefined,
+    next: WooCommerceSyncResult | undefined,
+  ): WooCommerceSyncResult | undefined {
+    if (!next) {
+      return current;
+    }
+    if (!current) {
+      return next;
+    }
+
+    const currentScore = this.syncSeverityScore(current);
+    const nextScore = this.syncSeverityScore(next);
+
+    return nextScore >= currentScore ? next : current;
+  }
+
+  private syncSeverityScore(sync: WooCommerceSyncResult): number {
+    if (!sync.attempted) {
+      return 3;
+    }
+    if (sync.errors > 0) {
+      return 2;
+    }
+    if (sync.products < 1) {
+      return 1;
+    }
+
+    return 0;
   }
 
   private loadDisplayUrls(): void {
