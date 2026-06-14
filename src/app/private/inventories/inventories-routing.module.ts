@@ -69,10 +69,8 @@ const routes: Routes = [
       breadcrumb: 'Multimedia',
       permission: 'product.update',
     },
-    loadComponent: () =>
-      import('./products/pages/multimedia/product-multimedia.component').then(
-        m => m.ProductMultimediaComponent,
-      ),
+    redirectTo: '/ecommerce/multimedia',
+    pathMatch: 'full',
   },
   {
     path: 'purchase',

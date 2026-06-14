@@ -117,10 +117,22 @@ export class AppMenuComponent implements OnInit {
           routerLink: ['/inventories/reconciliation'],
           permission: 'inventoryReconciliation.search',
         },
+      ],
+    },
+    {
+      label: 'Ecommerce',
+      icon: 'pi pi-shop',
+      items: [
+        {
+          label: 'Publicar productos',
+          icon: 'pi pi-fw pi-cloud-upload',
+          routerLink: ['/ecommerce/products'],
+          permission: 'product.update',
+        },
         {
           label: 'Multimedia',
           icon: 'pi pi-fw pi-images',
-          routerLink: ['/inventories/multimedia'],
+          routerLink: ['/ecommerce/multimedia'],
           permission: 'product.update',
         },
       ],

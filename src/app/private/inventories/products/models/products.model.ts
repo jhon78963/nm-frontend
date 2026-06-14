@@ -50,6 +50,13 @@ export interface Product {
   thumbnail?: string | null;
   gallery?: string[];
   media?: ProductMediaItem[];
+  isFeatured?: boolean;
+  isOnSale?: boolean;
+  wooStatus?: 'draft' | 'publish' | null;
+  wooCommerce?: {
+    productId: number | null;
+    lastSyncedAt: string | null;
+  };
 }
 
 export interface Paginate {
@@ -75,6 +82,9 @@ export class ProductSave {
   genderId: number;
   percentageDiscount: number;
   cashDiscount: number;
+  isFeatured?: boolean;
+  isOnSale?: boolean;
+  wooStatus?: 'draft' | 'publish' | null;
   warehouseId: number;
   constructor(product: Partial<Product>) {
     const num = (v: unknown): number => {
@@ -114,6 +124,15 @@ export class ProductSave {
     this.genderId = product.genderId ?? 0;
     this.percentageDiscount = num(product.percentageDiscount);
     this.cashDiscount = num(product.cashDiscount);
+    if ('isFeatured' in product) {
+      this.isFeatured = !!product.isFeatured;
+    }
+    if ('isOnSale' in product) {
+      this.isOnSale = !!product.isOnSale;
+    }
+    if ('wooStatus' in product && product.wooStatus) {
+      this.wooStatus = product.wooStatus;
+    }
     this.warehouseId = product.warehouseId ?? 0;
   }
 }

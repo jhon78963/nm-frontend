@@ -60,6 +60,19 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'ecommerce',
+        title: 'Ecommerce',
+        canActivate: [permissionGuard],
+        data: {
+          breadcrumb: 'Ecommerce',
+          permissions: ['product.update', 'product.getAll', 'product.get'],
+        },
+        loadChildren: () =>
+          import('./private/ecommerce/ecommerce.module').then(
+            m => m.EcommerceModule,
+          ),
+      },
+      {
         path: 'reports',
         title: 'Reportes',
         canActivate: [permissionGuard],
