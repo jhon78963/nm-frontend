@@ -22,6 +22,7 @@ import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import {
+  catchError,
   concatMap,
   debounceTime,
   distinctUntilChanged,
@@ -29,6 +30,7 @@ import {
   forkJoin,
   from,
   map,
+  of,
   switchMap,
   tap,
   toArray,
@@ -417,10 +419,14 @@ export class EcommercePublishComponent implements OnInit {
 
   private loadCatalogs(): void {
     forkJoin({
-      genders: this.gendersService.getAll(),
-      warehouses: this.warehousesService.getAll(),
-      sizes: this.apiService.get<SizeListResponse>('sizes?limit=500&page=1'),
-      colors: this.apiService.get<ColorListResponse>('colors?limit=500&page=1'),
+      genders: this.gendersService.getAll().pipe(catchError(() => of([] as Gender[]))),
+      warehouses: this.warehousesService.getAll().pipe(catchError(() => of([] as Warehouse[]))),
+      sizes: this.apiService
+        .get<SizeListResponse>('sizes?limit=200&page=1')
+        .pipe(catchError(() => of({ data: [], paginate: { total: 0, pages: 0 } }))),
+      colors: this.apiService
+        .get<ColorListResponse>('colors?limit=200&page=1')
+        .pipe(catchError(() => of({ data: [], paginate: { total: 0, pages: 0 } }))),
     }).subscribe({
       next: ({ genders, warehouses, sizes, colors }) => {
         this.genders = genders;
