@@ -275,8 +275,8 @@ export class CashflowService {
     data: any,
     files: File[] | File | null,
     currentDate: string,
-    category: 'ADMINISTRATIVE' | 'ACCUMULATED' = 'ADMINISTRATIVE',
-  ): Observable<any[]> {
+    category: 'ADMINISTRATIVE' | 'ACCUMULATED' | 'STORE' = 'ADMINISTRATIVE',
+  ): Observable<any[] | void> {
     const formData = new FormData();
 
     // Spoofing de método para que Laravel acepte archivos en PUT
@@ -300,10 +300,38 @@ export class CashflowService {
 
     return this.apiService.post(`${this.apiUrl}/${id}`, formData).pipe(
       switchMap(() => {
+        const resolvedCategory = data.category ?? category;
+
+        if (resolvedCategory === 'STORE') {
+          return this.loadDailyReport(currentDate);
+        }
+
+        const month = currentDate.substring(0, 7);
+        if (resolvedCategory === 'ACCUMULATED') {
+          return this.loadMonthlyAccumulatedExpenses(month).pipe(
+            map(() => undefined),
+          );
+        }
+        return this.loadMonthlyAdminExpenses(month);
+      }),
+    );
+  }
+
+  deleteMovement(
+    id: number,
+    currentDate: string,
+    category: 'ADMINISTRATIVE' | 'ACCUMULATED' | 'STORE' = 'ADMINISTRATIVE',
+  ): Observable<any[] | void> {
+    return this.apiService.delete(`${this.apiUrl}/${id}`).pipe(
+      switchMap(() => {
+        if (category === 'STORE') {
+          return this.loadDailyReport(currentDate);
+        }
+
         const month = currentDate.substring(0, 7);
         if (category === 'ACCUMULATED') {
           return this.loadMonthlyAccumulatedExpenses(month).pipe(
-            map(result => result.expenses),
+            map(() => undefined),
           );
         }
         return this.loadMonthlyAdminExpenses(month);

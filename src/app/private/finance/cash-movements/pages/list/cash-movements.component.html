@@ -1,4 +1,6 @@
 <div class="flex flex-column h-screen bg-blue-50 font-family relative">
+  <p-toast position="top-right" />
+  <p-confirmDialog />
   <div class="surface-card shadow-2 p-3 z-2 relative">
     <div
       class="flex flex-column md:flex-row justify-content-between align-items-center gap-2 md:gap-3">
@@ -104,12 +106,15 @@
             <th class="p-3 text-left">Descripción</th>
             <th class="p-3 text-center w-8rem">Método</th>
             <th class="p-3 text-right w-8rem">Monto</th>
+            @if (isAdmin()) {
+              <th class="p-3 text-center w-6rem">Acciones</th>
+            }
           </tr>
         </thead>
         <tbody class="text-700">
           <tr class="surface-50 border-bottom-1 border-100">
             <td
-              colspan="5"
+              [attr.colspan]="isAdmin() ? 6 : 5"
               class="p-2 pl-3 text-xs font-bold text-indigo-600 uppercase">
               <i class="pi pi-shopping-bag mr-2"></i> Ventas del Día
             </td>
@@ -138,7 +143,9 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="5" class="p-3 text-center text-500 text-xs italic">
+              <td
+                [attr.colspan]="isAdmin() ? 6 : 5"
+                class="p-3 text-center text-500 text-xs italic">
                 No hay ventas registradas
               </td>
             </tr>
@@ -146,7 +153,7 @@
 
           <tr class="surface-50 border-bottom-1 border-100">
             <td
-              colspan="5"
+              [attr.colspan]="isAdmin() ? 6 : 5"
               class="p-2 pl-3 text-xs font-bold text-green-600 uppercase">
               <i class="pi pi-plus-circle mr-2"></i> Otros Ingresos
             </td>
@@ -169,10 +176,32 @@
               <td class="p-3 text-right font-bold text-green-600">
                 + {{ item.amount | number: '1.2-2' }}
               </td>
+              @if (isAdmin()) {
+                <td class="p-3 text-center">
+                  <div class="flex justify-content-center gap-1">
+                    <button
+                      type="button"
+                      pButton
+                      icon="pi pi-pencil"
+                      class="p-button-text p-button-rounded p-button-sm"
+                      (click)="openModalForEdit(item, 'INCOME')"
+                      aria-label="Editar ingreso"></button>
+                    <button
+                      type="button"
+                      pButton
+                      icon="pi pi-trash"
+                      class="p-button-text p-button-rounded p-button-sm p-button-danger"
+                      (click)="confirmDeleteMovement(item, 'INCOME')"
+                      aria-label="Eliminar ingreso"></button>
+                  </div>
+                </td>
+              }
             </tr>
           } @empty {
             <tr>
-              <td colspan="5" class="p-3 text-center text-500 text-xs italic">
+              <td
+                [attr.colspan]="isAdmin() ? 6 : 5"
+                class="p-3 text-center text-500 text-xs italic">
                 No hay ingresos extra
               </td>
             </tr>
@@ -180,7 +209,7 @@
 
           <tr class="surface-50 border-bottom-1 border-100">
             <td
-              colspan="5"
+              [attr.colspan]="isAdmin() ? 6 : 5"
               class="p-2 pl-3 text-xs font-bold text-red-600 uppercase">
               <i class="pi pi-minus-circle mr-2"></i> Gastos
             </td>
@@ -203,10 +232,32 @@
               <td class="p-3 text-right font-bold text-red-600">
                 - {{ item.amount | number: '1.2-2' }}
               </td>
+              @if (isAdmin()) {
+                <td class="p-3 text-center">
+                  <div class="flex justify-content-center gap-1">
+                    <button
+                      type="button"
+                      pButton
+                      icon="pi pi-pencil"
+                      class="p-button-text p-button-rounded p-button-sm"
+                      (click)="openModalForEdit(item, 'EXPENSE')"
+                      aria-label="Editar gasto"></button>
+                    <button
+                      type="button"
+                      pButton
+                      icon="pi pi-trash"
+                      class="p-button-text p-button-rounded p-button-sm p-button-danger"
+                      (click)="confirmDeleteMovement(item, 'EXPENSE')"
+                      aria-label="Eliminar gasto"></button>
+                  </div>
+                </td>
+              }
             </tr>
           } @empty {
             <tr>
-              <td colspan="5" class="p-3 text-center text-500 text-xs italic">
+              <td
+                [attr.colspan]="isAdmin() ? 6 : 5"
+                class="p-3 text-center text-500 text-xs italic">
                 No hay gastos
               </td>
             </tr>
@@ -265,11 +316,12 @@
   [modal]="true"
   [draggable]="false"
   [resizable]="false"
-  [header]="modalType === 'INCOME' ? 'Registrar Ingreso' : 'Registrar Gasto'"
+  [header]="modalHeader"
   [style]="{ width: '95%', maxWidth: '400px' }"
-  styleClass="p-fluid">
+  styleClass="p-fluid"
+  (onHide)="closeModal()">
   <div class="flex flex-column gap-3 pt-2">
-    @if (modalType === 'EXPENSE') {
+    @if (modalType === 'EXPENSE' && !isEditing) {
       <span class="text-xs font-bold text-500 uppercase"
         >Gastos Recurrentes</span
       >
@@ -359,7 +411,7 @@
 
     <button
       pButton
-      [label]="modalType === 'INCOME' ? 'Guardar Ingreso' : 'Confirmar Gasto'"
+      [label]="modalSaveLabel"
       [class]="modalType === 'INCOME' ? 'p-button-success' : 'p-button-danger'"
       class="mt-2 font-bold py-3"
       [disabled]="!movementForm.amount || !movementForm.description"

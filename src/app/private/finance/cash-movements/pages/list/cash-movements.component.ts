@@ -9,16 +9,19 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { AuthService } from '../../../../../auth/services/auth.service';
 
 // PrimeNG imports
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { CalendarModule } from 'primeng/calendar'; // <-- Importado el Calendario
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
+import { ToastModule } from 'primeng/toast';
 import { CashflowService } from '../../services/cash-movements.service';
 
 @Component({
@@ -34,8 +37,10 @@ import { CashflowService } from '../../services/cash-movements.service';
     CalendarModule,
     AutoCompleteModule,
     DropdownModule,
+    ConfirmDialogModule,
+    ToastModule,
   ],
-  providers: [DatePipe],
+  providers: [DatePipe, ConfirmationService, MessageService],
   templateUrl: './cash-movements.component.html',
   styleUrl: './cash-movements.component.scss',
 })
@@ -43,6 +48,8 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
   cashflowService = inject(CashflowService);
   datePipe = inject(DatePipe);
   private readonly authService = inject(AuthService);
+  private readonly confirmationService = inject(ConfirmationService);
+  private readonly messageService = inject(MessageService);
 
   readonly isAdmin = computed(() => this.authService.isAdminUser());
 
@@ -62,6 +69,8 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
 
   // Control del Modal
   showModal = false;
+  isEditing = false;
+  editingId: number | null = null;
   modalType: 'INCOME' | 'EXPENSE' = 'INCOME';
   movementForm = {
     payment_method: 'CASH',
@@ -198,6 +207,8 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
 
   // Modal Actions
   openModal(type: 'INCOME' | 'EXPENSE') {
+    this.isEditing = false;
+    this.editingId = null;
     this.modalType = type;
 
     // LÓGICA DE FECHA: Toma la fecha visualizada + la hora actual
@@ -212,6 +223,43 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
       payment_method: 'CASH',
     };
     this.showModal = true;
+  }
+
+  openModalForEdit(item: { id: number; description: string; amount: number; date?: string; method?: string; payment_method?: string }, type: 'INCOME' | 'EXPENSE') {
+    this.isEditing = true;
+    this.editingId = item.id;
+    this.modalType = type;
+    this.movementForm = {
+      description: item.description,
+      amount: item.amount,
+      date: item.date
+        ? new Date(item.date.replace(' ', 'T'))
+        : new Date(this.currentDate),
+      payment_method: item.method ?? item.payment_method ?? 'CASH',
+    };
+    this.showModal = true;
+  }
+
+  closeModal(): void {
+    this.showModal = false;
+    this.isEditing = false;
+    this.editingId = null;
+  }
+
+  get modalHeader(): string {
+    if (this.isEditing) {
+      return this.modalType === 'INCOME' ? 'Editar Ingreso' : 'Editar Gasto';
+    }
+
+    return this.modalType === 'INCOME' ? 'Registrar Ingreso' : 'Registrar Gasto';
+  }
+
+  get modalSaveLabel(): string {
+    if (this.isEditing) {
+      return this.modalType === 'INCOME' ? 'Guardar cambios' : 'Guardar cambios';
+    }
+
+    return this.modalType === 'INCOME' ? 'Guardar Ingreso' : 'Confirmar Gasto';
   }
 
   setQuickExpense(desc: string, amount: number) {
@@ -240,14 +288,63 @@ export class CashMovementsListComponent implements OnInit, OnDestroy {
       payment_method: this.movementForm.payment_method,
     };
 
-    // Usamos el servicio reactivo: Crea y recarga automáticamente
-    this.cashflowService
-      .registerMovement(movementData, null, dateStr)
-      .subscribe({
-        next: () => {
-          this.showModal = false;
-        },
-        error: err => console.error('Error guardando movimiento', err),
-      });
+    const request$ =
+      this.isEditing && this.editingId
+        ? this.cashflowService.updateMovement(
+            this.editingId,
+            movementData,
+            null,
+            dateStr,
+            'STORE',
+          )
+        : this.cashflowService.registerMovement(movementData, null, dateStr);
+
+    request$.subscribe({
+      next: () => {
+        this.closeModal();
+      },
+      error: err => console.error('Error guardando movimiento', err),
+    });
+  }
+
+  confirmDeleteMovement(
+    item: { id: number; description: string; amount: number },
+    type: 'INCOME' | 'EXPENSE',
+  ): void {
+    const label = type === 'INCOME' ? 'ingreso' : 'gasto';
+
+    this.confirmationService.confirm({
+      header: 'Eliminar movimiento',
+      message: `¿Eliminar este ${label} (S/ ${item.amount})? Esta acción no se puede deshacer.`,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Eliminar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => this.deleteMovement(item.id),
+    });
+  }
+
+  deleteMovement(id: number): void {
+    const dateStr = this.datePipe.transform(this.currentDate, 'yyyy-MM-dd')!;
+
+    this.cashflowService.deleteMovement(id, dateStr, 'STORE').subscribe({
+      next: () => {
+        if (this.editingId === id) {
+          this.closeModal();
+        }
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Eliminado',
+          detail: 'Movimiento eliminado correctamente.',
+        });
+      },
+      error: () => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo eliminar el movimiento.',
+        });
+      },
+    });
   }
 }
