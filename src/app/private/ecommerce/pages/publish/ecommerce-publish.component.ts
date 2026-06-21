@@ -1,6 +1,6 @@
 import { HttpResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormArray,
@@ -110,6 +110,8 @@ interface VariantFormValue {
 export class EcommercePublishComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
+  @ViewChild(ProductGalleryComponent) productGallery?: ProductGalleryComponent;
+
   products: Product[] = [];
   total = 0;
   limit = 10;
@@ -191,6 +193,10 @@ export class EcommercePublishComponent implements OnInit {
 
   get variants(): FormArray {
     return this.createForm.get('variants') as FormArray;
+  }
+
+  variantGroup(index: number): FormGroup {
+    return this.variants.at(index) as FormGroup;
   }
 
   buildVariantGroup(): FormGroup {
@@ -345,9 +351,12 @@ export class EcommercePublishComponent implements OnInit {
       wooStatus: this.publishForm.value.wooStatus as 'draft' | 'publish',
     });
 
-    this.productsService
-      .edit(productId, payload)
+    const uploadPending$ =
+      this.productGallery?.uploadPendingIfAny(true) ?? of([]);
+
+    uploadPending$
       .pipe(
+        switchMap(() => this.productsService.edit(productId, payload)),
         switchMap(() => this.productWooCommerceService.syncProduct(productId)),
         finalize(() => {
           this.isSaving = false;
@@ -371,10 +380,12 @@ export class EcommercePublishComponent implements OnInit {
             };
           }
         },
-        error: (err: { error?: { message?: string } }) => {
+        error: (err: { error?: { message?: string }; message?: string }) => {
           showError(
             this.messageService,
-            err?.error?.message ?? 'No se pudo guardar ni sincronizar el producto.',
+            err?.error?.message ??
+              err?.message ??
+              'No se pudo guardar, subir imágenes ni sincronizar el producto.',
           );
         },
       });

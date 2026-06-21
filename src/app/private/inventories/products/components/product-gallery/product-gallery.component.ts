@@ -16,7 +16,7 @@ import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
-import { concatMap, finalize, forkJoin, from, tap, toArray } from 'rxjs';
+import { concatMap, finalize, forkJoin, from, map, Observable, of, tap, throwError, toArray } from 'rxjs';
 
 import { VoucherDropzoneComponent } from '../../../../shared/components/voucher-dropzone/voucher-dropzone.component';
 import { showError } from '../../../../../utils/notifications';
@@ -95,6 +95,10 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
     );
   }
 
+  get hasPendingFiles(): boolean {
+    return this.pendingFiles.length > 0;
+  }
+
   get dropzoneDisabled(): boolean {
     return this.isUploading || this.isDeleting;
   }
@@ -131,48 +135,67 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   uploadPendingFiles(): void {
-    if (!this.canUpload) {
-      return;
+    this.uploadPendingIfAny().subscribe({
+      error: err => {
+        showError(
+          this.messageService,
+          err?.error?.message ?? err?.message ?? 'No se pudo subir la imagen.',
+        );
+        this.loadGallery();
+      },
+    });
+  }
+
+  /**
+   * Sube archivos pendientes del dropzone al servidor (requerido antes del sync WooCommerce).
+   */
+  uploadPendingIfAny(quiet = false): Observable<ProductMediaItem[]> {
+    if (this.pendingFiles.length === 0) {
+      return of([]);
+    }
+
+    if (this.isUploading) {
+      return throwError(() => new Error('Ya hay una subida de imágenes en curso.'));
+    }
+
+    if (this.isDeleting) {
+      return throwError(() => new Error('Espera a que termine la eliminación de imágenes.'));
     }
 
     this.isUploading = true;
     let worstSync: WooCommerceSyncResult | undefined;
     const uploaded: ProductMediaItem[] = [];
 
-    from(this.pendingFiles)
-      .pipe(
-        concatMap(file =>
-          this.productMediaService.uploadImage(this.productId, file).pipe(
-            tap((response: HttpResponse<ProductMediaUploadResponse>) => {
-              worstSync = this.mergeSyncResults(
-                worstSync,
-                response.body?.wooCommerceSync,
-              );
-              if (response.body?.media) {
-                uploaded.push(response.body.media);
-              }
-            }),
-          ),
+    return from(this.pendingFiles).pipe(
+      concatMap(file =>
+        this.productMediaService.uploadImage(this.productId, file).pipe(
+          tap((response: HttpResponse<ProductMediaUploadResponse>) => {
+            worstSync = this.mergeSyncResults(
+              worstSync,
+              response.body?.wooCommerceSync,
+            );
+            if (response.body?.media) {
+              uploaded.push(response.body.media);
+            }
+          }),
         ),
-        toArray(),
-        finalize(() => {
-          this.isUploading = false;
-          this.pendingFiles = [];
-          this.mediaDropzone?.clear();
+      ),
+      toArray(),
+      tap(() => {
+        this.pendingFiles = [];
+        this.mediaDropzone?.clear();
 
-          if (uploaded.length > 0) {
-            const existingIds = new Set(this.mediaItems.map(m => m.id));
-            const novel = uploaded.filter(m => !existingIds.has(m.id));
-            this.mediaItems = [...this.mediaItems, ...novel];
-            this.loadDisplayUrlsForItems(novel);
-            this.emitMediaCount();
-          }
+        if (uploaded.length > 0) {
+          const existingIds = new Set(this.mediaItems.map(m => m.id));
+          const novel = uploaded.filter(m => !existingIds.has(m.id));
+          this.mediaItems = [...this.mediaItems, ...novel];
+          this.loadDisplayUrlsForItems(novel);
+          this.emitMediaCount();
+        } else {
+          this.loadGallery();
+        }
 
-          if (uploaded.length === 0) {
-            this.loadGallery();
-            return;
-          }
-
+        if (!quiet && uploaded.length > 0) {
           const baseMessage =
             uploaded.length === 1
               ? 'Imagen subida correctamente.'
@@ -182,17 +205,13 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
             worstSync,
             baseMessage,
           );
-        }),
-      )
-      .subscribe({
-        error: err => {
-          showError(
-            this.messageService,
-            err?.error?.message ?? 'No se pudo subir la imagen.',
-          );
-          this.loadGallery();
-        },
-      });
+        }
+      }),
+      finalize(() => {
+        this.isUploading = false;
+      }),
+      map(() => uploaded),
+    );
   }
 
   deleteImage(mediaId: number): void {

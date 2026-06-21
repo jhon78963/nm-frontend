@@ -152,13 +152,14 @@
       </p>
 
       <div formArrayName="variants" class="flex flex-column gap-3">
-        @for (variant of variants.controls; track i; let i = $index) {
+        @for (variant of variants.controls; track variant; let i = $index) {
           <div
             [formGroupName]="i"
             class="variant-row border-1 border-round surface-border p-3">
             <div class="p-fluid p-formgrid grid">
               <div class="field col-12 md:col-3">
                 <app-input-select
+                  [formGroup]="variantGroup(i)"
                   label="Talla"
                   controlName="sizeId"
                   placeholder="Talla"
@@ -168,6 +169,7 @@
               </div>
               <div class="field col-12 md:col-3">
                 <app-input-select
+                  [formGroup]="variantGroup(i)"
                   label="Color"
                   controlName="colorId"
                   placeholder="Color"
@@ -177,6 +179,7 @@
               </div>
               <div class="field col-12 md:col-2">
                 <app-input-text
+                  [formGroup]="variantGroup(i)"
                   label="Precio venta"
                   controlName="salePrice"
                   placeholder="0.00"
@@ -184,6 +187,7 @@
               </div>
               <div class="field col-12 md:col-2">
                 <app-input-text
+                  [formGroup]="variantGroup(i)"
                   label="Precio mín."
                   controlName="minSalePrice"
                   placeholder="Oferta"
@@ -191,6 +195,7 @@
               </div>
               <div class="field col-12 md:col-2">
                 <app-input-text
+                  [formGroup]="variantGroup(i)"
                   label="Stock"
                   controlName="stock"
                   placeholder="0"

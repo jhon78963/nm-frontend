@@ -24,7 +24,14 @@
     [disabled]="!canUpload"
     (click)="uploadPendingFiles()"></button>
 
-  @if (mediaItems.length === 0 && !isLoading) {
+  @if (pendingFiles.length > 0) {
+    <p class="text-orange-600 text-sm m-0 mt-3 text-center font-medium">
+      Imagen(es) seleccionada(s) pero aún no subidas. Pulsa «Subir imágenes» o
+      «Guardar y sincronizar» para enviarlas a WooCommerce.
+    </p>
+  }
+
+  @if (mediaItems.length === 0 && pendingFiles.length === 0 && !isLoading) {
     <p class="text-600 text-sm m-0 mt-3 text-center">
       Este producto aún no tiene imágenes. Hasta que subas al menos una,
       permanecerá en borrador en WooCommerce.

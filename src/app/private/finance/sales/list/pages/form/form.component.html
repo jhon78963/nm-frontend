@@ -11,9 +11,19 @@
 
       <!-- 2. ITEMS (Edición de Precios) -->
       <div class="col-12">
-        <span class="block text-500 font-bold mb-2 text-sm uppercase"
-          >Productos</span
-        >
+        <div class="flex justify-content-between align-items-center mb-2">
+          <span class="block text-500 font-bold text-sm uppercase"
+            >Productos</span
+          >
+          <button
+            type="button"
+            pButton
+            icon="pi pi-plus"
+            label="Agregar producto"
+            class="p-button-text p-button-sm py-1"
+            (click)="openAddProduct()"
+            [disabled]="isCanceled()"></button>
+        </div>
         <div
           class="border-1 border-200 border-round-xl overflow-hidden"
           formArrayName="items">
@@ -24,6 +34,7 @@
                 <th class="p-2 text-left">Desc.</th>
                 <th class="p-2 text-right w-6rem">Precio</th>
                 <th class="p-2 text-right">Sub.</th>
+                <th class="p-2 w-3rem"></th>
               </tr>
             </thead>
             <tbody>
@@ -41,6 +52,11 @@
                     <div class="flex align-items-center gap-2">
                       <div class="font-bold text-xs">
                         {{ item.get('description_full')?.value }}
+                        <span
+                          *ngIf="isNewItem(i)"
+                          class="ml-1 text-green-600 text-xs font-normal"
+                          >(nuevo)</span
+                        >
                       </div>
                       <button
                         type="button"
@@ -48,7 +64,7 @@
                         icon="pi pi-sync"
                         class="p-button-text p-button-sm p-button-warning p-0 h-1rem w-1rem"
                         (click)="openExchangeProduct(i)"
-                        [disabled]="isCanceled()"
+                        [disabled]="isCanceled() || isNewItem(i)"
                         pTooltip="Cambiar por otro producto"></button>
                     </div>
                   </td>
@@ -62,12 +78,23 @@
                   <td class="p-2 text-right font-bold">
                     {{ item.get('subtotal')?.value | number: '1.2-2' }}
                   </td>
+                  <td class="p-2 text-center">
+                    <button
+                      *ngIf="isNewItem(i)"
+                      type="button"
+                      pButton
+                      icon="pi pi-trash"
+                      class="p-button-danger p-button-text p-button-rounded p-0"
+                      (click)="removeItem(i)"
+                      [disabled]="isCanceled()"
+                      pTooltip="Quitar producto"></button>
+                  </td>
                 </tr>
               </ng-container>
             </tbody>
             <tfoot class="surface-50">
               <tr>
-                <td colspan="3" class="p-2 text-right font-bold">
+                <td colspan="4" class="p-2 text-right font-bold">
                   Total Venta
                 </td>
                 <td class="p-2 text-right font-black text-indigo-700">

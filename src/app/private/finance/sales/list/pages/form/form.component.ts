@@ -92,36 +92,106 @@ export class SaleFormComponent implements OnInit {
     const itemsArray = this.form.get('items') as FormArray;
     itemsArray.clear();
     items.forEach(item => {
-      const group = this.formBuilder.group({
-        id: [item.id],
-        product_name: [item.product_name],
-        description_full: [item.description_full],
-        quantity: [item.quantity, [Validators.required, Validators.min(1)]], // Agregado Validators
-        unit_price: [item.unit_price, [Validators.required, Validators.min(0)]],
-        subtotal: [item.subtotal],
-        product_size_id: [null],
-        color_id: [item.color_id],
-      });
-
-      // Recalcular al cambiar precio O CANTIDAD
-      const recalculate = () => {
-        const qty = group.get('quantity')?.value || 0;
-        const price = group.get('unit_price')?.value || 0;
-        group.patchValue({ subtotal: qty * price }, { emitEvent: false });
-        this.recalculateTotals();
-      };
-
-      group
-        .get('unit_price')
-        ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe(recalculate);
-      group
-        .get('quantity')
-        ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe(recalculate);
-
-      itemsArray.push(group);
+      itemsArray.push(this.buildItemGroup(item));
     });
+  }
+
+  private buildItemGroup(item: {
+    id?: number | null;
+    product_name?: string;
+    description_full?: string;
+    quantity?: number;
+    unit_price?: number;
+    subtotal?: number;
+    product_size_id?: number | null;
+    color_id?: number | null;
+    is_new?: boolean;
+  }) {
+    const group = this.formBuilder.group({
+      id: [item.id ?? null],
+      product_name: [item.product_name ?? ''],
+      description_full: [item.description_full ?? ''],
+      quantity: [item.quantity ?? 1, [Validators.required, Validators.min(1)]],
+      unit_price: [item.unit_price ?? 0, [Validators.required, Validators.min(0)]],
+      subtotal: [item.subtotal ?? 0],
+      product_size_id: [item.product_size_id ?? null],
+      color_id: [item.color_id ?? null],
+      is_new: [item.is_new ?? false],
+    });
+
+    const recalculate = () => {
+      const qty = group.get('quantity')?.value || 0;
+      const price = group.get('unit_price')?.value || 0;
+      group.patchValue({ subtotal: qty * price }, { emitEvent: false });
+      this.recalculateTotals();
+    };
+
+    group
+      .get('unit_price')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(recalculate);
+    group
+      .get('quantity')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(recalculate);
+
+    return group;
+  }
+
+  openAddProduct(): void {
+    const ref = this.dialogService.open(ProductSelectorComponent, {
+      header: 'Agregar producto',
+      width: '60vw',
+    });
+
+    ref.onClose
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res: any) => {
+        if (!res) {
+          return;
+        }
+
+        const qty = 1;
+        const price = res.sale_price ?? 0;
+        const itemsArray = this.form.get('items') as FormArray;
+
+        itemsArray.push(
+          this.buildItemGroup({
+            product_size_id: res.product_size_id,
+            color_id: res.color_id,
+            product_name: res.name,
+            unit_price: price,
+            quantity: qty,
+            subtotal: qty * price,
+            description_full: `${res.name} (${res.size_name} | ${res.colorName})`,
+            is_new: true,
+          }),
+        );
+
+        this.recalculateTotals();
+
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Producto agregado',
+          detail: 'Se añadió a la venta. Ajuste pagos si el total cambió.',
+        });
+      });
+  }
+
+  removeItem(index: number): void {
+    const itemsArray = this.form.get('items') as FormArray;
+    const row = itemsArray.at(index);
+
+    if (!row.get('is_new')?.value) {
+      return;
+    }
+
+    itemsArray.removeAt(index);
+    this.recalculateTotals();
+  }
+
+  isNewItem(index: number): boolean {
+    return !!this.itemsControls[index]?.get('is_new')?.value;
   }
 
   // --- PAGOS ---
@@ -203,13 +273,23 @@ export class SaleFormComponent implements OnInit {
         total: this.calculatedTotal,
         status: this.dynamicDialogConfig.data.status,
         creationTime: formatDateTime(formValue.creationTime, this.datePipe),
-        items: formValue.items.map((i: any) => ({
-          id: i.id,
-          quantity: i.quantity,
-          unit_price: i.unit_price,
-          product_size_id: i.product_size_id,
-          color_id: i.color_id,
-        })),
+        items: formValue.items.map((i: any) => {
+          const item: Record<string, unknown> = {
+            quantity: i.quantity,
+            unit_price: i.unit_price,
+          };
+
+          if (i.id) {
+            item['id'] = i.id;
+          }
+
+          if (i.product_size_id) {
+            item['product_size_id'] = i.product_size_id;
+            item['color_id'] = i.color_id;
+          }
+
+          return item;
+        }),
         payments: formValue.payments.map((p: any) => ({
           method: p.method,
           amount: p.amount,
@@ -226,7 +306,7 @@ export class SaleFormComponent implements OnInit {
           takeUntilDestroyed(this.destroyRef),
         )
         .subscribe({
-          next: () => this.dynamicDialogRef.close(true),
+          next: () => this.dynamicDialogRef.close({ success: true }),
           error: (err: unknown) => {
             const message =
               (err as { error?: { message?: string }; message?: string })?.error
@@ -259,6 +339,7 @@ export class SaleFormComponent implements OnInit {
             product_name: res.name, // res tiene 'name', form tiene 'product_name'
             unit_price: res.sale_price, // res tiene 'sale_price', form tiene 'unit_price'
             description_full: `${res.name} (${res.size_name} | ${res.colorName})`,
+            is_new: false,
             // Mantenemos la cantidad que ya estaba o la reseteamos a 1
             quantity: row.get('quantity')?.value || 1,
           });

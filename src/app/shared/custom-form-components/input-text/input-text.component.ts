@@ -1,5 +1,6 @@
-import { Component, Input, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, Optional, Host, SkipSelf } from '@angular/core';
 import {
+  ControlContainer,
   FormControl,
   FormGroup,
   FormGroupDirective,
@@ -34,19 +35,39 @@ export class InputTextComponent implements OnInit, OnDestroy {
 
   private sub: Subscription = new Subscription();
 
-  constructor(private formGroupDirective: FormGroupDirective) {}
+  constructor(
+    @Optional() @Host() @SkipSelf() private controlContainer: ControlContainer,
+    @Optional() private formGroupDirective: FormGroupDirective,
+  ) {}
 
   ngOnInit(): void {
-    this.formGroup = this.formGroupDirective.form;
+    const parentGroup =
+      this.formGroup ??
+      (this.controlContainer?.control as FormGroup | undefined);
+
+    if (!parentGroup) {
+      throw new Error(
+        `app-input-text "${this.controlName}": debe usarse dentro de un FormGroup`,
+      );
+    }
+
+    this.formGroup = parentGroup;
     this.formControl = this.formGroup.get(this.controlName) as FormControl;
 
-    // Solo necesitamos escuchar el submit para validaciones
-    const submitSub = this.formGroupDirective.ngSubmit.subscribe(
-      (value: any) => {
-        this.submitted = value.isTrusted;
-      },
-    );
-    this.sub.add(submitSub);
+    if (!this.formControl) {
+      throw new Error(
+        `app-input-text: no existe el control "${this.controlName}"`,
+      );
+    }
+
+    if (this.formGroupDirective) {
+      const submitSub = this.formGroupDirective.ngSubmit.subscribe(
+        (value: any) => {
+          this.submitted = value.isTrusted;
+        },
+      );
+      this.sub.add(submitSub);
+    }
   }
 
   // Métodos simples para control visual

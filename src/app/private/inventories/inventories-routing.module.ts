@@ -63,12 +63,6 @@ const routes: Routes = [
   },
   {
     path: 'multimedia',
-    title: 'Multimedia',
-    canActivate: [permissionGuard],
-    data: {
-      breadcrumb: 'Multimedia',
-      permission: 'product.update',
-    },
     redirectTo: '/ecommerce/multimedia',
     pathMatch: 'full',
   },
