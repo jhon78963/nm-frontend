@@ -18,25 +18,51 @@
     [fileStatusUploading]="bindDropzoneStatusUploading"
     (filesChange)="onDropzoneFiles($event)" />
 
-  <button
-    pButton
-    type="button"
-    label="Reintentar fallidas"
-    icon="pi pi-upload"
-    class="w-full mt-2"
-    [disabled]="!canUpload"
-    (click)="uploadPendingFiles()"></button>
+  <div class="flex flex-column gap-2 mt-2">
+    <button
+      pButton
+      type="button"
+      [label]="
+        pendingCount > 0
+          ? 'Subir cola (' + pendingCount + ')'
+          : 'Subir cola'
+      "
+      icon="pi pi-cloud-upload"
+      class="w-full"
+      [loading]="hasActiveUploads"
+      [disabled]="!canStartQueue"
+      (click)="startQueueUpload()"></button>
+
+    <button
+      pButton
+      type="button"
+      [label]="
+        failedCount > 0
+          ? 'Reintentar fallidas (' + failedCount + ')'
+          : 'Reintentar fallidas'
+      "
+      icon="pi pi-refresh"
+      class="w-full p-button-outlined"
+      [disabled]="!canRetryFailed"
+      (click)="retryFailedUploads()"></button>
+  </div>
+
+  @if (pendingCount > 0 && !hasActiveUploads) {
+    <p class="text-600 text-sm m-0 mt-3 text-center">
+      Tienes {{ pendingCount }} imagen(es) pendiente(s). Pulsa «Subir cola» para
+      enviarlas al servidor.
+    </p>
+  }
 
   @if (hasActiveUploads) {
     <p class="text-primary text-sm m-0 mt-3 text-center">
       @if (uploadingCount > 0 && queuedCount > 0) {
-        Subiendo {{ uploadingCount }} imagen(es), {{ queuedCount }} en cola…
+        Subiendo {{ uploadingCount }}, {{ queuedCount }} en cola…
       } @else if (uploadingCount > 0) {
         Subiendo {{ uploadingCount }} imagen(es)…
       } @else {
         {{ queuedCount }} imagen(es) en cola…
       }
-      Puedes seguir tomando o eligiendo fotos.
     </p>
   }
 

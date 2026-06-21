@@ -55,7 +55,7 @@ import { TooltipModule } from 'primeng/tooltip';
           [disabled]="disabled || files.length >= maxFiles"
           (click)="cameraInput.click()"></button>
         <p class="m-0 text-400 text-xs text-center">
-          Puedes tomar varias fotos seguidas; se irán encolando y subiendo solas.
+          Puedes tomar varias fotos seguidas; luego pulsa «Subir cola» en la galería.
         </p>
         <input
           #cameraInput

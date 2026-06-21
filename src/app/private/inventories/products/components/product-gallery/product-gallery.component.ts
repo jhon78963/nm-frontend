@@ -18,14 +18,11 @@ import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import {
   catchError,
-  concatMap,
   EMPTY,
   finalize,
   forkJoin,
-  map,
   Observable,
   of,
-  Subject,
   tap,
   throwError,
 } from 'rxjs';
@@ -41,9 +38,10 @@ import {
 import { ProductMediaService } from '../../services/product-media.service';
 import { ProductsService } from '../../services/products.service';
 
-type UploadJobStatus = 'queued' | 'uploading' | 'done' | 'error';
+type UploadJobStatus = 'pending' | 'queued' | 'uploading' | 'done' | 'error';
 
-interface UploadJob {
+interface TrackedFile {
+  key: string;
   file: File;
   status: UploadJobStatus;
   media?: ProductMediaItem;
@@ -81,8 +79,8 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
   readonly maxFiles = 10;
   readonly accept = 'image/jpeg,image/png,image/webp';
 
-  private readonly uploadJobs = new Map<string, UploadJob>();
-  private readonly uploadQueue$ = new Subject<string>();
+  private readonly trackedFiles = new Map<string, TrackedFile>();
+  private readonly fileKeyByRef = new Map<File, string>();
   private readonly localPreviewByKey = new Map<string, string>();
   private queueWaiters: Array<{
     quiet: boolean;
@@ -91,6 +89,8 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
   }> = [];
   private sessionUploaded: ProductMediaItem[] = [];
   private sessionWorstSync: WooCommerceSyncResult | undefined;
+  private isPumpingQueue = false;
+  private suppressErrorToast = false;
 
   constructor(
     private readonly productsService: ProductsService,
@@ -100,13 +100,6 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
 
   ngOnInit(): void {
     this.loadGallery();
-    this.uploadQueue$
-      .pipe(
-        concatMap(key => this.processUploadJob(key)),
-      )
-      .subscribe({
-        error: err => this.failWaiters(err),
-      });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -128,26 +121,32 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
     return this.deletingMediaId !== null;
   }
 
+  get pendingCount(): number {
+    return this.countByStatus('pending');
+  }
+
   get queuedCount(): number {
-    return [...this.uploadJobs.values()].filter(job => job.status === 'queued')
-      .length;
+    return this.countByStatus('queued');
   }
 
   get uploadingCount(): number {
-    return [...this.uploadJobs.values()].filter(
-      job => job.status === 'uploading',
-    ).length;
+    return this.countByStatus('uploading');
+  }
+
+  get failedCount(): number {
+    return this.countByStatus('error');
   }
 
   get hasActiveUploads(): boolean {
     return this.queuedCount > 0 || this.uploadingCount > 0;
   }
 
-  get canUpload(): boolean {
-    return (
-      this.pendingFiles.some(file => this.canRetryUpload(file)) &&
-      !this.isDeleting
-    );
+  get canStartQueue(): boolean {
+    return this.pendingCount > 0 && !this.hasActiveUploads && !this.isDeleting;
+  }
+
+  get canRetryFailed(): boolean {
+    return this.failedCount > 0 && !this.hasActiveUploads && !this.isDeleting;
   }
 
   get dropzoneDisabled(): boolean {
@@ -182,27 +181,33 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   onDropzoneFiles(files: File[]): void {
-    const previousKeys = new Set(
-      this.pendingFiles.map(file => this.filePreviewKey(file)),
-    );
-    const added = files.filter(
-      file => !previousKeys.has(this.filePreviewKey(file)),
-    );
+    const activeKeys = new Set<string>();
+
+    for (const file of files) {
+      const key = this.ensureFileKey(file);
+      activeKeys.add(key);
+
+      if (!this.trackedFiles.has(key)) {
+        this.trackedFiles.set(key, { key, file, status: 'pending' });
+      }
+    }
 
     this.pendingFiles = files;
-
-    if (added.length > 0 && this.productId) {
-      this.enqueueFiles(added);
-    }
+    this.pruneRemovedPending(activeKeys);
   }
 
-  uploadPendingFiles(): void {
-    const retryable = this.pendingFiles.filter(file => this.canRetryUpload(file));
-    if (retryable.length === 0) {
-      return;
+  startQueueUpload(): void {
+    this.enqueuePending(false);
+  }
+
+  retryFailedUploads(): void {
+    for (const tracked of this.trackedFiles.values()) {
+      if (tracked.status === 'error') {
+        tracked.status = 'pending';
+      }
     }
 
-    this.enqueueFiles(retryable);
+    this.enqueuePending(false);
   }
 
   /**
@@ -215,20 +220,19 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
       );
     }
 
-    const pending = this.pendingFiles.filter(
-      file =>
-        !this.uploadJobs.has(this.filePreviewKey(file)) ||
-        this.canRetryUpload(file),
-    );
+    const needsUpload = this.pendingFiles.some(file => {
+      const status = this.trackedFiles.get(this.ensureFileKey(file))?.status;
+      return !status || status === 'pending' || status === 'error';
+    });
 
-    if (pending.length === 0 && !this.hasActiveUploads) {
+    if (!needsUpload && !this.hasActiveUploads) {
       return of([]);
     }
 
-    this.enqueueFiles(pending);
+    this.enqueuePending(quiet);
 
     return new Observable<ProductMediaItem[]>(observer => {
-      if (!this.hasActiveUploads && pending.length === 0) {
+      if (!this.hasActiveUploads && !needsUpload) {
         observer.next([]);
         observer.complete();
         return;
@@ -281,11 +285,13 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   bindDropzoneFileKey(file: File): string {
-    return this.filePreviewKey(file);
+    return this.ensureFileKey(file);
   }
 
   bindDropzoneStatusLabel(file: File): string | null {
-    switch (this.uploadJobs.get(this.filePreviewKey(file))?.status) {
+    switch (this.trackedFiles.get(this.ensureFileKey(file))?.status) {
+      case 'pending':
+        return 'Pendiente';
       case 'queued':
         return 'En cola';
       case 'uploading':
@@ -300,7 +306,9 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
   bindDropzoneStatusSeverity(
     file: File,
   ): 'success' | 'info' | 'warning' | 'danger' | 'secondary' {
-    switch (this.uploadJobs.get(this.filePreviewKey(file))?.status) {
+    switch (this.trackedFiles.get(this.ensureFileKey(file))?.status) {
+      case 'pending':
+        return 'secondary';
       case 'queued':
         return 'info';
       case 'uploading':
@@ -313,91 +321,100 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   bindDropzoneStatusUploading(file: File): boolean {
-    return this.uploadJobs.get(this.filePreviewKey(file))?.status === 'uploading';
+    return (
+      this.trackedFiles.get(this.ensureFileKey(file))?.status === 'uploading'
+    );
   }
 
-  private enqueueFiles(files: File[]): void {
-    if (files.length === 0) {
+  private enqueuePending(quiet: boolean): void {
+    this.suppressErrorToast = quiet;
+
+    for (const tracked of this.trackedFiles.values()) {
+      if (tracked.status === 'pending' || tracked.status === 'error') {
+        tracked.status = 'queued';
+      }
+    }
+
+    this.pumpQueue();
+  }
+
+  private pumpQueue(): void {
+    if (this.isPumpingQueue) {
+      return;
+    }
+
+    const next = [...this.trackedFiles.values()].find(
+      tracked => tracked.status === 'queued',
+    );
+
+    if (!next) {
       this.completeWaitersIfIdle();
       return;
     }
 
-    for (const file of files) {
-      const key = this.filePreviewKey(file);
-      const existing = this.uploadJobs.get(key);
+    this.isPumpingQueue = true;
+    next.status = 'uploading';
 
-      if (existing?.status === 'uploading' || existing?.status === 'queued') {
-        continue;
-      }
-
-      if (!this.localPreviewByKey.has(key)) {
-        this.localPreviewByKey.set(key, URL.createObjectURL(file));
-      }
-
-      this.uploadJobs.set(key, { file, status: 'queued' });
-      this.uploadQueue$.next(key);
-    }
-  }
-
-  private processUploadJob(key: string): Observable<void> {
-    const job = this.uploadJobs.get(key);
-    if (!job || job.status !== 'queued') {
-      return of(undefined);
+    const key = next.key;
+    if (!this.localPreviewByKey.has(key)) {
+      this.localPreviewByKey.set(key, URL.createObjectURL(next.file));
     }
 
-    job.status = 'uploading';
+    this.productMediaService
+      .uploadImage(this.productId, next.file)
+      .pipe(
+        tap((response: HttpResponse<ProductMediaUploadResponse>) => {
+          next.status = 'done';
+          next.media = response.body?.media;
 
-    return this.productMediaService.uploadImage(this.productId, job.file).pipe(
-      tap((response: HttpResponse<ProductMediaUploadResponse>) => {
-        job.status = 'done';
-        job.media = response.body?.media;
+          this.sessionWorstSync = this.mergeSyncResults(
+            this.sessionWorstSync,
+            response.body?.wooCommerceSync,
+          );
 
-        this.sessionWorstSync = this.mergeSyncResults(
-          this.sessionWorstSync,
-          response.body?.wooCommerceSync,
-        );
+          if (response.body?.media) {
+            this.sessionUploaded.push(response.body.media);
+            this.applyLocalPreview(response.body.media.id, key);
 
-        if (response.body?.media) {
-          this.sessionUploaded.push(response.body.media);
-          this.applyLocalPreview(response.body.media.id, key);
-
-          const existingIds = new Set(this.mediaItems.map(item => item.id));
-          if (!existingIds.has(response.body.media.id)) {
-            this.mediaItems = [...this.mediaItems, response.body.media];
-            this.emitMediaCount();
+            const existingIds = new Set(this.mediaItems.map(item => item.id));
+            if (!existingIds.has(response.body.media.id)) {
+              this.mediaItems = [...this.mediaItems, response.body.media];
+              this.emitMediaCount();
+            }
           }
-        }
-      }),
-      catchError(err => {
-        job.status = 'error';
-        if (!this.queueWaiters.every(waiter => waiter.quiet)) {
-          showError(
-            this.messageService,
-            err?.error?.message ??
-              err?.message ??
-              'No se pudo subir una imagen.',
-          );
-        }
-        return EMPTY;
-      }),
-      finalize(() => {
-        if (job.status === 'done') {
-          this.uploadJobs.delete(key);
-          this.pendingFiles = this.pendingFiles.filter(
-            file => this.filePreviewKey(file) !== key,
-          );
-          this.mediaDropzone?.removeByKey(key);
-          this.releaseLocalPreview(key);
-        }
+        }),
+        catchError(err => {
+          next.status = 'error';
+          if (!this.suppressErrorToast) {
+            showError(
+              this.messageService,
+              err?.error?.message ??
+                err?.message ??
+                'No se pudo subir una imagen.',
+            );
+          }
+          return EMPTY;
+        }),
+        finalize(() => {
+          this.isPumpingQueue = false;
 
-        this.completeWaitersIfIdle();
-      }),
-      map(() => undefined),
-    );
+          if (next.status === 'done') {
+            this.trackedFiles.delete(key);
+            this.pendingFiles = this.pendingFiles.filter(
+              file => this.fileKeyByRef.get(file) !== key,
+            );
+            this.fileKeyByRef.delete(next.file);
+            this.mediaDropzone?.removeByKey(key);
+          }
+
+          this.pumpQueue();
+        }),
+      )
+      .subscribe();
   }
 
   private completeWaitersIfIdle(): void {
-    if (this.hasActiveUploads) {
+    if (this.hasActiveUploads || this.isPumpingQueue) {
       return;
     }
 
@@ -405,10 +422,12 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
     const worstSync = this.sessionWorstSync;
     const waiters = [...this.queueWaiters];
     const suppressToast =
-      waiters.length > 0 && waiters.every(waiter => waiter.quiet);
+      this.suppressErrorToast ||
+      (waiters.length > 0 && waiters.every(waiter => waiter.quiet));
 
     this.sessionUploaded = [];
     this.sessionWorstSync = undefined;
+    this.suppressErrorToast = false;
     this.queueWaiters = [];
 
     for (const waiter of waiters) {
@@ -424,25 +443,52 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-  private failWaiters(err: unknown): void {
-    const waiters = [...this.queueWaiters];
-    this.queueWaiters = [];
-    for (const waiter of waiters) {
-      waiter.reject(err);
+  private pruneRemovedPending(activeKeys: Set<string>): void {
+    for (const [key, tracked] of this.trackedFiles) {
+      if (
+        activeKeys.has(key) ||
+        tracked.status === 'queued' ||
+        tracked.status === 'uploading'
+      ) {
+        continue;
+      }
+
+      this.trackedFiles.delete(key);
+      this.fileKeyByRef.delete(tracked.file);
+      this.releaseLocalPreview(key);
     }
   }
 
-  private canRetryUpload(file: File): boolean {
-    const status = this.uploadJobs.get(this.filePreviewKey(file))?.status;
-    return !status || status === 'error';
+  private ensureFileKey(file: File): string {
+    const existing = this.fileKeyByRef.get(file);
+    if (existing) {
+      return existing;
+    }
+
+    const key =
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+    this.fileKeyByRef.set(file, key);
+    return key;
+  }
+
+  private countByStatus(status: UploadJobStatus): number {
+    return [...this.trackedFiles.values()].filter(
+      tracked => tracked.status === status,
+    ).length;
   }
 
   private resetUploadState(): void {
-    this.uploadJobs.clear();
+    this.trackedFiles.clear();
+    this.fileKeyByRef.clear();
     this.revokeLocalPreviews();
     this.sessionUploaded = [];
     this.sessionWorstSync = undefined;
     this.queueWaiters = [];
+    this.isPumpingQueue = false;
+    this.suppressErrorToast = false;
   }
 
   private emitMediaCount(): void {
@@ -517,10 +563,6 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
         );
       },
     });
-  }
-
-  private filePreviewKey(file: File): string {
-    return `${file.name}:${file.size}:${file.lastModified}`;
   }
 
   private applyLocalPreview(mediaId: number, key: string): void {
