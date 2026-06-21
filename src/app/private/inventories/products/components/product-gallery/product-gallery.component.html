@@ -18,20 +18,90 @@
     [fileStatusUploading]="bindDropzoneStatusUploading"
     (filesChange)="onDropzoneFiles($event)" />
 
-  <div class="flex flex-column gap-2 mt-2">
+  @if (queueItems.length > 0) {
+    <div class="queue-panel mt-3">
+      <div class="flex align-items-center justify-content-between gap-2 mb-2">
+        <h4 class="text-base font-semibold m-0">
+          Cola de subida ({{ queueItems.length }})
+        </h4>
+        <span class="text-500 text-xs">Toca una foto para enviarla primero</span>
+      </div>
+
+      <div class="grid">
+        @for (item of queueItems; track item.key; let i = $index) {
+          <div class="col-6 sm:col-4 md:col-3">
+            <div
+              class="queue-card border-1 border-round overflow-hidden relative cursor-pointer"
+              [class.queue-card-selected]="isQueueSelected(item.key)"
+              (click)="selectQueueItem(item.key)">
+              @if (queuePreviewUrl(item.key); as previewUrl) {
+                <img
+                  [src]="previewUrl"
+                  [alt]="item.file.name"
+                  class="queue-image w-full block" />
+              } @else {
+                <div
+                  class="queue-image w-full flex align-items-center justify-content-center">
+                  <i class="pi pi-image text-400 text-2xl"></i>
+                </div>
+              }
+
+              <div class="queue-card-footer flex align-items-center justify-content-between gap-1 p-2">
+                <p-tag
+                  [value]="queueStatusLabel(item)"
+                  [severity]="queueStatusSeverity(item)"
+                  styleClass="text-xs" />
+                <span class="text-500 text-xs">#{{ i + 1 }}</span>
+              </div>
+
+              <div class="queue-card-actions flex gap-1 p-2 pt-0">
+                <button
+                  pButton
+                  type="button"
+                  icon="pi pi-arrow-up"
+                  class="p-button-text p-button-sm flex-1"
+                  pTooltip="Subir prioridad"
+                  tooltipPosition="top"
+                  [disabled]="i === 0 || item.status === 'uploading'"
+                  (click)="moveQueueItem(item.key, -1, $event)"></button>
+                <button
+                  pButton
+                  type="button"
+                  icon="pi pi-arrow-down"
+                  class="p-button-text p-button-sm flex-1"
+                  pTooltip="Bajar prioridad"
+                  tooltipPosition="top"
+                  [disabled]="
+                    i === queueItems.length - 1 || item.status === 'uploading'
+                  "
+                  (click)="moveQueueItem(item.key, 1, $event)"></button>
+                <button
+                  pButton
+                  type="button"
+                  icon="pi pi-cloud-upload"
+                  class="p-button-text p-button-sm flex-1"
+                  pTooltip="Subir esta"
+                  tooltipPosition="top"
+                  [disabled]="!canUploadNext || item.status === 'uploading'"
+                  (click)="uploadQueueItem(item.key, $event)"></button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <div class="flex flex-column gap-2 mt-3">
     <button
       pButton
       type="button"
-      [label]="
-        pendingCount > 0
-          ? 'Subir cola (' + pendingCount + ')'
-          : 'Subir cola'
-      "
+      [label]="nextUploadLabel"
       icon="pi pi-cloud-upload"
       class="w-full"
-      [loading]="hasActiveUploads"
-      [disabled]="!canStartQueue"
-      (click)="startQueueUpload()"></button>
+      [loading]="isUploading"
+      [disabled]="!canUploadNext"
+      (click)="uploadNext()"></button>
 
     <button
       pButton
@@ -60,26 +130,20 @@
       (click)="clearQueue()"></button>
   </div>
 
-  @if (pendingCount > 0 && !hasActiveUploads) {
+  @if (pendingCount > 1 && !isUploading) {
     <p class="text-600 text-sm m-0 mt-3 text-center">
-      Tienes {{ pendingCount }} imagen(es) pendiente(s). Pulsa «Subir cola» para
-      enviarlas al servidor.
+      Se sube de a una foto. Pulsa «Subir siguiente» o el icono de nube en la
+      imagen que quieras enviar primero.
     </p>
   }
 
-  @if (hasActiveUploads) {
+  @if (isUploading) {
     <p class="text-primary text-sm m-0 mt-3 text-center">
-      @if (uploadingCount > 0 && queuedCount > 0) {
-        Subiendo {{ uploadingCount }}, {{ queuedCount }} en cola…
-      } @else if (uploadingCount > 0) {
-        Subiendo {{ uploadingCount }} imagen(es)…
-      } @else {
-        {{ queuedCount }} imagen(es) en cola…
-      }
+      Subiendo 1 imagen…
     </p>
   }
 
-  @if (mediaItems.length === 0 && pendingFiles.length === 0 && !isLoading) {
+  @if (mediaItems.length === 0 && queueItems.length === 0 && !isLoading) {
     <p class="text-600 text-sm m-0 mt-3 text-center">
       Este producto aún no tiene imágenes. Hasta que subas al menos una,
       permanecerá en borrador en WooCommerce.

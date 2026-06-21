@@ -14,6 +14,7 @@ import { HttpResponse } from '@angular/common/http';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import {
@@ -38,7 +39,7 @@ import {
 import { ProductMediaService } from '../../services/product-media.service';
 import { ProductsService } from '../../services/products.service';
 
-type UploadJobStatus = 'pending' | 'queued' | 'uploading' | 'done' | 'error';
+type UploadJobStatus = 'pending' | 'uploading' | 'error';
 
 interface TrackedFile {
   key: string;
@@ -54,6 +55,7 @@ interface TrackedFile {
     CommonModule,
     ButtonModule,
     ProgressSpinnerModule,
+    TagModule,
     ToastModule,
     TooltipModule,
     VoucherDropzoneComponent,
@@ -71,6 +73,7 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
   mediaItems: ProductMediaItem[] = [];
   pendingFiles: File[] = [];
   displayUrls = new Map<number, string>();
+  selectedQueueKey: string | null = null;
 
   isLoading = false;
   deletingMediaId: number | null = null;
@@ -82,6 +85,7 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
   private readonly trackedFiles = new Map<string, TrackedFile>();
   private readonly fileKeyByRef = new Map<File, string>();
   private readonly localPreviewByKey = new Map<string, string>();
+  private queueOrder: string[] = [];
   private queueWaiters: Array<{
     quiet: boolean;
     resolve: (items: ProductMediaItem[]) => void;
@@ -91,6 +95,7 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
   private sessionWorstSync: WooCommerceSyncResult | undefined;
   private isPumpingQueue = false;
   private suppressErrorToast = false;
+  private autoDrainAfterUpload = false;
 
   constructor(
     private readonly productsService: ProductsService,
@@ -121,12 +126,14 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
     return this.deletingMediaId !== null;
   }
 
-  get pendingCount(): number {
-    return this.countByStatus('pending');
+  get queueItems(): TrackedFile[] {
+    return this.queueOrder
+      .map(key => this.trackedFiles.get(key))
+      .filter((item): item is TrackedFile => !!item);
   }
 
-  get queuedCount(): number {
-    return this.countByStatus('queued');
+  get pendingCount(): number {
+    return this.countByStatus('pending');
   }
 
   get uploadingCount(): number {
@@ -137,32 +144,74 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
     return this.countByStatus('error');
   }
 
-  get hasActiveUploads(): boolean {
-    return this.queuedCount > 0 || this.uploadingCount > 0;
+  get isUploading(): boolean {
+    return this.uploadingCount > 0 || this.isPumpingQueue;
   }
 
-  get canStartQueue(): boolean {
-    return this.pendingCount > 0 && !this.hasActiveUploads && !this.isDeleting;
+  get canUploadNext(): boolean {
+    return !!this.nextUploadKey() && !this.isUploading && !this.isDeleting;
   }
 
   get canRetryFailed(): boolean {
-    return this.failedCount > 0 && !this.hasActiveUploads && !this.isDeleting;
+    return this.failedCount > 0 && !this.isUploading && !this.isDeleting;
   }
 
   get clearQueueCount(): number {
-    return Math.max(this.trackedFiles.size, this.pendingFiles.length);
+    return this.queueItems.length;
   }
 
   get canClearQueue(): boolean {
-    return this.clearQueueCount > 0 && !this.isDeleting;
+    return this.clearQueueCount > 0 && !this.isUploading && !this.isDeleting;
   }
 
   get dropzoneDisabled(): boolean {
-    return this.isDeleting;
+    return this.isDeleting || this.isUploading;
+  }
+
+  get nextUploadLabel(): string {
+    const key = this.nextUploadKey();
+    if (!key) {
+      return 'Subir siguiente';
+    }
+
+    const index = this.queueOrder.indexOf(key) + 1;
+    return `Subir siguiente (${index}/${this.queueItems.length})`;
   }
 
   displayUrl(mediaId: number): string | null {
     return this.displayUrls.get(mediaId) ?? null;
+  }
+
+  queuePreviewUrl(key: string): string | null {
+    return this.localPreviewByKey.get(key) ?? null;
+  }
+
+  isQueueSelected(key: string): boolean {
+    return (this.selectedQueueKey ?? this.nextUploadKey()) === key;
+  }
+
+  queueStatusLabel(item: TrackedFile): string {
+    switch (item.status) {
+      case 'pending':
+        return this.isQueueSelected(item.key) ? 'Siguiente' : 'Pendiente';
+      case 'uploading':
+        return 'Subiendo…';
+      case 'error':
+        return 'Error';
+    }
+  }
+
+  queueStatusSeverity(
+    item: TrackedFile,
+  ): 'success' | 'info' | 'warning' | 'danger' | 'secondary' {
+    switch (item.status) {
+      case 'pending':
+        return this.isQueueSelected(item.key) ? 'info' : 'secondary';
+      case 'uploading':
+        return 'warning';
+      case 'error':
+        return 'danger';
+    }
   }
 
   loadGallery(): void {
@@ -197,25 +246,82 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
 
       if (!this.trackedFiles.has(key)) {
         this.trackedFiles.set(key, { key, file, status: 'pending' });
+        this.queueOrder.push(key);
+        this.ensureQueuePreview(key, file);
       }
     }
 
     this.pendingFiles = files;
     this.pruneRemovedPending(activeKeys);
+    this.ensureSelectedQueueKey();
   }
 
-  startQueueUpload(): void {
-    this.enqueuePending(false);
+  selectQueueItem(key: string): void {
+    const item = this.trackedFiles.get(key);
+    if (!item || item.status === 'uploading') {
+      return;
+    }
+
+    if (item.status === 'error') {
+      item.status = 'pending';
+    }
+
+    this.selectedQueueKey = key;
+    this.moveQueueKeyToFront(key);
+  }
+
+  moveQueueItem(key: string, delta: number, event?: Event): void {
+    event?.stopPropagation();
+
+    const item = this.trackedFiles.get(key);
+    if (!item || item.status === 'uploading') {
+      return;
+    }
+
+    const index = this.queueOrder.indexOf(key);
+    if (index < 0) {
+      return;
+    }
+
+    const target = index + delta;
+    if (target < 0 || target >= this.queueOrder.length) {
+      return;
+    }
+
+    this.queueOrder[index] = this.queueOrder[target];
+    this.queueOrder[target] = key;
+  }
+
+  uploadNext(): void {
+    this.autoDrainAfterUpload = false;
+    this.uploadOne(this.nextUploadKey(), false);
+  }
+
+  uploadQueueItem(key: string, event?: Event): void {
+    event?.stopPropagation();
+    this.autoDrainAfterUpload = false;
+    this.selectedQueueKey = key;
+
+    const item = this.trackedFiles.get(key);
+    if (item?.status === 'error') {
+      item.status = 'pending';
+    }
+
+    this.moveQueueKeyToFront(key);
+    this.uploadOne(key, false);
   }
 
   retryFailedUploads(): void {
-    for (const tracked of this.trackedFiles.values()) {
-      if (tracked.status === 'error') {
-        tracked.status = 'pending';
-      }
+    const failed = this.queueItems.find(item => item.status === 'error');
+    if (!failed) {
+      return;
     }
 
-    this.enqueuePending(false);
+    failed.status = 'pending';
+    this.selectedQueueKey = failed.key;
+    this.moveQueueKeyToFront(failed.key);
+    this.autoDrainAfterUpload = false;
+    this.uploadOne(failed.key, false);
   }
 
   clearQueue(): void {
@@ -227,8 +333,11 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
     const waiters = [...this.queueWaiters];
 
     this.isPumpingQueue = false;
+    this.autoDrainAfterUpload = false;
     this.trackedFiles.clear();
     this.fileKeyByRef.clear();
+    this.queueOrder = [];
+    this.selectedQueueKey = null;
     this.revokeLocalPreviews();
     this.pendingFiles = [];
     this.mediaDropzone?.clear();
@@ -244,9 +353,6 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
     showSuccess(this.messageService, 'Cola de imágenes limpiada.');
   }
 
-  /**
-   * Sube archivos pendientes del dropzone al servidor (requerido antes del sync WooCommerce).
-   */
   uploadPendingIfAny(quiet = false): Observable<ProductMediaItem[]> {
     if (this.isDeleting) {
       return throwError(
@@ -254,19 +360,20 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
       );
     }
 
-    const needsUpload = this.pendingFiles.some(file => {
-      const status = this.trackedFiles.get(this.ensureFileKey(file))?.status;
-      return !status || status === 'pending' || status === 'error';
-    });
+    const needsUpload = this.queueItems.some(
+      item => item.status === 'pending' || item.status === 'error',
+    );
 
-    if (!needsUpload && !this.hasActiveUploads) {
+    if (!needsUpload && !this.isUploading) {
       return of([]);
     }
 
-    this.enqueuePending(quiet);
+    this.autoDrainAfterUpload = true;
+    this.suppressErrorToast = quiet;
+    this.uploadOne(this.nextUploadKey(), quiet);
 
     return new Observable<ProductMediaItem[]>(observer => {
-      if (!this.hasActiveUploads && !needsUpload) {
+      if (!this.isUploading && !needsUpload) {
         observer.next([]);
         observer.complete();
         return;
@@ -323,35 +430,15 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   bindDropzoneStatusLabel(file: File): string | null {
-    switch (this.trackedFiles.get(this.ensureFileKey(file))?.status) {
-      case 'pending':
-        return 'Pendiente';
-      case 'queued':
-        return 'En cola';
-      case 'uploading':
-        return 'Subiendo…';
-      case 'error':
-        return 'Error';
-      default:
-        return null;
-    }
+    const item = this.trackedFiles.get(this.ensureFileKey(file));
+    return item ? this.queueStatusLabel(item) : null;
   }
 
   bindDropzoneStatusSeverity(
     file: File,
   ): 'success' | 'info' | 'warning' | 'danger' | 'secondary' {
-    switch (this.trackedFiles.get(this.ensureFileKey(file))?.status) {
-      case 'pending':
-        return 'secondary';
-      case 'queued':
-        return 'info';
-      case 'uploading':
-        return 'warning';
-      case 'error':
-        return 'danger';
-      default:
-        return 'secondary';
-    }
+    const item = this.trackedFiles.get(this.ensureFileKey(file));
+    return item ? this.queueStatusSeverity(item) : 'secondary';
   }
 
   bindDropzoneStatusUploading(file: File): boolean {
@@ -360,50 +447,39 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
     );
   }
 
-  private enqueuePending(quiet: boolean): void {
-    this.suppressErrorToast = quiet;
-
-    for (const tracked of this.trackedFiles.values()) {
-      if (tracked.status === 'pending' || tracked.status === 'error') {
-        tracked.status = 'queued';
-      }
-    }
-
-    this.pumpQueue();
-  }
-
-  private pumpQueue(): void {
-    if (this.isPumpingQueue) {
-      return;
-    }
-
-    const next = [...this.trackedFiles.values()].find(
-      tracked => tracked.status === 'queued',
-    );
-
-    if (!next) {
+  private uploadOne(key: string | null, quiet: boolean): void {
+    if (!key || this.isPumpingQueue) {
       this.completeWaitersIfIdle();
       return;
     }
 
-    this.isPumpingQueue = true;
-    next.status = 'uploading';
-
-    const key = next.key;
-    if (!this.localPreviewByKey.has(key)) {
-      this.localPreviewByKey.set(key, URL.createObjectURL(next.file));
+    const tracked = this.trackedFiles.get(key);
+    if (
+      !tracked ||
+      (tracked.status !== 'pending' && tracked.status !== 'error')
+    ) {
+      if (this.autoDrainAfterUpload) {
+        this.uploadOne(this.nextUploadKey(), quiet);
+      } else {
+        this.completeWaitersIfIdle();
+      }
+      return;
     }
 
+    this.suppressErrorToast = quiet;
+    this.isPumpingQueue = true;
+    tracked.status = 'uploading';
+    this.ensureQueuePreview(key, tracked.file);
+
     this.productMediaService
-      .uploadImage(this.productId, next.file)
+      .uploadImage(this.productId, tracked.file)
       .pipe(
         tap((response: HttpResponse<ProductMediaUploadResponse>) => {
           if (!this.trackedFiles.has(key)) {
             return;
           }
 
-          next.status = 'done';
-          next.media = response.body?.media;
+          tracked.media = response.body?.media;
 
           this.sessionWorstSync = this.mergeSyncResults(
             this.sessionWorstSync,
@@ -426,13 +502,13 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
             return EMPTY;
           }
 
-          next.status = 'error';
+          tracked.status = 'error';
           if (!this.suppressErrorToast) {
             showError(
               this.messageService,
               err?.error?.message ??
                 err?.message ??
-                'No se pudo subir una imagen.',
+                'No se pudo subir la imagen.',
             );
           }
           return EMPTY;
@@ -440,23 +516,87 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
         finalize(() => {
           this.isPumpingQueue = false;
 
-          if (this.trackedFiles.has(key) && next.status === 'done') {
-            this.trackedFiles.delete(key);
-            this.pendingFiles = this.pendingFiles.filter(
-              file => this.fileKeyByRef.get(file) !== key,
-            );
-            this.fileKeyByRef.delete(next.file);
-            this.mediaDropzone?.removeByKey(key);
+          if (this.trackedFiles.has(key) && tracked.status !== 'error') {
+            this.removeFromQueue(key);
           }
 
-          this.pumpQueue();
+          if (this.autoDrainAfterUpload) {
+            const nextKey = this.nextUploadKey();
+            if (nextKey) {
+              this.uploadOne(nextKey, quiet);
+              return;
+            }
+          }
+
+          this.completeWaitersIfIdle();
         }),
       )
       .subscribe();
   }
 
+  private removeFromQueue(key: string): void {
+    const tracked = this.trackedFiles.get(key);
+    if (!tracked) {
+      return;
+    }
+
+    this.trackedFiles.delete(key);
+    this.fileKeyByRef.delete(tracked.file);
+    this.queueOrder = this.queueOrder.filter(itemKey => itemKey !== key);
+    this.pendingFiles = this.pendingFiles.filter(
+      file => this.fileKeyByRef.get(file) !== key,
+    );
+    this.mediaDropzone?.removeByKey(key);
+
+    if (this.selectedQueueKey === key) {
+      this.selectedQueueKey = null;
+    }
+
+    this.ensureSelectedQueueKey();
+  }
+
+  private nextUploadKey(): string | null {
+    if (this.selectedQueueKey) {
+      const selected = this.trackedFiles.get(this.selectedQueueKey);
+      if (
+        selected &&
+        (selected.status === 'pending' || selected.status === 'error')
+      ) {
+        return this.selectedQueueKey;
+      }
+    }
+
+    return (
+      this.queueOrder.find(itemKey => {
+        const item = this.trackedFiles.get(itemKey);
+        return item?.status === 'pending' || item?.status === 'error';
+      }) ?? null
+    );
+  }
+
+  private moveQueueKeyToFront(key: string): void {
+    this.queueOrder = [key, ...this.queueOrder.filter(itemKey => itemKey !== key)];
+  }
+
+  private ensureSelectedQueueKey(): void {
+    if (
+      this.selectedQueueKey &&
+      this.trackedFiles.has(this.selectedQueueKey)
+    ) {
+      return;
+    }
+
+    this.selectedQueueKey = this.nextUploadKey();
+  }
+
+  private ensureQueuePreview(key: string, file: File): void {
+    if (!this.localPreviewByKey.has(key)) {
+      this.localPreviewByKey.set(key, URL.createObjectURL(file));
+    }
+  }
+
   private completeWaitersIfIdle(): void {
-    if (this.hasActiveUploads || this.isPumpingQueue) {
+    if (this.isUploading) {
       return;
     }
 
@@ -470,26 +610,33 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
     this.sessionUploaded = [];
     this.sessionWorstSync = undefined;
     this.suppressErrorToast = false;
+    this.autoDrainAfterUpload = false;
     this.queueWaiters = [];
 
     for (const waiter of waiters) {
       waiter.resolve(uploaded);
     }
 
-    if (uploaded.length > 0 && !suppressToast) {
-      const baseMessage =
+    if (uploaded.length > 0 && !suppressToast && !this.autoDrainAfterUpload) {
+      notifyWooCommerceSyncResult(
+        this.messageService,
+        worstSync,
         uploaded.length === 1
           ? 'Imagen subida correctamente.'
-          : `${uploaded.length} imágenes subidas correctamente.`;
-      notifyWooCommerceSyncResult(this.messageService, worstSync, baseMessage);
+          : `${uploaded.length} imágenes subidas correctamente.`,
+      );
     }
   }
 
   private pruneRemovedPending(activeKeys: Set<string>): void {
-    for (const [key, tracked] of this.trackedFiles) {
+    for (const key of [...this.queueOrder]) {
+      const tracked = this.trackedFiles.get(key);
+      if (!tracked) {
+        continue;
+      }
+
       if (
         activeKeys.has(key) ||
-        tracked.status === 'queued' ||
         tracked.status === 'uploading'
       ) {
         continue;
@@ -497,8 +644,15 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
 
       this.trackedFiles.delete(key);
       this.fileKeyByRef.delete(tracked.file);
+      this.queueOrder = this.queueOrder.filter(itemKey => itemKey !== key);
       this.releaseLocalPreview(key);
+
+      if (this.selectedQueueKey === key) {
+        this.selectedQueueKey = null;
+      }
     }
+
+    this.ensureSelectedQueueKey();
   }
 
   private ensureFileKey(file: File): string {
@@ -525,12 +679,15 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
   private resetUploadState(): void {
     this.trackedFiles.clear();
     this.fileKeyByRef.clear();
+    this.queueOrder = [];
+    this.selectedQueueKey = null;
     this.revokeLocalPreviews();
     this.sessionUploaded = [];
     this.sessionWorstSync = undefined;
     this.queueWaiters = [];
     this.isPumpingQueue = false;
     this.suppressErrorToast = false;
+    this.autoDrainAfterUpload = false;
   }
 
   private emitMediaCount(): void {
