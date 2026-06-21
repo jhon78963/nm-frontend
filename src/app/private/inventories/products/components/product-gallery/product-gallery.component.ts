@@ -16,7 +16,19 @@ import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
-import { concatMap, finalize, forkJoin, from, map, Observable, of, tap, throwError, toArray } from 'rxjs';
+import {
+  catchError,
+  concatMap,
+  EMPTY,
+  finalize,
+  forkJoin,
+  map,
+  Observable,
+  of,
+  Subject,
+  tap,
+  throwError,
+} from 'rxjs';
 
 import { VoucherDropzoneComponent } from '../../../../shared/components/voucher-dropzone/voucher-dropzone.component';
 import { showError } from '../../../../../utils/notifications';
@@ -28,6 +40,14 @@ import {
 } from '../../models/product-media.model';
 import { ProductMediaService } from '../../services/product-media.service';
 import { ProductsService } from '../../services/products.service';
+
+type UploadJobStatus = 'queued' | 'uploading' | 'done' | 'error';
+
+interface UploadJob {
+  file: File;
+  status: UploadJobStatus;
+  media?: ProductMediaItem;
+}
 
 @Component({
   selector: 'app-product-gallery',
@@ -55,13 +75,22 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
   displayUrls = new Map<number, string>();
 
   isLoading = false;
-  isUploading = false;
   deletingMediaId: number | null = null;
 
   readonly maxFileSizeMb = 5;
   readonly maxFiles = 10;
   readonly accept = 'image/jpeg,image/png,image/webp';
-  readonly cameraCapture = 'environment';
+
+  private readonly uploadJobs = new Map<string, UploadJob>();
+  private readonly uploadQueue$ = new Subject<string>();
+  private readonly localPreviewByKey = new Map<string, string>();
+  private queueWaiters: Array<{
+    quiet: boolean;
+    resolve: (items: ProductMediaItem[]) => void;
+    reject: (err: unknown) => void;
+  }> = [];
+  private sessionUploaded: ProductMediaItem[] = [];
+  private sessionWorstSync: WooCommerceSyncResult | undefined;
 
   constructor(
     private readonly productsService: ProductsService,
@@ -71,10 +100,18 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
 
   ngOnInit(): void {
     this.loadGallery();
+    this.uploadQueue$
+      .pipe(
+        concatMap(key => this.processUploadJob(key)),
+      )
+      .subscribe({
+        error: err => this.failWaiters(err),
+      });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['productId'] && !changes['productId'].firstChange) {
+      this.resetUploadState();
       this.pendingFiles = [];
       this.mediaDropzone?.clear();
       this.loadGallery();
@@ -83,24 +120,38 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
 
   ngOnDestroy(): void {
     this.revokeDisplayUrls();
+    this.revokeLocalPreviews();
+    this.queueWaiters = [];
   }
 
   get isDeleting(): boolean {
     return this.deletingMediaId !== null;
   }
 
+  get queuedCount(): number {
+    return [...this.uploadJobs.values()].filter(job => job.status === 'queued')
+      .length;
+  }
+
+  get uploadingCount(): number {
+    return [...this.uploadJobs.values()].filter(
+      job => job.status === 'uploading',
+    ).length;
+  }
+
+  get hasActiveUploads(): boolean {
+    return this.queuedCount > 0 || this.uploadingCount > 0;
+  }
+
   get canUpload(): boolean {
     return (
-      this.pendingFiles.length > 0 && !this.isUploading && !this.isDeleting
+      this.pendingFiles.some(file => this.canRetryUpload(file)) &&
+      !this.isDeleting
     );
   }
 
-  get hasPendingFiles(): boolean {
-    return this.pendingFiles.length > 0;
-  }
-
   get dropzoneDisabled(): boolean {
-    return this.isUploading || this.isDeleting;
+    return this.isDeleting;
   }
 
   displayUrl(mediaId: number): string | null {
@@ -131,119 +182,71 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   onDropzoneFiles(files: File[]): void {
-    const previousCount = this.pendingFiles.length;
+    const previousKeys = new Set(
+      this.pendingFiles.map(file => this.filePreviewKey(file)),
+    );
+    const added = files.filter(
+      file => !previousKeys.has(this.filePreviewKey(file)),
+    );
+
     this.pendingFiles = files;
 
-    if (files.length > previousCount && files.length > 0 && this.productId) {
-      this.uploadPendingIfAny().subscribe({
-        error: err => {
-          showError(
-            this.messageService,
-            err?.error?.message ??
-              err?.message ??
-              'No se pudo subir la imagen.',
-          );
-          this.loadGallery();
-        },
-      });
+    if (added.length > 0 && this.productId) {
+      this.enqueueFiles(added);
     }
   }
 
   uploadPendingFiles(): void {
-    this.uploadPendingIfAny().subscribe({
-      error: err => {
-        showError(
-          this.messageService,
-          err?.error?.message ?? err?.message ?? 'No se pudo subir la imagen.',
-        );
-        this.loadGallery();
-      },
-    });
+    const retryable = this.pendingFiles.filter(file => this.canRetryUpload(file));
+    if (retryable.length === 0) {
+      return;
+    }
+
+    this.enqueueFiles(retryable);
   }
 
   /**
    * Sube archivos pendientes del dropzone al servidor (requerido antes del sync WooCommerce).
    */
   uploadPendingIfAny(quiet = false): Observable<ProductMediaItem[]> {
-    if (this.pendingFiles.length === 0) {
+    if (this.isDeleting) {
+      return throwError(
+        () => new Error('Espera a que termine la eliminación de imágenes.'),
+      );
+    }
+
+    const pending = this.pendingFiles.filter(
+      file =>
+        !this.uploadJobs.has(this.filePreviewKey(file)) ||
+        this.canRetryUpload(file),
+    );
+
+    if (pending.length === 0 && !this.hasActiveUploads) {
       return of([]);
     }
 
-    if (this.isUploading) {
-      return throwError(() => new Error('Ya hay una subida de imágenes en curso.'));
-    }
+    this.enqueueFiles(pending);
 
-    if (this.isDeleting) {
-      return throwError(() => new Error('Espera a que termine la eliminación de imágenes.'));
-    }
+    return new Observable<ProductMediaItem[]>(observer => {
+      if (!this.hasActiveUploads && pending.length === 0) {
+        observer.next([]);
+        observer.complete();
+        return;
+      }
 
-    this.isUploading = true;
-    let worstSync: WooCommerceSyncResult | undefined;
-    const uploaded: ProductMediaItem[] = [];
-    const localPreviewByKey = new Map<string, string>();
-    for (const file of this.pendingFiles) {
-      localPreviewByKey.set(this.filePreviewKey(file), URL.createObjectURL(file));
-    }
-
-    return from(this.pendingFiles).pipe(
-      concatMap(file =>
-        this.productMediaService.uploadImage(this.productId, file).pipe(
-          tap((response: HttpResponse<ProductMediaUploadResponse>) => {
-            worstSync = this.mergeSyncResults(
-              worstSync,
-              response.body?.wooCommerceSync,
-            );
-            if (response.body?.media) {
-              uploaded.push(response.body.media);
-              this.applyLocalPreview(
-                response.body.media.id,
-                localPreviewByKey.get(this.filePreviewKey(file)),
-                localPreviewByKey,
-                this.filePreviewKey(file),
-              );
-            }
-          }),
-        ),
-      ),
-      toArray(),
-      tap(() => {
-        this.pendingFiles = [];
-        this.mediaDropzone?.clear();
-
-        if (uploaded.length > 0) {
-          const existingIds = new Set(this.mediaItems.map(m => m.id));
-          const novel = uploaded.filter(m => !existingIds.has(m.id));
-          this.mediaItems = [...this.mediaItems, ...novel];
-          this.loadDisplayUrlsForItems(novel);
-          this.emitMediaCount();
-        } else {
-          this.loadGallery();
-        }
-
-        if (!quiet && uploaded.length > 0) {
-          const baseMessage =
-            uploaded.length === 1
-              ? 'Imagen subida correctamente.'
-              : `${uploaded.length} imágenes subidas correctamente.`;
-          notifyWooCommerceSyncResult(
-            this.messageService,
-            worstSync,
-            baseMessage,
-          );
-        }
-      }),
-      finalize(() => {
-        for (const url of localPreviewByKey.values()) {
-          URL.revokeObjectURL(url);
-        }
-        this.isUploading = false;
-      }),
-      map(() => uploaded),
-    );
+      this.queueWaiters.push({
+        quiet,
+        resolve: items => {
+          observer.next(items);
+          observer.complete();
+        },
+        reject: err => observer.error(err),
+      });
+    });
   }
 
   deleteImage(mediaId: number): void {
-    if (this.isUploading || this.deletingMediaId !== null) {
+    if (this.deletingMediaId !== null) {
       return;
     }
 
@@ -275,6 +278,171 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
 
   isDeletingItem(mediaId: number): boolean {
     return this.deletingMediaId === mediaId;
+  }
+
+  bindDropzoneFileKey(file: File): string {
+    return this.filePreviewKey(file);
+  }
+
+  bindDropzoneStatusLabel(file: File): string | null {
+    switch (this.uploadJobs.get(this.filePreviewKey(file))?.status) {
+      case 'queued':
+        return 'En cola';
+      case 'uploading':
+        return 'Subiendo…';
+      case 'error':
+        return 'Error';
+      default:
+        return null;
+    }
+  }
+
+  bindDropzoneStatusSeverity(
+    file: File,
+  ): 'success' | 'info' | 'warning' | 'danger' | 'secondary' {
+    switch (this.uploadJobs.get(this.filePreviewKey(file))?.status) {
+      case 'queued':
+        return 'info';
+      case 'uploading':
+        return 'warning';
+      case 'error':
+        return 'danger';
+      default:
+        return 'secondary';
+    }
+  }
+
+  bindDropzoneStatusUploading(file: File): boolean {
+    return this.uploadJobs.get(this.filePreviewKey(file))?.status === 'uploading';
+  }
+
+  private enqueueFiles(files: File[]): void {
+    if (files.length === 0) {
+      this.completeWaitersIfIdle();
+      return;
+    }
+
+    for (const file of files) {
+      const key = this.filePreviewKey(file);
+      const existing = this.uploadJobs.get(key);
+
+      if (existing?.status === 'uploading' || existing?.status === 'queued') {
+        continue;
+      }
+
+      if (!this.localPreviewByKey.has(key)) {
+        this.localPreviewByKey.set(key, URL.createObjectURL(file));
+      }
+
+      this.uploadJobs.set(key, { file, status: 'queued' });
+      this.uploadQueue$.next(key);
+    }
+  }
+
+  private processUploadJob(key: string): Observable<void> {
+    const job = this.uploadJobs.get(key);
+    if (!job || job.status !== 'queued') {
+      return of(undefined);
+    }
+
+    job.status = 'uploading';
+
+    return this.productMediaService.uploadImage(this.productId, job.file).pipe(
+      tap((response: HttpResponse<ProductMediaUploadResponse>) => {
+        job.status = 'done';
+        job.media = response.body?.media;
+
+        this.sessionWorstSync = this.mergeSyncResults(
+          this.sessionWorstSync,
+          response.body?.wooCommerceSync,
+        );
+
+        if (response.body?.media) {
+          this.sessionUploaded.push(response.body.media);
+          this.applyLocalPreview(response.body.media.id, key);
+
+          const existingIds = new Set(this.mediaItems.map(item => item.id));
+          if (!existingIds.has(response.body.media.id)) {
+            this.mediaItems = [...this.mediaItems, response.body.media];
+            this.emitMediaCount();
+          }
+        }
+      }),
+      catchError(err => {
+        job.status = 'error';
+        if (!this.queueWaiters.every(waiter => waiter.quiet)) {
+          showError(
+            this.messageService,
+            err?.error?.message ??
+              err?.message ??
+              'No se pudo subir una imagen.',
+          );
+        }
+        return EMPTY;
+      }),
+      finalize(() => {
+        if (job.status === 'done') {
+          this.uploadJobs.delete(key);
+          this.pendingFiles = this.pendingFiles.filter(
+            file => this.filePreviewKey(file) !== key,
+          );
+          this.mediaDropzone?.removeByKey(key);
+          this.releaseLocalPreview(key);
+        }
+
+        this.completeWaitersIfIdle();
+      }),
+      map(() => undefined),
+    );
+  }
+
+  private completeWaitersIfIdle(): void {
+    if (this.hasActiveUploads) {
+      return;
+    }
+
+    const uploaded = [...this.sessionUploaded];
+    const worstSync = this.sessionWorstSync;
+    const waiters = [...this.queueWaiters];
+    const suppressToast =
+      waiters.length > 0 && waiters.every(waiter => waiter.quiet);
+
+    this.sessionUploaded = [];
+    this.sessionWorstSync = undefined;
+    this.queueWaiters = [];
+
+    for (const waiter of waiters) {
+      waiter.resolve(uploaded);
+    }
+
+    if (uploaded.length > 0 && !suppressToast) {
+      const baseMessage =
+        uploaded.length === 1
+          ? 'Imagen subida correctamente.'
+          : `${uploaded.length} imágenes subidas correctamente.`;
+      notifyWooCommerceSyncResult(this.messageService, worstSync, baseMessage);
+    }
+  }
+
+  private failWaiters(err: unknown): void {
+    const waiters = [...this.queueWaiters];
+    this.queueWaiters = [];
+    for (const waiter of waiters) {
+      waiter.reject(err);
+    }
+  }
+
+  private canRetryUpload(file: File): boolean {
+    const status = this.uploadJobs.get(this.filePreviewKey(file))?.status;
+    return !status || status === 'error';
+  }
+
+  private resetUploadState(): void {
+    this.uploadJobs.clear();
+    this.revokeLocalPreviews();
+    this.sessionUploaded = [];
+    this.sessionWorstSync = undefined;
+    this.queueWaiters = [];
   }
 
   private emitMediaCount(): void {
@@ -355,19 +523,30 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
     return `${file.name}:${file.size}:${file.lastModified}`;
   }
 
-  private applyLocalPreview(
-    mediaId: number,
-    localUrl: string | undefined,
-    localPreviewByKey: Map<string, string>,
-    key: string,
-  ): void {
+  private applyLocalPreview(mediaId: number, key: string): void {
+    const localUrl = this.localPreviewByKey.get(key);
     if (!localUrl) {
       return;
     }
 
     this.revokeDisplayUrl(mediaId);
     this.displayUrls.set(mediaId, localUrl);
-    localPreviewByKey.delete(key);
+    this.localPreviewByKey.delete(key);
+  }
+
+  private releaseLocalPreview(key: string): void {
+    const url = this.localPreviewByKey.get(key);
+    if (url) {
+      URL.revokeObjectURL(url);
+      this.localPreviewByKey.delete(key);
+    }
+  }
+
+  private revokeLocalPreviews(): void {
+    for (const url of this.localPreviewByKey.values()) {
+      URL.revokeObjectURL(url);
+    }
+    this.localPreviewByKey.clear();
   }
 
   private setDisplayUrl(mediaId: number, blob: Blob): void {

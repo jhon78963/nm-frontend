@@ -8,31 +8,35 @@
     [maxFiles]="maxFiles"
     [maxFileSizeMb]="maxFileSizeMb"
     [accept]="accept"
-    [capture]="cameraCapture"
+    [splitPickers]="true"
     subjectLabel="imágenes"
-    formatsHint="JPEG, PNG o WebP · puedes tomar foto con la cámara"
+    formatsHint="JPEG, PNG o WebP"
     [disabled]="dropzoneDisabled"
+    [fileKeyFn]="bindDropzoneFileKey"
+    [fileStatusLabel]="bindDropzoneStatusLabel"
+    [fileStatusSeverity]="bindDropzoneStatusSeverity"
+    [fileStatusUploading]="bindDropzoneStatusUploading"
     (filesChange)="onDropzoneFiles($event)" />
 
   <button
     pButton
     type="button"
-    label="Subir imágenes"
+    label="Reintentar fallidas"
     icon="pi pi-upload"
     class="w-full mt-2"
-    [loading]="isUploading"
     [disabled]="!canUpload"
     (click)="uploadPendingFiles()"></button>
 
-  @if (pendingFiles.length > 0) {
-    <p class="text-orange-600 text-sm m-0 mt-3 text-center font-medium">
-      Subiendo imagen(es)… Si falla, pulsa «Subir imágenes» para reintentar.
-    </p>
-  }
-
-  @if (isUploading && pendingFiles.length === 0) {
+  @if (hasActiveUploads) {
     <p class="text-primary text-sm m-0 mt-3 text-center">
-      Subiendo al servidor y sincronizando con WooCommerce…
+      @if (uploadingCount > 0 && queuedCount > 0) {
+        Subiendo {{ uploadingCount }} imagen(es), {{ queuedCount }} en cola…
+      } @else if (uploadingCount > 0) {
+        Subiendo {{ uploadingCount }} imagen(es)…
+      } @else {
+        {{ queuedCount }} imagen(es) en cola…
+      }
+      Puedes seguir tomando o eligiendo fotos.
     </p>
   }
 
@@ -76,9 +80,7 @@
               pTooltip="Eliminar imagen"
               tooltipPosition="top"
               [loading]="isDeletingItem(item.id)"
-              [disabled]="
-                isUploading || (isDeleting && !isDeletingItem(item.id))
-              "
+              [disabled]="isDeleting && !isDeletingItem(item.id)"
               (click)="deleteImage(item.id)"></button>
           </div>
         </div>
