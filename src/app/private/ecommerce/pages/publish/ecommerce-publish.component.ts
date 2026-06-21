@@ -110,7 +110,8 @@ interface VariantFormValue {
 export class EcommercePublishComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
-  @ViewChild(ProductGalleryComponent) productGallery?: ProductGalleryComponent;
+  @ViewChild('productGalleryRef')
+  productGallery?: ProductGalleryComponent;
 
   products: Product[] = [];
   total = 0;
@@ -333,6 +334,15 @@ export class EcommercePublishComponent implements OnInit {
       return;
     }
 
+    const gallery = this.productGallery;
+    if (!gallery) {
+      showError(
+        this.messageService,
+        'La galería aún no está lista. Espera un momento e intenta de nuevo.',
+      );
+      return;
+    }
+
     this.isSaving = true;
     const productId = this.selectedProduct.id;
     const current = this.selectedProduct;
@@ -351,10 +361,8 @@ export class EcommercePublishComponent implements OnInit {
       wooStatus: this.publishForm.value.wooStatus as 'draft' | 'publish',
     });
 
-    const uploadPending$ =
-      this.productGallery?.uploadPendingIfAny(true) ?? of([]);
-
-    uploadPending$
+    gallery
+      .uploadPendingIfAny(true)
       .pipe(
         switchMap(() => this.productsService.edit(productId, payload)),
         switchMap(() => this.productWooCommerceService.syncProduct(productId)),

@@ -26,8 +26,13 @@
 
   @if (pendingFiles.length > 0) {
     <p class="text-orange-600 text-sm m-0 mt-3 text-center font-medium">
-      Imagen(es) seleccionada(s) pero aún no subidas. Pulsa «Subir imágenes» o
-      «Guardar y sincronizar» para enviarlas a WooCommerce.
+      Subiendo imagen(es)… Si falla, pulsa «Subir imágenes» para reintentar.
+    </p>
+  }
+
+  @if (isUploading && pendingFiles.length === 0) {
+    <p class="text-primary text-sm m-0 mt-3 text-center">
+      Subiendo al servidor y sincronizando con WooCommerce…
     </p>
   }
 

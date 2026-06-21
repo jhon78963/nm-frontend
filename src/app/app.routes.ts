@@ -65,7 +65,12 @@ export const routes: Routes = [
         canActivate: [permissionGuard],
         data: {
           breadcrumb: 'Ecommerce',
-          permissions: ['product.update', 'product.create', 'product.getAll', 'product.get'],
+          permissions: [
+            'product.update',
+            'product.create',
+            'product.getAll',
+            'product.get',
+          ],
         },
         loadChildren: () =>
           import('./private/ecommerce/ecommerce.module').then(

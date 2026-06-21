@@ -131,7 +131,22 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   onDropzoneFiles(files: File[]): void {
+    const previousCount = this.pendingFiles.length;
     this.pendingFiles = files;
+
+    if (files.length > previousCount && files.length > 0 && this.productId) {
+      this.uploadPendingIfAny().subscribe({
+        error: err => {
+          showError(
+            this.messageService,
+            err?.error?.message ??
+              err?.message ??
+              'No se pudo subir la imagen.',
+          );
+          this.loadGallery();
+        },
+      });
+    }
   }
 
   uploadPendingFiles(): void {

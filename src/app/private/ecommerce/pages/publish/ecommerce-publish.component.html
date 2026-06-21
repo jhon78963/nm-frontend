@@ -303,6 +303,7 @@
       </form>
 
       <app-product-gallery
+        #productGalleryRef
         [productId]="selectedProduct.id"
         (mediaCountChange)="onMediaCountChange($event)" />
 
