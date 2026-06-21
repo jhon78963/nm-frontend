@@ -28,7 +28,7 @@ import {
 } from 'rxjs';
 
 import { VoucherDropzoneComponent } from '../../../../shared/components/voucher-dropzone/voucher-dropzone.component';
-import { showError } from '../../../../../utils/notifications';
+import { showError, showSuccess } from '../../../../../utils/notifications';
 import { notifyWooCommerceSyncResult } from '../../../../../utils/woo-commerce-sync-feedback';
 import {
   ProductMediaItem,
@@ -149,6 +149,14 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
     return this.failedCount > 0 && !this.hasActiveUploads && !this.isDeleting;
   }
 
+  get clearQueueCount(): number {
+    return Math.max(this.trackedFiles.size, this.pendingFiles.length);
+  }
+
+  get canClearQueue(): boolean {
+    return this.clearQueueCount > 0 && !this.isDeleting;
+  }
+
   get dropzoneDisabled(): boolean {
     return this.isDeleting;
   }
@@ -208,6 +216,32 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     this.enqueuePending(false);
+  }
+
+  clearQueue(): void {
+    if (!this.canClearQueue) {
+      return;
+    }
+
+    const uploaded = [...this.sessionUploaded];
+    const waiters = [...this.queueWaiters];
+
+    this.isPumpingQueue = false;
+    this.trackedFiles.clear();
+    this.fileKeyByRef.clear();
+    this.revokeLocalPreviews();
+    this.pendingFiles = [];
+    this.mediaDropzone?.clear();
+    this.sessionUploaded = [];
+    this.sessionWorstSync = undefined;
+    this.suppressErrorToast = false;
+    this.queueWaiters = [];
+
+    for (const waiter of waiters) {
+      waiter.resolve(uploaded);
+    }
+
+    showSuccess(this.messageService, 'Cola de imágenes limpiada.');
   }
 
   /**
@@ -364,6 +398,10 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
       .uploadImage(this.productId, next.file)
       .pipe(
         tap((response: HttpResponse<ProductMediaUploadResponse>) => {
+          if (!this.trackedFiles.has(key)) {
+            return;
+          }
+
           next.status = 'done';
           next.media = response.body?.media;
 
@@ -384,6 +422,10 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
           }
         }),
         catchError(err => {
+          if (!this.trackedFiles.has(key)) {
+            return EMPTY;
+          }
+
           next.status = 'error';
           if (!this.suppressErrorToast) {
             showError(
@@ -398,7 +440,7 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
         finalize(() => {
           this.isPumpingQueue = false;
 
-          if (next.status === 'done') {
+          if (this.trackedFiles.has(key) && next.status === 'done') {
             this.trackedFiles.delete(key);
             this.pendingFiles = this.pendingFiles.filter(
               file => this.fileKeyByRef.get(file) !== key,

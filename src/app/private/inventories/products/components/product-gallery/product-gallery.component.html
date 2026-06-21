@@ -45,6 +45,19 @@
       class="w-full p-button-outlined"
       [disabled]="!canRetryFailed"
       (click)="retryFailedUploads()"></button>
+
+    <button
+      pButton
+      type="button"
+      [label]="
+        clearQueueCount > 0
+          ? 'Limpiar cola (' + clearQueueCount + ')'
+          : 'Limpiar cola'
+      "
+      icon="pi pi-times"
+      class="w-full p-button-outlined p-button-danger p-button-sm"
+      [disabled]="!canClearQueue"
+      (click)="clearQueue()"></button>
   </div>
 
   @if (pendingCount > 0 && !hasActiveUploads) {
