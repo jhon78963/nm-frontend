@@ -180,6 +180,10 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
     this.isUploading = true;
     let worstSync: WooCommerceSyncResult | undefined;
     const uploaded: ProductMediaItem[] = [];
+    const localPreviewByKey = new Map<string, string>();
+    for (const file of this.pendingFiles) {
+      localPreviewByKey.set(this.filePreviewKey(file), URL.createObjectURL(file));
+    }
 
     return from(this.pendingFiles).pipe(
       concatMap(file =>
@@ -191,6 +195,12 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
             );
             if (response.body?.media) {
               uploaded.push(response.body.media);
+              this.applyLocalPreview(
+                response.body.media.id,
+                localPreviewByKey.get(this.filePreviewKey(file)),
+                localPreviewByKey,
+                this.filePreviewKey(file),
+              );
             }
           }),
         ),
@@ -223,6 +233,9 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
         }
       }),
       finalize(() => {
+        for (const url of localPreviewByKey.values()) {
+          URL.revokeObjectURL(url);
+        }
         this.isUploading = false;
       }),
       map(() => uploaded),
@@ -300,22 +313,31 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private loadDisplayUrls(): void {
-    this.revokeDisplayUrls();
-    this.loadDisplayUrlsForItems(this.mediaItems);
+    const activeIds = new Set(this.mediaItems.map(item => item.id));
+    for (const mediaId of [...this.displayUrls.keys()]) {
+      if (!activeIds.has(mediaId)) {
+        this.revokeDisplayUrl(mediaId);
+      }
+    }
+
+    this.loadDisplayUrlsForItems(
+      this.mediaItems.filter(item => !this.displayUrls.has(item.id)),
+    );
   }
 
   private loadDisplayUrlsForItems(items: ProductMediaItem[]): void {
-    if (items.length === 0) {
+    const pending = items.filter(item => !this.displayUrls.has(item.id));
+    if (pending.length === 0) {
       return;
     }
 
     forkJoin(
-      items.map(item =>
+      pending.map(item =>
         this.productMediaService
           .getPreviewBlob(this.productId, item.id)
           .pipe(
             tap(blob => {
-              this.displayUrls.set(item.id, URL.createObjectURL(blob));
+              this.setDisplayUrl(item.id, blob);
             }),
           ),
       ),
@@ -327,6 +349,35 @@ export class ProductGalleryComponent implements OnInit, OnChanges, OnDestroy {
         );
       },
     });
+  }
+
+  private filePreviewKey(file: File): string {
+    return `${file.name}:${file.size}:${file.lastModified}`;
+  }
+
+  private applyLocalPreview(
+    mediaId: number,
+    localUrl: string | undefined,
+    localPreviewByKey: Map<string, string>,
+    key: string,
+  ): void {
+    if (!localUrl) {
+      return;
+    }
+
+    this.revokeDisplayUrl(mediaId);
+    this.displayUrls.set(mediaId, localUrl);
+    localPreviewByKey.delete(key);
+  }
+
+  private setDisplayUrl(mediaId: number, blob: Blob): void {
+    const typedBlob =
+      blob.type && blob.type.startsWith('image/')
+        ? blob
+        : new Blob([blob], { type: 'image/jpeg' });
+
+    this.revokeDisplayUrl(mediaId);
+    this.displayUrls.set(mediaId, URL.createObjectURL(typedBlob));
   }
 
   private revokeDisplayUrl(mediaId: number): void {
