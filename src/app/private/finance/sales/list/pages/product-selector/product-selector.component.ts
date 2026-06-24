@@ -54,7 +54,7 @@ export class ProductSelectorComponent implements OnInit {
       const res = await this.posService.searchProductBySku(query);
 
       if (res && res.variants) {
-        const flatVariants: any[] = [];
+        let flatVariants: any[] = [];
 
         // Recorremos las llaves del objeto (XS, M, ESTÁNDAR...)
         Object.keys(res.variants).forEach(sizeName => {
@@ -70,6 +70,12 @@ export class ProductSelectorComponent implements OnInit {
             });
           });
         });
+
+        const trimmedQuery = query.trim();
+        const matchesSizeBarcode = flatVariants.some(v => v.sku === trimmedQuery);
+        if (matchesSizeBarcode) {
+          flatVariants = flatVariants.filter(v => v.sku === trimmedQuery);
+        }
 
         this.products.set(flatVariants);
       } else {
