@@ -1,4 +1,5 @@
 @if (form) {
+  <p-confirmDialog></p-confirmDialog>
   <form [formGroup]="form" (ngSubmit)="buttonSaveSale()">
     <div class="p-fluid p-formgrid grid">
       <!-- 1. FECHA -->
@@ -80,14 +81,13 @@
                   </td>
                   <td class="p-2 text-center">
                     <button
-                      *ngIf="isNewItem(i)"
                       type="button"
                       pButton
                       icon="pi pi-trash"
                       class="p-button-danger p-button-text p-button-rounded p-0"
-                      (click)="removeItem(i)"
-                      [disabled]="isCanceled()"
-                      pTooltip="Quitar producto"></button>
+                      (click)="removeItem(i, $event)"
+                      [disabled]="!canRemoveItem(i)"
+                      pTooltip="Eliminar producto"></button>
                   </td>
                 </tr>
               </ng-container>

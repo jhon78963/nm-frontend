@@ -9,7 +9,8 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { MessageService } from 'primeng/api';
+import { MessageService, ConfirmationService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import {
   DialogService,
   DynamicDialogConfig,
@@ -25,10 +26,16 @@ import { ProductSelectorComponent } from '../product-selector/product-selector.c
 @Component({
   selector: 'app-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, SharedModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    SharedModule,
+    ConfirmDialogModule,
+  ],
   templateUrl: './form.component.html',
   styleUrl: './form.component.scss',
-  providers: [DialogService, MessageService, DatePipe],
+  providers: [DialogService, MessageService, ConfirmationService, DatePipe],
 })
 export class SaleFormComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -54,6 +61,7 @@ export class SaleFormComponent implements OnInit {
     private readonly dynamicDialogRef: DynamicDialogRef,
     private readonly formBuilder: FormBuilder,
     private readonly messageService: MessageService,
+    private readonly confirmationService: ConfirmationService,
     private readonly salesService: SalesService,
   ) {}
 
@@ -178,16 +186,47 @@ export class SaleFormComponent implements OnInit {
       });
   }
 
-  removeItem(index: number): void {
-    const itemsArray = this.form.get('items') as FormArray;
-    const row = itemsArray.at(index);
-
-    if (!row.get('is_new')?.value) {
+  removeItem(index: number, event?: Event): void {
+    if (this.itemsControls.length <= 1) {
+      showError(
+        this.messageService,
+        'La venta debe tener al menos un producto.',
+      );
       return;
     }
 
-    itemsArray.removeAt(index);
-    this.recalculateTotals();
+    const row = this.itemsControls[index];
+    const isNew = !!row.get('is_new')?.value;
+    const label =
+      row.get('description_full')?.value ||
+      row.get('product_name')?.value ||
+      'este producto';
+
+    const doRemove = () => {
+      (this.form.get('items') as FormArray).removeAt(index);
+      this.recalculateTotals();
+    };
+
+    if (isNew) {
+      doRemove();
+      return;
+    }
+
+    this.confirmationService.confirm({
+      target: event?.target as EventTarget | undefined,
+      message: `¿Eliminar "${label}" de la venta? El stock se devolverá al inventario.`,
+      header: 'Eliminar producto',
+      icon: 'pi pi-exclamation-triangle',
+      acceptButtonStyleClass: 'p-button-danger p-button-text',
+      rejectButtonStyleClass: 'p-button-text',
+      acceptLabel: 'Sí, eliminar',
+      rejectLabel: 'Cancelar',
+      accept: () => doRemove(),
+    });
+  }
+
+  canRemoveItem(index: number): boolean {
+    return !this.isCanceled() && this.itemsControls.length > 1;
   }
 
   isNewItem(index: number): boolean {
