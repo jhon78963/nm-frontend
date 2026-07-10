@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -44,6 +44,11 @@ import { ProductsService } from '../../services/products.service';
 })
 export class ProductListComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+
+  @ViewChild('importInput') importInput!: ElementRef<HTMLInputElement>;
+
+  isExporting = false;
+  isImporting = false;
 
   columns: Column[] = [
     {
@@ -328,5 +333,55 @@ export class ProductListComponent implements OnInit {
 
   private updatePage(value: number): void {
     this.page = value;
+  }
+
+  exportProducts(): void {
+    this.isExporting = true;
+    this.productsService
+      .exportToExcel()
+      .pipe(finalize(() => (this.isExporting = false)))
+      .subscribe({
+        next: (blob: Blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `productos_${new Date().toISOString().slice(0, 10)}.xlsx`;
+          a.click();
+          URL.revokeObjectURL(url);
+        },
+        error: () =>
+          showError(this.messageService, 'Error al exportar productos'),
+      });
+  }
+
+  triggerImport(): void {
+    this.importInput.nativeElement.value = '';
+    this.importInput.nativeElement.click();
+  }
+
+  onImportFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    this.isImporting = true;
+    this.productsService
+      .importFromExcel(file)
+      .pipe(finalize(() => (this.isImporting = false)))
+      .subscribe({
+        next: (res) => {
+          if (res.errors?.length) {
+            showError(
+              this.messageService,
+              `Importación con errores: ${res.errors.slice(0, 3).join('; ')}`,
+            );
+          } else {
+            showSuccess(this.messageService, res.message);
+          }
+          this.getProducts(this.limit, this.page, this.name, this.selectedGenderIds);
+        },
+        error: () =>
+          showError(this.messageService, 'Error al importar el archivo'),
+      });
   }
 }

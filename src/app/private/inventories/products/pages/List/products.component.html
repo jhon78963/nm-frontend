@@ -20,16 +20,44 @@
     </div>
     <div
       class="w-full md:w-4 flex justify-content-center md:justify-content-end flex-order-1 md:flex-order-3 gap-2">
-      <p-button [outlined]="true" severity="secondary" (click)="clearFilter()">
+      <p-button [outlined]="true" severity="secondary" (click)="clearFilter()"
+        pTooltip="Limpiar filtros" tooltipPosition="bottom">
         <i class="pi pi-filter-slash" style="font-size: 1rem"></i>
+      </p-button>
+      <p-button
+        [outlined]="true"
+        severity="secondary"
+        pTooltip="Importar Excel"
+        tooltipPosition="bottom"
+        [loading]="isImporting"
+        (click)="triggerImport()">
+        <i class="pi pi-upload" style="font-size: 1rem"></i>
+      </p-button>
+      <p-button
+        [outlined]="true"
+        severity="secondary"
+        pTooltip="Exportar Excel"
+        tooltipPosition="bottom"
+        [loading]="isExporting"
+        (click)="exportProducts()">
+        <i class="pi pi-download" style="font-size: 1rem"></i>
       </p-button>
       <p-button
         [routerLink]="['step/general']"
         [outlined]="true"
-        styleClass="w-full md:w-auto">
+        styleClass="w-full md:w-auto"
+        pTooltip="Nuevo producto"
+        tooltipPosition="bottom">
         <i class="pi pi-plus" style="font-size: 1rem"></i>
       </p-button>
     </div>
+
+    <input
+      #importInput
+      type="file"
+      accept=".xlsx,.xls,.ods"
+      style="display: none"
+      (change)="onImportFileSelected($event)" />
   </div>
   <app-table-pagination
     [data]="(products | async) ?? []"

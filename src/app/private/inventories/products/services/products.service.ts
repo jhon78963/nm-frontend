@@ -6,6 +6,7 @@ import {
   ProductSave,
 } from '../models/products.model';
 import { BehaviorSubject, map, Observable, switchMap } from 'rxjs';
+import { HttpParams } from '@angular/common/http';
 
 export interface ProductFilterState {
   limit: number;
@@ -142,6 +143,19 @@ export class ProductsService {
 
   getHistory(id: number): Observable<any> {
     return this.apiService.get(`products/${id}/history`);
+  }
+
+  exportToExcel(warehouseId?: number): Observable<Blob> {
+    const params = warehouseId
+      ? new HttpParams().set('warehouseId', warehouseId.toString())
+      : undefined;
+    return this.apiService.getBlob('products/export/excel', { params });
+  }
+
+  importFromExcel(file: File): Observable<{ message: string; updated: number; skipped: number; errors: string[] }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.apiService.post('products/import/excel', formData);
   }
 
   private updateProducts(value: Product[]): void {
