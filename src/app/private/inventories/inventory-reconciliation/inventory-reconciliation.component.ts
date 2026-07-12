@@ -243,7 +243,9 @@ export class InventoryReconciliationComponent
     });
   }
 
-  loadFullProduct(id: number): void {
+  loadFullProduct(id: number, preserveEditsFrom: ReconciliationDraft | null = null): void {
+    const snapshot = preserveEditsFrom;
+
     this.loadingBundle = true;
     forkJoin({
       meta: this.productsService.getOne(id),
@@ -263,21 +265,23 @@ export class InventoryReconciliationComponent
           }
 
           this.lastProductFromApi = meta;
-          this.productForm.patchValue({
-            name: meta.name ?? '',
-            genderId: meta.genderId ?? 1,
-            warehouseId: meta.warehouseId ?? 1,
-            barcode: meta.barcode ?? '',
-            description: meta.description ?? '',
-            purchasePrice: meta.purchasePrice ?? null,
-            salePrice: meta.salePrice ?? null,
-            minSalePrice: meta.minSalePrice ?? null,
-            status: this.normalizeStatus(meta.status),
-            percentageDiscount: meta.percentageDiscount ?? '',
-            cashDiscount: meta.cashDiscount ?? '',
-          });
+          if (!snapshot) {
+            this.productForm.patchValue({
+              name: meta.name ?? '',
+              genderId: meta.genderId ?? 1,
+              warehouseId: meta.warehouseId ?? 1,
+              barcode: meta.barcode ?? '',
+              description: meta.description ?? '',
+              purchasePrice: meta.purchasePrice ?? null,
+              salePrice: meta.salePrice ?? null,
+              minSalePrice: meta.minSalePrice ?? null,
+              status: this.normalizeStatus(meta.status),
+              percentageDiscount: meta.percentageDiscount ?? '',
+              cashDiscount: meta.cashDiscount ?? '',
+            });
+          }
 
-          this.applyProduct(inv);
+          this.applyProduct(inv, snapshot);
           this.searchQuery =
             meta.name?.trim() ||
             (meta.barcode ? String(meta.barcode) : '') ||
@@ -351,6 +355,14 @@ export class InventoryReconciliationComponent
           this.toast('error', this.parseHttpError(err));
         },
       });
+  }
+
+  /** Snapshot del borrador antes de una operación parcial en servidor. */
+  private captureDraftSnapshot(): ReconciliationDraft | null {
+    if (!this.draft) {
+      return null;
+    }
+    return JSON.parse(JSON.stringify(this.draft)) as ReconciliationDraft;
   }
 
   clearProduct(navigate = true): void {
@@ -482,6 +494,7 @@ export class InventoryReconciliationComponent
 
     const ref = draft.sizes[0];
     const v = this.productForm.getRawValue();
+    const snapshot = this.captureDraftSnapshot();
     this.addingSize = true;
     this.inventoryService
       .addSizeToProduct(draft.productId, size.id, {
@@ -496,7 +509,7 @@ export class InventoryReconciliationComponent
         next: () => {
           this.toast('success', `Talla "${size.value}" agregada al producto.`);
           this.closeAddSizeDialog();
-          this.loadFullProduct(draft.productId);
+          this.loadFullProduct(draft.productId, snapshot);
         },
         error: err => this.toast('error', this.parseHttpError(err)),
       });
@@ -556,6 +569,7 @@ export class InventoryReconciliationComponent
 
     this.addingColor = true;
     const stock = Math.max(0, Math.trunc(Number(this.addColorInitialStock) || 0));
+    const snapshot = this.captureDraftSnapshot();
 
     const attachColor = (colorId: number) =>
       this.inventoryService
@@ -597,7 +611,7 @@ export class InventoryReconciliationComponent
         next: () => {
           this.toast('success', 'Color agregado a la talla.');
           this.closeAddColorDialog();
-          this.loadFullProduct(draft.productId);
+          this.loadFullProduct(draft.productId, snapshot);
         },
         error: (err: unknown) => this.toast('error', this.parseHttpError(err)),
       });
@@ -657,6 +671,9 @@ export class InventoryReconciliationComponent
     }
 
     this.replacingVariantColor = true;
+    const snapshot = this.captureDraftSnapshot();
+    const replaceCtx = this.replaceCtx;
+    const replaceTargetColorId = this.replaceTargetColorId;
     this.replaceColorSub?.unsubscribe();
     this.replaceColorSub = this.inventoryService
       .replaceVariantColor(draft.productId, ctx.productSizeId, {
@@ -668,7 +685,17 @@ export class InventoryReconciliationComponent
         next: res => {
           this.toast('success', res.message ?? 'Color actualizado.');
           if (res.product) {
-            this.applyProduct(res.product as ReconciliationProductApi);
+            this.applyProduct(
+              res.product as ReconciliationProductApi,
+              snapshot,
+              replaceCtx
+                ? {
+                    productSizeId: replaceCtx.productSizeId,
+                    fromColorId: replaceCtx.fromColorId,
+                    toColorId: replaceTargetColorId ?? toId,
+                  }
+                : undefined,
+            );
           }
           this.closeReplaceColorDialog();
         },
@@ -678,8 +705,86 @@ export class InventoryReconciliationComponent
       });
   }
 
-  private applyProduct(api: ReconciliationProductApi): void {
-    this.draft = this.cloneProductToDraft(api);
+  private applyProduct(
+    api: ReconciliationProductApi,
+    preserveEditsFrom?: ReconciliationDraft | null,
+    colorReplace?: {
+      productSizeId: number;
+      fromColorId: number;
+      toColorId: number;
+    },
+  ): void {
+    const fresh = this.cloneProductToDraft(api);
+    if (
+      !preserveEditsFrom ||
+      preserveEditsFrom.productId !== fresh.productId
+    ) {
+      this.draft = fresh;
+      return;
+    }
+    this.draft = this.mergeDraftPreservingEdits(
+      preserveEditsFrom,
+      fresh,
+      colorReplace,
+    );
+  }
+
+  /**
+   * Tras una operación parcial (reemplazo de color, agregar talla/color),
+   * conserva stocks y precios editados en el borrador local.
+   */
+  private mergeDraftPreservingEdits(
+    previous: ReconciliationDraft,
+    fresh: ReconciliationDraft,
+    colorReplace?: {
+      productSizeId: number;
+      fromColorId: number;
+      toColorId: number;
+    },
+  ): ReconciliationDraft {
+    const prevBySizeId = new Map(previous.sizes.map(s => [s.id, s]));
+
+    return {
+      ...fresh,
+      sizes: fresh.sizes.map(freshSize => {
+        const prevSize = prevBySizeId.get(freshSize.id);
+        if (!prevSize) {
+          return freshSize;
+        }
+
+        const prevColorsById = new Map(
+          prevSize.colors.map(c => [c.colorId, c]),
+        );
+
+        return {
+          ...freshSize,
+          purchasePrice: prevSize.purchasePrice,
+          salePrice: prevSize.salePrice,
+          minSalePrice: prevSize.minSalePrice,
+          masterStock: prevSize.masterStock,
+          serverMasterStock: freshSize.serverMasterStock,
+          colors: freshSize.colors.map(freshColor => {
+            const prevColor = prevColorsById.get(freshColor.colorId);
+            if (prevColor) {
+              return { ...freshColor, stock: prevColor.stock };
+            }
+
+            if (
+              colorReplace &&
+              freshSize.id === colorReplace.productSizeId &&
+              freshColor.colorId === colorReplace.toColorId
+            ) {
+              const replacedFrom = prevColorsById.get(colorReplace.fromColorId);
+              if (replacedFrom) {
+                return { ...freshColor, stock: replacedFrom.stock };
+              }
+            }
+
+            return freshColor;
+          }),
+        };
+      }),
+    };
   }
 
   private cloneProductToDraft(
