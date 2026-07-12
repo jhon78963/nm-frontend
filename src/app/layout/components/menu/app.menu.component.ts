@@ -112,7 +112,7 @@ export class AppMenuComponent implements OnInit {
           permissions: ['color.getAll', 'color.get'],
         },
         {
-          label: 'Cuadre rápido',
+          label: 'Actualizar inventario',
           icon: 'pi pi-fw pi-table',
           routerLink: ['/inventories/reconciliation'],
           permission: 'inventoryReconciliation.search',

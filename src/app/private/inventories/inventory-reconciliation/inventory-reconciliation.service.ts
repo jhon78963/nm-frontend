@@ -1,7 +1,10 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, of, switchMap } from 'rxjs';
 import { ApiService } from '../../../services/api.service';
 import { Color, ColorListResponse } from '../colors/models/colors.model';
+import { AutocompleteResponse } from '../../../shared/models/autocomplete.interface';
+import { ProductSizeColorSave } from '../products/models/colors.interface';
+import { ProductSizeSave } from '../products/models/sizes.interface';
 import {
   ReconciliationProductApi,
   ReconciliationSearchResponse,
@@ -69,6 +72,73 @@ export class InventoryReconciliationService {
     return this.api
       .get<ColorListResponse>(`colors?limit=${limit}&page=1`)
       .pipe(map(res => res?.data ?? []));
+  }
+
+  addSizeToProduct(
+    productId: number,
+    sizeId: number,
+    data: Partial<ProductSizeSave>,
+  ): Observable<{ message: string }> {
+    const payload: ProductSizeSave = {
+      barcode: data.barcode ?? 0,
+      stock: data.stock ?? 0,
+      purchasePrice: data.purchasePrice ?? 0,
+      salePrice: data.salePrice ?? 0,
+      minSalePrice: data.minSalePrice ?? 0,
+    };
+    return this.api.post(`products/${productId}/size/${sizeId}`, payload);
+  }
+
+  addColorToProductSize(
+    productSizeId: number,
+    colorId: number,
+    data: ProductSizeColorSave = { stock: 0 },
+  ): Observable<{ message: string }> {
+    return this.api.post(
+      `product-size/${productSizeId}/color/${colorId}`,
+      data,
+    );
+  }
+
+  /** Crea color en catálogo si no existe y devuelve su id. */
+  resolveOrCreateColorId(description: string): Observable<number> {
+    const term = description.trim();
+    return this.searchColorAutocomplete(term).pipe(
+      switchMap(existing => {
+        const match = existing.find(
+          c => c.value.trim().toLowerCase() === term.toLowerCase(),
+        );
+        if (match) {
+          return of(match.id);
+        }
+        return this.api.post<{ message: string }>('colors', { description: term }).pipe(
+          switchMap(() => this.searchColorAutocomplete(term)),
+          map(list => {
+            const created = list.find(
+              c => c.value.trim().toLowerCase() === term.toLowerCase(),
+            );
+            if (!created) {
+              throw new Error(`No se pudo registrar el color "${term}".`);
+            }
+            return created.id;
+          }),
+        );
+      }),
+    );
+  }
+
+  searchSizeAutocomplete(search: string): Observable<AutocompleteResponse[]> {
+    const q = encodeURIComponent(search.trim());
+    return this.api.get<AutocompleteResponse[]>(
+      `sizes/autocomplete?search=${q}&limit=20`,
+    );
+  }
+
+  searchColorAutocomplete(search: string): Observable<AutocompleteResponse[]> {
+    const q = encodeURIComponent(search.trim());
+    return this.api.get<AutocompleteResponse[]>(
+      `colors/autocomplete?search=${q}&limit=20`,
+    );
   }
 
   private normalizeProductList(raw: unknown): ReconciliationProductApi[] {

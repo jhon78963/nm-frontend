@@ -10,12 +10,12 @@
           value="Inventario"
           styleClass="mr-2 mb-2"></p-tag>
         <h1 class="text-xl md:text-2xl font-bold text-900 m-0">
-          Cuadre y ficha de producto
+          Actualizar inventario
         </h1>
         <p class="text-600 m-0 mt-2 text-sm line-height-3 max-w-48rem">
-          Todo en una sola vista: edite la ficha, la matriz de stocks y las
-          fotos. Con el lector de barras, al terminar el código pulse
-          <strong>Enter</strong>.
+          Busque por nombre o código de barras, ajuste stocks, cambie colores
+          (ej. Vino → Guinda), agregue tallas o colores nuevos y guarde. Los
+          cambios quedan en historial y kardex.
         </p>
       </div>
       @if (draft) {
@@ -109,7 +109,7 @@
           pButton
           pRipple
           type="button"
-          label="Guardar ficha e inventario"
+          label="Guardar inventario"
           icon="pi pi-save"
           class="p-button-lg"
           [loading]="saving"
@@ -183,24 +183,33 @@
       <section
         class="reconciliation-section surface-card shadow-1 border-round p-3 md:p-4"
         aria-labelledby="section-inventory">
-        <div class="section-heading flex align-items-center gap-2 mb-3">
-          <span
-            class="section-index flex align-items-center justify-content-center border-circle bg-primary text-primary-contrast text-sm font-bold w-2rem h-2rem shrink-0"
-            >2</span
-          >
-          <div>
-            <h2 id="section-inventory" class="section-title m-0 text-lg">
-              Tallas y colores
-            </h2>
-            <p class="section-sub m-0 text-sm text-600">
-              Precios por talla (fila en negrita); debajo, cada color solo con
-              stock. Con colores, el stock de la talla es la suma (solo
-              lectura). Use el ícono
-              <i class="pi pi-sync text-700 vertical-align-middle"></i>
-              junto al nombre del color para sustituirlo por otro del catálogo
-              (el stock se conserva).
-            </p>
+        <div class="section-heading flex align-items-center justify-content-between gap-2 mb-3 flex-wrap">
+          <div class="flex align-items-center gap-2">
+            <span
+              class="section-index flex align-items-center justify-content-center border-circle bg-primary text-primary-contrast text-sm font-bold w-2rem h-2rem shrink-0"
+              >2</span
+            >
+            <div>
+              <h2 id="section-inventory" class="section-title m-0 text-lg">
+                Tallas y colores
+              </h2>
+              <p class="section-sub m-0 text-sm text-600">
+                Edite stocks por color. Use
+                <i class="pi pi-sync text-700 vertical-align-middle"></i> para
+                cambiar el color (conserva stock). Agregue tallas o colores
+                nuevos con los botones de abajo.
+              </p>
+            </div>
           </div>
+          <button
+            pButton
+            pRipple
+            type="button"
+            label="Agregar talla"
+            icon="pi pi-plus"
+            class="p-button-outlined p-button-sm"
+            [disabled]="saving || addingSize"
+            (click)="openAddSizeDialog()"></button>
         </div>
 
         <div class="reconciliation-grid-wrap overflow-x-auto">
@@ -219,7 +228,19 @@
               @for (size of draft.sizes; track trackBySizeId($index, size)) {
                 <tr class="row-master">
                   <td class="font-semibold text-900 align-top">
-                    <div>{{ size.sizeLabel }}</div>
+                    <div class="flex align-items-center justify-content-between gap-2 flex-wrap">
+                      <span>{{ size.sizeLabel }}</span>
+                      <button
+                        pButton
+                        pRipple
+                        type="button"
+                        icon="pi pi-plus"
+                        class="p-button-rounded p-button-text p-button-sm"
+                        [disabled]="saving || addingColor"
+                        pTooltip="Agregar color a esta talla"
+                        tooltipPosition="left"
+                        (click)="openAddColorDialog(size)"></button>
+                    </div>
                     @if (hasColorBreakdown(size)) {
                       <small class="block mt-2 text-600">
                         Suma colores:
@@ -347,8 +368,8 @@
     <div
       class="surface-border border-round border-1 border-dashed p-5 text-center text-600 empty-state">
       <i class="pi pi-box text-4xl text-300 mb-3 block"></i>
-      Busque por nombre, ID o código de barras para cargar la ficha y el
-      inventario.
+      Busque por nombre, ID o código de barras para cargar tallas, colores y
+      stocks.
     </div>
   }
 </div>
@@ -409,5 +430,167 @@
         replaceCtx === null
       "
       (click)="confirmReplaceVariantColor()"></button>
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  header="Resultados de búsqueda"
+  [(visible)]="searchResultsVisible"
+  [modal]="true"
+  [style]="{ width: 'min(32rem, 94vw)' }"
+  [draggable]="false"
+  [resizable]="false">
+  <ul class="list-none p-0 m-0">
+    @for (item of searchResults; track item.id) {
+      <li class="mb-2">
+        <button
+          pButton
+          pRipple
+          type="button"
+          class="p-button-text w-full text-left justify-content-start"
+          (click)="openProduct(item.id)">
+          <span class="font-semibold">{{ item.name }}</span>
+          <span class="text-600 text-sm ml-2">ID {{ item.id }}</span>
+        </button>
+      </li>
+    }
+  </ul>
+</p-dialog>
+
+<p-dialog
+  header="Agregar talla al producto"
+  [(visible)]="addSizeDialogVisible"
+  [modal]="true"
+  [dismissableMask]="true"
+  [style]="{ width: 'min(28rem, 94vw)' }"
+  [draggable]="false"
+  [resizable]="false"
+  (onHide)="closeAddSizeDialog()">
+  <p class="text-sm text-600 mt-0 mb-3">
+    Busque la talla en el catálogo. Si no existe, créela antes en Inventario →
+    Tallas.
+  </p>
+  <app-input-autocomplete-api
+    id="add-size-autocomplete"
+    for="add-size-autocomplete"
+    label="Talla"
+    type="text"
+    placeholder="Ej. 32, M, L…"
+    collectionToCall="sizes/autocomplete"
+    collectionToSave="sizes"
+    bodyColumn="description"
+    queryParam="search"
+    (itemSelected)="onAddSizeSelected($event)">
+  </app-input-autocomplete-api>
+  @if (addSizeTarget) {
+    <p class="text-sm mt-3 mb-0">
+      Seleccionada: <strong>{{ addSizeTarget.value }}</strong>
+    </p>
+  }
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      pRipple
+      type="button"
+      label="Cancelar"
+      class="p-button-text"
+      [disabled]="addingSize"
+      (click)="closeAddSizeDialog()"></button>
+    <button
+      pButton
+      pRipple
+      type="button"
+      label="Agregar talla"
+      icon="pi pi-check"
+      [loading]="addingSize"
+      [disabled]="!addSizeTarget"
+      (click)="confirmAddSize()"></button>
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  header="Agregar color a la talla"
+  [(visible)]="addColorDialogVisible"
+  [modal]="true"
+  [dismissableMask]="true"
+  [style]="{ width: 'min(28rem, 94vw)' }"
+  [draggable]="false"
+  [resizable]="false"
+  (onHide)="closeAddColorDialog()">
+  @if (addColorCtx) {
+    <p class="text-sm text-600 mt-0 mb-3">
+      Talla <strong>{{ addColorCtx.sizeLabel }}</strong>
+    </p>
+  }
+  <div class="flex gap-2 mb-3">
+    <button
+      pButton
+      pRipple
+      type="button"
+      label="Del catálogo"
+      class="p-button-sm"
+      [outlined]="addColorMode !== 'catalog'"
+      (click)="addColorMode = 'catalog'"></button>
+    <button
+      pButton
+      pRipple
+      type="button"
+      label="Color nuevo"
+      class="p-button-sm"
+      [outlined]="addColorMode !== 'new'"
+      (click)="addColorMode = 'new'"></button>
+  </div>
+  @if (addColorMode === 'catalog') {
+    @if (catalogColorsLoading) {
+      <p class="text-600 text-sm">Cargando colores…</p>
+    } @else {
+      <p-dropdown
+        class="w-full block mb-3"
+        styleClass="w-full"
+        [options]="addColorDropdownOptions"
+        optionLabel="description"
+        optionValue="id"
+        placeholder="Seleccionar color…"
+        [(ngModel)]="addColorTargetId"
+        [filter]="true"
+        filterBy="description"
+        appendTo="body"
+        [showClear]="true"></p-dropdown>
+    }
+  } @else {
+    <input
+      pInputText
+      class="w-full mb-3"
+      placeholder="Nombre del color nuevo (ej. Guinda)"
+      [(ngModel)]="addColorNewName" />
+  }
+  <label class="block text-sm font-medium mb-2">Stock inicial</label>
+  <p-inputNumber
+    [(ngModel)]="addColorInitialStock"
+    [min]="0"
+    [useGrouping]="false"
+    styleClass="w-full"></p-inputNumber>
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      pRipple
+      type="button"
+      label="Cancelar"
+      class="p-button-text"
+      [disabled]="addingColor"
+      (click)="closeAddColorDialog()"></button>
+    <button
+      pButton
+      pRipple
+      type="button"
+      label="Agregar color"
+      icon="pi pi-check"
+      [loading]="addingColor"
+      [disabled]="
+        catalogColorsLoading ||
+        (addColorMode === 'catalog' && addColorTargetId === null) ||
+        (addColorMode === 'new' && !addColorNewName.trim())
+      "
+      (click)="confirmAddColor()"></button>
   </ng-template>
 </p-dialog>

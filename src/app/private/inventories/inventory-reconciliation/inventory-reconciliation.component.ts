@@ -28,13 +28,14 @@ import { RippleModule } from 'primeng/ripple';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
-import { finalize, forkJoin, Subscription, switchMap } from 'rxjs';
+import { finalize, forkJoin, of, Subscription, switchMap } from 'rxjs';
 import { Gender } from '../../../models/gender.interface';
 import { Warehouse } from '../../../models/warehouse.interface';
 import { GendersService } from '../../../services/genders.service';
 import { ProgressSpinnerService } from '../../../services/progress-spinner.service';
 import { WarehousesService } from '../../../services/warehouse.service';
 import { SharedModule } from '../../../shared/shared.module';
+import { AutocompleteResponse } from '../../../shared/models/autocomplete.interface';
 import { Color } from '../colors/models/colors.model';
 import { Product, ProductSave } from '../products/models/products.model';
 import { ProductsService } from '../products/services/products.service';
@@ -91,6 +92,9 @@ export class InventoryReconciliationComponent
   loadingBundle = false;
   saving = false;
 
+  searchResults: ReconciliationProductApi[] = [];
+  searchResultsVisible = false;
+
   genders: Gender[] = [];
   warehouses: Warehouse[] = [];
 
@@ -137,6 +141,18 @@ export class InventoryReconciliationComponent
     fromLabel: string;
     stock: number;
   } | null = null;
+
+  addSizeDialogVisible = false;
+  addSizeTarget: AutocompleteResponse | null = null;
+  addingSize = false;
+
+  addColorDialogVisible = false;
+  addColorCtx: { productSizeId: number; sizeLabel: string } | null = null;
+  addColorMode: 'catalog' | 'new' = 'catalog';
+  addColorTargetId: number | null = null;
+  addColorNewName = '';
+  addColorInitialStock = 0;
+  addingColor = false;
 
   ngOnInit(): void {
     this.gendersService.getAll().subscribe((g: Gender[]) => (this.genders = g));
@@ -205,23 +221,26 @@ export class InventoryReconciliationComponent
             return;
           }
 
-          if (list.length > 1) {
-            this.toast(
-              'info',
-              `Se encontraron ${list.length} resultados. Se abre el primero; afinar búsqueda si hace falta.`,
-            );
+          if (list.length === 1) {
+            this.openProduct(list[0].id);
+            return;
           }
 
-          const id = list[0].id;
-          this.router.navigate(['/inventories/reconciliation', id], {
-            replaceUrl: true,
-          });
+          this.searchResults = list;
+          this.searchResultsVisible = true;
         },
         error: err => {
           this.toast('error', this.parseHttpError(err));
           this.focusSearch();
         },
       });
+  }
+
+  openProduct(id: number): void {
+    this.searchResultsVisible = false;
+    this.router.navigate(['/inventories/reconciliation', id], {
+      replaceUrl: true,
+    });
   }
 
   loadFullProduct(id: number): void {
@@ -356,9 +375,13 @@ export class InventoryReconciliationComponent
       cashDiscount: '',
     });
     this.searchQuery = '';
+    this.searchResults = [];
+    this.searchResultsVisible = false;
     this.replaceDialogVisible = false;
     this.replaceCtx = null;
     this.replaceTargetColorId = null;
+    this.addSizeDialogVisible = false;
+    this.addColorDialogVisible = false;
     this.catalogSub?.unsubscribe();
     this.replaceColorSub?.unsubscribe();
     if (navigate) {
@@ -425,6 +448,159 @@ export class InventoryReconciliationComponent
       return this.catalogColors;
     }
     return this.catalogColors.filter(c => c.id !== fromId);
+  }
+
+  openAddSizeDialog(): void {
+    if (!this.draft || this.saving) {
+      return;
+    }
+    this.addSizeTarget = null;
+    this.addSizeDialogVisible = true;
+  }
+
+  closeAddSizeDialog(): void {
+    this.addSizeDialogVisible = false;
+    this.addSizeTarget = null;
+  }
+
+  onAddSizeSelected(item: AutocompleteResponse): void {
+    this.addSizeTarget = item;
+  }
+
+  confirmAddSize(): void {
+    const draft = this.draft;
+    const size = this.addSizeTarget;
+    if (!draft || !size?.id) {
+      this.toast('warn', 'Seleccione una talla del catálogo.');
+      return;
+    }
+
+    if (draft.sizes.some(s => s.sizeId === size.id)) {
+      this.toast('warn', 'Esa talla ya está en el producto.');
+      return;
+    }
+
+    const ref = draft.sizes[0];
+    const v = this.productForm.getRawValue();
+    this.addingSize = true;
+    this.inventoryService
+      .addSizeToProduct(draft.productId, size.id, {
+        barcode: 0,
+        stock: 0,
+        purchasePrice: ref?.purchasePrice ?? v.purchasePrice ?? 0,
+        salePrice: ref?.salePrice ?? v.salePrice ?? 0,
+        minSalePrice: ref?.minSalePrice ?? v.minSalePrice ?? 0,
+      })
+      .pipe(finalize(() => (this.addingSize = false)))
+      .subscribe({
+        next: () => {
+          this.toast('success', `Talla "${size.value}" agregada al producto.`);
+          this.closeAddSizeDialog();
+          this.loadFullProduct(draft.productId);
+        },
+        error: err => this.toast('error', this.parseHttpError(err)),
+      });
+  }
+
+  openAddColorDialog(size: ReconciliationSizeDraft): void {
+    if (!this.draft || this.saving) {
+      return;
+    }
+    this.addColorCtx = {
+      productSizeId: size.id,
+      sizeLabel: size.sizeLabel,
+    };
+    this.addColorMode = 'catalog';
+    this.addColorTargetId = null;
+    this.addColorNewName = '';
+    this.addColorInitialStock = 0;
+    this.addColorDialogVisible = true;
+
+    if (this.catalogColors.length === 0) {
+      this.catalogColorsLoading = true;
+      this.catalogSub?.unsubscribe();
+      this.catalogSub = this.inventoryService.loadColorsCatalog().subscribe({
+        next: rows => {
+          this.catalogColors = rows ?? [];
+          this.catalogColorsLoading = false;
+        },
+        error: err => {
+          this.catalogColorsLoading = false;
+          this.toast('error', this.parseHttpError(err));
+        },
+      });
+    }
+  }
+
+  closeAddColorDialog(): void {
+    this.addColorDialogVisible = false;
+    this.addColorCtx = null;
+    this.addColorTargetId = null;
+    this.addColorNewName = '';
+  }
+
+  get addColorDropdownOptions(): Color[] {
+    const size = this.draft?.sizes.find(
+      s => s.id === this.addColorCtx?.productSizeId,
+    );
+    const used = new Set((size?.colors ?? []).map(c => c.colorId));
+    return this.catalogColors.filter(c => !used.has(c.id));
+  }
+
+  confirmAddColor(): void {
+    const draft = this.draft;
+    const ctx = this.addColorCtx;
+    if (!draft || !ctx) {
+      return;
+    }
+
+    this.addingColor = true;
+    const stock = Math.max(0, Math.trunc(Number(this.addColorInitialStock) || 0));
+
+    const attachColor = (colorId: number) =>
+      this.inventoryService
+        .addColorToProductSize(ctx.productSizeId, colorId, { stock })
+        .pipe(
+          switchMap(() => {
+            if (stock > 0) {
+              return this.inventoryService.bulkUpdate(draft.productId, {
+                sizes: [
+                  {
+                    id: ctx.productSizeId,
+                    colors: [{ colorId, stock }],
+                  },
+                ],
+              });
+            }
+            return of(null);
+          }),
+        );
+
+    const colorId$ =
+      this.addColorMode === 'new'
+        ? this.inventoryService.resolveOrCreateColorId(this.addColorNewName)
+        : this.addColorTargetId != null
+          ? of(this.addColorTargetId)
+          : of<number | null>(null);
+
+    colorId$
+      .pipe(
+        switchMap((colorId: number | null) => {
+          if (colorId == null || colorId < 1) {
+            throw new Error('Seleccione un color o escriba uno nuevo.');
+          }
+          return attachColor(colorId);
+        }),
+        finalize(() => (this.addingColor = false)),
+      )
+      .subscribe({
+        next: () => {
+          this.toast('success', 'Color agregado a la talla.');
+          this.closeAddColorDialog();
+          this.loadFullProduct(draft.productId);
+        },
+        error: (err: unknown) => this.toast('error', this.parseHttpError(err)),
+      });
   }
 
   openReplaceColorDialog(

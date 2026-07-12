@@ -5,10 +5,10 @@ import { permissionGuard } from '../../auth/guards/permission.guard';
 const routes: Routes = [
   {
     path: 'reconciliation/:productId',
-    title: 'Cuadre de inventario',
+    title: 'Actualizar inventario',
     canActivate: [permissionGuard],
     data: {
-      breadcrumb: 'Cuadre de inventario',
+      breadcrumb: 'Actualizar inventario',
       permission: 'inventoryReconciliation.search',
     },
     loadComponent: () =>
@@ -18,10 +18,10 @@ const routes: Routes = [
   },
   {
     path: 'reconciliation',
-    title: 'Cuadre de inventario',
+    title: 'Actualizar inventario',
     canActivate: [permissionGuard],
     data: {
-      breadcrumb: 'Cuadre de inventario',
+      breadcrumb: 'Actualizar inventario',
       permission: 'inventoryReconciliation.search',
     },
     loadComponent: () =>
