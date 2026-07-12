@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, map, of, switchMap } from 'rxjs';
+import { Observable, forkJoin, map, of, switchMap } from 'rxjs';
 import { ApiService } from '../../../services/api.service';
 import { Color, ColorListResponse } from '../colors/models/colors.model';
 import { AutocompleteResponse } from '../../../shared/models/autocomplete.interface';
@@ -67,11 +67,33 @@ export class InventoryReconciliationService {
     );
   }
 
-  /** Lista de colores del catálogo (para selector en cuadre). */
-  loadColorsCatalog(limit = 2000): Observable<Color[]> {
+  /** Lista completa del catálogo de colores (pagina en bloques de 200). */
+  loadColorsCatalog(pageSize = 200): Observable<Color[]> {
     return this.api
-      .get<ColorListResponse>(`colors?limit=${limit}&page=1`)
-      .pipe(map(res => res?.data ?? []));
+      .get<ColorListResponse>(`colors?limit=${pageSize}&page=1`)
+      .pipe(
+        switchMap(first => {
+          const totalPages = Math.max(1, first.paginate?.pages ?? 1);
+          if (totalPages <= 1) {
+            return of(first.data ?? []);
+          }
+
+          const pageRequests = Array.from({ length: totalPages - 1 }, (_, i) =>
+            this.api
+              .get<ColorListResponse>(
+                `colors?limit=${pageSize}&page=${i + 2}`,
+              )
+              .pipe(map(res => res?.data ?? [])),
+          );
+
+          return forkJoin(pageRequests).pipe(
+            map(restPages => [
+              ...(first.data ?? []),
+              ...restPages.flat(),
+            ]),
+          );
+        }),
+      );
   }
 
   addSizeToProduct(
