@@ -95,6 +95,15 @@ export class ProductListComponent implements OnInit {
     {
       type: 'button',
       size: 'small',
+      icon: 'pi pi-table',
+      outlined: true,
+      pTooltip: 'Actualizar inventario',
+      tooltipPosition: 'bottom',
+      click: (rowData: Product) => this.inventoryUpdateButton(rowData.id),
+    },
+    {
+      type: 'button',
+      size: 'small',
       icon: 'pi pi-pencil',
       outlined: true,
       pTooltip: 'Editar',
@@ -283,6 +292,10 @@ export class ProductListComponent implements OnInit {
 
   editProductButton(id: number) {
     this.router.navigate([`/inventories/products/step/general/${id}`]);
+  }
+
+  inventoryUpdateButton(id: number) {
+    this.router.navigate([`/inventories/reconciliation/${id}`]);
   }
 
   sizeProductButton(id: number) {

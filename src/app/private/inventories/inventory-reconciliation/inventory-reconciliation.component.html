@@ -194,10 +194,10 @@
                 Tallas y colores
               </h2>
               <p class="section-sub m-0 text-sm text-600">
-                Edite stocks por color. Use
-                <i class="pi pi-sync text-700 vertical-align-middle"></i> para
-                cambiar el color (conserva stock). Agregue tallas o colores
-                nuevos con los botones de abajo.
+              Edite stocks por color. Use
+              <i class="pi pi-sync text-700 vertical-align-middle"></i> para
+              cambiar el color (conserva stock). Marque el checkbox cuando
+              revise o confirme cada stock.
               </p>
             </div>
           </div>
@@ -319,7 +319,7 @@
                   color of size.colors;
                   track trackByColorId($index, color)
                 ) {
-                  <tr class="row-color">
+                  <tr class="row-color" [ngClass]="colorRowReviewClass(color)">
                     <td class="color-label-cell">
                       <div
                         class="flex align-items-center gap-2 justify-content-between flex-wrap">
@@ -345,16 +345,31 @@
                     <td class="text-500 text-center">—</td>
                     <td class="text-500">—</td>
                     <td class="text-right">
-                      <p-inputNumber
-                        [inputId]="'c-' + size.id + '-' + color.colorId"
-                        [(ngModel)]="color.stock"
-                        [min]="0"
-                        [useGrouping]="false"
-                        mode="decimal"
-                        styleClass="stock-input w-full"
-                        [inputStyleClass]="'text-right'"
-                        [pTooltip]="'Stock — ' + color.description"
-                        tooltipPosition="top"></p-inputNumber>
+                      <div
+                        class="flex align-items-center justify-content-end gap-2 stock-review-cell">
+                        <p-checkbox
+                          [binary]="true"
+                          [ngModel]="color.stockReviewed"
+                          (ngModelChange)="
+                            onColorStockReviewedChange(color, $event)
+                          "
+                          [disabled]="saving || replacingVariantColor"
+                          pTooltip="Marcar stock como revisado"
+                          tooltipPosition="left"
+                          inputId="review-{{ size.id }}-{{ color.colorId }}">
+                        </p-checkbox>
+                        <p-inputNumber
+                          [inputId]="'c-' + size.id + '-' + color.colorId"
+                          [ngModel]="color.stock"
+                          (ngModelChange)="onColorStockChange(color, $event)"
+                          [min]="0"
+                          [useGrouping]="false"
+                          mode="decimal"
+                          styleClass="stock-input flex-1"
+                          [inputStyleClass]="'text-right'"
+                          [pTooltip]="'Stock — ' + color.description"
+                          tooltipPosition="top"></p-inputNumber>
+                      </div>
                     </td>
                   </tr>
                 }

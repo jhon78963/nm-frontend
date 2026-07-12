@@ -46,6 +46,10 @@ export interface ReconciliationColorDraft {
   description: string;
   /** Cantidad editada (mapeada desde inventory.available_quantity al cargar). */
   stock: number;
+  /** Stock al cargar; solo UI para detectar cambios. */
+  baselineStock: number;
+  /** Marcado local: el usuario revisó/confirmó este stock (no se envía al API). */
+  stockReviewed: boolean;
 }
 
 export interface ReconciliationSizeDraft {

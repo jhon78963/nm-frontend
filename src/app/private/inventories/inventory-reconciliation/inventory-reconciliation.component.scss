@@ -77,6 +77,19 @@
     background: var(--surface-0, #fff);
   }
 
+  tbody tr.row-color-reviewed td {
+    background: var(--green-50, #f0fdf4);
+  }
+
+  .stock-review-cell {
+    min-width: 9rem;
+  }
+
+  .stock-review-cell ::ng-deep .stock-input.p-inputnumber {
+    flex: 1;
+    min-width: 0;
+  }
+
   .col-stock {
     text-align: right;
   }

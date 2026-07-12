@@ -297,6 +297,25 @@ export class InventoryReconciliationComponent
     return size.colors.reduce((acc, c) => acc + (Number(c.stock) || 0), 0);
   }
 
+  /** Marca revisado al cambiar el stock respecto al valor inicial cargado. */
+  onColorStockChange(color: ReconciliationColorDraft, value: number | null): void {
+    color.stock = Math.max(0, Math.trunc(Number(value) || 0));
+    if (color.stock !== color.baselineStock) {
+      color.stockReviewed = true;
+    }
+  }
+
+  onColorStockReviewedChange(
+    color: ReconciliationColorDraft,
+    checked: boolean,
+  ): void {
+    color.stockReviewed = checked;
+  }
+
+  colorRowReviewClass(color: ReconciliationColorDraft): string {
+    return color.stockReviewed ? 'row-color-reviewed' : '';
+  }
+
   hasColorBreakdown(size: ReconciliationSizeDraft): boolean {
     return size.colors.length > 0;
   }
@@ -766,7 +785,12 @@ export class InventoryReconciliationComponent
           colors: freshSize.colors.map(freshColor => {
             const prevColor = prevColorsById.get(freshColor.colorId);
             if (prevColor) {
-              return { ...freshColor, stock: prevColor.stock };
+              return {
+                ...freshColor,
+                stock: prevColor.stock,
+                baselineStock: prevColor.baselineStock,
+                stockReviewed: prevColor.stockReviewed,
+              };
             }
 
             if (
@@ -776,7 +800,12 @@ export class InventoryReconciliationComponent
             ) {
               const replacedFrom = prevColorsById.get(colorReplace.fromColorId);
               if (replacedFrom) {
-                return { ...freshColor, stock: replacedFrom.stock };
+                return {
+                  ...freshColor,
+                  stock: replacedFrom.stock,
+                  baselineStock: freshColor.stock,
+                  stockReviewed: replacedFrom.stockReviewed,
+                };
               }
             }
 
@@ -796,10 +825,8 @@ export class InventoryReconciliationComponent
       name: raw.name ?? '',
       sku: raw.barcode ?? null,
       sizes: (raw.sizes ?? []).map(s => {
-        const colors = (s.colors ?? []).map(c => ({
-          colorId: c.colorId,
-          description: c.description ?? `Color #${c.colorId}`,
-          stock: Math.max(
+        const colors = (s.colors ?? []).map(c => {
+          const stock = Math.max(
             0,
             Math.trunc(
               Number(
@@ -807,8 +834,15 @@ export class InventoryReconciliationComponent
                   (c as { stock?: number }).stock,
               ) || 0,
             ),
-          ),
-        }));
+          );
+          return {
+            colorId: c.colorId,
+            description: c.description ?? `Color #${c.colorId}`,
+            stock,
+            baselineStock: stock,
+            stockReviewed: false,
+          };
+        });
         const sumColors = colors.reduce((acc, c) => acc + c.stock, 0);
         const master = Math.max(
           0,
