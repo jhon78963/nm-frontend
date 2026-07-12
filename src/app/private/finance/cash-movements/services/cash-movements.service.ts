@@ -354,9 +354,42 @@ export class CashflowService {
   getVoucherPreview(voucherPath: string): Observable<Blob> {
     const params = new HttpParams().set('path', voucherPath);
 
-    return this.apiService.getBlob(`${this.apiUrl}/vouchers/preview`, {
-      params,
-    });
+    return this.apiService
+      .getBlob(`${this.apiUrl}/vouchers/preview`, {
+        params,
+      })
+      .pipe(map(blob => this.ensureVoucherBlobType(blob, voucherPath)));
+  }
+
+  /**
+   * CORS cross-origin (adm → api) no expone Content-Type de PDF/imagen al JS;
+   * el blob queda sin MIME y el iframe/img no renderiza sin este ajuste.
+   */
+  private ensureVoucherBlobType(blob: Blob, voucherPath: string): Blob {
+    const mimeType = this.mimeTypeFromVoucherPath(voucherPath);
+    if (!mimeType || blob.type === mimeType) {
+      return blob;
+    }
+
+    return new Blob([blob], { type: mimeType });
+  }
+
+  private mimeTypeFromVoucherPath(path: string): string | null {
+    const lower = path.trim().toLowerCase();
+    if (lower.endsWith('.pdf')) {
+      return 'application/pdf';
+    }
+    if (lower.endsWith('.png')) {
+      return 'image/png';
+    }
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+      return 'image/jpeg';
+    }
+    if (lower.endsWith('.webp')) {
+      return 'image/webp';
+    }
+
+    return null;
   }
 
   loadAccumulatedAccountSettings(): Observable<{
