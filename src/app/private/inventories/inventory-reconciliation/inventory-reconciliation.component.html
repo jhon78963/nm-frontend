@@ -1,4 +1,5 @@
 <p-toast position="top-right" />
+<p-confirmDialog [appendTo]="'body'" styleClass="dialog-confirm-inv"></p-confirmDialog>
 
 <div class="p-3 md:p-4">
   <header class="page-header mb-3">
@@ -197,7 +198,9 @@
               Edite stocks por color. Use
               <i class="pi pi-sync text-700 vertical-align-middle"></i> para
               cambiar el color (conserva stock). Marque el checkbox cuando
-              revise o confirme cada stock.
+              revise o confirme cada stock. Use
+              <i class="pi pi-trash text-700 vertical-align-middle"></i> para
+              quitar colores o tallas con stock 0.
               </p>
             </div>
           </div>
@@ -230,16 +233,28 @@
                   <td class="font-semibold text-900 align-top">
                     <div class="flex align-items-center justify-content-between gap-2 flex-wrap">
                       <span>{{ size.sizeLabel }}</span>
-                      <button
-                        pButton
-                        pRipple
-                        type="button"
-                        icon="pi pi-plus"
-                        class="p-button-rounded p-button-text p-button-sm"
-                        [disabled]="saving || addingColor"
-                        pTooltip="Agregar color a esta talla"
-                        tooltipPosition="left"
-                        (click)="openAddColorDialog(size)"></button>
+                      <div class="flex align-items-center gap-1 shrink-0">
+                        <button
+                          pButton
+                          pRipple
+                          type="button"
+                          icon="pi pi-plus"
+                          class="p-button-rounded p-button-text p-button-sm"
+                          [disabled]="saving || addingColor || removingSize"
+                          pTooltip="Agregar color a esta talla"
+                          tooltipPosition="left"
+                          (click)="openAddColorDialog(size)"></button>
+                        <button
+                          pButton
+                          pRipple
+                          type="button"
+                          icon="pi pi-trash"
+                          class="p-button-rounded p-button-text p-button-danger p-button-sm"
+                          [disabled]="!canRemoveSize(size) || removingSize"
+                          [pTooltip]="sizeRemoveTooltip(size)"
+                          tooltipPosition="left"
+                          (click)="confirmRemoveSize(size)"></button>
+                      </div>
                     </div>
                     @if (hasColorBreakdown(size)) {
                       <small class="block mt-2 text-600">
@@ -326,18 +341,37 @@
                         <span class="color-indent flex-1 min-w-0">{{
                           color.description
                         }}</span>
-                        <button
-                          pButton
-                          pRipple
-                          type="button"
-                          icon="pi pi-sync"
-                          class="p-button-rounded p-button-text p-button-sm shrink-0"
-                          [disabled]="saving || replacingVariantColor"
-                          pTooltip="Sustituir por otro color del catálogo (conserva stock)"
-                          tooltipPosition="left"
-                          (click)="
-                            openReplaceColorDialog(size, color)
-                          "></button>
+                        <div class="flex align-items-center gap-1 shrink-0">
+                          <button
+                            pButton
+                            pRipple
+                            type="button"
+                            icon="pi pi-sync"
+                            class="p-button-rounded p-button-text p-button-sm"
+                            [disabled]="
+                              saving || replacingVariantColor || removingColor
+                            "
+                            pTooltip="Sustituir por otro color del catálogo (conserva stock)"
+                            tooltipPosition="left"
+                            (click)="
+                              openReplaceColorDialog(size, color)
+                            "></button>
+                          <button
+                            pButton
+                            pRipple
+                            type="button"
+                            icon="pi pi-trash"
+                            class="p-button-rounded p-button-text p-button-danger p-button-sm"
+                            [disabled]="
+                              saving ||
+                              replacingVariantColor ||
+                              removingColor ||
+                              removingSize
+                            "
+                            pTooltip="Eliminar variante de color"
+                            tooltipPosition="left"
+                            (click)="confirmRemoveColor(size, color)"></button>
+                        </div>
                       </div>
                     </td>
                     <td class="text-500 text-center">—</td>
@@ -465,7 +499,9 @@
           class="p-button-text w-full text-left justify-content-start"
           (click)="openProduct(item.id)">
           <span class="font-semibold">{{ item.name }}</span>
-          <span class="text-600 text-sm ml-2">ID {{ item.id }}</span>
+          <span class="text-600 text-sm ml-2">
+            ID {{ item.id }}@if (item.gender) { — {{ item.gender }} }
+          </span>
         </button>
       </li>
     }

@@ -17,8 +17,9 @@ import {
   Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { DividerModule } from 'primeng/divider';
 import { InputNumberModule } from 'primeng/inputnumber';
@@ -57,6 +58,7 @@ import {
     SharedModule,
     RouterLink,
     ButtonModule,
+    ConfirmDialogModule,
     DialogModule,
     DividerModule,
     InputTextModule,
@@ -67,7 +69,7 @@ import {
     TagModule,
     RippleModule,
   ],
-  providers: [MessageService],
+  providers: [ConfirmationService, MessageService],
   templateUrl: './inventory-reconciliation.component.html',
   styleUrl: './inventory-reconciliation.component.scss',
 })
@@ -86,6 +88,7 @@ export class InventoryReconciliationComponent
   private readonly warehousesService = inject(WarehousesService);
   private readonly progressSpinnerService = inject(ProgressSpinnerService);
   private readonly messageService = inject(MessageService);
+  private readonly confirmationService = inject(ConfirmationService);
 
   searchQuery = '';
   searching = false;
@@ -153,6 +156,8 @@ export class InventoryReconciliationComponent
   addColorNewName = '';
   addColorInitialStock = 0;
   addingColor = false;
+  removingColor = false;
+  removingSize = false;
 
   ngOnInit(): void {
     this.gendersService.getAll().subscribe((g: Gender[]) => (this.genders = g));
@@ -318,6 +323,144 @@ export class InventoryReconciliationComponent
 
   hasColorBreakdown(size: ReconciliationSizeDraft): boolean {
     return size.colors.length > 0;
+  }
+
+  effectiveSizeStock(size: ReconciliationSizeDraft): number {
+    if (this.hasColorBreakdown(size)) {
+      return this.colorStockSum(size);
+    }
+    return Math.max(0, Math.trunc(Number(size.masterStock) || 0));
+  }
+
+  canRemoveSize(size: ReconciliationSizeDraft): boolean {
+    return (
+      !this.saving &&
+      !this.removingSize &&
+      !this.removingColor &&
+      !this.addingColor &&
+      !this.addingSize &&
+      this.effectiveSizeStock(size) === 0
+    );
+  }
+
+  sizeRemoveTooltip(size: ReconciliationSizeDraft): string {
+    if (this.effectiveSizeStock(size) > 0) {
+      return 'Solo puede eliminar tallas con stock 0';
+    }
+    return 'Eliminar talla del producto (ventas anteriores se conservan en historial)';
+  }
+
+  confirmRemoveColor(
+    size: ReconciliationSizeDraft,
+    color: ReconciliationColorDraft,
+  ): void {
+    if (
+      this.saving ||
+      this.removingColor ||
+      this.removingSize ||
+      this.replacingVariantColor
+    ) {
+      return;
+    }
+
+    const stock = Math.max(0, Math.trunc(Number(color.stock) || 0));
+    const stockNote =
+      stock > 0
+        ? ` El stock actual (${stock}) se pondrá en 0 antes de quitar la variante.`
+        : '';
+
+    this.confirmationService.confirm({
+      header: 'Eliminar variante de color',
+      message:
+        `¿Quitar "${color.description}" de la talla ${size.sizeLabel}?` +
+        `${stockNote} Las ventas, tickets de caja y kardex anteriores se conservan en el historial.`,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, eliminar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => this.removeColorVariant(size, color),
+    });
+  }
+
+  confirmRemoveSize(size: ReconciliationSizeDraft): void {
+    if (!this.draft || !this.canRemoveSize(size)) {
+      return;
+    }
+
+    const colorNote =
+      size.colors.length > 0
+        ? ` También se quitarán ${size.colors.length} color(es) asociados.`
+        : '';
+
+    this.confirmationService.confirm({
+      header: 'Eliminar talla',
+      message:
+        `¿Eliminar la talla ${size.sizeLabel} de este producto?${colorNote} ` +
+        'Las ventas anteriores se conservan en historial y caja. ' +
+        'Si esta talla tuvo movimientos de inventario, el sistema puede impedir la eliminación.',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, eliminar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => this.removeSizeVariant(size),
+    });
+  }
+
+  private removeColorVariant(
+    size: ReconciliationSizeDraft,
+    color: ReconciliationColorDraft,
+  ): void {
+    const draft = this.draft;
+    if (!draft) {
+      return;
+    }
+
+    this.removingColor = true;
+    const snapshot = this.captureDraftSnapshot();
+    this.inventoryService
+      .removeColorVariant(size.id, color.colorId)
+      .pipe(finalize(() => (this.removingColor = false)))
+      .subscribe({
+        next: () => {
+          this.toast('success', 'Variante de color eliminada.');
+          this.loadFullProduct(draft.productId, snapshot);
+        },
+        error: err => this.toast('error', this.parseHttpError(err)),
+      });
+  }
+
+  private removeSizeVariant(size: ReconciliationSizeDraft): void {
+    const draft = this.draft;
+    if (!draft) {
+      return;
+    }
+
+    this.removingSize = true;
+    const snapshot = this.captureDraftSnapshot();
+    this.inventoryService
+      .removeSize(draft.productId, size.sizeId)
+      .pipe(finalize(() => (this.removingSize = false)))
+      .subscribe({
+        next: () => {
+          this.toast('success', 'Talla eliminada.');
+          this.loadFullProduct(draft.productId, snapshot);
+        },
+        error: err => {
+          const msg = this.parseHttpError(err);
+          if (
+            msg.toLowerCase().includes('foreign') ||
+            msg.toLowerCase().includes('constraint') ||
+            msg.toLowerCase().includes('referenc')
+          ) {
+            this.toast(
+              'error',
+              'No se puede eliminar: esta talla tiene movimientos de inventario o compras registradas. Deje el stock en 0.',
+            );
+            return;
+          }
+          this.toast('error', msg);
+        },
+      });
   }
 
   hasAnyShelfWarning(): boolean {

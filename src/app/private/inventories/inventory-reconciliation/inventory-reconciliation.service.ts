@@ -163,6 +163,24 @@ export class InventoryReconciliationService {
     );
   }
 
+  removeColorVariant(
+    productSizeId: number,
+    colorId: number,
+  ): Observable<{ message: string }> {
+    return this.api.delete<{ message: string }>(
+      `product-size/${productSizeId}/color/${colorId}`,
+    );
+  }
+
+  removeSize(
+    productId: number,
+    sizeId: number,
+  ): Observable<{ message: string }> {
+    return this.api.delete<{ message: string }>(
+      `products/${productId}/size/${sizeId}`,
+    );
+  }
+
   private normalizeProductList(raw: unknown): ReconciliationProductApi[] {
     if (raw == null) {
       return [];

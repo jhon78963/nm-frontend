@@ -6,6 +6,8 @@ export interface ReconciliationProductApi {
   name: string;
   barcode: string | null;
   genderId?: number;
+  /** Nombre de categoría/género (Damas, Caballeros, Niños, …). */
+  gender?: string | null;
   warehouseId?: number;
   status?: string;
   sizes: ReconciliationSizeApi[];
