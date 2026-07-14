@@ -581,6 +581,7 @@ export class InventoryReconciliationComponent
         salePrice: this.normalizeDraftPrice(s.salePrice),
         minSalePrice: this.normalizeDraftPrice(s.minSalePrice),
       };
+      const barcode = this.normalizeDraftBarcode(s.barcode);
       if (s.colors.length > 0) {
         return {
           id: s.id,
@@ -588,12 +589,14 @@ export class InventoryReconciliationComponent
             colorId: c.colorId,
             stock: Math.max(0, Math.trunc(Number(c.stock) || 0)),
           })),
+          barcode,
           ...prices,
         };
       }
       return {
         id: s.id,
         stock: Math.max(0, Math.trunc(Number(s.masterStock) || 0)),
+        barcode,
         ...prices,
       };
     });
@@ -606,6 +609,14 @@ export class InventoryReconciliationComponent
     }
     const n = Number(v);
     return Number.isFinite(n) ? n : null;
+  }
+
+  private normalizeDraftBarcode(v: unknown): string | null {
+    if (v === null || v === undefined) {
+      return null;
+    }
+    const trimmed = String(v).trim();
+    return trimmed === '' ? null : trimmed;
   }
 
   trackBySizeId(_: number, s: ReconciliationSizeDraft): number {
@@ -920,6 +931,7 @@ export class InventoryReconciliationComponent
 
         return {
           ...freshSize,
+          barcode: prevSize.barcode,
           purchasePrice: prevSize.purchasePrice,
           salePrice: prevSize.salePrice,
           minSalePrice: prevSize.minSalePrice,
@@ -1000,7 +1012,7 @@ export class InventoryReconciliationComponent
           id: s.id,
           sizeId: s.sizeId,
           sizeLabel: s.size?.description ?? `Talla #${s.sizeId}`,
-          barcode: s.barcode ?? null,
+          barcode: s.barcode != null ? String(s.barcode) : '',
           masterStock: master,
           serverMasterStock: master,
           shelfInconsistentOnLoad: colors.length > 0 && sumColors !== master,

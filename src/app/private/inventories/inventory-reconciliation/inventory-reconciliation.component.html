@@ -306,7 +306,17 @@
                       styleClass="price-input w-full"
                       inputStyleClass="text-right"></p-inputNumber>
                   </td>
-                  <td class="text-600 align-top">{{ size.barcode || '—' }}</td>
+                  <td class="align-top">
+                    <input
+                      pInputText
+                      type="text"
+                      class="w-full barcode-input"
+                      [inputId]="'bc-' + size.id"
+                      [(ngModel)]="size.barcode"
+                      maxlength="255"
+                      placeholder="—"
+                      [disabled]="saving" />
+                  </td>
                   <td class="text-right align-top">
                     @if (hasColorBreakdown(size)) {
                       <p-inputNumber
