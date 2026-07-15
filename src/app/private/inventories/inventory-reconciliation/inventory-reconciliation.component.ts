@@ -44,6 +44,7 @@ import { InventoryReconciliationService } from './inventory-reconciliation.servi
 import {
   ReconciliationColorDraft,
   ReconciliationDraft,
+  ReconciliationPosSalesSummary,
   ReconciliationProductApi,
   ReconciliationSizeDraft,
 } from './models/inventory-reconciliation.model';
@@ -126,6 +127,8 @@ export class InventoryReconciliationComponent
   lastProductFromApi: Product | null = null;
 
   draft: ReconciliationDraft | null = null;
+  posSalesSummary: ReconciliationPosSalesSummary | null = null;
+  posSalesLoading = false;
   private routeSub?: Subscription;
   private searchSub: Subscription | null = null;
   private saveSub: Subscription | null = null;
@@ -252,13 +255,20 @@ export class InventoryReconciliationComponent
     const snapshot = preserveEditsFrom;
 
     this.loadingBundle = true;
+    this.posSalesLoading = true;
     forkJoin({
       meta: this.productsService.getOne(id),
       shelf: this.inventoryService.search(String(id)),
+      posSales: this.inventoryService.getPosSalesSince(id),
     })
-      .pipe(finalize(() => (this.loadingBundle = false)))
+      .pipe(
+        finalize(() => {
+          this.loadingBundle = false;
+          this.posSalesLoading = false;
+        }),
+      )
       .subscribe({
-        next: ({ meta, shelf }) => {
+        next: ({ meta, shelf, posSales }) => {
           const list = shelf.products ?? [];
           const inv = list.find(p => p.id === id) ?? list[0];
           if (!inv) {
@@ -270,6 +280,7 @@ export class InventoryReconciliationComponent
           }
 
           this.lastProductFromApi = meta;
+          this.posSalesSummary = posSales;
           if (!snapshot) {
             this.productForm.patchValue({
               name: meta.name ?? '',
@@ -298,6 +309,125 @@ export class InventoryReconciliationComponent
       });
   }
 
+  hasPosSalesSinceInventory(): boolean {
+    return !!this.posSalesSummary?.hasAnySales;
+  }
+
+  posSalesSinceLabel(): string {
+    return this.posSalesSummary?.sinceLabel ?? '10/07/2026';
+  }
+
+  variantHadPosSale(color: ReconciliationColorDraft): boolean {
+    return this.colorPosSoldQty(color) > 0;
+  }
+
+  variantShowNoPosSaleChip(color: ReconciliationColorDraft): boolean {
+    return (
+      !this.posSalesLoading &&
+      this.hasPosSalesSinceInventory() &&
+      !this.variantHadPosSale(color)
+    );
+  }
+
+  colorPosSoldQty(color: ReconciliationColorDraft): number {
+    return Math.max(0, Math.trunc(Number(color.posSoldQty) || 0));
+  }
+
+  sizePosSoldQty(size: ReconciliationSizeDraft): number {
+    return Math.max(0, Math.trunc(Number(size.posSoldQty) || 0));
+  }
+
+  posSoldTagLabel(qty: number): string {
+    if (qty === 1) {
+      return '1 vendida POS';
+    }
+    return `${qty} vendidas POS`;
+  }
+
+  posSoldTooltip(
+    qty: number,
+    saleCount: number,
+    lastSoldAt: string | null,
+  ): string {
+    const since = this.posSalesSinceLabel();
+    const parts = [
+      `${qty} unidad${qty === 1 ? '' : 'es'} vendida${qty === 1 ? '' : 's'} por caja (POS) desde el ${since}.`,
+      'Cuente solo lo que queda en anaquel; no incluya piezas ya entregadas al cliente.',
+    ];
+    if (saleCount > 0) {
+      parts.push(
+        `${saleCount} venta${saleCount === 1 ? '' : 's'} registrada${saleCount === 1 ? '' : 's'}.`,
+      );
+    }
+    if (lastSoldAt) {
+      parts.push(`Última venta: ${this.formatPosSaleDate(lastSoldAt)}.`);
+    }
+    return parts.join(' ');
+  }
+
+  posStockHint(size: ReconciliationSizeDraft, color?: ReconciliationColorDraft): string {
+    const qty = color ? this.colorPosSoldQty(color) : this.sizePosSoldQty(size);
+    if (qty < 1) {
+      return '';
+    }
+    return `−${qty} ya salió por POS desde el ${this.posSalesSinceLabel()}`;
+  }
+
+  private formatPosSaleDate(iso: string): string {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) {
+      return iso;
+    }
+    return d.toLocaleString('es-PE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
+  private applyPosSalesToDraft(summary: ReconciliationPosSalesSummary | null): void {
+    if (!this.draft || !summary) {
+      return;
+    }
+
+    const byVariant = new Map<string, (typeof summary.variants)[number]>();
+    for (const v of summary.variants ?? []) {
+      byVariant.set(this.posVariantKey(v.productSizeId, v.colorId), v);
+    }
+
+    this.draft = {
+      ...this.draft,
+      sizes: this.draft.sizes.map(size => {
+        const masterVariant = byVariant.get(this.posVariantKey(size.id, null));
+        const colors = size.colors.map(color => {
+          const variant = byVariant.get(
+            this.posVariantKey(size.id, color.colorId),
+          );
+          return {
+            ...color,
+            posSoldQty: variant?.quantitySold ?? 0,
+            posSaleCount: variant?.saleCount ?? 0,
+            posLastSoldAt: variant?.lastSoldAt ?? null,
+          };
+        });
+
+        return {
+          ...size,
+          colors,
+          posSoldQty: masterVariant?.quantitySold ?? 0,
+          posSaleCount: masterVariant?.saleCount ?? 0,
+          posLastSoldAt: masterVariant?.lastSoldAt ?? null,
+        };
+      }),
+    };
+  }
+
+  private posVariantKey(productSizeId: number, colorId: number | null): string {
+    return `${productSizeId}:${colorId ?? 'none'}`;
+  }
+
   colorStockSum(size: ReconciliationSizeDraft): number {
     return size.colors.reduce((acc, c) => acc + (Number(c.stock) || 0), 0);
   }
@@ -318,7 +448,14 @@ export class InventoryReconciliationComponent
   }
 
   colorRowReviewClass(color: ReconciliationColorDraft): string {
-    return color.stockReviewed ? 'row-color-reviewed' : '';
+    const classes: string[] = [];
+    if (color.stockReviewed) {
+      classes.push('row-color-reviewed');
+    }
+    if (this.colorPosSoldQty(color) > 0) {
+      classes.push('row-color-pos-sold');
+    }
+    return classes.join(' ');
   }
 
   hasColorBreakdown(size: ReconciliationSizeDraft): boolean {
@@ -534,6 +671,7 @@ export class InventoryReconciliationComponent
 
   private clearWorkspace(navigate: boolean): void {
     this.draft = null;
+    this.posSalesSummary = null;
     this.lastProductFromApi = null;
     this.productForm.reset({
       name: '',
@@ -893,13 +1031,14 @@ export class InventoryReconciliationComponent
       preserveEditsFrom.productId !== fresh.productId
     ) {
       this.draft = fresh;
-      return;
+    } else {
+      this.draft = this.mergeDraftPreservingEdits(
+        preserveEditsFrom,
+        fresh,
+        colorReplace,
+      );
     }
-    this.draft = this.mergeDraftPreservingEdits(
-      preserveEditsFrom,
-      fresh,
-      colorReplace,
-    );
+    this.applyPosSalesToDraft(this.posSalesSummary);
   }
 
   /**
@@ -996,6 +1135,9 @@ export class InventoryReconciliationComponent
             stock,
             baselineStock: stock,
             stockReviewed: false,
+            posSoldQty: 0,
+            posSaleCount: 0,
+            posLastSoldAt: null,
           };
         });
         const sumColors = colors.reduce((acc, c) => acc + c.stock, 0);
@@ -1020,6 +1162,9 @@ export class InventoryReconciliationComponent
           salePrice: this.normalizeDraftPrice(s.salePrice),
           minSalePrice: this.normalizeDraftPrice(s.minSalePrice),
           colors,
+          posSoldQty: 0,
+          posSaleCount: 0,
+          posLastSoldAt: null,
         };
       }),
     };

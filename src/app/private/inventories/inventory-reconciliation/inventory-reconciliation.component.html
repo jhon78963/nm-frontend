@@ -88,6 +88,37 @@
       </div>
     }
 
+    @if (hasPosSalesSinceInventory()) {
+      <div
+        class="border-round p-3 mb-3 bg-amber-50 border-1 border-amber-200 text-amber-950 text-sm line-height-3 pos-sales-banner">
+        <div class="flex align-items-start gap-2">
+          <i class="pi pi-shopping-cart text-lg mt-1 shrink-0"></i>
+          <div>
+            <strong>Ventas POS durante el inventario</strong>
+            <span class="ml-2 text-amber-800">
+              (desde el {{ posSalesSinceLabel() }})
+            </span>
+            <p class="m-0 mt-2">
+              Este producto tuvo
+              <strong>{{ posSalesSummary?.totalSold ?? 0 }}</strong>
+              unidad{{ (posSalesSummary?.totalSold ?? 0) === 1 ? '' : 'es' }}
+              vendida{{ (posSalesSummary?.totalSold ?? 0) === 1 ? '' : 's' }} por
+              caja. Las variantes marcadas en naranja ya salieron del anaquel:
+              cuente solo lo que queda físicamente (ej. si tenía 2 y vendió 1,
+              deje stock 1).
+            </p>
+          </div>
+        </div>
+      </div>
+    } @else if (!posSalesLoading && draft) {
+      <div
+        class="border-round p-3 mb-3 bg-green-50 border-1 border-green-200 text-green-900 text-sm line-height-3">
+        <i class="pi pi-check-circle mr-2"></i>
+        Sin ventas POS registradas desde el {{ posSalesSinceLabel() }} en este
+        producto.
+      </div>
+    }
+
     <div class="sticky-product-bar">
       <div
         class="sticky-product-summary surface-card shadow-1 border-round p-3">
@@ -201,6 +232,11 @@
               revise o confirme cada stock. Use
               <i class="pi pi-trash text-700 vertical-align-middle"></i> para
               quitar colores o tallas con stock 0.
+              @if (hasPosSalesSinceInventory()) {
+                Las etiquetas
+                <span class="pos-tag-inline">vendida POS</span> indican unidades
+                que salieron por caja desde el {{ posSalesSinceLabel() }}.
+              }
               </p>
             </div>
           </div>
@@ -233,6 +269,21 @@
                   <td class="font-semibold text-900 align-top">
                     <div class="flex align-items-center justify-content-between gap-2 flex-wrap">
                       <span>{{ size.sizeLabel }}</span>
+                      @if (!hasColorBreakdown(size) && sizePosSoldQty(size) > 0) {
+                        <p-tag
+                          severity="warning"
+                          icon="pi pi-shopping-cart"
+                          styleClass="pos-sold-tag shrink-0"
+                          [value]="posSoldTagLabel(sizePosSoldQty(size))"
+                          [pTooltip]="
+                            posSoldTooltip(
+                              sizePosSoldQty(size),
+                              size.posSaleCount,
+                              size.posLastSoldAt
+                            )
+                          "
+                          tooltipPosition="top"></p-tag>
+                      }
                       <div class="flex align-items-center gap-1 shrink-0">
                         <button
                           pButton
@@ -329,14 +380,25 @@
                         styleClass="stock-input stock-input-readonly w-full"
                         [inputStyleClass]="'text-right'"></p-inputNumber>
                     } @else {
-                      <p-inputNumber
-                        [inputId]="'master-' + size.id"
-                        [(ngModel)]="size.masterStock"
-                        [min]="0"
-                        [useGrouping]="false"
-                        mode="decimal"
-                        styleClass="stock-input w-full"
-                        [inputStyleClass]="'text-right'"></p-inputNumber>
+                      <div class="flex flex-column align-items-end gap-1">
+                        <p-inputNumber
+                          [inputId]="'master-' + size.id"
+                          [(ngModel)]="size.masterStock"
+                          [min]="0"
+                          [useGrouping]="false"
+                          mode="decimal"
+                          styleClass="stock-input w-full"
+                          [inputStyleClass]="
+                            sizePosSoldQty(size) > 0
+                              ? 'text-right stock-input-pos-sold'
+                              : 'text-right'
+                          "></p-inputNumber>
+                        @if (sizePosSoldQty(size) > 0) {
+                          <small class="pos-stock-hint">{{
+                            posStockHint(size)
+                          }}</small>
+                        }
+                      </div>
                     }
                   </td>
                 </tr>
@@ -348,9 +410,33 @@
                     <td class="color-label-cell">
                       <div
                         class="flex align-items-center gap-2 justify-content-between flex-wrap">
-                        <span class="color-indent flex-1 min-w-0">{{
-                          color.description
-                        }}</span>
+                        <div class="color-indent flex-1 min-w-0">
+                          <div class="color-indent-inner">
+                            <span>{{ color.description }}</span>
+                            @if (colorPosSoldQty(color) > 0) {
+                              <p-tag
+                                severity="warning"
+                                icon="pi pi-shopping-cart"
+                                styleClass="pos-sold-tag"
+                                [value]="posSoldTagLabel(colorPosSoldQty(color))"
+                                [pTooltip]="
+                                  posSoldTooltip(
+                                    colorPosSoldQty(color),
+                                    color.posSaleCount,
+                                    color.posLastSoldAt
+                                  )
+                                "
+                                tooltipPosition="top"></p-tag>
+                            } @else if (variantShowNoPosSaleChip(color)) {
+                              <span
+                                class="pos-no-sale-chip"
+                                pTooltip="Sin ventas POS desde el {{ posSalesSinceLabel() }}"
+                                tooltipPosition="top">
+                                Sin venta POS
+                              </span>
+                            }
+                          </div>
+                        </div>
                         <div class="flex align-items-center gap-1 shrink-0">
                           <button
                             pButton
@@ -390,29 +476,41 @@
                     <td class="text-500">—</td>
                     <td class="text-right">
                       <div
-                        class="flex align-items-center justify-content-end gap-2 stock-review-cell">
-                        <p-checkbox
-                          [binary]="true"
-                          [ngModel]="color.stockReviewed"
-                          (ngModelChange)="
-                            onColorStockReviewedChange(color, $event)
-                          "
-                          [disabled]="saving || replacingVariantColor"
-                          pTooltip="Marcar stock como revisado"
-                          tooltipPosition="left"
-                          inputId="review-{{ size.id }}-{{ color.colorId }}">
-                        </p-checkbox>
-                        <p-inputNumber
-                          [inputId]="'c-' + size.id + '-' + color.colorId"
-                          [ngModel]="color.stock"
-                          (ngModelChange)="onColorStockChange(color, $event)"
-                          [min]="0"
-                          [useGrouping]="false"
-                          mode="decimal"
-                          styleClass="stock-input flex-1"
-                          [inputStyleClass]="'text-right'"
-                          [pTooltip]="'Stock — ' + color.description"
-                          tooltipPosition="top"></p-inputNumber>
+                        class="flex flex-column align-items-end gap-1 stock-review-wrap">
+                        <div
+                          class="flex align-items-center justify-content-end gap-2 stock-review-cell w-full">
+                          <p-checkbox
+                            [binary]="true"
+                            [ngModel]="color.stockReviewed"
+                            (ngModelChange)="
+                              onColorStockReviewedChange(color, $event)
+                            "
+                            [disabled]="saving || replacingVariantColor"
+                            pTooltip="Marcar stock como revisado"
+                            tooltipPosition="left"
+                            inputId="review-{{ size.id }}-{{ color.colorId }}">
+                          </p-checkbox>
+                          <p-inputNumber
+                            [inputId]="'c-' + size.id + '-' + color.colorId"
+                            [ngModel]="color.stock"
+                            (ngModelChange)="onColorStockChange(color, $event)"
+                            [min]="0"
+                            [useGrouping]="false"
+                            mode="decimal"
+                            styleClass="stock-input flex-1"
+                            [inputStyleClass]="
+                              colorPosSoldQty(color) > 0
+                                ? 'text-right stock-input-pos-sold'
+                                : 'text-right'
+                            "
+                            [pTooltip]="'Stock — ' + color.description"
+                            tooltipPosition="top"></p-inputNumber>
+                        </div>
+                        @if (colorPosSoldQty(color) > 0) {
+                          <small class="pos-stock-hint">{{
+                            posStockHint(size, color)
+                          }}</small>
+                        }
                       </div>
                     </td>
                   </tr>

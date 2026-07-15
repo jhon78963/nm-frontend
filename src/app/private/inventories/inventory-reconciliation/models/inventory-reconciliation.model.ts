@@ -42,6 +42,24 @@ export interface ReconciliationUpdateResponse {
   product: ReconciliationProductApi | null;
 }
 
+/** Ventas POS desde el inicio del inventario físico (GET pos-sales). */
+export interface ReconciliationPosSalesVariant {
+  productSizeId: number;
+  sizeId: number;
+  colorId: number | null;
+  quantitySold: number;
+  saleCount: number;
+  lastSoldAt: string | null;
+}
+
+export interface ReconciliationPosSalesSummary {
+  since: string;
+  sinceLabel: string;
+  variants: ReconciliationPosSalesVariant[];
+  totalSold: number;
+  hasAnySales: boolean;
+}
+
 /** Estado editable local (copia profunda). */
 export interface ReconciliationColorDraft {
   colorId: number;
@@ -52,6 +70,12 @@ export interface ReconciliationColorDraft {
   baselineStock: number;
   /** Marcado local: el usuario revisó/confirmó este stock (no se envía al API). */
   stockReviewed: boolean;
+  /** Unidades vendidas por POS desde el inicio del inventario físico. */
+  posSoldQty: number;
+  /** Ventas POS distintas que incluyeron esta variante. */
+  posSaleCount: number;
+  /** ISO 8601 de la última venta POS de esta variante, si aplica. */
+  posLastSoldAt: string | null;
 }
 
 export interface ReconciliationSizeDraft {
@@ -73,6 +97,10 @@ export interface ReconciliationSizeDraft {
   salePrice: number | null;
   minSalePrice: number | null;
   colors: ReconciliationColorDraft[];
+  /** Ventas POS en talla sin desglose por color. */
+  posSoldQty: number;
+  posSaleCount: number;
+  posLastSoldAt: string | null;
 }
 
 export interface ReconciliationDraft {

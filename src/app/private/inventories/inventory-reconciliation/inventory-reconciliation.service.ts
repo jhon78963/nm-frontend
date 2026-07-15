@@ -6,6 +6,7 @@ import { AutocompleteResponse } from '../../../shared/models/autocomplete.interf
 import { ProductSizeColorSave } from '../products/models/colors.interface';
 import { ProductSizeSave } from '../products/models/sizes.interface';
 import {
+  ReconciliationPosSalesSummary,
   ReconciliationProductApi,
   ReconciliationSearchResponse,
   ReconciliationUpdateResponse,
@@ -43,6 +44,13 @@ export class InventoryReconciliationService {
           }),
         ),
       );
+  }
+
+  /** Unidades vendidas por POS desde el inicio del inventario físico. */
+  getPosSalesSince(productId: number): Observable<ReconciliationPosSalesSummary> {
+    return this.api.get<ReconciliationPosSalesSummary>(
+      `inventory/reconciliation/${productId}/pos-sales`,
+    );
   }
 
   bulkUpdate(
