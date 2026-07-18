@@ -88,6 +88,10 @@
     background: var(--surface-0, #fff);
   }
 
+  tbody tr.row-color .color-label-cell {
+    border-left: 3px solid var(--green-500, #22c55e);
+  }
+
   tbody tr.row-color-reviewed td {
     background: var(--green-50, #f0fdf4);
   }
@@ -108,8 +112,11 @@
       color: white;
     }
 
-    .color-indent {
+    .color-label-cell {
       border-left-color: rgba(255, 255, 255, 0.85);
+    }
+
+    .color-indent {
       color: white;
     }
 
@@ -175,7 +182,6 @@
 .color-indent {
   display: block;
   padding-left: 1.25rem;
-  border-left: 3px solid var(--primary-color, #3b82f6);
   margin-left: 0.25rem;
   color: var(--text-color, #1e293b);
 }

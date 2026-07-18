@@ -474,6 +474,63 @@ export class InventoryReconciliationComponent
     return this.effectiveSizeStock(size) === 0;
   }
 
+  /** Tallas ordenadas A–Z; stock 0 al final (con venta POS primero entre esas). */
+  sortedSizes(): ReconciliationSizeDraft[] {
+    if (!this.draft) {
+      return [];
+    }
+    return [...this.draft.sizes].sort((a, b) => this.compareSizeRows(a, b));
+  }
+
+  /** Colores de una talla ordenados A–Z; stock 0 al final (con venta POS primero). */
+  sortedColors(size: ReconciliationSizeDraft): ReconciliationColorDraft[] {
+    return [...size.colors].sort((a, b) => this.compareColorRows(a, b));
+  }
+
+  private compareSizeRows(
+    a: ReconciliationSizeDraft,
+    b: ReconciliationSizeDraft,
+  ): number {
+    const rankDiff = this.sizeSortRank(a) - this.sizeSortRank(b);
+    if (rankDiff !== 0) {
+      return rankDiff;
+    }
+    return this.compareLabelAsc(a.sizeLabel, b.sizeLabel);
+  }
+
+  private compareColorRows(
+    a: ReconciliationColorDraft,
+    b: ReconciliationColorDraft,
+  ): number {
+    const rankDiff = this.colorSortRank(a) - this.colorSortRank(b);
+    if (rankDiff !== 0) {
+      return rankDiff;
+    }
+    return this.compareLabelAsc(a.description, b.description);
+  }
+
+  /** 0 = con stock · 1 = stock 0 y vendido POS · 2 = stock 0 sin venta POS */
+  private sizeSortRank(size: ReconciliationSizeDraft): number {
+    if (!this.isSizeZeroStock(size)) {
+      return 0;
+    }
+    return this.sizePosSoldQty(size) > 0 ? 1 : 2;
+  }
+
+  private colorSortRank(color: ReconciliationColorDraft): number {
+    if (!this.isColorZeroStock(color)) {
+      return 0;
+    }
+    return this.colorPosSoldQty(color) > 0 ? 1 : 2;
+  }
+
+  private compareLabelAsc(a: string, b: string): number {
+    return (a ?? '').localeCompare(b ?? '', 'es', {
+      sensitivity: 'base',
+      numeric: true,
+    });
+  }
+
   hasColorBreakdown(size: ReconciliationSizeDraft): boolean {
     return size.colors.length > 0;
   }
