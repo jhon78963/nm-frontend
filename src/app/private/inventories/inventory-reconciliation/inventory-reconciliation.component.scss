@@ -45,19 +45,21 @@
     transition: background-color 0.12s ease, color 0.12s ease;
   }
 
-  // Resalta la columna completa al pasar el mouse (th o cualquier celda).
-  @for $i from 1 through 6 {
-    &:has(thead th:nth-child(#{$i}):hover),
-    &:has(tbody td:nth-child(#{$i}):hover) {
-      thead th:nth-child(#{$i}),
-      tbody td:nth-child(#{$i}) {
-        background-color: var(--primary-50, #eff6ff);
-      }
+  // Resalta la fila completa al pasar el mouse.
+  tbody tr:hover td {
+    background-color: var(--primary-50, #eff6ff);
+  }
 
-      tbody tr.row-zero-stock td:nth-child(#{$i}) {
-        background-color: #cc0000;
-      }
-    }
+  tbody tr.row-color-reviewed:hover td {
+    background-color: var(--primary-100, #dbeafe);
+  }
+
+  tbody tr.row-color-pos-sold:hover td {
+    background-color: var(--orange-100, #ffedd5);
+  }
+
+  tbody tr.row-zero-stock:hover td {
+    background-color: #cc0000;
   }
 
   thead th {
