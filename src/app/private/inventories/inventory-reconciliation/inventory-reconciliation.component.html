@@ -265,7 +265,7 @@
             </thead>
             <tbody>
               @for (size of draft.sizes; track trackBySizeId($index, size)) {
-                <tr class="row-master">
+                <tr class="row-master" [ngClass]="sizeRowClass(size)">
                   <td class="font-semibold text-900 align-top">
                     <div class="flex align-items-center justify-content-between gap-2 flex-wrap">
                       <span>{{ size.sizeLabel }}</span>

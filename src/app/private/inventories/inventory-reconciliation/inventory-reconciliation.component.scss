@@ -42,6 +42,22 @@
     padding: 0.5rem 0.65rem;
     border: 1px solid var(--surface-border, #dfe7ef);
     vertical-align: middle;
+    transition: background-color 0.12s ease, color 0.12s ease;
+  }
+
+  // Resalta la columna completa al pasar el mouse (th o cualquier celda).
+  @for $i from 1 through 6 {
+    &:has(thead th:nth-child(#{$i}):hover),
+    &:has(tbody td:nth-child(#{$i}):hover) {
+      thead th:nth-child(#{$i}),
+      tbody td:nth-child(#{$i}) {
+        background-color: var(--primary-50, #eff6ff);
+      }
+
+      tbody tr.row-zero-stock td:nth-child(#{$i}) {
+        background-color: #cc0000;
+      }
+    }
   }
 
   thead th {
@@ -49,6 +65,7 @@
     font-weight: 600;
     color: var(--text-color-secondary, #64748b);
     text-align: left;
+    cursor: default;
   }
 
   thead th.col-price {
@@ -79,6 +96,72 @@
 
   tbody tr.row-color-reviewed td {
     background: var(--green-50, #f0fdf4);
+  }
+
+  tbody tr.row-zero-stock td {
+    background: red;
+    color: white;
+    border-color: #b30000;
+  }
+
+  tbody tr.row-zero-stock {
+    .text-600,
+    .text-900,
+    .text-500,
+    small,
+    strong,
+    span:not(.p-button-icon) {
+      color: white;
+    }
+
+    .color-indent {
+      border-left-color: rgba(255, 255, 255, 0.85);
+      color: white;
+    }
+
+    .pos-stock-hint {
+      color: rgba(255, 255, 255, 0.92);
+    }
+
+    ::ng-deep .p-inputnumber-input,
+    ::ng-deep .p-inputtext,
+    ::ng-deep input.p-inputtext {
+      background: rgba(255, 255, 255, 0.14);
+      color: white;
+      border-color: rgba(255, 255, 255, 0.55);
+
+      &::placeholder {
+        color: rgba(255, 255, 255, 0.65);
+      }
+    }
+
+    ::ng-deep .stock-input-readonly .p-inputnumber-input {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+    }
+
+    ::ng-deep .p-button.p-button-text {
+      color: white;
+
+      &:enabled:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+      }
+    }
+
+    ::ng-deep .p-button.p-button-danger.p-button-text {
+      color: #ffe0e0;
+
+      &:enabled:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+      }
+    }
+
+    ::ng-deep .p-checkbox .p-checkbox-box {
+      border-color: rgba(255, 255, 255, 0.75);
+      background: rgba(255, 255, 255, 0.1);
+    }
   }
 
   .stock-review-cell {

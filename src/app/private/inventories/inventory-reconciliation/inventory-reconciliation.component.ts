@@ -449,13 +449,29 @@ export class InventoryReconciliationComponent
 
   colorRowReviewClass(color: ReconciliationColorDraft): string {
     const classes: string[] = [];
-    if (color.stockReviewed) {
-      classes.push('row-color-reviewed');
-    }
-    if (this.colorPosSoldQty(color) > 0) {
-      classes.push('row-color-pos-sold');
+    if (this.isColorZeroStock(color)) {
+      classes.push('row-zero-stock');
+    } else {
+      if (color.stockReviewed) {
+        classes.push('row-color-reviewed');
+      }
+      if (this.colorPosSoldQty(color) > 0) {
+        classes.push('row-color-pos-sold');
+      }
     }
     return classes.join(' ');
+  }
+
+  sizeRowClass(size: ReconciliationSizeDraft): string {
+    return this.isSizeZeroStock(size) ? 'row-zero-stock' : '';
+  }
+
+  isColorZeroStock(color: ReconciliationColorDraft): boolean {
+    return Math.max(0, Math.trunc(Number(color.stock) || 0)) === 0;
+  }
+
+  isSizeZeroStock(size: ReconciliationSizeDraft): boolean {
+    return this.effectiveSizeStock(size) === 0;
   }
 
   hasColorBreakdown(size: ReconciliationSizeDraft): boolean {
