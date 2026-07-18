@@ -45,17 +45,9 @@
     transition: background-color 0.12s ease, color 0.12s ease;
   }
 
-  // Resalta la fila completa al pasar el mouse.
-  tbody tr:hover td {
-    background-color: var(--primary-50, #eff6ff);
-  }
-
-  tbody tr.row-color-reviewed:hover td {
-    background-color: var(--primary-100, #dbeafe);
-  }
-
-  tbody tr.row-color-pos-sold:hover td {
-    background-color: var(--orange-100, #ffedd5);
+  // Resalta la fila completa al pasar el mouse (gris suave; rojas mantienen rojo).
+  tbody tr:not(.row-zero-stock):hover td {
+    background-color: #e9ecef;
   }
 
   tbody tr.row-zero-stock:hover td {
