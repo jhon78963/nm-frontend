@@ -1,12 +1,12 @@
 import { Component } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { finalize } from 'rxjs';
 import { showError } from '../../../../../utils/notifications';
 import {
-  newPasswordValidators,
-  passwordValidationMessage,
+  mediumPasswordValidationMessage,
+  mediumPasswordValidators,
 } from '../../../../../auth/validators/password.validators';
 import { UsersService } from '../../services/users.service';
 
@@ -22,8 +22,8 @@ export class UsersPasswordResetComponent {
   isSaving = false;
 
   readonly form: FormGroup = this.formBuilder.group({
-    password: [null, newPasswordValidators],
-    passwordConfirmation: [null, newPasswordValidators],
+    password: [null, mediumPasswordValidators],
+    passwordConfirmation: [null, Validators.required],
   });
 
   constructor(
@@ -47,11 +47,18 @@ export class UsersPasswordResetComponent {
       return null;
     }
 
-    return passwordValidationMessage(control);
+    if (
+      controlName === 'passwordConfirmation' &&
+      control.errors?.['required']
+    ) {
+      return 'La confirmación de la contraseña es obligatoria.';
+    }
+
+    return mediumPasswordValidationMessage(control);
   }
 
   passwordHint(): string {
-    return 'Mínimo 12 caracteres, con mayúsculas, minúsculas, números y símbolos.';
+    return 'Mínimo 6 caracteres. Debe alcanzar nivel medio: mayúsculas y minúsculas, o letras y números.';
   }
 
   buttonResetPassword(): void {
