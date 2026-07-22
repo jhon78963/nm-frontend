@@ -87,9 +87,6 @@ export class UserFormComponent implements OnInit {
   }
 
   private removeValidatorsForEdit(): void {
-    this.form.get('username')?.clearValidators();
-    this.form.get('username')?.updateValueAndValidity();
-
     this.form.get('email')?.clearValidators();
     this.form.get('email')?.updateValueAndValidity();
   }
@@ -126,6 +123,7 @@ export class UserFormComponent implements OnInit {
 
       if (this.userId) {
         const patch: Partial<UserPayload> = {
+          username: payload.username,
           name: payload.name,
           surname: payload.surname,
           tenantId: payload.tenantId,

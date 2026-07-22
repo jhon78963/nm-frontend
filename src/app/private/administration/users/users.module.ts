@@ -10,9 +10,15 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { UserListComponent } from './pages/list/users.component';
 import { UserFormComponent } from './pages/form/users-form.component';
+import { UsersPasswordResetComponent } from './pages/password-reset/users-password-reset.component';
+import { PasswordModule } from 'primeng/password';
 
 @NgModule({
-  declarations: [UserListComponent, UserFormComponent],
+  declarations: [
+    UserListComponent,
+    UserFormComponent,
+    UsersPasswordResetComponent,
+  ],
   imports: [
     CommonModule,
     UsersRoutingModule,
@@ -22,6 +28,7 @@ import { UserFormComponent } from './pages/form/users-form.component';
     ToastModule,
     ConfirmDialogModule,
     RadioButtonModule,
+    PasswordModule,
   ],
   providers: [DialogService],
 })

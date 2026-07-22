@@ -23,6 +23,7 @@ import {
 import { User } from '../../models/users.model';
 import { UsersService } from '../../services/users.service';
 import { UserFormComponent } from '../form/users-form.component';
+import { UsersPasswordResetComponent } from '../password-reset/users-password-reset.component';
 import { FormControl, FormGroup } from '@angular/forms';
 
 @Component({
@@ -49,6 +50,15 @@ export class UserListComponent implements OnInit, OnDestroy {
       pTooltip: 'Editar',
       tooltipPosition: 'bottom',
       click: (rowData: User) => this.buttonEditUSer(rowData.id),
+    },
+    {
+      type: 'button',
+      size: 'small',
+      icon: 'pi pi-key',
+      outlined: true,
+      pTooltip: 'Restablecer contraseña',
+      tooltipPosition: 'bottom',
+      click: (rowData: User) => this.buttonResetPassword(rowData),
     },
     {
       type: 'button',
@@ -200,6 +210,24 @@ export class UserListComponent implements OnInit, OnDestroy {
       next: value => {
         value && value?.success
           ? showSuccess(this.messageService, 'Usuario actualizado.')
+          : value?.error
+            ? showError(this.messageService, value?.error)
+            : null;
+      },
+    });
+  }
+
+  buttonResetPassword(user: User): void {
+    this.userModal = this.dialogService.open(UsersPasswordResetComponent, {
+      data: { id: user.id, username: user.username },
+      header: 'Restablecer contraseña',
+      styleClass: 'dialog-custom-form',
+    });
+
+    this.userModal.onClose.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: value => {
+        value && value?.success
+          ? showSuccess(this.messageService, 'Contraseña restablecida.')
           : value?.error
             ? showError(this.messageService, value?.error)
             : null;

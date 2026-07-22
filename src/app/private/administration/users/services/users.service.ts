@@ -20,6 +20,11 @@ export type UserPayload = {
   warehouseId: number;
 };
 
+export type UserPasswordResetPayload = {
+  password: string;
+  passwordConfirmation: string;
+};
+
 @Injectable({ providedIn: 'root' })
 export class UsersService {
   users: User[] = [];
@@ -72,6 +77,13 @@ export class UsersService {
     return this.apiService
       .patch(`users/${id}`, data)
       .pipe(switchMap(() => this.callGetList()));
+  }
+
+  resetPassword(
+    id: number,
+    data: UserPasswordResetPayload,
+  ): Observable<void> {
+    return this.apiService.patch(`users/${id}/password`, data);
   }
 
   getOne(id: number): Observable<User> {
