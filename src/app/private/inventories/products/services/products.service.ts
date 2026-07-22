@@ -78,7 +78,7 @@ export class ProductsService {
 
     let url = `products?limit=${limit}&page=${page}`;
     if (name) {
-      url += `&search=${name}`;
+      url += `&search=${encodeURIComponent(name)}`;
     }
     if (genderId && genderId.length > 0) {
       url += `&genderId=${genderId}`;

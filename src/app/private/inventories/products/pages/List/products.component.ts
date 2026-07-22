@@ -191,7 +191,7 @@ export class ProductListComponent implements OnInit {
     if (searchControl) {
       searchControl.valueChanges
         .pipe(
-          map((value: string | null) => (value ?? '').trim()),
+          map((value: string | null) => this.normalizeProductSearch(value ?? '')),
           debounceTime(600),
           distinctUntilChanged(),
           switchMap((term: string) => {
@@ -396,5 +396,9 @@ export class ProductListComponent implements OnInit {
         error: () =>
           showError(this.messageService, 'Error al importar el archivo'),
       });
+  }
+
+  private normalizeProductSearch(value: string): string {
+    return value.trim().replace(/[\s\r\n\t]+/g, '');
   }
 }
