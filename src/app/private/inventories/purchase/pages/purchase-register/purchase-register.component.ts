@@ -69,6 +69,7 @@ import { showError, showSuccess } from '../../../../../utils/notifications';
 import { Vendor } from '../../../../directory/vendors/models/vendors.model';
 import { Product } from '../../../products/models/products.model';
 import { ProductsService } from '../../../products/services/products.service';
+import { SizesService } from '../../../sizes/services/sizes.service';
 import { Size } from '../../../sizes/models/sizes.model';
 import { buildPurchaseBulkPayload } from '../../models/purchase-payload';
 import {
@@ -239,6 +240,7 @@ export class PurchaseRegisterComponent implements OnInit {
     private readonly gendersService: GendersService,
     private readonly warehousesService: WarehousesService,
     private readonly productsService: ProductsService,
+    private readonly sizesService: SizesService,
     private readonly messageService: MessageService,
     private readonly router: Router,
     private readonly route: ActivatedRoute,
@@ -1320,7 +1322,7 @@ export class PurchaseRegisterComponent implements OnInit {
       sizeMode: ['existing'],
       sizeId: [line.sizeId],
       sizeTempId: [null],
-      sizeTypeId: [null],
+      sizeTypeId: [line.sizeTypeId ?? null],
       productSizeId: [line.productSizeId],
       barcode: [line.barcode ?? null],
       purchasePrice: [
@@ -1420,43 +1422,17 @@ export class PurchaseRegisterComponent implements OnInit {
       this.lineDraft.patchValue({ colorNewToggle: !hasExisting });
     }
 
-    const sizeTypeId =
-      raw['sizeTypeId'] != null ? Number(raw['sizeTypeId']) : null;
     const sizeMode = raw['sizeMode'] as string;
     this.lineDraft.patchValue(
       {
-        selectedSizeTypeId: sizeTypeId,
         sizeNewToggle: sizeMode === 'new',
         newSizeDescription:
           sizeMode === 'new' ? String(raw['sizeLabel'] ?? '') : '',
-        selectedSizeId: null,
       },
       { emitEvent: false },
     );
 
-    if (sizeTypeId) {
-      this.catalog
-        .getSizesBySizeType(sizeTypeId)
-        .pipe(
-          takeUntilDestroyed(this.destroyRef),
-          tap(() => this.markViewForCheck()),
-        )
-        .subscribe({
-          next: sizes => {
-            this.catalogSizes.set(sizes ?? []);
-            if (sizeMode === 'existing' && raw['sizeId'] != null) {
-              this.lineDraft.patchValue(
-                { selectedSizeId: Number(raw['sizeId']) },
-                { emitEvent: false },
-              );
-            }
-            this.finishEditLineProductHydration(raw);
-          },
-        });
-    } else {
-      this.catalogSizes.set([]);
-      this.finishEditLineProductHydration(raw);
-    }
+    this.finishEditLineProductHydration(raw);
 
     showSuccess(
       this.messageService,
@@ -1474,19 +1450,21 @@ export class PurchaseRegisterComponent implements OnInit {
           switchMap((p: Product) => {
             this.selectedProduct = p;
             this.filteredProducts = [p];
-            return this.catalog.getProductSizes(p.id);
+            return this.catalog.getProductSizes(p.id).pipe(
+              map(rows => ({ product: p, sizes: rows ?? [] })),
+            );
           }),
           takeUntilDestroyed(this.destroyRef),
           tap(() => this.markViewForCheck()),
         )
         .subscribe({
-          next: rows => {
+          next: ({ product, sizes }) => {
             const m = new Map<number, ProductSizeOption>();
-            for (const r of rows ?? []) {
+            for (const r of sizes) {
               m.set(r.id, r);
             }
             this.productPivotBySizeId.set(m);
-            this.refreshColorsAfterSizeChange();
+            this.hydrateLineDraftSizeFromRow(raw, product);
           },
           error: () => {
             showError(
@@ -1509,8 +1487,100 @@ export class PurchaseRegisterComponent implements OnInit {
       );
       this.activeNewProductTempId =
         (raw['productTempId'] as string | null) ?? null;
-      this.refreshColorsAfterSizeChange();
+      this.hydrateLineDraftSizeFromRow(raw);
     }
+  }
+
+  private hydrateLineDraftSizeFromRow(
+    raw: Record<string, unknown>,
+    product?: Product | null,
+  ): void {
+    const sizeMode = raw['sizeMode'] as string;
+    const sizeId =
+      raw['sizeId'] != null && Number(raw['sizeId']) > 0
+        ? Number(raw['sizeId'])
+        : null;
+    const sizeTypeFromRow =
+      raw['sizeTypeId'] != null && Number(raw['sizeTypeId']) > 0
+        ? Number(raw['sizeTypeId'])
+        : null;
+
+    const applySizeContext = (sizeTypeId: number | null): void => {
+      this.lineDraft.patchValue(
+        {
+          selectedSizeTypeId: sizeTypeId,
+          selectedSizeId: null,
+          selectedColorId: null,
+        },
+        { emitEvent: false },
+      );
+
+      if (!sizeTypeId) {
+        this.catalogSizes.set([]);
+        this.refreshColorsAfterSizeChange();
+        this.markViewForCheck();
+        return;
+      }
+
+      this.catalog
+        .getSizesBySizeType(sizeTypeId)
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          tap(() => this.markViewForCheck()),
+        )
+        .subscribe({
+          next: sizes => {
+            this.catalogSizes.set(sizes ?? []);
+            if (sizeMode === 'existing' && sizeId != null) {
+              this.lineDraft.patchValue(
+                { selectedSizeId: sizeId },
+                { emitEvent: false },
+              );
+            }
+            this.refreshColorsAfterSizeChange();
+            this.markViewForCheck();
+          },
+          error: () => {
+            this.catalogSizes.set([]);
+            this.refreshColorsAfterSizeChange();
+            this.markViewForCheck();
+          },
+        });
+    };
+
+    if (sizeTypeFromRow != null) {
+      applySizeContext(sizeTypeFromRow);
+      return;
+    }
+
+    if (sizeMode === 'existing' && sizeId != null) {
+      this.sizesService
+        .getOne(sizeId)
+        .pipe(
+          catchError(() => of(null as Size | null)),
+          takeUntilDestroyed(this.destroyRef),
+          tap(() => this.markViewForCheck()),
+        )
+        .subscribe(size => {
+          const resolved =
+            size?.sizeTypeId != null && Number(size.sizeTypeId) > 0
+              ? Number(size.sizeTypeId)
+              : this.firstProductSizeTypeId(product);
+          applySizeContext(resolved);
+        });
+      return;
+    }
+
+    applySizeContext(this.firstProductSizeTypeId(product));
+  }
+
+  private firstProductSizeTypeId(product?: Product | null): number | null {
+    const types = product?.sizeTypeId ?? [];
+    if (!Array.isArray(types) || types.length === 0) {
+      return null;
+    }
+    const first = Number(types[0]);
+    return Number.isFinite(first) && first > 0 ? first : null;
   }
 
   removeLineColorVariant(lineIndex: number, colorIndex: number): void {

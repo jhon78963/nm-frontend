@@ -27,6 +27,7 @@ export interface PurchaseLineRow {
   productName?: string;
   sizeId: number;
   sizeDescription?: string;
+  sizeTypeId?: number;
   productSizeId: number;
   barcode: string | null;
   purchasePrice: number | null;
