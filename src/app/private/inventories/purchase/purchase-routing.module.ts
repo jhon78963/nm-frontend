@@ -29,6 +29,16 @@ const routes: Routes = [
       ),
   },
   {
+    path: 'edit/:id',
+    title: 'Editar compra',
+    canActivate: [permissionGuard],
+    data: { breadcrumb: 'Editar compra', permission: 'purchase.update' },
+    loadComponent: () =>
+      import('./pages/purchase-register/purchase-register.component').then(
+        c => c.PurchaseRegisterComponent,
+      ),
+  },
+  {
     path: ':id',
     title: 'Detalle de compra',
     canActivate: [permissionGuard],

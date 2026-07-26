@@ -20,7 +20,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import {
   AutoComplete,
@@ -135,6 +135,11 @@ export class PurchaseRegisterComponent implements OnInit {
   private persistDraftEnabled = false;
   /** Si el usuario eligió proveedor de la lista: al editar el texto se limpia `vendorId`. */
   private supplierNameLockedForVendorId: string | null = null;
+  
+  /** Modo edición: ID de compra a editar */
+  editingPurchaseId = signal<number | null>(null);
+  isEditMode = signal(false);
+  loadingPurchase = signal(false);
 
   readonly productSourceMode = [
     { label: 'Producto existente', value: true },
@@ -236,6 +241,7 @@ export class PurchaseRegisterComponent implements OnInit {
     private readonly productsService: ProductsService,
     private readonly messageService: MessageService,
     private readonly router: Router,
+    private readonly route: ActivatedRoute,
   ) {}
 
   /** OnPush: refresca la vista tras mutaciones async fuera de signals. */
@@ -244,6 +250,12 @@ export class PurchaseRegisterComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    const purchaseId = Number(this.route.snapshot.paramMap.get('id'));
+    if (Number.isFinite(purchaseId) && purchaseId > 0) {
+      this.editingPurchaseId.set(purchaseId);
+      this.isEditMode.set(true);
+    }
+
     this.gendersService
       .getAll()
       .pipe(
@@ -278,7 +290,11 @@ export class PurchaseRegisterComponent implements OnInit {
         },
       });
 
-    this.tryRestoreDraftFromMemory();
+    if (this.isEditMode()) {
+      this.loadPurchaseForEdit(this.editingPurchaseId()!);
+    } else {
+      this.tryRestoreDraftFromMemory();
+    }
 
     this.header
       .get('supplierName')
