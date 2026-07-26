@@ -14,6 +14,12 @@
       @if (purchase.status === 'ACTIVE') {
         <a
           pButton
+          label="Editar compra"
+          icon="pi pi-pencil"
+          class="p-button-warning p-button-outlined"
+          [routerLink]="['/inventories/purchase/edit', purchase.id]"></a>
+        <a
+          pButton
           label="Registrar más mercadería"
           icon="pi pi-plus"
           class="p-button-success p-button-outlined"
@@ -212,27 +218,17 @@
     </div>
   </div>
 
-  <p-card header="Detalle de líneas" styleClass="mt-3">
-    @if (purchase.status !== 'ACTIVE') {
-      <p class="text-600 text-sm mt-0 mb-3">
-        Compra no activa: el detalle es solo lectura.
-      </p>
-    } @else {
-      <div class="flex align-items-center justify-content-between mb-3 gap-2 flex-wrap">
-        <p class="text-600 text-sm m-0">
-          Podés corregir precios, código de barras y cantidades por color, o
-          eliminar una sola fila sin anular toda la compra.
-        </p>
-        <button
-          pButton
-          pRipple
-          type="button"
-          label="Agregar producto"
-          icon="pi pi-plus"
-          class="p-button-sm p-button-success"
-          (click)="openAddLineDialog()"></button>
-      </div>
-    }
+<p-card header="Detalle de líneas" styleClass="mt-3">
+  @if (purchase.status !== 'ACTIVE') {
+    <p class="text-600 text-sm mt-0 mb-3">
+      Compra no activa: el detalle es solo lectura.
+    </p>
+  } @else {
+    <p class="text-600 text-sm mt-0 mb-3">
+      Podés corregir precios, código de barras y cantidades por color, o
+      eliminar una sola fila sin anular toda la compra.
+    </p>
+  }
     <p-table
       [value]="purchase.lines"
       styleClass="p-datatable-sm"
@@ -373,183 +369,6 @@
 @if (loading) {
   <p class="text-600 p-4">Cargando…</p>
 }
-
-<p-dialog
-  [visible]="showAddLineDialog()"
-  (visibleChange)="showAddLineDialog.set($event)"
-  [modal]="true"
-  header="Agregar nuevo producto a la compra"
-  [style]="{ width: '90vw', maxWidth: '700px' }"
-  [draggable]="false"
-  [resizable]="false">
-  <form [formGroup]="newLineForm" class="flex flex-column gap-3">
-    <div class="flex flex-column gap-2">
-      <label class="text-sm font-medium" for="newProduct">Producto *</label>
-      <p-autoComplete
-        inputId="newProduct"
-        formControlName="product"
-        [suggestions]="filteredProducts"
-        (completeMethod)="searchProductsForNewLine($event)"
-        (onSelect)="onProductSelectForNewLine($event)"
-        field="name"
-        [forceSelection]="false"
-        placeholder="Buscar producto..."
-        styleClass="w-full"
-        inputStyleClass="w-full">
-        <ng-template let-p pTemplate="item">
-          <div class="flex flex-column">
-            <span class="font-medium">{{ p.name }}</span>
-            @if (p.barcode) {
-              <small class="text-600">Código: {{ p.barcode }}</small>
-            }
-          </div>
-        </ng-template>
-      </p-autoComplete>
-    </div>
-
-    @if (availableSizes.length > 0) {
-      <div class="flex flex-column gap-2">
-        <label class="text-sm font-medium" for="newSize">Talla *</label>
-        <select
-          id="newSize"
-          pInputText
-          formControlName="size"
-          class="w-full"
-          (change)="onSizeSelectForNewLine()">
-          <option [ngValue]="null">Selecciona una talla</option>
-          @for (s of availableSizes; track s.id) {
-            <option [ngValue]="s">{{ s.description }}</option>
-          }
-        </select>
-      </div>
-    }
-
-    @if (newLineForm.value.size) {
-      <div class="grid">
-        <div class="col-12 md:col-6">
-          <div class="flex flex-column gap-2">
-            <label class="text-sm font-medium">Código de barras</label>
-            <input pInputText formControlName="barcode" class="w-full" />
-          </div>
-        </div>
-        <div class="col-12 md:col-6">
-          <div class="flex flex-column gap-2">
-            <label class="text-sm font-medium">Precio compra *</label>
-            <p-inputNumber
-              formControlName="purchasePrice"
-              mode="decimal"
-              [minFractionDigits]="2"
-              [maxFractionDigits]="2"
-              [min]="0"
-              styleClass="w-full"></p-inputNumber>
-          </div>
-        </div>
-        <div class="col-12 md:col-6">
-          <div class="flex flex-column gap-2">
-            <label class="text-sm font-medium">Precio venta</label>
-            <p-inputNumber
-              formControlName="salePrice"
-              mode="decimal"
-              [minFractionDigits]="2"
-              [maxFractionDigits]="2"
-              [min]="0"
-              styleClass="w-full"></p-inputNumber>
-          </div>
-        </div>
-        <div class="col-12 md:col-6">
-          <div class="flex flex-column gap-2">
-            <label class="text-sm font-medium">Precio mínimo</label>
-            <p-inputNumber
-              formControlName="minSalePrice"
-              mode="decimal"
-              [minFractionDigits]="2"
-              [maxFractionDigits]="2"
-              [min]="0"
-              styleClass="w-full"></p-inputNumber>
-          </div>
-        </div>
-      </div>
-
-      @if (newLineForm.value.hasColorBreakdown && availableColors.length > 0) {
-        <div class="flex flex-column gap-2">
-          <label class="text-sm font-medium">Colores y cantidades</label>
-          <ul class="list-none m-0 p-0 flex flex-column gap-2">
-            @for (cg of getNewLineColorControls(); track $index) {
-              <li
-                [formGroup]="cg"
-                class="flex align-items-center gap-2 flex-wrap border-1 border-round p-2 surface-ground">
-                <select
-                  pInputText
-                  formControlName="colorId"
-                  class="flex-1"
-                  style="min-width: 150px">
-                  @for (color of availableColors; track color.id) {
-                    <option [value]="color.id">{{ color.description }}</option>
-                  }
-                </select>
-                <p-inputNumber
-                  formControlName="quantity"
-                  [min]="1"
-                  [useGrouping]="false"
-                  inputStyleClass="w-5rem"></p-inputNumber>
-                @if (getNewLineColorControls().length > 1) {
-                  <button
-                    pButton
-                    pRipple
-                    type="button"
-                    icon="pi pi-times"
-                    class="p-button-rounded p-button-text p-button-sm p-button-danger"
-                    pTooltip="Quitar color"
-                    (click)="removeColorFromNewLine($index)"></button>
-                }
-              </li>
-            }
-          </ul>
-          <button
-            pButton
-            pRipple
-            type="button"
-            label="Agregar otro color"
-            icon="pi pi-plus"
-            class="p-button-sm p-button-text w-full"
-            (click)="addColorToNewLine()"></button>
-        </div>
-      } @else if (!newLineForm.value.hasColorBreakdown) {
-        <div class="flex flex-column gap-2">
-          <label class="text-sm font-medium">Cantidad *</label>
-          <p-inputNumber
-            formControlName="sizeOnlyQuantity"
-            [min]="1"
-            [useGrouping]="false"
-            styleClass="w-full"></p-inputNumber>
-        </div>
-      }
-    }
-  </form>
-
-  <ng-template pTemplate="footer">
-    <div class="flex gap-2 justify-content-end">
-      <button
-        pButton
-        pRipple
-        type="button"
-        label="Cancelar"
-        class="p-button-text"
-        [disabled]="savingNewLine()"
-        (click)="showAddLineDialog.set(false)"></button>
-      <button
-        pButton
-        pRipple
-        type="button"
-        label="Agregar línea"
-        icon="pi pi-check"
-        [loading]="savingNewLine()"
-        [disabled]="newLineForm.invalid"
-        (click)="saveNewLine()"></button>
-    </div>
-  </ng-template>
-</p-dialog>
-
 <p-dialog
   [visible]="displayPreview()"
   (visibleChange)="onPreviewVisibleChange($event)"

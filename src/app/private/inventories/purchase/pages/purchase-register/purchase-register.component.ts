@@ -1211,6 +1211,132 @@ export class PurchaseRegisterComponent implements OnInit {
     this.totalEstimated.set(Math.round(t * 100) / 100);
   }
 
+  private loadPurchaseForEdit(purchaseId: number): void {
+    this.loadingPurchase.set(true);
+    this.purchaseApi
+      .getOne(purchaseId)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.markViewForCheck()),
+        finalize(() => {
+          this.loadingPurchase.set(false);
+          this.markViewForCheck();
+        }),
+      )
+      .subscribe({
+        next: purchase => {
+          if (purchase.status !== 'ACTIVE') {
+            showError(
+              this.messageService,
+              'Solo se pueden editar compras activas. Esta compra está: ' + purchase.status,
+            );
+            void this.router.navigate(['/inventories/purchase', purchaseId]);
+            return;
+          }
+          this.hydrateFormFromPurchase(purchase);
+        },
+        error: () => {
+          showError(this.messageService, 'No se pudo cargar la compra.');
+          void this.router.navigate(['/inventories/purchase']);
+        },
+      });
+  }
+
+  private hydrateFormFromPurchase(purchase: any): void {
+    this.persistDraftEnabled = false;
+
+    this.header.patchValue(
+      {
+        supplierName: purchase.supplierName ?? '',
+        vendorId: purchase.vendorId ?? null,
+        documentNote: purchase.documentNote ?? '',
+        registeredAt: purchase.registeredAt
+          ? new Date(purchase.registeredAt + 'T12:00:00')
+          : new Date(),
+        warehouseId: purchase.warehouseId || 1,
+      },
+      { emitEvent: false },
+    );
+
+    this.supplierNameLockedForVendorId =
+      purchase.vendorId != null && purchase.vendorId > 0
+        ? String(purchase.supplierName ?? '').trim()
+        : null;
+
+    this.lines.clear({ emitEvent: false });
+
+    for (const line of purchase.lines || []) {
+      this.addLineFromPurchase(line);
+    }
+
+    this.recalcGrandTotal();
+    this.persistDraftEnabled = true;
+    showSuccess(
+      this.messageService,
+      `Compra #${purchase.id} cargada para edición.`,
+    );
+  }
+
+  private addLineFromPurchase(line: any): void {
+    const hasColorBreakdown = line.hasColorBreakdown ?? false;
+    const colorDeltas = line.colorDeltas || [];
+
+    const colorsArr = this.fb.array<FormGroup>([]);
+
+    if (hasColorBreakdown && colorDeltas.length > 0) {
+      for (const cd of colorDeltas) {
+        colorsArr.push(
+          this.fb.group({
+            _rowKey: [genTempId('kc')],
+            displayLabel: [cd.colorDescription ?? `Color #${cd.colorId}`],
+            colorId: [cd.colorId],
+            colorTempId: [null],
+            colorHash: [null],
+            quantity: [cd.quantity || 1, [Validators.required, Validators.min(1)]],
+          }),
+        );
+      }
+    } else {
+      colorsArr.push(
+        this.fb.group({
+          _rowKey: [genTempId('kc')],
+          displayLabel: ['— (solo talla)'],
+          colorId: [null],
+          colorTempId: [null],
+          colorHash: [null],
+          quantity: [line.sizeStockDelta || 1, [Validators.required, Validators.min(1)]],
+        }),
+      );
+    }
+
+    const lineGroup = this.fb.group({
+      lineId: [String(line.id)],
+      productName: [line.productName ?? `Producto #${line.productId}`],
+      sizeLabel: [line.sizeDescription ?? `Talla #${line.sizeId}`],
+      productMode: ['existing'],
+      productId: [line.productId],
+      productTempId: [null],
+      productGenderId: [null],
+      sizeMode: ['existing'],
+      sizeId: [line.sizeId],
+      sizeTempId: [null],
+      sizeTypeId: [null],
+      productSizeId: [line.productSizeId],
+      barcode: [line.barcode ?? null],
+      purchasePrice: [
+        Number(line.purchasePrice) || 0,
+        [Validators.required, Validators.min(0)],
+      ],
+      salePrice: [Number(line.salePrice) || 0, [Validators.min(0)]],
+      minSalePrice: [Number(line.minSalePrice) || 0, [Validators.min(0)]],
+      colors: colorsArr,
+      subtotal: [{ value: Number(line.subtotal) || 0, disabled: true }],
+    });
+
+    this.bindLineTotals(lineGroup);
+    this.lines.push(lineGroup);
+  }
+
   lineColors(line: AbstractControl): FormArray<FormGroup> {
     return line.get('colors') as FormArray<FormGroup>;
   }
@@ -1403,6 +1529,14 @@ export class PurchaseRegisterComponent implements OnInit {
   }
 
   registerPurchase(): void {
+    if (this.isEditMode()) {
+      showError(
+        this.messageService,
+        'En modo edición: modifica las líneas y usa "Volver al detalle" para ver los cambios aplicados.',
+      );
+      return;
+    }
+
     if (this.header.invalid) {
       this.header.markAllAsTouched();
       showError(
@@ -1492,6 +1626,15 @@ export class PurchaseRegisterComponent implements OnInit {
           }
         },
       });
+  }
+
+  goBackToDetail(): void {
+    const pid = this.editingPurchaseId();
+    if (pid != null && pid > 0) {
+      void this.router.navigate(['/inventories/purchase', pid]);
+    } else {
+      void this.router.navigate(['/inventories/purchase']);
+    }
   }
 
   copyPayload(): void {

@@ -1,17 +1,41 @@
 <p-toast />
-<div class="flex justify-content-end px-2 pt-2 surface-ground">
-  <a
-    routerLink="/inventories/purchase"
-    pButton
-    type="button"
-    label="Listado de compras"
-    icon="pi pi-list"
-    class="p-button-text p-button-sm"></a>
+<div class="flex justify-content-between align-items-center px-2 pt-2 surface-ground">
+  @if (isEditMode()) {
+    <h2 class="m-0 text-xl font-semibold">
+      Editar compra #{{ editingPurchaseId() }}
+    </h2>
+  } @else {
+    <h2 class="m-0 text-xl font-semibold">Registrar nueva compra</h2>
+  }
+  <div class="flex gap-2">
+    @if (isEditMode()) {
+      <button
+        pButton
+        type="button"
+        label="Volver al detalle"
+        icon="pi pi-arrow-left"
+        class="p-button-text p-button-sm"
+        (click)="goBackToDetail()"></button>
+    }
+    <a
+      routerLink="/inventories/purchase"
+      pButton
+      type="button"
+      label="Listado de compras"
+      icon="pi pi-list"
+      class="p-button-text p-button-sm"></a>
+  </div>
 </div>
-<div class="surface-ground p-3 md:p-4 pt-0">
-  <div class="grid purchase-layout">
-    <div class="col-12 xl:col-4 flex flex-column gap-3">
-      <p-card header="1. Cabecera de compra">
+
+@if (loadingPurchase()) {
+  <div class="surface-ground p-4 text-center">
+    <p class="text-600">Cargando compra...</p>
+  </div>
+} @else {
+  <div class="surface-ground p-3 md:p-4 pt-0">
+    <div class="grid purchase-layout">
+      <div class="col-12 xl:col-4 flex flex-column gap-3">
+        <p-card [header]="isEditMode() ? 'Cabecera de compra' : '1. Cabecera de compra'">
         <form [formGroup]="header" class="flex flex-column gap-3">
           <div class="flex flex-column gap-2">
             <label for="supplierName" class="font-medium text-sm"
@@ -116,7 +140,7 @@
     </div>
 
     <div class="col-12 xl:col-8 flex flex-column gap-3">
-      <p-card header="2. Constructor de ítem">
+      <p-card [header]="isEditMode() ? 'Agregar productos' : '2. Constructor de ítem'">
         <div class="flex flex-column gap-3 mb-2">
           @if (isEditingLine()) {
             <div
@@ -507,7 +531,7 @@
     </div>
 
     <div class="col-12 flex flex-column gap-3">
-      <p-card header="3. Detalle de la compra">
+      <p-card [header]="isEditMode() ? 'Líneas de compra' : '3. Detalle de la compra'">
         <p-table
           [value]="lines.controls"
           styleClass="p-datatable-sm"
@@ -626,7 +650,7 @@
         </p-table>
       </p-card>
 
-      <p-card header="4. Totales y registro">
+      <p-card [header]="isEditMode() ? 'Total' : '4. Totales y registro'">
         <div
           class="flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3">
           <div class="text-xl">
@@ -636,23 +660,40 @@
             }}</span>
           </div>
           <div class="flex flex-wrap gap-2">
-            <button
-              pButton
-              type="button"
-              label="Limpiar todo"
-              icon="pi pi-refresh"
-              class="p-button-secondary p-button-outlined"
-              (click)="resetAll()"></button>
-            <button
-              pButton
-              type="button"
-              label="Registrar ingreso de mercadería"
-              icon="pi pi-save"
-              [loading]="submitting()"
-              (click)="registerPurchase()"></button>
+            @if (isEditMode()) {
+              <button
+                pButton
+                type="button"
+                label="Volver al detalle"
+                icon="pi pi-arrow-left"
+                class="p-button-secondary"
+                (click)="goBackToDetail()"></button>
+            } @else {
+              <button
+                pButton
+                type="button"
+                label="Limpiar todo"
+                icon="pi pi-refresh"
+                class="p-button-secondary p-button-outlined"
+                (click)="resetAll()"></button>
+              <button
+                pButton
+                type="button"
+                label="Registrar ingreso de mercadería"
+                icon="pi pi-save"
+                [loading]="submitting()"
+                (click)="registerPurchase()"></button>
+            }
           </div>
         </div>
+        @if (isEditMode()) {
+          <p-message
+            severity="info"
+            styleClass="w-full text-sm mt-3"
+            text="Modo edición: agrega o modifica líneas. Los cambios se aplican automáticamente al inventario."></p-message>
+        }
       </p-card>
     </div>
   </div>
-</div>
+  </div>
+}
