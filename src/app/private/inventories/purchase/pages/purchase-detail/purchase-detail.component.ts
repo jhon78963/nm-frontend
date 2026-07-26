@@ -7,6 +7,7 @@ import {
   FormGroup,
   FormsModule,
   ReactiveFormsModule,
+  Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -39,6 +40,11 @@ import type {
   PurchaseLineRow,
   PurchaseLinkedPayment,
 } from '../../models/purchases-list.model';
+import type {
+  ProductColorOption,
+  ProductSizeOption,
+} from '../../models/purchase.models';
+import { Product } from '../../products/models/products.model';
 import { PurchaseCatalogService } from '../../services/purchase-catalog.service';
 import { PurchaseService } from '../../services/purchase.service';
 
@@ -106,6 +112,25 @@ export class PurchaseDetailComponent implements OnInit {
 
   /** Edición en paralelo al detalle cargado (misma cantidad de filas que `purchase.lines`). */
   linesForm = this.fb.array<FormGroup>([]);
+
+  /** Dialog para agregar nuevos productos */
+  showAddLineDialog = signal(false);
+  savingNewLine = signal(false);
+  filteredProducts: Product[] = [];
+  availableSizes: ProductSizeOption[] = [];
+  availableColors: ProductColorOption[] = [];
+  
+  newLineForm = this.fb.group({
+    product: [null as Product | null, Validators.required],
+    size: [null as ProductSizeOption | null, Validators.required],
+    barcode: [''],
+    purchasePrice: [0, [Validators.required, Validators.min(0)]],
+    salePrice: [0, [Validators.min(0)]],
+    minSalePrice: [0, [Validators.min(0)]],
+    hasColorBreakdown: [false],
+    sizeOnlyQuantity: [1, [Validators.min(1)]],
+    colors: this.fb.array<FormGroup>([]),
+  });
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -581,6 +606,232 @@ export class PurchaseDetailComponent implements OnInit {
               showError(this.messageService, String(msg));
             },
           });
+      },
+    });
+  }
+
+  /** Agregar/remover colores en líneas existentes */
+  addColorToLine(lineIdx: number): void {
+    const line = this.purchase?.lines[lineIdx];
+    if (!line || !line.hasColorBreakdown) {
+      return;
+    }
+    const colorsArray = this.lineEditAt(lineIdx).get('colorDeltas') as FormArray;
+    
+    this.catalog.getColors(line.productId, line.sizeId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: colors => {
+          if (colors.length === 0) {
+            showError(this.messageService, 'No hay colores disponibles para este producto/talla.');
+            return;
+          }
+          const firstAvailable = colors[0];
+          colorsArray.push(this.fb.group({
+            colorId: [firstAvailable.id],
+            quantity: [1],
+          }));
+        },
+      });
+  }
+
+  removeColorFromLine(lineIdx: number, colorIdx: number): void {
+    const colorsArray = this.lineEditAt(lineIdx).get('colorDeltas') as FormArray;
+    if (colorsArray.length > 1) {
+      colorsArray.removeAt(colorIdx);
+    } else {
+      showError(this.messageService, 'Debe haber al menos un color.');
+    }
+  }
+
+  /** Dialog para agregar nueva línea */
+  openAddLineDialog(): void {
+    this.newLineForm.reset({
+      product: null,
+      size: null,
+      barcode: '',
+      purchasePrice: 0,
+      salePrice: 0,
+      minSalePrice: 0,
+      hasColorBreakdown: false,
+      sizeOnlyQuantity: 1,
+    });
+    const colorsArray = this.newLineForm.get('colors') as FormArray;
+    colorsArray.clear();
+    this.availableSizes = [];
+    this.availableColors = [];
+    this.showAddLineDialog.set(true);
+  }
+
+  searchProductsForNewLine(ev: AutoCompleteCompleteEvent): void {
+    const q = (ev.query ?? '').trim();
+    if (q.length < 2) {
+      this.filteredProducts = [];
+      return;
+    }
+    this.catalog
+      .searchProducts(q, 20)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: rows => {
+          this.filteredProducts = rows ?? [];
+        },
+      });
+  }
+
+  onProductSelectForNewLine(ev: AutoCompleteSelectEvent): void {
+    const p = ev.value as Product | null;
+    if (!p || !p.id) {
+      this.availableSizes = [];
+      this.availableColors = [];
+      return;
+    }
+    this.catalog.getProductSizes(p.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: sizes => {
+          this.availableSizes = sizes ?? [];
+          this.newLineForm.patchValue({ 
+            size: null,
+            purchasePrice: 0,
+            salePrice: 0,
+            minSalePrice: 0,
+          });
+          this.availableColors = [];
+        },
+      });
+  }
+
+  onSizeSelectForNewLine(): void {
+    const product = this.newLineForm.value.product;
+    const size = this.newLineForm.value.size;
+    
+    if (!product?.id || !size?.id) {
+      this.availableColors = [];
+      return;
+    }
+
+    this.newLineForm.patchValue({
+      barcode: size.barcode ?? '',
+      purchasePrice: size.purchasePrice ?? 0,
+      salePrice: size.salePrice ?? 0,
+      minSalePrice: size.minSalePrice ?? 0,
+    });
+
+    this.catalog.getColors(product.id, size.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: colors => {
+          this.availableColors = colors ?? [];
+          const hasColors = this.availableColors.length > 0;
+          this.newLineForm.patchValue({ hasColorBreakdown: hasColors });
+          
+          if (hasColors) {
+            const colorsArray = this.newLineForm.get('colors') as FormArray;
+            colorsArray.clear();
+            const firstColor = this.availableColors[0];
+            colorsArray.push(this.fb.group({
+              colorId: [firstColor.id],
+              quantity: [1],
+            }));
+          }
+        },
+      });
+  }
+
+  addColorToNewLine(): void {
+    const colorsArray = this.newLineForm.get('colors') as FormArray;
+    if (this.availableColors.length === 0) {
+      showError(this.messageService, 'No hay colores disponibles.');
+      return;
+    }
+    const firstAvailable = this.availableColors[0];
+    colorsArray.push(this.fb.group({
+      colorId: [firstAvailable.id],
+      quantity: [1],
+    }));
+  }
+
+  removeColorFromNewLine(idx: number): void {
+    const colorsArray = this.newLineForm.get('colors') as FormArray;
+    if (colorsArray.length > 1) {
+      colorsArray.removeAt(idx);
+    } else {
+      showError(this.messageService, 'Debe haber al menos un color.');
+    }
+  }
+
+  getNewLineColorControls(): FormGroup[] {
+    const arr = this.newLineForm.get('colors') as FormArray;
+    return arr.controls as FormGroup[];
+  }
+
+  getColorDescription(colorId: number): string {
+    const color = this.availableColors.find(c => c.id === colorId);
+    return color?.description ?? `Color #${colorId}`;
+  }
+
+  saveNewLine(): void {
+    if (!this.purchase || this.purchase.status !== 'ACTIVE') {
+      return;
+    }
+
+    if (this.newLineForm.invalid) {
+      showError(this.messageService, 'Completa todos los campos requeridos.');
+      return;
+    }
+
+    const raw = this.newLineForm.getRawValue();
+    if (!raw.product?.id || !raw.size?.id) {
+      showError(this.messageService, 'Selecciona producto y talla.');
+      return;
+    }
+
+    this.savingNewLine.set(true);
+
+    const body: {
+      productId: number;
+      sizeId: number;
+      barcode?: string | null;
+      purchasePrice: number;
+      salePrice?: number | null;
+      minSalePrice?: number | null;
+      hasColorBreakdown: boolean;
+      colorDeltas?: { colorId: number; quantity: number }[];
+      sizeOnlyQuantity?: number;
+    } = {
+      productId: raw.product.id,
+      sizeId: raw.size.id,
+      barcode: raw.barcode?.trim() || null,
+      purchasePrice: Number(raw.purchasePrice) || 0,
+      salePrice: Number(raw.salePrice) || 0,
+      minSalePrice: Number(raw.minSalePrice) || 0,
+      hasColorBreakdown: raw.hasColorBreakdown ?? false,
+    };
+
+    if (raw.hasColorBreakdown && raw.colors && raw.colors.length > 0) {
+      body.colorDeltas = raw.colors.map(c => ({
+        colorId: Number(c.colorId),
+        quantity: Math.max(1, Number(c.quantity) || 1),
+      }));
+    } else {
+      body.sizeOnlyQuantity = Math.max(1, Number(raw.sizeOnlyQuantity) || 1);
+    }
+
+    this.purchaseApi.addLine(this.purchase.id, body).subscribe({
+      next: () => {
+        this.savingNewLine.set(false);
+        this.showAddLineDialog.set(false);
+        showSuccess(this.messageService, 'Línea agregada correctamente.');
+        this.loadPurchase(this.purchase!.id);
+      },
+      error: err => {
+        this.savingNewLine.set(false);
+        const msg =
+          err?.error?.message ??
+          err?.error?.errors?.sizeId?.[0] ??
+          'No se pudo agregar la línea.';
+        showError(this.messageService, String(msg));
       },
     });
   }

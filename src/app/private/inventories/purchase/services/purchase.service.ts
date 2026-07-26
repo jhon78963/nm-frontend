@@ -95,6 +95,26 @@ export class PurchaseService {
     );
   }
 
+  addLine(
+    purchaseId: number,
+    body: {
+      productId: number;
+      sizeId: number;
+      barcode?: string | null;
+      purchasePrice: number;
+      salePrice?: number | null;
+      minSalePrice?: number | null;
+      hasColorBreakdown: boolean;
+      colorDeltas?: { colorId: number; quantity: number }[];
+      sizeOnlyQuantity?: number;
+    },
+  ): Observable<{ message: string }> {
+    return this.api.post<{ message: string }>(
+      `${this.basePath}/${purchaseId}/lines`,
+      body,
+    );
+  }
+
   updateLine(
     purchaseId: number,
     lineId: number,
