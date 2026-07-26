@@ -44,7 +44,7 @@ import type {
   ProductColorOption,
   ProductSizeOption,
 } from '../../models/purchase.models';
-import { Product } from '../../products/models/products.model';
+import { Product } from '../../../products/models/products.model';
 import { PurchaseCatalogService } from '../../services/purchase-catalog.service';
 import { PurchaseService } from '../../services/purchase.service';
 
@@ -810,7 +810,9 @@ export class PurchaseDetailComponent implements OnInit {
     };
 
     if (raw.hasColorBreakdown && raw.colors && raw.colors.length > 0) {
-      body.colorDeltas = raw.colors.map(c => ({
+      body.colorDeltas = (
+        raw.colors as { colorId: number; quantity: number }[]
+      ).map(c => ({
         colorId: Number(c.colorId),
         quantity: Math.max(1, Number(c.quantity) || 1),
       }));
