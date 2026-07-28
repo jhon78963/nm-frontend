@@ -800,17 +800,30 @@ export class PurchaseRegisterComponent implements OnInit {
     });
   }
 
+  private findDraftColorQueueIndexByExistingColorId(colorId: number): number {
+    return this.draftColorQueue.controls.findIndex(c => {
+      const v = (c as FormGroup).getRawValue() as Record<string, unknown>;
+      return v['colorMode'] === 'existing' && Number(v['colorId']) === colorId;
+    });
+  }
+
+  private incrementDraftColorQuantity(index: number, delta: number): void {
+    const row = this.draftColorQueue.at(index) as FormGroup;
+    const current = Number(row.get('quantity')?.value) || 0;
+    row
+      .get('quantity')
+      ?.patchValue(Math.max(1, current + delta), { emitEvent: true });
+    this.requestPersistDraft();
+    this.markViewForCheck();
+  }
+
   private addCatalogColorToQueue(opt: ProductColorOption, qty: number): void {
-    if (
-      this.draftQueueRawRows().some(
-        r => r.colorMode === 'existing' && r.colorId === opt.id,
-      )
-    ) {
-      showError(this.messageService, 'Ese color ya está en la lista.');
-      this.scheduleFocusColorSearch();
+    const safeQty = !Number.isFinite(qty) || qty < 1 ? 1 : Math.floor(qty);
+    const existingIdx = this.findDraftColorQueueIndexByExistingColorId(opt.id);
+    if (existingIdx >= 0) {
+      this.incrementDraftColorQuantity(existingIdx, safeQty);
       return;
     }
-    const safeQty = !Number.isFinite(qty) || qty < 1 ? 1 : Math.floor(qty);
     const entry: PurchaseDraftColorVariant = {
       id: genTempId('dv'),
       displayLabel: opt.description,
@@ -912,12 +925,11 @@ export class PurchaseRegisterComponent implements OnInit {
         showError(this.messageService, 'Color no válido.');
         return;
       }
-      if (
-        this.draftQueueRawRows().some(
-          r => r.colorMode === 'existing' && r.colorId === co.id,
-        )
-      ) {
-        showError(this.messageService, 'Ese color ya está en la lista.');
+      const existingIdx = this.findDraftColorQueueIndexByExistingColorId(co.id);
+      if (existingIdx >= 0) {
+        this.incrementDraftColorQuantity(existingIdx, qty);
+        this.lineDraft.patchValue({ variantQuantity: 1 });
+        this.requestPersistDraft();
         return;
       }
       colorMode = 'existing';
