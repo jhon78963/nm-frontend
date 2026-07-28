@@ -399,6 +399,6 @@ export class ProductListComponent implements OnInit {
   }
 
   private normalizeProductSearch(value: string): string {
-    return value.trim().replace(/[\s\r\n\t]+/g, '');
+    return value.trim().replace(/[\s\r\n\t]+/g, ' ');
   }
 }
