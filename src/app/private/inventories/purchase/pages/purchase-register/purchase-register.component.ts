@@ -48,13 +48,17 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ToolbarModule } from 'primeng/toolbar';
 import {
   catchError,
+  concatMap,
   debounceTime,
   EMPTY,
   filter,
   finalize,
   forkJoin,
+  from,
+  last,
   map,
   merge,
+  Observable,
   of,
   Subject,
   switchMap,
@@ -141,6 +145,10 @@ export class PurchaseRegisterComponent implements OnInit {
   editingPurchaseId = signal<number | null>(null);
   isEditMode = signal(false);
   loadingPurchase = signal(false);
+  /** IDs de líneas persistidas al cargar la compra (para detectar eliminaciones). */
+  private originalLineIds: number[] = [];
+  /** Al re-editar una fila del detalle, conserva el ID de línea del backend. */
+  private editingPersistedLineId: string | null = null;
 
   readonly productSourceMode = [
     { label: 'Producto existente', value: true },
@@ -1120,7 +1128,7 @@ export class PurchaseRegisterComponent implements OnInit {
     }
 
     const lineGroup = this.fb.group({
-      lineId: [genTempId('l')],
+      lineId: [this.editingPersistedLineId ?? genTempId('l')],
       productName: [productName],
       sizeLabel: [sizeLabel],
       productMode: [productMode],
@@ -1143,6 +1151,7 @@ export class PurchaseRegisterComponent implements OnInit {
     this.bindLineTotals(lineGroup);
     this.lines.push(lineGroup);
     this.recalcGrandTotal();
+    this.editingPersistedLineId = null;
     this.resetConstructorAfterLineAdded();
     this.isEditingLine.set(false);
     showSuccess(
@@ -1278,6 +1287,9 @@ export class PurchaseRegisterComponent implements OnInit {
         : null;
 
     this.lines.clear({ emitEvent: false });
+    this.originalLineIds = (purchase.lines ?? []).map(
+      (line: { id: number }) => line.id,
+    );
 
     for (const line of purchase.lines || []) {
       this.addLineFromPurchase(line);
@@ -1381,6 +1393,10 @@ export class PurchaseRegisterComponent implements OnInit {
       return;
     }
     const raw = row.getRawValue() as Record<string, unknown>;
+    const lineIdStr = String(raw['lineId'] ?? '');
+    this.editingPersistedLineId = this.isPersistedLineId(lineIdStr)
+      ? lineIdStr
+      : null;
     this.lines.removeAt(index);
     this.recalcGrandTotal();
     this.isEditingLine.set(true);
@@ -1610,12 +1626,100 @@ export class PurchaseRegisterComponent implements OnInit {
     this.recalcGrandTotal();
   }
 
-  registerPurchase(): void {
-    if (this.isEditMode()) {
+  updatePurchase(): void {
+    const purchaseId = this.editingPurchaseId();
+    if (!this.isEditMode() || purchaseId == null || purchaseId <= 0) {
+      return;
+    }
+
+    if (this.header.invalid) {
+      this.header.markAllAsTouched();
       showError(
         this.messageService,
-        'En modo edición: modifica las líneas y usa "Volver al detalle" para ver los cambios aplicados.',
+        'Completa la cabecera (proveedor y fecha).',
       );
+      return;
+    }
+    if (this.lines.length === 0) {
+      showError(this.messageService, 'La compra debe tener al menos una línea.');
+      return;
+    }
+
+    const lineSyncPlan = this.buildLineSyncPlan(purchaseId);
+    if (!lineSyncPlan.ok) {
+      showError(this.messageService, lineSyncPlan.error);
+      return;
+    }
+
+    const nameTrim = String(this.header.value.supplierName ?? '').trim();
+    const existingVid = this.header.value.vendorId;
+    const ensureVendor$ =
+      existingVid != null && Number(existingVid) > 0
+        ? of(void 0)
+        : this.catalog.resolveOrCreateVendor(nameTrim).pipe(
+            tap(v => {
+              const nm = String(v.name ?? nameTrim).trim();
+              this.header.patchValue(
+                { vendorId: v.id, supplierName: nm },
+                { emitEvent: false },
+              );
+              this.supplierNameLockedForVendorId = nm;
+            }),
+            map(() => void 0),
+          );
+
+    this.submitting.set(true);
+    ensureVendor$
+      .pipe(
+        switchMap(() => {
+          const raw = this.header.getRawValue();
+          const reg =
+            raw.registeredAt instanceof Date
+              ? raw.registeredAt.toISOString().slice(0, 10)
+              : null;
+          return this.purchaseApi.patchHeader(purchaseId, {
+            supplierName: String(raw.supplierName ?? '').trim(),
+            vendorId:
+              raw.vendorId != null && Number(raw.vendorId) > 0
+                ? Number(raw.vendorId)
+                : null,
+            documentNote: raw.documentNote?.trim() || null,
+            registeredAt: reg,
+          });
+        }),
+        switchMap(() => this.runLineSyncOps(lineSyncPlan.ops)),
+        catchError(err => {
+          const msg =
+            err?.error?.message ??
+            err?.message ??
+            'No se pudo actualizar la compra.';
+          showError(this.messageService, String(msg));
+          console.warn('[purchase:update]', err);
+          return EMPTY;
+        }),
+        finalize(() => {
+          this.submitting.set(false);
+          this.markViewForCheck();
+        }),
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.markViewForCheck()),
+      )
+      .subscribe({
+        next: () => {
+          this.originalLineIds = this.lines.controls
+            .map(g => String(g.getRawValue().lineId ?? ''))
+            .filter(id => this.isPersistedLineId(id))
+            .map(id => Number(id));
+
+          showSuccess(this.messageService, 'Compra actualizada correctamente.');
+          void this.router.navigate(['/inventories/purchase', purchaseId]);
+        },
+      });
+  }
+
+  registerPurchase(): void {
+    if (this.isEditMode()) {
+      this.updatePurchase();
       return;
     }
 
@@ -1708,6 +1812,167 @@ export class PurchaseRegisterComponent implements OnInit {
           }
         },
       });
+  }
+
+  private isPersistedLineId(lineId: string): boolean {
+    return /^\d+$/.test(lineId.trim());
+  }
+
+  private lineHasColorBreakdown(colors: Record<string, unknown>[]): boolean {
+    if (colors.length === 0) {
+      return false;
+    }
+    if (colors.length === 1) {
+      const label = String(colors[0]?.['displayLabel'] ?? '');
+      if (label.includes('solo talla') && colors[0]?.['colorId'] == null) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private buildLineMutationBody(raw: Record<string, unknown>): {
+    barcode?: string | null;
+    purchasePrice: number;
+    salePrice?: number | null;
+    minSalePrice?: number | null;
+    colorDeltas?: { colorId: number; quantity: number }[];
+    sizeOnlyQuantity?: number;
+  } {
+    const colors = (raw['colors'] as Record<string, unknown>[]) ?? [];
+    const hasColorBreakdown = this.lineHasColorBreakdown(colors);
+    const body: {
+      barcode?: string | null;
+      purchasePrice: number;
+      salePrice?: number | null;
+      minSalePrice?: number | null;
+      colorDeltas?: { colorId: number; quantity: number }[];
+      sizeOnlyQuantity?: number;
+    } = {
+      barcode: (raw['barcode'] as string | null)?.trim() || null,
+      purchasePrice: Number(raw['purchasePrice']) || 0,
+      salePrice: Number(raw['salePrice']) || 0,
+      minSalePrice: Number(raw['minSalePrice']) || 0,
+    };
+
+    if (hasColorBreakdown) {
+      body.colorDeltas = colors
+        .filter(c => c['colorId'] != null)
+        .map(c => ({
+          colorId: Number(c['colorId']),
+          quantity: Math.max(1, Number(c['quantity']) || 1),
+        }));
+    } else {
+      body.sizeOnlyQuantity = Math.max(
+        1,
+        Number(colors[0]?.['quantity']) || 1,
+      );
+    }
+
+    return body;
+  }
+
+  private buildAddLineBody(raw: Record<string, unknown>):
+    | {
+        productId: number;
+        sizeId: number;
+        barcode?: string | null;
+        purchasePrice: number;
+        salePrice?: number | null;
+        minSalePrice?: number | null;
+        hasColorBreakdown: boolean;
+        colorDeltas?: { colorId: number; quantity: number }[];
+        sizeOnlyQuantity?: number;
+      }
+    | { error: string } {
+    if (raw['productMode'] === 'new' || raw['sizeMode'] === 'new') {
+      return {
+        error:
+          'Las líneas nuevas deben usar productos y tallas existentes del catálogo.',
+      };
+    }
+
+    const productId = Number(raw['productId']);
+    const sizeId = Number(raw['sizeId']);
+    if (!Number.isFinite(productId) || productId <= 0) {
+      return { error: 'Falta el producto en una línea nueva.' };
+    }
+    if (!Number.isFinite(sizeId) || sizeId <= 0) {
+      return { error: 'Falta la talla en una línea nueva.' };
+    }
+
+    const colors = (raw['colors'] as Record<string, unknown>[]) ?? [];
+    const hasColorBreakdown = this.lineHasColorBreakdown(colors);
+    if (hasColorBreakdown) {
+      for (const c of colors) {
+        if (c['colorId'] == null || c['colorTempId']) {
+          return {
+            error:
+              'Las líneas nuevas con color deben usar colores existentes del catálogo.',
+          };
+        }
+      }
+    }
+
+    return {
+      productId,
+      sizeId,
+      hasColorBreakdown,
+      ...this.buildLineMutationBody(raw),
+    };
+  }
+
+  private buildLineSyncPlan(purchaseId: number):
+    | {
+        ok: true;
+        ops: Observable<{ message: string }>[];
+      }
+    | { ok: false; error: string } {
+    const currentPersistedIds = new Set<number>();
+    const ops: Observable<{ message: string }>[] = [];
+
+    for (const g of this.lines.controls) {
+      const raw = g.getRawValue() as Record<string, unknown>;
+      const lineIdStr = String(raw['lineId'] ?? '');
+
+      if (this.isPersistedLineId(lineIdStr)) {
+        const id = Number(lineIdStr);
+        currentPersistedIds.add(id);
+        ops.push(
+          this.purchaseApi.updateLine(
+            purchaseId,
+            id,
+            this.buildLineMutationBody(raw),
+          ),
+        );
+        continue;
+      }
+
+      const addBody = this.buildAddLineBody(raw);
+      if ('error' in addBody) {
+        return { ok: false, error: addBody.error };
+      }
+      ops.push(this.purchaseApi.addLine(purchaseId, addBody));
+    }
+
+    for (const id of this.originalLineIds) {
+      if (!currentPersistedIds.has(id)) {
+        ops.unshift(
+          this.purchaseApi.deleteLine(purchaseId, id),
+        );
+      }
+    }
+
+    return { ok: true, ops };
+  }
+
+  private runLineSyncOps(
+    ops: Observable<{ message: string }>[],
+  ): Observable<unknown> {
+    if (ops.length === 0) {
+      return of(null);
+    }
+    return from(ops).pipe(concatMap(op => op), last());
   }
 
   goBackToDetail(): void {
@@ -1816,6 +2081,8 @@ export class PurchaseRegisterComponent implements OnInit {
     this.persistDraftEnabled = false;
     this.purchaseDraft.clear();
     this.lines.clear({ emitEvent: false });
+    this.originalLineIds = [];
+    this.editingPersistedLineId = null;
     this.isEditingLine.set(false);
     this.totalEstimated.set(0);
     this.catalogSizes.set([]);

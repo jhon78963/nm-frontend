@@ -666,8 +666,15 @@
                 type="button"
                 label="Volver al detalle"
                 icon="pi pi-arrow-left"
-                class="p-button-secondary"
+                class="p-button-secondary p-button-outlined"
                 (click)="goBackToDetail()"></button>
+              <button
+                pButton
+                type="button"
+                label="Actualizar compra"
+                icon="pi pi-check"
+                [loading]="submitting()"
+                (click)="updatePurchase()"></button>
             } @else {
               <button
                 pButton
@@ -690,7 +697,7 @@
           <p-message
             severity="info"
             styleClass="w-full text-sm mt-3"
-            text="Modo edición: agrega o modifica líneas. Los cambios se aplican automáticamente al inventario."></p-message>
+            text="Modo edición: modifica cabecera o líneas y pulsa «Actualizar compra» para guardar en el servidor. Los cambios en stock se aplican al confirmar."></p-message>
         }
       </p-card>
     </div>
