@@ -75,7 +75,7 @@ import { Product } from '../../../products/models/products.model';
 import { ProductsService } from '../../../products/services/products.service';
 import { SizesService } from '../../../sizes/services/sizes.service';
 import { Size } from '../../../sizes/models/sizes.model';
-import { buildPurchaseBulkPayload } from '../../models/purchase-payload';
+import { buildPurchaseBulkPayload, buildPurchaseAppendLinesPayload } from '../../models/purchase-payload';
 import {
   genTempId,
   ProductColorOption,
@@ -1646,10 +1646,6 @@ export class PurchaseRegisterComponent implements OnInit {
     }
 
     const lineSyncPlan = this.buildLineSyncPlan(purchaseId);
-    if (!lineSyncPlan.ok) {
-      showError(this.messageService, lineSyncPlan.error);
-      return;
-    }
 
     const nameTrim = String(this.header.value.supplierName ?? '').trim();
     const existingVid = this.header.value.vendorId;
@@ -1872,63 +1868,12 @@ export class PurchaseRegisterComponent implements OnInit {
     return body;
   }
 
-  private buildAddLineBody(raw: Record<string, unknown>):
-    | {
-        productId: number;
-        sizeId: number;
-        barcode?: string | null;
-        purchasePrice: number;
-        salePrice?: number | null;
-        minSalePrice?: number | null;
-        hasColorBreakdown: boolean;
-        colorDeltas?: { colorId: number; quantity: number }[];
-        sizeOnlyQuantity?: number;
-      }
-    | { error: string } {
-    if (raw['productMode'] === 'new' || raw['sizeMode'] === 'new') {
-      return {
-        error:
-          'Las líneas nuevas deben usar productos y tallas existentes del catálogo.',
-      };
-    }
-
-    const productId = Number(raw['productId']);
-    const sizeId = Number(raw['sizeId']);
-    if (!Number.isFinite(productId) || productId <= 0) {
-      return { error: 'Falta el producto en una línea nueva.' };
-    }
-    if (!Number.isFinite(sizeId) || sizeId <= 0) {
-      return { error: 'Falta la talla en una línea nueva.' };
-    }
-
-    const colors = (raw['colors'] as Record<string, unknown>[]) ?? [];
-    const hasColorBreakdown = this.lineHasColorBreakdown(colors);
-    if (hasColorBreakdown) {
-      for (const c of colors) {
-        if (c['colorId'] == null || c['colorTempId']) {
-          return {
-            error:
-              'Las líneas nuevas con color deben usar colores existentes del catálogo.',
-          };
-        }
-      }
-    }
-
-    return {
-      productId,
-      sizeId,
-      hasColorBreakdown,
-      ...this.buildLineMutationBody(raw),
-    };
-  }
-
-  private buildLineSyncPlan(purchaseId: number):
-    | {
-        ok: true;
-        ops: Observable<{ message: string }>[];
-      }
-    | { ok: false; error: string } {
+  private buildLineSyncPlan(purchaseId: number): {
+    ok: true;
+    ops: Observable<{ message: string }>[];
+  } {
     const currentPersistedIds = new Set<number>();
+    const newLineIdSet = new Set<string>();
     const ops: Observable<{ message: string }>[] = [];
 
     for (const g of this.lines.controls) {
@@ -1948,19 +1893,25 @@ export class PurchaseRegisterComponent implements OnInit {
         continue;
       }
 
-      const addBody = this.buildAddLineBody(raw);
-      if ('error' in addBody) {
-        return { ok: false, error: addBody.error };
-      }
-      ops.push(this.purchaseApi.addLine(purchaseId, addBody));
+      newLineIdSet.add(lineIdStr);
     }
 
     for (const id of this.originalLineIds) {
       if (!currentPersistedIds.has(id)) {
-        ops.unshift(
-          this.purchaseApi.deleteLine(purchaseId, id),
-        );
+        ops.unshift(this.purchaseApi.deleteLine(purchaseId, id));
       }
+    }
+
+    if (newLineIdSet.size > 0) {
+      const newLineRows = this.collectLinesForPayload().filter(line =>
+        newLineIdSet.has(String(line.lineId)),
+      );
+      ops.push(
+        this.purchaseApi.appendLines(
+          purchaseId,
+          buildPurchaseAppendLinesPayload(newLineRows),
+        ),
+      );
     }
 
     return { ok: true, ops };

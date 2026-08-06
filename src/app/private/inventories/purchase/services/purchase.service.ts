@@ -115,6 +115,16 @@ export class PurchaseService {
     );
   }
 
+  appendLines(
+    purchaseId: number,
+    payload: Pick<PurchaseBulkPayload, 'catalogUpserts' | 'lines' | 'totals'>,
+  ): Observable<{ message: string }> {
+    return this.api.post<{ message: string }>(
+      `${this.basePath}/${purchaseId}/lines/bulk`,
+      payload,
+    );
+  }
+
   updateLine(
     purchaseId: number,
     lineId: number,
