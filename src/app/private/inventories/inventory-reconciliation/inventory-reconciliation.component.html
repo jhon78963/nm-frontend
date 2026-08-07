@@ -228,8 +228,9 @@
               <p class="section-sub m-0 text-sm text-600">
               Edite stocks por color. Use
               <i class="pi pi-sync text-700 vertical-align-middle"></i> para
-              cambiar el color (conserva stock). Marque el checkbox cuando
-              revise o confirme cada stock. Use
+              cambiar el color (conserva stock). Marque el checkbox de stock
+              cuando revise o confirme cada stock. Seleccione con el checkbox
+              a la izquierda del nombre para eliminar en lote. Use
               <i class="pi pi-trash text-700 vertical-align-middle"></i> para
               quitar colores o tallas con stock 0.
               @if (hasPosSalesSinceInventory()) {
@@ -240,15 +241,35 @@
               </p>
             </div>
           </div>
-          <button
-            pButton
-            pRipple
-            type="button"
-            label="Agregar talla"
-            icon="pi pi-plus"
-            class="p-button-outlined p-button-sm"
-            [disabled]="saving || addingSize"
-            (click)="openAddSizeDialog()"></button>
+          <div class="flex align-items-center gap-2 flex-wrap">
+            <button
+              pButton
+              pRipple
+              type="button"
+              [label]="bulkDeleteButtonLabel()"
+              icon="pi pi-trash"
+              class="p-button-outlined p-button-danger p-button-sm"
+              [loading]="bulkDeleting"
+              [disabled]="
+                !hasBulkSelection() ||
+                saving ||
+                bulkDeleting ||
+                removingSize ||
+                removingColor ||
+                addingSize ||
+                addingColor
+              "
+              (click)="confirmBulkDelete()"></button>
+            <button
+              pButton
+              pRipple
+              type="button"
+              label="Agregar talla"
+              icon="pi pi-plus"
+              class="p-button-outlined p-button-sm"
+              [disabled]="saving || addingSize || bulkDeleting"
+              (click)="openAddSizeDialog()"></button>
+          </div>
         </div>
 
         <div class="reconciliation-grid-wrap overflow-x-auto">
@@ -268,7 +289,19 @@
                 <tr class="row-master" [ngClass]="sizeRowClass(size)">
                   <td class="font-semibold text-900 align-top">
                     <div class="flex align-items-center justify-content-between gap-2 flex-wrap">
-                      <span>{{ size.sizeLabel }}</span>
+                      <div class="flex align-items-center gap-2 min-w-0">
+                        <p-checkbox
+                          [binary]="true"
+                          styleClass="bulk-select-checkbox"
+                          [ngModel]="isBulkSelectedSize(size)"
+                          (ngModelChange)="onBulkSelectSizeChange(size, $event)"
+                          [disabled]="!canBulkSelectSize(size)"
+                          [pTooltip]="bulkSizeSelectTooltip(size)"
+                          tooltipPosition="top"
+                          [inputId]="'bulk-s-' + size.id">
+                        </p-checkbox>
+                        <span>{{ size.sizeLabel }}</span>
+                      </div>
                       @if (!hasColorBreakdown(size) && sizePosSoldQty(size) > 0) {
                         <p-tag
                           severity="warning"
@@ -412,6 +445,20 @@
                         class="flex align-items-center gap-2 justify-content-between flex-wrap">
                         <div class="color-indent flex-1 min-w-0">
                           <div class="color-indent-inner">
+                            <p-checkbox
+                              [binary]="true"
+                              styleClass="bulk-select-checkbox"
+                              [ngModel]="isBulkSelectedColor(size, color)"
+                              (ngModelChange)="
+                                onBulkSelectColorChange(size, color, $event)
+                              "
+                              [disabled]="!canBulkSelectColor(size)"
+                              pTooltip="Seleccionar color para eliminar"
+                              tooltipPosition="top"
+                              [inputId]="
+                                'bulk-c-' + size.id + '-' + color.colorId
+                              ">
+                            </p-checkbox>
                             <span>{{ color.description }}</span>
                             @if (colorPosSoldQty(color) > 0) {
                               <p-tag

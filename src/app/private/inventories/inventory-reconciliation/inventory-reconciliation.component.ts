@@ -29,7 +29,13 @@ import { RippleModule } from 'primeng/ripple';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
-import { finalize, forkJoin, of, Subscription, switchMap } from 'rxjs';
+import {
+  finalize,
+  forkJoin,
+  of,
+  Subscription,
+  switchMap,
+} from 'rxjs';
 import { Gender } from '../../../models/gender.interface';
 import { Warehouse } from '../../../models/warehouse.interface';
 import { GendersService } from '../../../services/genders.service';
@@ -161,6 +167,9 @@ export class InventoryReconciliationComponent
   addingColor = false;
   removingColor = false;
   removingSize = false;
+  bulkDeleting = false;
+  /** Selección masiva (independiente de stockReviewed). Claves: s:{productSizeId} | c:{productSizeId}:{colorId} */
+  private readonly bulkSelection = new Set<string>();
 
   ngOnInit(): void {
     this.gendersService.getAll().subscribe((g: Gender[]) => (this.genders = g));
@@ -297,6 +306,7 @@ export class InventoryReconciliationComponent
             });
           }
 
+          this.clearBulkSelection();
           this.applyProduct(inv, snapshot);
           this.searchQuery =
             meta.name?.trim() ||
@@ -547,10 +557,231 @@ export class InventoryReconciliationComponent
       !this.saving &&
       !this.removingSize &&
       !this.removingColor &&
+      !this.bulkDeleting &&
       !this.addingColor &&
       !this.addingSize &&
       this.effectiveSizeStock(size) === 0
     );
+  }
+
+  bulkSelectionCount(): number {
+    return this.bulkSelection.size;
+  }
+
+  hasBulkSelection(): boolean {
+    return this.bulkSelection.size > 0;
+  }
+
+  isBulkSelectedSize(size: ReconciliationSizeDraft): boolean {
+    return this.bulkSelection.has(this.sizeSelectionKey(size));
+  }
+
+  isBulkSelectedColor(
+    size: ReconciliationSizeDraft,
+    color: ReconciliationColorDraft,
+  ): boolean {
+    return this.bulkSelection.has(this.colorSelectionKey(size, color));
+  }
+
+  canBulkSelectSize(size: ReconciliationSizeDraft): boolean {
+    return (
+      !this.saving &&
+      !this.bulkDeleting &&
+      !this.removingSize &&
+      !this.removingColor &&
+      this.effectiveSizeStock(size) === 0
+    );
+  }
+
+  canBulkSelectColor(size: ReconciliationSizeDraft): boolean {
+    return (
+      !this.saving &&
+      !this.bulkDeleting &&
+      !this.removingSize &&
+      !this.removingColor &&
+      !this.isBulkSelectedSize(size)
+    );
+  }
+
+  onBulkSelectSizeChange(
+    size: ReconciliationSizeDraft,
+    checked: boolean,
+  ): void {
+    const key = this.sizeSelectionKey(size);
+    if (checked) {
+      this.bulkSelection.add(key);
+      for (const color of size.colors) {
+        this.bulkSelection.delete(this.colorSelectionKey(size, color));
+      }
+    } else {
+      this.bulkSelection.delete(key);
+    }
+  }
+
+  onBulkSelectColorChange(
+    size: ReconciliationSizeDraft,
+    color: ReconciliationColorDraft,
+    checked: boolean,
+  ): void {
+    const key = this.colorSelectionKey(size, color);
+    if (checked) {
+      this.bulkSelection.add(key);
+    } else {
+      this.bulkSelection.delete(key);
+    }
+  }
+
+  bulkSizeSelectTooltip(size: ReconciliationSizeDraft): string {
+    if (this.effectiveSizeStock(size) > 0) {
+      return 'Solo puede seleccionar tallas con stock 0 para eliminar';
+    }
+    return 'Seleccionar talla para eliminar';
+  }
+
+  bulkDeleteButtonLabel(): string {
+    const n = this.bulkSelectionCount();
+    if (n === 0) {
+      return 'Eliminar seleccionados';
+    }
+    return `Eliminar seleccionados (${n})`;
+  }
+
+  confirmBulkDelete(): void {
+    if (
+      !this.draft ||
+      !this.hasBulkSelection() ||
+      this.bulkDeleting ||
+      this.saving
+    ) {
+      return;
+    }
+
+    const { sizesToDelete, colorsToDelete } = this.collectBulkDeleteTargets();
+    const total = sizesToDelete.length + colorsToDelete.length;
+    if (total === 0) {
+      this.clearBulkSelection();
+      return;
+    }
+
+    const parts: string[] = [];
+    if (sizesToDelete.length > 0) {
+      parts.push(
+        `${sizesToDelete.length} talla${sizesToDelete.length === 1 ? '' : 's'}`,
+      );
+    }
+    if (colorsToDelete.length > 0) {
+      parts.push(
+        `${colorsToDelete.length} color${colorsToDelete.length === 1 ? '' : 'es'}`,
+      );
+    }
+
+    const withStock = colorsToDelete.filter(
+      ({ color }) => Math.max(0, Math.trunc(Number(color.stock) || 0)) > 0,
+    ).length;
+    const stockNote =
+      withStock > 0
+        ? ` ${withStock} variante${withStock === 1 ? '' : 's'} con stock se pondrá${withStock === 1 ? '' : 'n'} en 0 antes de quitarlas.`
+        : '';
+
+    this.confirmationService.confirm({
+      header: 'Eliminar seleccionados',
+      message:
+        `¿Eliminar ${parts.join(' y ')}?${stockNote} ` +
+        'Las ventas, tickets de caja y kardex anteriores se conservan en el historial.',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, eliminar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => this.executeBulkDelete(),
+    });
+  }
+
+  private executeBulkDelete(): void {
+    const draft = this.draft;
+    if (!draft) {
+      return;
+    }
+
+    const { sizesToDelete, colorsToDelete } = this.collectBulkDeleteTargets();
+    const requests = [
+      ...colorsToDelete.map(({ size, color }) =>
+        this.inventoryService.removeColorVariant(size.id, color.colorId),
+      ),
+      ...sizesToDelete.map(size =>
+        this.inventoryService.removeSize(draft.productId, size.sizeId),
+      ),
+    ];
+
+    if (requests.length === 0) {
+      this.clearBulkSelection();
+      return;
+    }
+
+    this.bulkDeleting = true;
+    const snapshot = this.captureDraftSnapshot();
+    const total = requests.length;
+
+    forkJoin(requests)
+      .pipe(finalize(() => (this.bulkDeleting = false)))
+      .subscribe({
+        next: () => {
+          this.clearBulkSelection();
+          this.toast(
+            'success',
+            `${total} elemento${total === 1 ? '' : 's'} eliminado${total === 1 ? '' : 's'}.`,
+          );
+          this.loadFullProduct(draft.productId, snapshot);
+        },
+        error: err => this.toast('error', this.parseHttpError(err)),
+      });
+  }
+
+  private collectBulkDeleteTargets(): {
+    sizesToDelete: ReconciliationSizeDraft[];
+    colorsToDelete: Array<{
+      size: ReconciliationSizeDraft;
+      color: ReconciliationColorDraft;
+    }>;
+  } {
+    const draft = this.draft;
+    const sizesToDelete: ReconciliationSizeDraft[] = [];
+    const colorsToDelete: Array<{
+      size: ReconciliationSizeDraft;
+      color: ReconciliationColorDraft;
+    }> = [];
+
+    if (!draft) {
+      return { sizesToDelete, colorsToDelete };
+    }
+
+    for (const size of draft.sizes) {
+      if (this.isBulkSelectedSize(size)) {
+        sizesToDelete.push(size);
+        continue;
+      }
+      for (const color of size.colors) {
+        if (this.isBulkSelectedColor(size, color)) {
+          colorsToDelete.push({ size, color });
+        }
+      }
+    }
+
+    return { sizesToDelete, colorsToDelete };
+  }
+
+  private clearBulkSelection(): void {
+    this.bulkSelection.clear();
+  }
+
+  private sizeSelectionKey(size: ReconciliationSizeDraft): string {
+    return `s:${size.id}`;
+  }
+
+  private colorSelectionKey(
+    size: ReconciliationSizeDraft,
+    color: ReconciliationColorDraft,
+  ): string {
+    return `c:${size.id}:${color.colorId}`;
   }
 
   sizeRemoveTooltip(size: ReconciliationSizeDraft): string {
@@ -568,6 +799,7 @@ export class InventoryReconciliationComponent
       this.saving ||
       this.removingColor ||
       this.removingSize ||
+      this.bulkDeleting ||
       this.replacingVariantColor
     ) {
       return;
@@ -767,6 +999,7 @@ export class InventoryReconciliationComponent
     this.replaceTargetColorId = null;
     this.addSizeDialogVisible = false;
     this.addColorDialogVisible = false;
+    this.clearBulkSelection();
     this.catalogSub?.unsubscribe();
     this.replaceColorSub?.unsubscribe();
     if (navigate) {

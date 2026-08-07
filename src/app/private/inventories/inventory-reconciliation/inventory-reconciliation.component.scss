@@ -193,6 +193,19 @@
   flex-wrap: wrap;
 }
 
+::ng-deep .bulk-select-checkbox.p-checkbox {
+  flex-shrink: 0;
+}
+
+::ng-deep .bulk-select-checkbox .p-checkbox-box {
+  border-color: var(--red-400, #f87171);
+}
+
+::ng-deep .bulk-select-checkbox:not(.p-disabled) .p-checkbox-box.p-highlight {
+  border-color: var(--red-500, #ef4444);
+  background: var(--red-500, #ef4444);
+}
+
 ::ng-deep .pos-sold-tag.p-tag {
   font-size: 0.7rem;
   font-weight: 600;
