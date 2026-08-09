@@ -214,6 +214,12 @@ export class AppMenuComponent implements OnInit {
           permission: 'report.products',
         },
         {
+          label: 'Ventas (diario / mensual)',
+          icon: 'pi pi-fw pi-chart-line',
+          routerLink: ['/reports/sales'],
+          permission: 'report.sales',
+        },
+        {
           label: 'Resumen Financiero',
           icon: 'pi pi-fw pi-user',
           routerLink: ['/financial-summary'],

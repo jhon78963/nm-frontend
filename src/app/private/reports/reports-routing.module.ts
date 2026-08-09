@@ -19,6 +19,15 @@ const routes: Routes = [
     canActivate: [permissionGuard],
     data: { permission: 'report.products' },
   },
+  {
+    path: 'sales',
+    loadComponent: () =>
+      import('./pages/sales-report/sales-report.component').then(
+        c => c.SalesReportComponent,
+      ),
+    canActivate: [permissionGuard],
+    data: { permission: 'report.sales' },
+  },
 ];
 
 @NgModule({

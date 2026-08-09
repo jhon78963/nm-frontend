@@ -216,6 +216,10 @@ function resolvePermissionPlacement(perm: Permission): MenuPlacement {
     return placement('Reportes', 'Productos (inventario)', 1);
   }
 
+  if (name === 'report.sales') {
+    return placement('Reportes', 'Ventas (diario / mensual)', 2);
+  }
+
   if (prefix === 'report') {
     return placement('Reportes', 'Reportes', 0);
   }

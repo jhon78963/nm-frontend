@@ -1,0 +1,336 @@
+<div class="sales-report-page p-4 font-family fadein-animation">
+  <!-- Header -->
+  <div
+    class="flex flex-column lg:flex-row justify-content-between align-items-start lg:align-items-center mb-4 gap-3">
+    <div class="flex flex-column gap-2">
+      <a
+        routerLink="/reports"
+        class="text-sm text-primary no-underline hover:underline flex align-items-center gap-1">
+        <i class="pi pi-arrow-left"></i>
+        Volver al reporte gerencial
+      </a>
+      <div class="flex align-items-center gap-2 flex-wrap">
+        <h1 class="text-2xl font-bold text-900 m-0">Reporte de Ventas</h1>
+        <span class="period-badge">{{ periodLabel() }}</span>
+      </div>
+      <p class="text-600 m-0 text-sm max-w-40rem">
+        Analiza el rendimiento comercial con vista diaria o mensual. Incluye
+        ticket promedio, desglose por método de pago y tendencia visual.
+      </p>
+    </div>
+
+    <div class="filter-toolbar surface-card shadow-1 border-round-2xl p-2 flex flex-column sm:flex-row align-items-stretch sm:align-items-center gap-2">
+      <p-selectButton
+        [options]="modeOptions"
+        [ngModel]="mode()"
+        (ngModelChange)="mode.set($event); onModeChange()"
+        optionLabel="label"
+        optionValue="value">
+        <ng-template let-item pTemplate="item">
+          <span class="flex align-items-center gap-2 px-1">
+            <i [class]="item.icon"></i>
+            {{ item.label }}
+          </span>
+        </ng-template>
+      </p-selectButton>
+
+      <div class="toolbar-divider hidden sm:block"></div>
+
+      <div class="flex align-items-center gap-2 px-2">
+        <span class="text-xs font-bold text-500 uppercase white-space-nowrap">
+          {{ mode() === 'daily' ? 'Fecha' : 'Mes' }}
+        </span>
+        <p-calendar
+          [ngModel]="filterDate()"
+          (ngModelChange)="filterDate.set($event); onFilterChange()"
+          [view]="mode() === 'daily' ? 'date' : 'month'"
+          [dateFormat]="mode() === 'daily' ? 'dd/mm/yy' : 'MM yy'"
+          [readonlyInput]="true"
+          [showIcon]="true"
+          inputStyleClass="border-none font-semibold text-indigo-700"
+          styleClass="border-none compact-calendar">
+        </p-calendar>
+      </div>
+
+      <div class="toolbar-divider hidden sm:block"></div>
+
+      <div class="flex gap-1 px-1">
+        <button
+          pButton
+          type="button"
+          icon="pi pi-calendar"
+          class="p-button-rounded p-button-text p-button-secondary"
+          (click)="goToToday()"
+          pTooltip="Ir a hoy / mes actual"></button>
+        <button
+          pButton
+          type="button"
+          icon="pi pi-refresh"
+          class="p-button-rounded p-button-text p-button-secondary"
+          [disabled]="loading()"
+          (click)="loadData()"
+          pTooltip="Actualizar datos"></button>
+      </div>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="grid">
+      @for (item of [1, 2, 3, 4]; track item) {
+        <div class="col-12 sm:col-6 lg:col-3">
+          <p-skeleton height="6.5rem" styleClass="border-round-xl"></p-skeleton>
+        </div>
+      }
+      <div class="col-12 lg:col-8">
+        <p-skeleton height="18rem" styleClass="border-round-xl"></p-skeleton>
+      </div>
+      <div class="col-12 lg:col-4">
+        <p-skeleton height="18rem" styleClass="border-round-xl"></p-skeleton>
+      </div>
+    </div>
+  } @else if (!summary()) {
+    <div class="surface-card shadow-2 border-round-xl p-5 text-center">
+      <i class="pi pi-chart-line text-4xl text-400 mb-3"></i>
+      <p class="text-700 font-medium m-0 mb-1">Sin datos para el periodo seleccionado</p>
+      <p class="text-500 text-sm m-0">Prueba con otra fecha o mes.</p>
+    </div>
+  } @else {
+    <!-- KPI Cards -->
+    <div class="grid mb-4">
+      <div class="col-12 sm:col-6 lg:col-3">
+        <div class="kpi-card kpi-card--primary">
+          <div class="kpi-card__icon"><i class="pi pi-wallet"></i></div>
+          <span class="kpi-card__label">Total vendido</span>
+          <span class="kpi-card__value">
+            S/ {{ summary()!.total_amount | number: '1.2-2' }}
+          </span>
+        </div>
+      </div>
+      <div class="col-12 sm:col-6 lg:col-3">
+        <div class="kpi-card kpi-card--indigo">
+          <div class="kpi-card__icon"><i class="pi pi-shopping-cart"></i></div>
+          <span class="kpi-card__label">Transacciones</span>
+          <span class="kpi-card__value">{{ summary()!.transaction_count }}</span>
+          <span class="kpi-card__hint">
+            {{ summary()!.items_sold }} artículos vendidos
+          </span>
+        </div>
+      </div>
+      <div class="col-12 sm:col-6 lg:col-3">
+        <div class="kpi-card kpi-card--green">
+          <div class="kpi-card__icon"><i class="pi pi-ticket"></i></div>
+          <span class="kpi-card__label">Ticket promedio</span>
+          <span class="kpi-card__value">
+            S/ {{ summary()!.average_ticket | number: '1.2-2' }}
+          </span>
+        </div>
+      </div>
+      <div class="col-12 sm:col-6 lg:col-3">
+        <div class="kpi-card kpi-card--amber">
+          <div class="kpi-card__icon"><i class="pi pi-money-bill"></i></div>
+          @if (mode() === 'monthly' && monthlyReport()?.summary) {
+            <span class="kpi-card__label">Promedio diario</span>
+            <span class="kpi-card__value">
+              S/ {{ monthlyReport()!.summary.average_daily | number: '1.2-2' }}
+            </span>
+            <span class="kpi-card__hint">
+              {{ monthlyReport()!.summary.days_with_sales }} días con ventas
+            </span>
+          } @else {
+            <span class="kpi-card__label">Efectivo vs Digital</span>
+            <span class="kpi-card__value">{{ cashSharePercent() }}% efectivo</span>
+            <span class="kpi-card__hint">
+              S/ {{ summary()!.cash | number: '1.0-0' }} · S/
+              {{ summary()!.digital | number: '1.0-0' }} digital
+            </span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="grid mb-4">
+      <div class="col-12 lg:col-8">
+        <div class="surface-card shadow-2 border-round-xl p-4 h-full chart-panel">
+          <div class="flex justify-content-between align-items-center mb-3">
+            <h3 class="text-lg font-bold text-700 m-0">
+              @if (mode() === 'daily') {
+                Ventas por hora
+              } @else {
+                Tendencia diaria del mes
+              }
+            </h3>
+            <span class="text-500 text-sm">
+              @if (mode() === 'daily') {
+                Distribución horaria del día
+              } @else {
+                Evolución día a día
+              }
+            </span>
+          </div>
+          <div class="chart-container">
+            @if (mainChartData) {
+              <p-chart
+                [type]="mode() === 'daily' ? 'bar' : 'line'"
+                [data]="mainChartData"
+                [options]="mainChartOptions"
+                height="100%"></p-chart>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 lg:col-4">
+        <div class="surface-card shadow-2 border-round-xl p-4 h-full chart-panel">
+          <h3 class="text-lg font-bold text-700 m-0 mb-1">Métodos de pago</h3>
+          <p class="text-500 text-sm mt-0 mb-3">Participación por canal</p>
+
+          @if (paymentBreakdown().length === 0) {
+            <div class="flex align-items-center justify-content-center h-15rem text-500 text-sm">
+              Sin ventas registradas
+            </div>
+          } @else {
+            <div class="chart-container chart-container--donut">
+              <p-chart
+                type="doughnut"
+                [data]="paymentChartData"
+                [options]="paymentChartOptions"
+                height="100%"></p-chart>
+            </div>
+
+            <div class="payment-list mt-3">
+              @for (item of paymentBreakdown(); track item.method) {
+                <div class="payment-list__row">
+                  <div class="flex align-items-center gap-2">
+                    <p-tag
+                      [value]="item.label"
+                      [severity]="paymentTagSeverity(item.method)"
+                      styleClass="text-xs"></p-tag>
+                    <span class="text-500 text-xs">{{ item.count }} ops.</span>
+                  </div>
+                  <span class="font-semibold text-900">
+                    S/ {{ item.amount | number: '1.2-2' }}
+                  </span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Detail table -->
+    <div class="surface-card shadow-2 border-round-xl p-4">
+      <div class="flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h3 class="text-lg font-bold text-700 m-0">
+          @if (mode() === 'daily') {
+            Detalle de ventas del día
+          } @else {
+            Desglose diario del mes
+          }
+        </h3>
+        <span class="text-500 text-sm">
+          @if (mode() === 'daily') {
+            {{ dailyReport()?.sales?.length ?? 0 }} registros
+          } @else {
+            {{ monthlyReport()?.daily_breakdown?.length ?? 0 }} días
+          }
+        </span>
+      </div>
+
+      @if (mode() === 'daily') {
+        <p-table
+          [value]="dailyReport()?.sales ?? []"
+          styleClass="p-datatable-sm p-datatable-striped sales-detail-table"
+          [paginator]="(dailyReport()?.sales?.length ?? 0) > 10"
+          [rows]="10"
+          [rowsPerPageOptions]="[10, 25, 50]"
+          responsiveLayout="scroll">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Hora</th>
+              <th>Código</th>
+              <th>Cliente</th>
+              <th class="text-center">Ítems</th>
+              <th>Pago</th>
+              <th class="text-right">Total</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-sale>
+            <tr>
+              <td class="font-medium">{{ sale.time }}</td>
+              <td class="font-mono text-sm">{{ sale.code }}</td>
+              <td>{{ sale.customer }}</td>
+              <td class="text-center">{{ sale.items_count }}</td>
+              <td>
+                <p-tag
+                  [value]="sale.payment_label"
+                  [severity]="paymentTagSeverity(sale.payment_method)"
+                  styleClass="text-xs"></p-tag>
+              </td>
+              <td class="text-right font-bold text-indigo-700">
+                S/ {{ sale.total_amount | number: '1.2-2' }}
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="6" class="text-center p-4 text-500">
+                No hubo ventas en esta fecha.
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      } @else {
+        <p-table
+          [value]="monthlyReport()?.daily_breakdown ?? []"
+          styleClass="p-datatable-sm p-datatable-striped sales-detail-table"
+          responsiveLayout="scroll">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Fecha</th>
+              <th>Día</th>
+              <th class="text-center">Transacciones</th>
+              <th class="text-right">Efectivo</th>
+              <th class="text-right">Digital</th>
+              <th class="text-right font-bold">Total</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-row>
+            <tr [class.row-muted]="row.transactions === 0">
+              <td class="font-medium">{{ row.date }}</td>
+              <td class="text-500">{{ row.day_of_week }}</td>
+              <td class="text-center">{{ row.transactions }}</td>
+              <td class="text-right">
+                S/ {{ row.cash | number: '1.2-2' }}
+              </td>
+              <td class="text-right">
+                S/ {{ row.digital | number: '1.2-2' }}
+              </td>
+              <td class="text-right font-bold text-green-700">
+                S/ {{ row.total | number: '1.2-2' }}
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="footer">
+            <tr class="font-bold">
+              <td colspan="2" class="bg-gray-100">TOTAL MES</td>
+              <td class="text-center bg-gray-100">
+                {{ monthlyReport()?.summary?.transaction_count ?? 0 }}
+              </td>
+              <td class="text-right bg-gray-100">
+                S/ {{ monthlyReport()?.summary?.cash | number: '1.2-2' }}
+              </td>
+              <td class="text-right bg-gray-100">
+                S/ {{ monthlyReport()?.summary?.digital | number: '1.2-2' }}
+              </td>
+              <td class="text-right bg-green-100 text-green-800">
+                S/ {{ monthlyReport()?.summary?.total_amount | number: '1.2-2' }}
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      }
+    </div>
+  }
+</div>

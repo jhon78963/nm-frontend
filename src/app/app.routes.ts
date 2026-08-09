@@ -83,7 +83,7 @@ export const routes: Routes = [
         canActivate: [permissionGuard],
         data: {
           breadcrumb: 'Reportes',
-          permissions: ['report.index', 'report.products'],
+          permissions: ['report.index', 'report.products', 'report.sales'],
         },
         loadChildren: () =>
           import('./private/reports/reports.module').then(m => m.ReportsModule),
