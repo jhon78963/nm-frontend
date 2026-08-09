@@ -1,0 +1,195 @@
+<div class="sales-period-page p-4 font-family fadein-animation">
+  <p-toast position="top-right"></p-toast>
+
+  <div
+    class="flex flex-column lg:flex-row justify-content-between align-items-start lg:align-items-center mb-4 gap-3">
+    <div class="flex flex-column gap-2">
+      <a
+        routerLink="/reports/sales"
+        class="text-sm text-primary no-underline hover:underline flex align-items-center gap-1">
+        <i class="pi pi-arrow-left"></i>
+        Volver al reporte de ventas
+      </a>
+      <div class="flex align-items-center gap-2 flex-wrap">
+        <h1 class="text-2xl font-bold text-900 m-0">
+          Ventas diarias por periodo
+        </h1>
+        @if (report()?.period_label) {
+          <span class="period-badge">{{ report()!.period_label }}</span>
+        }
+      </div>
+      <p class="text-600 m-0 text-sm max-w-40rem">
+        Consulta las ventas agrupadas día a día entre dos fechas. Al final de
+        la tabla verás el total consolidado del periodo.
+      </p>
+    </div>
+
+    <div
+      class="filter-toolbar surface-card shadow-1 border-round-2xl p-3 flex flex-column gap-3">
+      <div class="flex flex-column sm:flex-row align-items-stretch sm:align-items-end gap-3">
+        <div class="flex flex-column gap-1">
+          <label class="text-xs font-bold text-500 uppercase">Desde</label>
+          <p-calendar
+            [ngModel]="startDate()"
+            (ngModelChange)="startDate.set($event)"
+            dateFormat="dd/mm/yy"
+            [readonlyInput]="true"
+            [showIcon]="true"
+            placeholder="DD/MM/YYYY"
+            inputStyleClass="font-semibold text-indigo-700"
+            styleClass="w-full">
+          </p-calendar>
+        </div>
+
+        <div class="flex align-items-center justify-content-center text-500 pt-0 sm:pt-4">
+          <i class="pi pi-arrow-right"></i>
+        </div>
+
+        <div class="flex flex-column gap-1">
+          <label class="text-xs font-bold text-500 uppercase">Hasta</label>
+          <p-calendar
+            [ngModel]="endDate()"
+            (ngModelChange)="endDate.set($event)"
+            dateFormat="dd/mm/yy"
+            [readonlyInput]="true"
+            [showIcon]="true"
+            placeholder="DD/MM/YYYY"
+            inputStyleClass="font-semibold text-indigo-700"
+            styleClass="w-full">
+          </p-calendar>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-2 justify-content-end">
+        <button
+          pButton
+          type="button"
+          label="Mes actual"
+          icon="pi pi-calendar"
+          class="p-button-outlined p-button-secondary"
+          [disabled]="loading()"
+          (click)="setCurrentMonth()"
+          pTooltip="Desde el 1 del mes hasta hoy"></button>
+        <button
+          pButton
+          type="button"
+          label="Consultar"
+          icon="pi pi-search"
+          [loading]="loading()"
+          (click)="loadData()"></button>
+      </div>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p-card styleClass="shadow-2 border-round-xl">
+      <p-skeleton height="3rem" class="mb-3"></p-skeleton>
+      <p-skeleton height="24rem"></p-skeleton>
+    </p-card>
+  } @else if (!report()) {
+    <div class="surface-card shadow-2 border-round-xl p-5 text-center">
+      <i class="pi pi-calendar-times text-4xl text-400 mb-3"></i>
+      <p class="text-700 font-medium m-0 mb-1">Selecciona un periodo válido</p>
+      <p class="text-500 text-sm m-0">
+        Indica fecha inicial y final, luego pulsa Consultar.
+      </p>
+    </div>
+  } @else {
+    <div class="grid mb-4">
+      <div class="col-12 md:col-3">
+        <div class="summary-chip">
+          <span class="summary-chip__label">Total periodo</span>
+          <span class="summary-chip__value text-green-700">
+            S/ {{ report()!.summary.total_amount | number: '1.2-2' }}
+          </span>
+        </div>
+      </div>
+      <div class="col-12 md:col-3">
+        <div class="summary-chip">
+          <span class="summary-chip__label">Transacciones</span>
+          <span class="summary-chip__value">
+            {{ report()!.summary.transaction_count }}
+          </span>
+        </div>
+      </div>
+      <div class="col-12 md:col-3">
+        <div class="summary-chip">
+          <span class="summary-chip__label">Días con ventas</span>
+          <span class="summary-chip__value">
+            {{ report()!.summary.days_with_sales }} /
+            {{ report()!.summary.days_in_range }}
+          </span>
+        </div>
+      </div>
+      <div class="col-12 md:col-3">
+        <div class="summary-chip">
+          <span class="summary-chip__label">Promedio diario</span>
+          <span class="summary-chip__value">
+            S/ {{ report()!.summary.average_daily | number: '1.2-2' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="surface-card shadow-2 border-round-xl p-4">
+      <div class="flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h3 class="text-lg font-bold text-700 m-0">Desglose diario</h3>
+        <span class="text-500 text-sm">
+          {{ report()!.daily_breakdown.length }} días en el rango
+        </span>
+      </div>
+
+      <p-table
+        [value]="report()!.daily_breakdown"
+        styleClass="p-datatable-sm p-datatable-striped sales-detail-table"
+        responsiveLayout="scroll">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Fecha</th>
+            <th>Día</th>
+            <th class="text-center">Transacciones</th>
+            <th class="text-right">Efectivo</th>
+            <th class="text-right">Digital</th>
+            <th class="text-right font-bold">Total</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-row>
+          <tr [class.row-muted]="row.transactions === 0">
+            <td class="font-medium">{{ row.date }}</td>
+            <td class="text-500">{{ row.day_of_week }}</td>
+            <td class="text-center">{{ row.transactions }}</td>
+            <td class="text-right">S/ {{ row.cash | number: '1.2-2' }}</td>
+            <td class="text-right">S/ {{ row.digital | number: '1.2-2' }}</td>
+            <td class="text-right font-bold text-green-700">
+              S/ {{ row.total | number: '1.2-2' }}
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="footer">
+          <tr class="font-bold">
+            <td colspan="2" class="bg-gray-100">TOTAL PERIODO</td>
+            <td class="text-center bg-gray-100">
+              {{ report()!.summary.transaction_count }}
+            </td>
+            <td class="text-right bg-gray-100">
+              S/ {{ report()!.summary.cash | number: '1.2-2' }}
+            </td>
+            <td class="text-right bg-gray-100">
+              S/ {{ report()!.summary.digital | number: '1.2-2' }}
+            </td>
+            <td class="text-right bg-green-100 text-green-800">
+              S/ {{ report()!.summary.total_amount | number: '1.2-2' }}
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="6" class="text-center p-4 text-500">
+              No hay días en el periodo seleccionado.
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  }
+</div>

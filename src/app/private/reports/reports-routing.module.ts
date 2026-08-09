@@ -28,6 +28,15 @@ const routes: Routes = [
     canActivate: [permissionGuard],
     data: { permission: 'report.sales' },
   },
+  {
+    path: 'sales-period',
+    loadComponent: () =>
+      import('./pages/sales-period-report/sales-period-report.component').then(
+        c => c.SalesPeriodReportComponent,
+      ),
+    canActivate: [permissionGuard],
+    data: { permission: 'report.sales' },
+  },
 ];
 
 @NgModule({

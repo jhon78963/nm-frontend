@@ -77,18 +77,38 @@ export interface SalesMonthlyReportApi {
     digital: number;
   };
   payment_breakdown: SalesPaymentBreakdownApi[];
-  daily_breakdown: Array<{
-    date: string;
-    day_of_week: string;
-    transactions: number;
-    total: number;
-    cash: number;
-    digital: number;
-  }>;
+  daily_breakdown: SalesDailyBreakdownRowApi[];
   daily_chart: {
     labels: string[];
     amounts: number[];
   };
+}
+
+export interface SalesDailyBreakdownRowApi {
+  date: string;
+  day_of_week: string;
+  transactions: number;
+  total: number;
+  cash: number;
+  digital: number;
+}
+
+export interface SalesDailyPeriodReportApi {
+  period_label: string;
+  start_date: string;
+  end_date: string;
+  summary: {
+    total_amount: number;
+    transaction_count: number;
+    items_sold: number;
+    average_ticket: number;
+    average_daily: number;
+    days_with_sales: number;
+    days_in_range: number;
+    cash: number;
+    digital: number;
+  };
+  daily_breakdown: SalesDailyBreakdownRowApi[];
 }
 
 @Injectable({
@@ -128,5 +148,18 @@ export class ReportsService {
     data: SalesMonthlyReportApi;
   }> {
     return this.apiService.get(`reports/sales/monthly?month=${month}`);
+  }
+
+  getDailySalesPeriodReport(
+    startDate: string,
+    endDate: string,
+  ): Observable<{
+    success: boolean;
+    data: SalesDailyPeriodReportApi;
+    message?: string;
+  }> {
+    return this.apiService.get(
+      `reports/sales/daily-period?start_date=${startDate}&end_date=${endDate}`,
+    );
   }
 }

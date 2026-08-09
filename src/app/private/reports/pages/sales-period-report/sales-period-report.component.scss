@@ -1,0 +1,45 @@
+.sales-period-page {
+  background: linear-gradient(180deg, #ecfdf5 0%, #f8fafc 220px);
+  min-height: 100%;
+}
+
+.period-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.filter-toolbar {
+  min-width: min(100%, 36rem);
+}
+
+.summary-chip {
+  background: var(--surface-card);
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+  border-left: 4px solid #22c55e;
+}
+
+.summary-chip__label {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--text-color-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.summary-chip__value {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-color);
+}
+
+:host ::ng-deep .sales-detail-table .row-muted {
+  opacity: 0.55;
+}
