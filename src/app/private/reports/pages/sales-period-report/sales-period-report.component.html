@@ -19,8 +19,9 @@
         }
       </div>
       <p class="text-600 m-0 text-sm max-w-40rem">
-        Consulta las ventas agrupadas día a día entre dos fechas. Al final de
-        la tabla verás el total consolidado del periodo.
+        Consulta las ventas agrupadas día a día entre dos fechas. Los totales
+        incluyen ingresos de caja (ventas + chasqui y otros ingresos de tienda),
+        igual que Control de Caja.
       </p>
     </div>
 
@@ -98,10 +99,16 @@
     <div class="grid mb-4">
       <div class="col-12 md:col-3">
         <div class="summary-chip">
-          <span class="summary-chip__label">Total periodo</span>
+          <span class="summary-chip__label">Ingresos caja (periodo)</span>
           <span class="summary-chip__value text-green-700">
             S/ {{ report()!.summary.total_amount | number: '1.2-2' }}
           </span>
+          @if (report()!.summary.total_store_incomes) {
+            <span class="summary-chip__hint">
+              Ventas S/ {{ report()!.summary.total_sales | number: '1.0-0' }} ·
+              Otros S/ {{ report()!.summary.total_store_incomes | number: '1.0-0' }}
+            </span>
+          }
         </div>
       </div>
       <div class="col-12 md:col-3">
@@ -167,7 +174,7 @@
         </ng-template>
         <ng-template pTemplate="footer">
           <tr class="font-bold">
-            <td colspan="2" class="bg-gray-100">TOTAL PERIODO</td>
+            <td colspan="2" class="bg-gray-100">TOTAL PERIODO (CAJA)</td>
             <td class="text-center bg-gray-100">
               {{ report()!.summary.transaction_count }}
             </td>

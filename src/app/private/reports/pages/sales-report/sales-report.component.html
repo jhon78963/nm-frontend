@@ -14,8 +14,9 @@
         <span class="period-badge">{{ periodLabel() }}</span>
       </div>
       <p class="text-600 m-0 text-sm max-w-40rem">
-        Analiza el rendimiento comercial con vista diaria o mensual. Incluye
-        ticket promedio, desglose por método de pago y tendencia visual.
+        Analiza el rendimiento comercial con vista diaria o mensual. Los totales
+        siguen la misma lógica que <strong>Control de Caja</strong>: ventas +
+        otros ingresos de tienda (chasqui, etc.).
       </p>
       <a
         routerLink="/reports/sales-period"
@@ -106,10 +107,16 @@
       <div class="col-12 sm:col-6 lg:col-3">
         <div class="kpi-card kpi-card--primary">
           <div class="kpi-card__icon"><i class="pi pi-wallet"></i></div>
-          <span class="kpi-card__label">Total vendido</span>
+          <span class="kpi-card__label">Ingresos caja</span>
           <span class="kpi-card__value">
             S/ {{ summary()!.total_amount | number: '1.2-2' }}
           </span>
+          @if (summary()?.total_store_incomes) {
+            <span class="kpi-card__hint">
+              Ventas S/ {{ summary()!.total_sales | number: '1.0-0' }} · Otros
+              S/ {{ summary()!.total_store_incomes | number: '1.0-0' }}
+            </span>
+          }
         </div>
       </div>
       <div class="col-12 sm:col-6 lg:col-3">
@@ -255,7 +262,8 @@
           <ng-template pTemplate="header">
             <tr>
               <th>Hora</th>
-              <th>Código</th>
+              <th>Tipo</th>
+              <th>Código / Detalle</th>
               <th>Cliente</th>
               <th class="text-center">Ítems</th>
               <th>Pago</th>
@@ -263,11 +271,26 @@
             </tr>
           </ng-template>
           <ng-template pTemplate="body" let-sale>
-            <tr>
+            <tr [class.bg-green-50]="sale.source === 'income'">
               <td class="font-medium">{{ sale.time }}</td>
-              <td class="font-mono text-sm">{{ sale.code }}</td>
+              <td>
+                @if (sale.source === 'income') {
+                  <p-tag value="Ingreso" severity="success" styleClass="text-xs"></p-tag>
+                } @else {
+                  <p-tag value="Venta" severity="info" styleClass="text-xs"></p-tag>
+                }
+              </td>
+              <td>
+                @if (sale.source === 'income') {
+                  <span class="font-bold text-sm">{{ sale.description }}</span>
+                } @else {
+                  <span class="font-mono text-sm">{{ sale.code }}</span>
+                }
+              </td>
               <td>{{ sale.customer }}</td>
-              <td class="text-center">{{ sale.items_count }}</td>
+              <td class="text-center">
+                {{ sale.source === 'income' ? '—' : sale.items_count }}
+              </td>
               <td>
                 <p-tag
                   [value]="sale.payment_label"
@@ -281,8 +304,8 @@
           </ng-template>
           <ng-template pTemplate="emptymessage">
             <tr>
-              <td colspan="6" class="text-center p-4 text-500">
-                No hubo ventas en esta fecha.
+              <td colspan="7" class="text-center p-4 text-500">
+                No hubo ventas ni ingresos en esta fecha.
               </td>
             </tr>
           </ng-template>
@@ -320,7 +343,7 @@
           </ng-template>
           <ng-template pTemplate="footer">
             <tr class="font-bold">
-              <td colspan="2" class="bg-gray-100">TOTAL MES</td>
+              <td colspan="2" class="bg-gray-100">TOTAL MES (CAJA)</td>
               <td class="text-center bg-gray-100">
                 {{ monthlyReport()?.summary?.transaction_count ?? 0 }}
               </td>

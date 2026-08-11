@@ -33,17 +33,32 @@ export interface SalesPaymentBreakdownApi {
   count: number;
 }
 
+export interface SalesDailyBreakdownRowApi {
+  date: string;
+  day_of_week: string;
+  transactions: number;
+  total: number;
+  cash: number;
+  digital: number;
+  sales_total?: number;
+  store_incomes_total?: number;
+}
+
+export interface SalesCajaSummaryApi {
+  total_amount: number;
+  total_sales: number;
+  total_store_incomes: number;
+  transaction_count: number;
+  items_sold: number;
+  average_ticket: number;
+  cash: number;
+  digital: number;
+}
+
 export interface SalesDailyReportApi {
   date: string;
   date_iso: string;
-  summary: {
-    total_amount: number;
-    transaction_count: number;
-    items_sold: number;
-    average_ticket: number;
-    cash: number;
-    digital: number;
-  };
+  summary: SalesCajaSummaryApi;
   payment_breakdown: SalesPaymentBreakdownApi[];
   hourly_chart: {
     labels: string[];
@@ -52,9 +67,11 @@ export interface SalesDailyReportApi {
   };
   sales: Array<{
     id: number;
+    source: 'sale' | 'income';
     code: string;
     time: string;
     customer: string;
+    description: string | null;
     items_count: number;
     total_amount: number;
     payment_method: string;
@@ -66,15 +83,9 @@ export interface SalesMonthlyReportApi {
   month: string;
   month_label: string;
   month_iso: string;
-  summary: {
-    total_amount: number;
-    transaction_count: number;
-    items_sold: number;
-    average_ticket: number;
+  summary: SalesCajaSummaryApi & {
     average_daily: number;
     days_with_sales: number;
-    cash: number;
-    digital: number;
   };
   payment_breakdown: SalesPaymentBreakdownApi[];
   daily_breakdown: SalesDailyBreakdownRowApi[];
@@ -84,29 +95,14 @@ export interface SalesMonthlyReportApi {
   };
 }
 
-export interface SalesDailyBreakdownRowApi {
-  date: string;
-  day_of_week: string;
-  transactions: number;
-  total: number;
-  cash: number;
-  digital: number;
-}
-
 export interface SalesDailyPeriodReportApi {
   period_label: string;
   start_date: string;
   end_date: string;
-  summary: {
-    total_amount: number;
-    transaction_count: number;
-    items_sold: number;
-    average_ticket: number;
+  summary: SalesCajaSummaryApi & {
     average_daily: number;
     days_with_sales: number;
     days_in_range: number;
-    cash: number;
-    digital: number;
   };
   daily_breakdown: SalesDailyBreakdownRowApi[];
 }
