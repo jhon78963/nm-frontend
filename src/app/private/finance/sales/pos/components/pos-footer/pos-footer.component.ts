@@ -24,6 +24,7 @@ interface DocTypeOption {
   label: string;
   value: DocumentType;
   icon: string;
+  disabled?: boolean;
 }
 
 @Component({
@@ -40,8 +41,18 @@ export class PosFooterComponent {
 
   readonly docTypeOptions: DocTypeOption[] = [
     { label: 'Ticket', value: 'TICKET_INTERNO', icon: 'pi pi-tag' },
-    { label: 'Boleta', value: 'BOLETA', icon: 'pi pi-receipt' },
-    { label: 'Factura', value: 'FACTURA', icon: 'pi pi-file' },
+    {
+      label: 'Boleta',
+      value: 'BOLETA',
+      icon: 'pi pi-receipt',
+      disabled: true,
+    },
+    {
+      label: 'Factura',
+      value: 'FACTURA',
+      icon: 'pi pi-file',
+      disabled: true,
+    },
   ];
 
   // Estado local de los métodos de pago
@@ -87,6 +98,16 @@ export class PosFooterComponent {
   });
 
   constructor() {
+    // Boleta/factura deshabilitadas: forzar ticket para sesiones con estado antiguo.
+    effect(
+      () => {
+        if (this.posService.documentType() !== 'TICKET_INTERNO') {
+          this.posService.documentType.set('TICKET_INTERNO');
+        }
+      },
+      { allowSignalWrites: true },
+    );
+
     // Si el carrito se vacía, reseteamos a solo Efectivo
     effect(
       () => {
@@ -96,6 +117,14 @@ export class PosFooterComponent {
       },
       { allowSignalWrites: true },
     );
+  }
+
+  selectDocType(value: DocumentType): void {
+    const option = this.docTypeOptions.find(o => o.value === value);
+    if (option?.disabled) {
+      return;
+    }
+    this.posService.documentType.set(value);
   }
 
   resetMethods() {

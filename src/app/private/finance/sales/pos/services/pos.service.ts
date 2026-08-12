@@ -127,6 +127,11 @@ export class PosService {
 
     this.isLoading.set(true);
 
+    // Boleta/factura deshabilitadas temporalmente (SUNAT).
+    if (this.documentType() !== 'TICKET_INTERNO') {
+      this.documentType.set('TICKET_INTERNO');
+    }
+
     // CORRECCIÓN: Estructura anidada para cumplir validación 'items.*.color.product_size_id'
     const payload = {
       document_type: this.documentType(),
@@ -183,6 +188,13 @@ export class PosService {
     } catch (error: unknown) {
       const fallback = 'Error al procesar venta';
       if (error instanceof HttpErrorResponse) {
+        const docTypeErrors = error.error?.errors?.document_type;
+        if (Array.isArray(docTypeErrors) && docTypeErrors.length > 0) {
+          this.documentType.set('TICKET_INTERNO');
+          this.showToast(String(docTypeErrors[0]));
+          return;
+        }
+
         const raw = error.error?.message || error.error?.error;
         const backendMessage = Array.isArray(raw) ? raw[0] : raw;
         if (typeof backendMessage === 'string' && backendMessage.trim()) {

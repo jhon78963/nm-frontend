@@ -78,13 +78,27 @@
       @for (opt of docTypeOptions; track opt.value) {
         <button
           type="button"
-          class="flex-1 flex align-items-center justify-content-center gap-1 py-2 border-1 border-round-lg text-xs font-bold cursor-pointer transition-all border-none outline-none"
-          [class.bg-indigo-600]="posService.documentType() === opt.value"
-          [class.text-white]="posService.documentType() === opt.value"
-          [class.shadow-2]="posService.documentType() === opt.value"
-          [class.bg-gray-100]="posService.documentType() !== opt.value"
-          [class.text-gray-500]="posService.documentType() !== opt.value"
-          (click)="posService.documentType.set(opt.value)">
+          class="flex-1 flex align-items-center justify-content-center gap-1 py-2 border-1 border-round-lg text-xs font-bold transition-all border-none outline-none"
+          [class.bg-indigo-600]="
+            !opt.disabled && posService.documentType() === opt.value
+          "
+          [class.text-white]="
+            !opt.disabled && posService.documentType() === opt.value
+          "
+          [class.shadow-2]="
+            !opt.disabled && posService.documentType() === opt.value
+          "
+          [class.bg-gray-100]="
+            opt.disabled || posService.documentType() !== opt.value
+          "
+          [class.text-gray-500]="
+            opt.disabled || posService.documentType() !== opt.value
+          "
+          [class.opacity-50]="opt.disabled"
+          [class.cursor-not-allowed]="opt.disabled"
+          [class.cursor-pointer]="!opt.disabled"
+          [disabled]="opt.disabled"
+          (click)="selectDocType(opt.value)">
           <i [class]="opt.icon"></i>
           <span>{{ opt.label }}</span>
         </button>
