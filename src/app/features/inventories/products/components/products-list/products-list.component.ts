@@ -47,8 +47,15 @@ import { Product, Gender } from '../../models/product.model';
 
 const FILTER_STORAGE_KEY = TABLE_FILTER_KEYS.products;
 
+export type ProductImageFilter = 'all' | 'with' | 'without';
+
 interface ProductFilterState extends SearchPageFilterState {
   genderIds: string[];
+  imageFilter: ProductImageFilter;
+}
+
+function isProductImageFilter(value: unknown): value is ProductImageFilter {
+  return value === 'all' || value === 'with' || value === 'without';
 }
 
 function isProductFilterState(value: unknown): value is ProductFilterState {
@@ -56,7 +63,12 @@ function isProductFilterState(value: unknown): value is ProductFilterState {
     return false;
   }
 
-  return isStringArray((value as ProductFilterState).genderIds);
+  const state = value as ProductFilterState;
+  if (!isStringArray(state.genderIds)) {
+    return false;
+  }
+
+  return state.imageFilter === undefined || isProductImageFilter(state.imageFilter);
 }
 
 @Component({
@@ -98,6 +110,16 @@ export class ProductsListComponent implements OnInit {
 
   protected readonly genders = signal<Gender[]>([]);
   protected readonly selectedGenderIds = signal<string[]>([]);
+  protected readonly imageFilter = signal<ProductImageFilter>('all');
+
+  protected readonly imageFilterOptions: ReadonlyArray<{
+    id: ProductImageFilter;
+    label: string;
+  }> = [
+    { id: 'all', label: 'Todos' },
+    { id: 'with', label: 'Con imágenes' },
+    { id: 'without', label: 'Sin imágenes' },
+  ];
 
   protected readonly isExporting = signal(false);
   protected readonly isImporting = signal(false);
@@ -151,7 +173,8 @@ export class ProductsListComponent implements OnInit {
   protected readonly hasActiveFilters = computed(
     () =>
       this.currentSearch().trim().length > 0 ||
-      this.selectedGenderIds().length > 0,
+      this.selectedGenderIds().length > 0 ||
+      this.imageFilter() !== 'all',
   );
 
   protected readonly tableEmptySearch = computed(() => {
@@ -201,6 +224,7 @@ export class ProductsListComponent implements OnInit {
         page: this.page(),
         search: this.currentSearch(),
         genderId: this.selectedGenderIds(),
+        hasImages: this.resolveHasImagesParam(),
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -318,6 +342,7 @@ export class ProductsListComponent implements OnInit {
     this.filterForm.controls.search.setValue('', { emitEvent: false });
     this.currentSearch.set('');
     this.selectedGenderIds.set([]);
+    this.imageFilter.set('all');
     this.page.set(1);
     this.filterStorage.remove(FILTER_STORAGE_KEY);
     this.loadProducts();
@@ -340,6 +365,21 @@ export class ProductsListComponent implements OnInit {
 
   protected isGenderSelected(id: string): boolean {
     return this.selectedGenderIds().includes(id);
+  }
+
+  protected setImageFilter(filter: ProductImageFilter): void {
+    if (this.imageFilter() === filter) {
+      return;
+    }
+
+    this.imageFilter.set(filter);
+    this.page.set(1);
+    this.persistFilters();
+    this.loadProducts();
+  }
+
+  protected isImageFilterSelected(filter: ProductImageFilter): boolean {
+    return this.imageFilter() === filter;
   }
 
   protected exportProducts(): void {
@@ -428,6 +468,7 @@ export class ProductsListComponent implements OnInit {
     this.page.set(saved.page);
     this.currentSearch.set(saved.search);
     this.selectedGenderIds.set(saved.genderIds);
+    this.imageFilter.set(saved.imageFilter ?? 'all');
 
     if (saved.search) {
       this.filterForm.controls.search.setValue(saved.search, {
@@ -442,6 +483,14 @@ export class ProductsListComponent implements OnInit {
       page: this.page(),
       search: this.currentSearch(),
       genderIds: this.selectedGenderIds(),
+      imageFilter: this.imageFilter(),
     });
+  }
+
+  private resolveHasImagesParam(): boolean | undefined {
+    const filter = this.imageFilter();
+    if (filter === 'with') return true;
+    if (filter === 'without') return false;
+    return undefined;
   }
 }

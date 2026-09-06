@@ -114,6 +114,33 @@
         </div>
       </div>
     }
+
+    <div class="mt-4">
+      <span class="mb-2 block text-sm font-medium text-gray-700">Imágenes</span>
+      <div
+        class="flex flex-wrap items-center gap-1 rounded-xl bg-gray-50 p-1 ring-1 ring-gray-200/80"
+        role="group"
+        aria-label="Filtrar por imágenes">
+        @for (option of imageFilterOptions; track option.id) {
+          <div
+            class="[&_.btn-base]:rounded-lg [&_.btn-base]:px-3.5 [&_.btn-base]:py-2 [&_.btn-base]:text-sm [&_.btn-base]:font-medium [&_.btn-base]:whitespace-nowrap [&_.btn-base]:shadow-none [&_.btn-base]:ring-1 [&_.btn-base]:ring-inset"
+            [ngClass]="
+              isImageFilterSelected(option.id)
+                ? '[&_.btn-base]:bg-white [&_.btn-base]:text-sky-700 [&_.btn-base]:ring-sky-200 hover:[&_.btn-base]:bg-white'
+                : '[&_.btn-base]:bg-transparent [&_.btn-base]:text-gray-600 [&_.btn-base]:ring-transparent hover:[&_.btn-base]:bg-white/80 hover:[&_.btn-base]:text-gray-900'
+            "
+          >
+            <app-button
+              type="button"
+              variant="secondary"
+              [attr.aria-pressed]="isImageFilterSelected(option.id)"
+              (clicked)="setImageFilter(option.id)">
+              {{ option.label }}
+            </app-button>
+          </div>
+        }
+      </div>
+    </div>
   </div>
 
   <app-table-data

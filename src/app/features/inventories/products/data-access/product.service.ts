@@ -48,6 +48,7 @@ export class ProductService {
     page: number;
     search?: string;
     genderId?: string[];
+    hasImages?: boolean;
   }): Observable<ProductListResponse> {
     let url = `${this.base}?perPage=${params.limit}&page=${params.page}`;
 
@@ -57,6 +58,12 @@ export class ProductService {
 
     if (params.genderId && params.genderId.length > 0) {
       url += `&genderId=${params.genderId.join(',')}`;
+    }
+
+    if (params.hasImages === true) {
+      url += '&hasImages=true';
+    } else if (params.hasImages === false) {
+      url += '&hasImages=false';
     }
 
     return this.http.get<unknown>(url).pipe(map(adaptProductList));
