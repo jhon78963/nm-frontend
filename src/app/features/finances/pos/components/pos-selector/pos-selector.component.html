@@ -105,11 +105,6 @@
                       </svg>
                     </span>
                   }
-                  @if (variantMinSalePrice(v); as minPrice) {
-                    <span class="variant-swatch__min-label">
-                      Mín. S/ {{ minPrice | number: '1.0-2' }}
-                    </span>
-                  }
                 </div>
                 <div class="variant-card__meta">
                   <span class="variant-card__name">{{ v.colorName }}</span>
@@ -127,13 +122,12 @@
                       <span class="control-field__prefix">S/</span>
                       <input
                         type="number"
-                        [min]="variantMinSalePrice(v) ?? 0.01"
+                        min="0.01"
                         step="0.10"
                         [value]="getSelectionPrice(v)"
                         (input)="updatePrice(v, $event)"
                         (focus)="$any($event.target).select()"
                         class="price-input"
-                        [class.price-input--below-min]="isPriceBelowMinimum(v, getSelectionPrice(v))"
                         [attr.aria-label]="'Precio para ' + v.colorName"
                       />
                     </div>
@@ -164,9 +158,6 @@
               } @else if (variantStock(v) > 0) {
                 <div class="variant-card__hint">
                   <span class="variant-card__price">S/ {{ v.price | number: '1.2-2' }}</span>
-                  @if (variantMinSalePrice(v); as minPrice) {
-                    <span class="variant-card__min">mín. S/ {{ minPrice | number: '1.2-2' }}</span>
-                  }
                   <span class="variant-card__add">Toca para agregar</span>
                 </div>
               }

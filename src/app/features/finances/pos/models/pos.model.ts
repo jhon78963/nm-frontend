@@ -10,7 +10,6 @@ export interface Variant {
   hex: string;
   inventory?: ProductVariantInventory;
   price: number;
-  minSalePrice?: number | null;
   sku?: string;
 }
 

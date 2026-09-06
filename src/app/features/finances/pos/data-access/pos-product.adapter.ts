@@ -74,10 +74,6 @@ function buildVariantsForSize(
 ): Variant[] {
   const productSizeId = readString(row['id']);
   const salePrice = readNumber(row['salePrice']);
-  const minSalePrice =
-    row['minSalePrice'] != null && row['minSalePrice'] !== ''
-      ? readNumber(row['minSalePrice'])
-      : null;
   const barcode = readString(row['barcode']);
   const balances = buildColorStockMap(row['inventoryBalances']);
   const productSizeColors = Array.isArray(row['productSizeColors'])
@@ -109,7 +105,6 @@ function buildVariantsForSize(
         warehouse_id: warehouseId,
       },
       price: salePrice,
-      minSalePrice: minSalePrice,
       sku: barcode,
     });
   }
@@ -142,7 +137,6 @@ function buildVariantsForSize(
           warehouse_id: warehouseId,
         },
         price: salePrice,
-        minSalePrice: minSalePrice,
         sku: barcode,
       });
     }
