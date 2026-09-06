@@ -16,7 +16,7 @@ import { environment } from '../../../environments/environment';
 /**
  * URLs públicas donde NO inyectamos el access_token como Bearer.
  * - /auth/login, /auth/forgot-password, /auth/reset-password: rutas públicas.
- * - /auth/refresh: el Bearer aquí es el refresh_token (lo gestiona AuthService manualmente).
+ * - /auth/refresh: sin Bearer de access; AuthService envía refresh_token en el body.
  */
 const PUBLIC_URL_PARTS = [
   '/auth/login',

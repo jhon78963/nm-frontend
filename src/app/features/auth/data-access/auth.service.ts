@@ -1,4 +1,4 @@
-import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Service, signal } from '@angular/core';
 import {
   catchError,
@@ -137,9 +137,7 @@ export class AuthService {
   }
 
   /**
-   * Envía el refresh_token como Bearer (JwtRefreshGuard lo extrae del header).
-   * Retorna el nuevo access_token para que el tokenInterceptor lo inyecte
-   * en la petición original que causó el 401.
+   * Renueva la sesión enviando refresh_token en el body (contrato del auth-service).
    */
   refreshSession(): Observable<string> {
     const refreshToken = this.tokenStorage.getRefreshToken();
@@ -147,14 +145,10 @@ export class AuthService {
       return throwError(() => new Error('No refresh token available'));
     }
 
-    const headers = new HttpHeaders({ Authorization: `Bearer ${refreshToken}` });
-
     return this.http
-      .post<RefreshApiResponse>(
-        `${environment.apiUrl}/auth/refresh`,
-        {},
-        { headers },
-      )
+      .post<RefreshApiResponse>(`${environment.apiUrl}/auth/refresh`, {
+        refresh_token: refreshToken,
+      })
       .pipe(
         tap(({ access_token, refresh_token }) => {
           this.tokenStorage.updateAccessToken(access_token);

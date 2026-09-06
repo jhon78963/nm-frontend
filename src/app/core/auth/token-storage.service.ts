@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 
 /**
  * Almacenamiento seguro de tokens JWT.
- * - access_token: vida corta (15 min), se envía en cada request como Bearer.
- * - refresh_token: vida larga, se usa solo en POST /v1/auth/refresh.
+ * - access_token: vida corta (1 h), se envía en cada request como Bearer.
+ * - refresh_token: vida larga (7 días), se usa solo en POST /v1/auth/refresh.
  */
 @Injectable({ providedIn: 'root' })
 export class TokenStorageService {
