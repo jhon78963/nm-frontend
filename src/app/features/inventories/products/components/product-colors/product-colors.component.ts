@@ -38,6 +38,9 @@ interface StoredSizeSelection {
   productSizeId?: string;
   description?: string;
   stock?: number;
+  physicalStock?: number;
+  reservedStock?: number;
+  availableStock?: number;
   productId: string;
 }
 
@@ -118,13 +121,26 @@ export class ProductColorsComponent implements OnInit {
   });
 
   protected readonly sizeSelectOptions = computed<SelectOption<string>[]>(() =>
-    this.filteredSizeOptions().map((size) => ({
-      label:
-        size.stock != null
-          ? `${size.description} · ${size.stock} uds`
-          : size.description,
-      value: size.id,
-    })),
+    this.filteredSizeOptions().map((size) => {
+      const physical = size.physicalStock ?? size.stock;
+      const available = size.availableStock ?? size.stock;
+      if (physical == null && available == null) {
+        return { label: size.description, value: size.id };
+      }
+
+      const reserved = Math.max(0, (physical ?? 0) - (available ?? 0));
+      if (reserved > 0) {
+        return {
+          label: `${size.description} · ${physical ?? 0} bodega · ${available ?? 0} disp.`,
+          value: size.id,
+        };
+      }
+
+      return {
+        label: `${size.description} · ${physical ?? available ?? 0} uds`,
+        value: size.id,
+      };
+    }),
   );
 
   protected readonly selectedColors = computed(() =>
@@ -155,36 +171,60 @@ export class ProductColorsComponent implements OnInit {
     }, 0);
   });
 
-  protected readonly masterProductSizeStock = computed(() => {
+  protected readonly physicalSizeStock = computed(() => {
     this.panelStockSourceEpoch();
     const size = this.selectedSize();
-    const id = size?.id;
-    if (id == null) {
+    if (size?.physicalStock != null) {
+      return Math.max(0, Math.trunc(Number(size.physicalStock) || 0));
+    }
+
+    const row = this.sizes().find((item) => item.id === size?.id);
+    if (row?.physicalStock != null) {
+      return Math.max(0, Math.trunc(Number(row.physicalStock) || 0));
+    }
+
+    return this.totalAssignedStock();
+  });
+
+  protected readonly totalReservedStock = computed(() => {
+    this.colorRevisionEpoch();
+    if (this.catalogColorsPending()) {
       return 0;
     }
 
-    const row = this.sizes().find((item) => item.id === id);
-    if (
-      row != null &&
-      row.stock !== undefined &&
-      row.stock !== null &&
-      `${row.stock}`.trim() !== ''
-    ) {
-      const n = Number(row.stock);
-      if (!Number.isNaN(n)) {
-        return Math.max(0, Math.trunc(n));
-      }
-    }
-
-    return Math.max(0, Math.trunc(Number(size?.stock ?? 0) || 0));
+    return this.linkedColors().reduce((acc, color) => {
+      const physical = Number(color.stock) || 0;
+      const reserved = Number(color.reservedQuantity) || 0;
+      return acc + Math.min(physical, reserved);
+    }, 0);
   });
 
+  protected readonly totalAvailableStock = computed(() => {
+    this.colorRevisionEpoch();
+    if (this.catalogColorsPending()) {
+      return 0;
+    }
+
+    return this.linkedColors().reduce((acc, color) => {
+      const physical = Number(color.stock) || 0;
+      const reserved = Number(color.reservedQuantity) || 0;
+      return acc + Math.max(0, physical - reserved);
+    }, 0);
+  });
+
+  /** @deprecated Use physicalSizeStock — kept for template migration */
+  protected readonly masterProductSizeStock = computed(() => this.physicalSizeStock());
+
   protected readonly remainingStock = computed(
-    () => this.masterProductSizeStock() - this.totalAssignedStock(),
+    () => this.physicalSizeStock() - this.totalAssignedStock(),
   );
 
   protected readonly isStockBalanced = computed(
-    () => this.totalAssignedStock() === this.masterProductSizeStock(),
+    () => this.totalAssignedStock() === this.physicalSizeStock(),
+  );
+
+  protected readonly hasActiveReservations = computed(
+    () => this.totalReservedStock() > 0,
   );
 
   protected readonly effectiveStockBalancedForPanel = computed(
@@ -286,7 +326,7 @@ export class ProductColorsComponent implements OnInit {
     { key: 'select', label: 'Sel.', width: '3rem' },
     { key: 'id', label: '#', className: 'hidden w-16 md:table-cell' },
     { key: 'color', label: 'Color' },
-    { key: 'stock', label: 'Stock', width: '9rem' },
+    { key: 'stock', label: 'En bodega', width: '9rem' },
     { key: 'actions', label: 'Acciones', align: 'right', width: '6rem' },
   ];
 
@@ -654,6 +694,12 @@ export class ProductColorsComponent implements OnInit {
       return true;
     }
     return (Number(color.stock) || 0) > 0;
+  }
+
+  protected colorAvailableForSale(color: ProductColorVariantRow): number {
+    const physical = Number(color.stock) || 0;
+    const reserved = Number(color.reservedQuantity) || 0;
+    return Math.max(0, physical - reserved);
   }
 
   private clearColorSelection(): void {

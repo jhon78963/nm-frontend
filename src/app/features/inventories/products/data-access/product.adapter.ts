@@ -27,6 +27,17 @@ function readString(value: unknown, fallback = ''): string {
   return value == null ? fallback : String(value);
 }
 
+export function readStock(value: unknown): number {
+  if (value === null || value === undefined || value === '') {
+    return 0;
+  }
+  const n = Number(value);
+  if (!Number.isFinite(n)) {
+    return 0;
+  }
+  return Math.max(0, Math.trunc(n));
+}
+
 export function extractApiList(raw: unknown): unknown[] {
   if (Array.isArray(raw)) {
     return raw;
@@ -54,17 +65,6 @@ function adaptProductVariantInventory(
     availableQuantity: readNumber(r['available_quantity']),
     warehouseId: String(r['warehouse_id'] ?? ''),
   };
-}
-
-function readStock(value: unknown): number {
-  if (value === null || value === undefined || value === '') {
-    return 0;
-  }
-  const n = Number(value);
-  if (!Number.isFinite(n)) {
-    return 0;
-  }
-  return Math.max(0, Math.trunc(n));
 }
 
 function sumInventoryBalances(balances: unknown): number {
@@ -125,6 +125,14 @@ export function adaptProductColor(raw: unknown): ProductColor {
     hash,
     value: r['value'] ? readString(r['value']) : undefined,
     stock: r['stock'] !== undefined ? readStock(r['stock']) : undefined,
+    reservedQuantity:
+      r['reservedQuantity'] !== undefined && r['reservedQuantity'] !== null
+        ? readStock(r['reservedQuantity'])
+        : undefined,
+    availableQuantity:
+      r['availableQuantity'] !== undefined && r['availableQuantity'] !== null
+        ? readStock(r['availableQuantity'])
+        : undefined,
     productSizeId:
       r['productSizeId'] != null && r['productSizeId'] !== ''
         ? String(r['productSizeId'])
@@ -142,6 +150,8 @@ export function adaptProductColorVariantRow(raw: unknown): ProductColorVariantRo
   return {
     ...color,
     stock: readStock(color.stock),
+    reservedQuantity: readStock(color.reservedQuantity),
+    availableQuantity: readStock(color.availableQuantity),
     variantAttached: isExists,
   };
 }

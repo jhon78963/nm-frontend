@@ -9,6 +9,8 @@ export interface ProductColor {
   hash?: string;
   value?: string;
   stock?: number;
+  reservedQuantity?: number;
+  availableQuantity?: number;
   productSizeId?: string;
   isExists?: boolean;
   price?: number;
@@ -25,6 +27,9 @@ export interface ProductColorSizeOption {
   productSizeId?: string;
   description: string;
   stock?: number;
+  physicalStock?: number;
+  reservedStock?: number;
+  availableStock?: number;
 }
 
 export interface CatalogColorCreateData {

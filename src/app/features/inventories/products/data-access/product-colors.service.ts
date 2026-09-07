@@ -9,7 +9,7 @@ import {
   ProductColorSizeOption,
   ProductColorVariantRow,
 } from '../models/product.model';
-import { adaptProductColorVariantRow, adaptProductSize } from './product.adapter';
+import { adaptProductColorVariantRow, adaptProductSize, readStock } from './product.adapter';
 
 function extractErrorMessage(err: unknown): string {
   if (typeof err === 'string' && err.trim()) {
@@ -67,11 +67,24 @@ export class ProductColorsService {
             : [];
         return (list as unknown[]).map((item) => {
           const adapted = adaptProductSize(item);
+          const raw = item as Record<string, unknown>;
           return {
             id: adapted.id,
             productSizeId: adapted.productSizeId,
             description: adapted.description,
             stock: adapted.stock,
+            physicalStock:
+              raw['physicalStock'] !== undefined && raw['physicalStock'] !== null
+                ? readStock(raw['physicalStock'])
+                : adapted.stock,
+            reservedStock:
+              raw['reservedStock'] !== undefined && raw['reservedStock'] !== null
+                ? readStock(raw['reservedStock'])
+                : 0,
+            availableStock:
+              raw['availableStock'] !== undefined && raw['availableStock'] !== null
+                ? readStock(raw['availableStock'])
+                : adapted.stock,
           } satisfies ProductColorSizeOption;
         });
       }),
