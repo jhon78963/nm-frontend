@@ -151,7 +151,8 @@ export class AuthService {
       })
       .pipe(
         tap(({ access_token, refresh_token }) => {
-          this.tokenStorage.setTokens(access_token, refresh_token);
+          const nextRefresh = refresh_token ?? refreshToken;
+          this.tokenStorage.setTokens(access_token, nextRefresh);
         }),
         map(({ access_token }) => access_token),
       );
