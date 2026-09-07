@@ -3,7 +3,6 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { AuthService } from '../../features/auth/data-access/auth.service';
 import { ToastService } from '../../shared/ui/toast/toast.service';
 
 function readBackendMessage(error: HttpErrorResponse): string | undefined {
@@ -18,21 +17,13 @@ function readBackendMessage(error: HttpErrorResponse): string | undefined {
 export const errorInterceptor: HttpInterceptorFn = (request, next) => {
   const router = inject(Router);
   const toastService = inject(ToastService);
-  const authService = inject(AuthService);
 
   return next(request).pipe(
     catchError((error: HttpErrorResponse) => {
       const status = error.status;
 
-      // 401 Unauthorized: el tokenInterceptor ya intentó el refresh.
-      // Si llega aquí, significa que el refresh también falló → forzar logout.
+      // 401: lo maneja tokenInterceptor (refresh + retry). No cerrar sesión aquí.
       if (status === 401) {
-        const skipRoutes = ['/auth/login', '/auth/me', '/auth/refresh', '/auth/logout'];
-        const isSkipped = skipRoutes.some((r) => request.url.includes(r));
-        if (!isSkipped) {
-          authService.clearLocalSession();
-          void router.navigate(['/auth/login']);
-        }
         return throwError(() => error);
       }
 

@@ -1,22 +1,12 @@
-import { HttpErrorResponse, HttpHeaders, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
+import { HttpErrorResponse, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import {
-  BehaviorSubject,
-  catchError,
-  filter,
-  switchMap,
-  take,
-  throwError,
-} from 'rxjs';
+import { catchError, finalize, Observable, shareReplay, switchMap, throwError } from 'rxjs';
 import { TokenStorageService } from './token-storage.service';
 import { AuthService } from '../../features/auth/data-access/auth.service';
-import { environment } from '../../../environments/environment';
 
 /**
  * URLs públicas donde NO inyectamos el access_token como Bearer.
- * - /auth/login, /auth/forgot-password, /auth/reset-password: rutas públicas.
- * - /auth/refresh: sin Bearer de access; AuthService envía refresh_token en el body.
  */
 const PUBLIC_URL_PARTS = [
   '/auth/login',
@@ -26,10 +16,7 @@ const PUBLIC_URL_PARTS = [
 ];
 
 /**
- * URLs donde un 401 es esperado/válido: no intentar refresh automático.
- * - /auth/me: durante el arranque de la app se llama sin sesión (guest).
- *   El restoreSession() de AuthService maneja el retry manual.
- * - /auth/logout: puede devolver 401 si el token ya expiró; no hay nada que refrescar.
+ * URLs donde un 401 es esperado: no intentar refresh automático.
  */
 const REFRESH_SKIP_URL_PARTS = [
   ...PUBLIC_URL_PARTS,
@@ -37,8 +24,7 @@ const REFRESH_SKIP_URL_PARTS = [
   '/auth/logout',
 ];
 
-let isRefreshing = false;
-const refreshResult$ = new BehaviorSubject<string | null>(null);
+let refreshInFlight$: Observable<string> | null = null;
 
 function isPublicUrl(url: string): boolean {
   return PUBLIC_URL_PARTS.some((part) => url.includes(part));
@@ -54,12 +40,24 @@ function addBearerHeader(req: HttpRequest<unknown>, token: string): HttpRequest<
   });
 }
 
+function refreshAccessToken(authService: AuthService): Observable<string> {
+  if (!refreshInFlight$) {
+    refreshInFlight$ = authService.refreshSession().pipe(
+      shareReplay({ bufferSize: 1, refCount: false }),
+      finalize(() => {
+        refreshInFlight$ = null;
+      }),
+    );
+  }
+
+  return refreshInFlight$;
+}
+
 export const tokenInterceptor: HttpInterceptorFn = (request, next) => {
   const tokenStorage = inject(TokenStorageService);
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  // Rutas públicas: sin Bearer, sin withCredentials
   if (isPublicUrl(request.url)) {
     return next(request);
   }
@@ -73,39 +71,12 @@ export const tokenInterceptor: HttpInterceptorFn = (request, next) => {
         return throwError(() => error);
       }
 
-      // Primer intento de refresh: bloqueamos peticiones paralelas
-      if (!isRefreshing) {
-        isRefreshing = true;
-        refreshResult$.next(null);
-
-        return authService.refreshSession().pipe(
-          switchMap((newAccessToken) => {
-            isRefreshing = false;
-            refreshResult$.next(newAccessToken);
-            return next(addBearerHeader(request, newAccessToken));
-          }),
-          catchError((refreshError) => {
-            isRefreshing = false;
-            refreshResult$.next(null);
-            authService.clearLocalSession();
-            void router.navigate(['/auth/login']);
-            return throwError(() => refreshError);
-          }),
-        );
-      }
-
-      // Otras peticiones esperan el resultado del refresh en curso
-      return refreshResult$.pipe(
-        filter((token) => token !== null),
-        take(1),
-        switchMap((newToken) => {
-          if (newToken) {
-            return next(addBearerHeader(request, newToken));
-          }
-
+      return refreshAccessToken(authService).pipe(
+        switchMap((newAccessToken) => next(addBearerHeader(request, newAccessToken))),
+        catchError((refreshError) => {
           authService.clearLocalSession();
           void router.navigate(['/auth/login']);
-          return throwError(() => error);
+          return throwError(() => refreshError);
         }),
       );
     }),
