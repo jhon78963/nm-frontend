@@ -3,10 +3,10 @@ name: CI
 on:
   push:
     branches:
-      - try-backend-v2
+      - main
   pull_request:
     branches:
-      - try-backend-v2
+      - main
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -38,7 +38,7 @@ jobs:
   deploy:
     name: Trigger production deploy
     needs: quality
-    if: github.event_name == 'push' && github.ref == 'refs/heads/try-backend-v2'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
