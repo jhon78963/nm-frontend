@@ -51,7 +51,7 @@ jobs:
           event-type: deploy-production
           client-payload: |
             {
-              "repo": "nm-frontend-v2",
+              "repo": "nm-frontend",
               "sha": "${{ github.sha }}",
               "ref": "${{ github.ref_name }}"
             }
