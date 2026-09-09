@@ -9,6 +9,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
+import { resolveActiveSizeTypeId } from '../../utils/product-size-type.util';
 import { NgClass } from '@angular/common';
 import { ButtonComponent } from '../../../../../shared/ui/button/button.component';
 import { CheckboxComponent } from '../../../../../shared/ui/checkbox/checkbox.component';
@@ -65,7 +66,7 @@ export class ProductSizesComponent implements OnInit {
   protected readonly saving = signal(false);
   protected readonly sizes = signal<ProductSize[]>([]);
   protected readonly sizeTypes = signal<SizeType[]>([]);
-  protected readonly selectedSizeTypeIds = signal<string[]>([]);
+  protected readonly selectedSizeTypeId = signal<string | null>(null);
   protected readonly selectedSizes = signal<ProductSize[]>([]);
 
   protected readonly sizeTableColumns: TableDataColumn<ProductSize>[] = [
@@ -87,22 +88,10 @@ export class ProductSizesComponent implements OnInit {
     this.productId.set(id ?? null);
 
     if (this.productId()) {
-      this.loadSizeTypes();
       this.loadProductAndSizes();
     } else {
       this.loading.set(false);
     }
-  }
-
-  protected loadSizeTypes(): void {
-    this.productLookupService
-      .getSizeTypes()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (types) => {
-          this.sizeTypes.set(types);
-        },
-      });
   }
 
   protected loadProductAndSizes(): void {
@@ -110,14 +99,15 @@ export class ProductSizesComponent implements OnInit {
     if (!id) return;
 
     this.loading.set(true);
-    this.productService
-      .getOne(id)
+    forkJoin({
+      types: this.productLookupService.getSizeTypes(),
+      product: this.productService.getOne(id),
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (product) => {
-          this.selectedSizeTypeIds.set(
-            product.sizeTypeId.length ? product.sizeTypeId : [],
-          );
+        next: ({ types, product }) => {
+          this.sizeTypes.set(types);
+          this.selectedSizeTypeId.set(resolveActiveSizeTypeId(product, types));
           this.loadSizes();
         },
         error: () => {
@@ -129,11 +119,16 @@ export class ProductSizesComponent implements OnInit {
 
   protected loadSizes(): void {
     const id = this.productId();
-    if (!id) return;
+    const typeId = this.selectedSizeTypeId();
+    if (!id || !typeId) {
+      this.sizes.set([]);
+      this.loading.set(false);
+      return;
+    }
 
     this.loading.set(true);
     this.sizesService
-      .getSizes(id, this.selectedSizeTypeIds())
+      .getSizes(id, [typeId])
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (sizes) => {
@@ -152,18 +147,18 @@ export class ProductSizesComponent implements OnInit {
       });
   }
 
-  protected toggleSizeType(id: string): void {
-    const current = this.selectedSizeTypeIds();
-    const next = current.includes(id)
-      ? current.filter((itemId) => itemId !== id)
-      : [...current, id];
+  protected selectSizeType(id: string): void {
+    if (this.selectedSizeTypeId() === id) {
+      return;
+    }
 
-    this.selectedSizeTypeIds.set(next.length ? next : [id]);
+    this.selectedSizeTypeId.set(id);
+    this.selectedSizes.set([]);
     this.loadSizes();
   }
 
   protected isSizeTypeSelected(id: string): boolean {
-    return this.selectedSizeTypeIds().includes(id);
+    return this.selectedSizeTypeId() === id;
   }
 
   protected isSizeSelected(size: ProductSize): boolean {

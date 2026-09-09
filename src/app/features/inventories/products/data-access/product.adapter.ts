@@ -167,12 +167,18 @@ export function adaptProductSize(raw: unknown): ProductSize {
     .filter((colorId) => colorId !== '');
   const balanceStock = resolveProductSizeStock(balances, linkedColorIds);
 
+  const sizeTypeRaw =
+    r['sizeTypeId'] ??
+    r['size_type_id'] ??
+    (r['sizeType'] as Record<string, unknown> | undefined)?.['id'];
+
   return {
     id: String(r['id'] ?? ''),
     productSizeId:
       r['productSizeId'] != null && r['productSizeId'] !== ''
         ? String(r['productSizeId'])
         : undefined,
+    sizeTypeId: sizeTypeRaw != null ? String(sizeTypeRaw) : undefined,
     description: readString(r['description']),
     price: r['price'] != null ? readNumber(r['price']) : undefined,
     colors,
@@ -237,9 +243,15 @@ function adaptProductSizeFromNest(raw: unknown): ProductSize {
   const linkedColorIds = colors.map((color) => color.id).filter((colorId) => colorId !== '');
   const sizeStock = resolveProductSizeStock(balances, linkedColorIds);
 
+  const sizeTypeRaw =
+    sizeRec['sizeTypeId'] ??
+    sizeRec['size_type_id'] ??
+    (sizeRec['sizeType'] as Record<string, unknown> | undefined)?.['id'];
+
   return {
     id: String(sizeRec['id'] ?? r['sizeId'] ?? r['id'] ?? ''),
     productSizeId: String(r['id'] ?? ''),
+    sizeTypeId: sizeTypeRaw != null ? String(sizeTypeRaw) : undefined,
     description: readString(sizeRec['description'] ?? r['description']),
     price: r['salePrice'] != null ? readNumber(r['salePrice']) : undefined,
     purchasePrice: r['purchasePrice'] != null ? readNumber(r['purchasePrice']) : undefined,
@@ -280,7 +292,13 @@ export function adaptProduct(raw: unknown): Product {
 
   const sizeTypeId = Array.isArray(r['sizeTypeId'])
     ? (r['sizeTypeId'] as string[])
-    : [];
+    : [
+        ...new Set(
+          sizes
+            .map((size) => size.sizeTypeId)
+            .filter((id): id is string => typeof id === 'string' && id.trim() !== ''),
+        ),
+      ];
 
   // Nest returns gender as { id, name }; legacy returns string
   const genderRaw = r['gender'];

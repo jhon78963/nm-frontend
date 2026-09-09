@@ -40,6 +40,7 @@ export interface CatalogColorCreateData {
 export interface ProductSize {
   id: string;
   productSizeId?: string;
+  sizeTypeId?: string;
   description: string;
   price?: number;
   colors?: ProductColor[];
