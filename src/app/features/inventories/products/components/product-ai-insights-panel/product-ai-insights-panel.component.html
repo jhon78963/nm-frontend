@@ -1,0 +1,181 @@
+<section
+  class="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50/80 to-white p-5 shadow-sm"
+  aria-labelledby="product-ai-insights-title"
+>
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div>
+      <h2 id="product-ai-insights-title" class="text-base font-semibold text-gray-900">
+        Sugerencias IA
+      </h2>
+      <p class="mt-1 text-sm text-gray-600">
+        Precio sugerido y demanda proyectada para este producto.
+      </p>
+    </div>
+
+    <a
+      routerLink="/ai"
+      class="inline-flex items-center gap-1 text-xs font-semibold text-violet-700 transition-colors hover:text-violet-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+    >
+      Abrir asistente completo
+      <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+      </svg>
+    </a>
+  </div>
+
+  @if (contextLoading()) {
+    <div class="mt-4 flex items-center gap-3 rounded-xl border border-violet-100 bg-white/70 px-4 py-4" aria-live="polite">
+      <svg class="h-5 w-5 animate-spin text-violet-600" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+      </svg>
+      <p class="text-sm text-violet-800">Cargando contexto del producto…</p>
+    </div>
+  } @else if (contextError()) {
+    <div class="mt-4">
+      <app-alert variant="error" [message]="contextError()!" />
+    </div>
+  } @else if (productContext(); as context) {
+    <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div class="rounded-xl border border-violet-100 bg-white/80 p-3">
+        <p class="text-[10px] font-semibold uppercase tracking-wider text-violet-500">Precio actual</p>
+        <p class="mt-1 text-sm font-semibold text-gray-900">S/ {{ context.salePrice | number: '1.2-2' }}</p>
+      </div>
+      <div class="rounded-xl border border-violet-100 bg-white/80 p-3">
+        <p class="text-[10px] font-semibold uppercase tracking-wider text-violet-500">Stock</p>
+        <p class="mt-1 text-sm font-semibold text-gray-900">{{ context.currentStock }} uds.</p>
+      </div>
+      <div class="rounded-xl border border-violet-100 bg-white/80 p-3">
+        <p class="text-[10px] font-semibold uppercase tracking-wider text-violet-500">Ventas 30 días</p>
+        <p class="mt-1 text-sm font-semibold text-gray-900">{{ context.salesLastMonth }} uds.</p>
+      </div>
+      <div class="rounded-xl border border-violet-100 bg-white/80 p-3">
+        <p class="text-[10px] font-semibold uppercase tracking-wider text-violet-500">Categoría</p>
+        <p class="mt-1 text-sm font-semibold text-gray-900">{{ context.category || '—' }}</p>
+      </div>
+    </div>
+
+    @if (context.isDeadStock) {
+      <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+        <p class="text-xs font-semibold uppercase tracking-wider text-amber-700">Producto atacado</p>
+        <p class="mt-1 text-sm text-amber-900">{{ context.deadStockLabel }}</p>
+      </div>
+    }
+
+    <div class="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div class="rounded-xl border border-gray-200 bg-white p-4">
+        <h3 class="text-sm font-semibold text-gray-900">Precio sugerido</h3>
+        <p class="mt-1 text-xs text-gray-500">Basado en costo, ventas y señales de inventario.</p>
+
+        @if (!context.canViewCost) {
+          <div class="mt-3">
+            <app-alert
+              variant="warning"
+              message="Necesitas permiso para ver costos de compra antes de calcular el precio sugerido."
+            />
+          </div>
+        } @else if (context.currentCost <= 0) {
+          <div class="mt-3">
+            <app-alert
+              variant="warning"
+              message="Registra el costo de compra en tallas antes de usar esta sugerencia."
+            />
+          </div>
+        }
+
+        @if (priceError()) {
+          <div class="mt-3">
+            <app-alert variant="error" [message]="priceError()!" />
+          </div>
+        }
+
+        <div class="mt-4">
+          <app-button
+            type="button"
+            variant="secondary"
+            [disabled]="!canSubmitPrice()"
+            [loading]="priceLoading()"
+            (clicked)="submitPriceOptimization()"
+          >
+            Calcular precio sugerido
+          </app-button>
+        </div>
+
+        @if (priceResult(); as result) {
+          <div class="mt-4 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-700 p-4 text-white">
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-violet-200">Sugerido</p>
+            <p class="mt-1 text-2xl font-bold">S/ {{ result.suggestedPrice | number: '1.2-2' }}</p>
+            @if (priceDelta() != null) {
+              <p class="mt-1 text-xs text-violet-100">
+                @if (priceDelta()! > 0) {
+                  +S/ {{ priceDelta()! | number: '1.2-2' }} vs precio actual
+                } @else if (priceDelta()! < 0) {
+                  S/ {{ priceDelta()! | number: '1.2-2' }} vs precio actual
+                } @else {
+                  Sin cambio vs precio actual
+                }
+              </p>
+            }
+          </div>
+          @if (result.recommendationSummary) {
+            <div class="mt-3">
+              <app-alert variant="info" [message]="result.recommendationSummary" />
+            </div>
+          }
+        }
+      </div>
+
+      <div class="rounded-xl border border-gray-200 bg-white p-4">
+        <h3 class="text-sm font-semibold text-gray-900">Demanda proyectada</h3>
+        <p class="mt-1 text-xs text-gray-500">Compra sugerida según historial y stock actual.</p>
+
+        <div class="mt-3">
+          <app-input
+            type="number"
+            label="Horizonte (días)"
+            [formControl]="horizonDaysControl"
+          />
+        </div>
+
+        @if (demandError()) {
+          <div class="mt-3">
+            <app-alert variant="error" [message]="demandError()!" />
+          </div>
+        }
+
+        <div class="mt-4">
+          <app-button
+            type="button"
+            variant="secondary"
+            [disabled]="!canSubmitDemand()"
+            [loading]="demandLoading()"
+            (clicked)="submitDemandPrediction()"
+          >
+            Predecir demanda
+          </app-button>
+        </div>
+
+        @if (demandResult(); as result) {
+          <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-3">
+              <p class="text-[10px] font-semibold uppercase tracking-wider text-indigo-600">Ventas proyectadas</p>
+              <p class="mt-1 text-xl font-bold text-indigo-900">{{ result.projectedSales }}</p>
+            </div>
+            <div
+              class="rounded-xl border p-3"
+              [class.border-emerald-200]="restockUrgency() === 'ok'"
+              [class.bg-emerald-50]="restockUrgency() === 'ok'"
+              [class.border-amber-200]="restockUrgency() === 'medium'"
+              [class.bg-amber-50]="restockUrgency() === 'medium'"
+              [class.border-red-200]="restockUrgency() === 'high'"
+              [class.bg-red-50]="restockUrgency() === 'high'"
+            >
+              <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-600">Compra sugerida</p>
+              <p class="mt-1 text-xl font-bold text-gray-900">{{ result.suggestedPurchaseQuantity }}</p>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</section>

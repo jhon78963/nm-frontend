@@ -45,6 +45,10 @@
         [formField]="productForm.name"
         [errorMessage]="nameError()" />
 
+      @if (isEditing() && productId()) {
+        <app-product-ai-insights-panel [productId]="productId()!" />
+      }
+
       <div class="flex items-center justify-end gap-3 border-t pt-6">
         <app-button type="button" variant="secondary" [disabled]="saving()" (clicked)="close()">
           Cancelar

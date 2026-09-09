@@ -20,6 +20,7 @@ import { ButtonComponent } from '../../../../../shared/ui/button/button.componen
 import { InputComponent } from '../../../../../shared/ui/input/input.component';
 import { SelectComponent, SelectOption } from '../../../../../shared/ui/select/select.component';
 import { fieldErrorMessage } from '../../../../auth/utils/form-field.util';
+import { ProductAiInsightsPanelComponent } from '../product-ai-insights-panel/product-ai-insights-panel.component';
 import { ProductService } from '../../data-access/product.service';
 import { ProductLookupService } from '../../data-access/product-lookup.service';
 import { ProductFormModel, Gender, Warehouse } from '../../models/product.model';
@@ -38,6 +39,7 @@ const EMPTY_FORM: ProductFormModel = {
     SelectComponent,
     AlertComponent,
     ButtonComponent,
+    ProductAiInsightsPanelComponent,
   ],
   templateUrl: './product-form.component.html',
 })
