@@ -15,6 +15,37 @@ const routes: Routes = [
         (m) => m.SalesListComponent,
       ),
   },
+  {
+    path: 'new',
+    redirectTo: '/finances/pos',
+    pathMatch: 'full',
+  },
+  {
+    path: ':id/exchange',
+    title: 'Canje de venta',
+    data: {
+      breadcrumb: 'Canje',
+      permissions: ['sale.exchange', 'sale.update'],
+    },
+    canActivate: [permissionGuard],
+    loadComponent: () =>
+      import('./components/sale-exchange-page/sale-exchange-page.component').then(
+        (m) => m.SaleExchangePageComponent,
+      ),
+  },
+  {
+    path: ':id',
+    title: 'Detalle de venta',
+    data: {
+      breadcrumb: 'Detalle de venta',
+      permissions: ['sale.getAll', 'sale.get'],
+    },
+    canActivate: [permissionGuard],
+    loadComponent: () =>
+      import('./components/sale-detail-page/sale-detail-page.component').then(
+        (m) => m.SaleDetailPageComponent,
+      ),
+  },
 ];
 
 export default routes;

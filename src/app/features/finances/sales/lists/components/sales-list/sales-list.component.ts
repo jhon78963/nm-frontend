@@ -32,9 +32,6 @@ import { TableActionsComponent } from '../../../../../../shared/ui/table-actions
 import { ToastService } from '../../../../../../shared/ui/toast/toast.service';
 import { SaleService } from '../../data-access/sale.service';
 import { Sale, SunatStatus } from '../../models/sale.model';
-import { SaleFormComponent } from '../sale-form/sale-form.component';
-import { SaleExchangeComponent } from '../sale-exchange/sale-exchange.component';
-import { ExchangeResponse } from '../../models/sale.model';
 
 @Component({
   selector: 'app-sales-list',
@@ -43,8 +40,6 @@ import { ExchangeResponse } from '../../models/sale.model';
     RouterLink,
     ButtonComponent,
     InputComponent,
-    SaleFormComponent,
-    SaleExchangeComponent,
     ConfirmDialogComponent,
     TableDataComponent,
     DtCellDirective,
@@ -69,14 +64,8 @@ export class SalesListComponent implements OnInit {
   protected readonly page = signal(1);
   protected readonly limit = signal(10);
 
-  protected readonly formDialogOpen = signal(false);
-  protected readonly editingSaleId = signal<string | null>(null);
-  protected readonly formReadOnly = signal(false);
-
   protected readonly cancelConfirmId = signal<string | null>(null);
   protected readonly cancelling = signal(false);
-
-  protected readonly exchangeSaleId = signal<string | null>(null);
 
   protected readonly filterForm = new FormGroup({
     search: new FormControl('', { nonNullable: true }),
@@ -175,7 +164,7 @@ export class SalesListComponent implements OnInit {
   }
 
   protected goToPos(): void {
-    void this.router.navigate(['/finances/pos']);
+    void this.router.navigate(['/finances/sales/new']);
   }
 
   protected loadSales(): void {
@@ -221,15 +210,13 @@ export class SalesListComponent implements OnInit {
   }
 
   protected openEdit(id: string): void {
-    this.editingSaleId.set(id);
-    this.formReadOnly.set(false);
-    this.formDialogOpen.set(true);
+    void this.router.navigate(['/finances/sales', id]);
   }
 
   protected openView(id: string): void {
-    this.editingSaleId.set(id);
-    this.formReadOnly.set(true);
-    this.formDialogOpen.set(true);
+    void this.router.navigate(['/finances/sales', id], {
+      queryParams: { mode: 'view' },
+    });
   }
 
   protected openCancelConfirm(id: string): void {
@@ -277,28 +264,8 @@ export class SalesListComponent implements OnInit {
     });
   }
 
-  protected onFormSaved(message: string): void {
-    this.formDialogOpen.set(false);
-    this.toastService.show('success', message);
-    this.loadSales();
-  }
-
-  protected onFormClosed(): void {
-    this.formDialogOpen.set(false);
-  }
-
   protected openExchange(id: string): void {
-    this.exchangeSaleId.set(id);
-  }
-
-  protected closeExchange(): void {
-    this.exchangeSaleId.set(null);
-  }
-
-  protected onExchangeCompleted(response: ExchangeResponse): void {
-    this.exchangeSaleId.set(null);
-    this.toastService.show('success', response.message || 'Canje registrado correctamente.');
-    this.loadSales();
+    void this.router.navigate(['/finances/sales', id, 'exchange']);
   }
 
   protected canExchange(sale: Sale): boolean {
