@@ -33,6 +33,36 @@ test.describe('QA — Protección de rutas (v2 path routing)', () => {
     ).toBeVisible();
   });
 
+  test('vendedora ve métricas del día en el dashboard', async ({ page }) => {
+    await setupAuthMocks(page);
+
+    await page.route('**/api/dashboard/metrics', async (route) => {
+      if (await fulfillPreflight(route)) return;
+      await route.fulfill({
+        status: 200,
+        headers: {
+          ...corsHeaders(route.request().headers()['origin']),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          todaySales: 6,
+          todaySalesAmount: 1480.5,
+          todayExpenses: 0,
+          lowStockProducts: 0,
+          pendingPurchases: 0,
+          activeCustomers: 0,
+          pendingTasks: 1,
+        }),
+      });
+    });
+
+    await login(page);
+    await page.goto('/dashboard');
+    await expect(page.getByText('Ventas hoy')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('Monto de ventas')).toBeVisible();
+    await expect(page.getByText('Tareas pendientes')).toBeVisible();
+  });
+
   test('vendedora no ve inventario de productos en menú', async ({ page }) => {
     await setupAuthMocks(page);
     await login(page);

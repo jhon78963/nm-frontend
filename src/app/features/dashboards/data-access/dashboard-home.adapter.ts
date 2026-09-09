@@ -36,6 +36,7 @@ export function adaptDashboardMetrics(raw: unknown): DashboardMetrics {
     activeCustomers: readNumber(
       record['activeCustomers'] ?? record['active_customers'],
     ),
+    pendingTasks: readNumber(record['pendingTasks'] ?? record['pending_tasks']),
   };
 }
 

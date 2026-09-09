@@ -5,6 +5,7 @@ export interface DashboardMetrics {
   lowStockProducts: number;
   pendingPurchases: number;
   activeCustomers: number;
+  pendingTasks: number;
 }
 
 export interface QuickAccessItem {
@@ -27,7 +28,14 @@ export const EMPTY_DASHBOARD_METRICS: DashboardMetrics = {
   lowStockProducts: 0,
   pendingPurchases: 0,
   activeCustomers: 0,
+  pendingTasks: 0,
 };
+
+export const SELLER_DASHBOARD_PERMISSIONS = [
+  'pos.checkout',
+  'cashflow.getDaily',
+  'sale.getAll',
+] as const;
 
 export const QUICK_ACCESS_ITEMS: QuickAccessItem[] = [
   {

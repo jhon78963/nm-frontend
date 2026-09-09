@@ -20,11 +20,16 @@
     }
   </header>
 
-  @if (canViewMetrics()) {
+  @if (visibleMetricCards().length > 0) {
     <section aria-labelledby="metrics-title">
       <h2 id="metrics-title" class="sr-only">Métricas del día</h2>
-      <div class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        @for (card of metricCards(); track card.label) {
+      <div
+        class="grid grid-cols-2 gap-3"
+        [class.md:grid-cols-3]="canViewMetrics()"
+        [class.xl:grid-cols-6]="canViewMetrics()"
+        [class.max-w-3xl]="canViewSellerMetrics()"
+      >
+        @for (card of visibleMetricCards(); track card.label) {
           <app-metric-card
             [label]="card.label"
             [value]="card.value"

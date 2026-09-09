@@ -1,7 +1,10 @@
 import { Component, computed, inject } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { of, switchMap } from 'rxjs';
-import { isAdminOrSuperAdmin } from '../../core/auth/permission.util';
+import {
+  isAdminOrSuperAdmin,
+  userHasAnyPermission,
+} from '../../core/auth/permission.util';
 import { AuthService } from '../auth/data-access/auth.service';
 import { MetricCardComponent } from './components/metric-card/metric-card.component';
 import { QuickAccessGridComponent } from './components/quick-access-grid/quick-access-grid.component';
@@ -10,6 +13,7 @@ import {
   EMPTY_DASHBOARD_METRICS,
   MetricColorVariant,
   MetricValueFormat,
+  SELLER_DASHBOARD_PERMISSIONS,
 } from './models/dashboard-home.model';
 
 interface MetricCardView {
@@ -34,17 +38,31 @@ export class DashboardHomeComponent {
     isAdminOrSuperAdmin(this.authService.currentUser()),
   );
 
+  protected readonly canViewSellerMetrics = computed(() => {
+    const user = this.authService.currentUser();
+    if (isAdminOrSuperAdmin(user)) {
+      return false;
+    }
+
+    return userHasAnyPermission(user, SELLER_DASHBOARD_PERMISSIONS);
+  });
+
+  protected readonly shouldLoadMetrics = computed(
+    () => this.canViewMetrics() || this.canViewSellerMetrics(),
+  );
+
   protected readonly metrics = toSignal(
-    toObservable(this.canViewMetrics).pipe(
-      switchMap((canView) =>
-        canView
+    toObservable(this.shouldLoadMetrics).pipe(
+      switchMap((shouldLoad) =>
+        shouldLoad
           ? this.dashboardService.getMetrics()
           : of(EMPTY_DASHBOARD_METRICS),
       ),
     ),
   );
+
   protected readonly isLoading = computed(
-    () => this.canViewMetrics() && this.metrics() === undefined,
+    () => this.shouldLoadMetrics() && this.metrics() === undefined,
   );
 
   protected readonly greeting = computed(() => {
@@ -129,6 +147,46 @@ export class DashboardHomeComponent {
         format: 'integer',
       },
     ];
+  });
+
+  protected readonly sellerMetricCards = computed<MetricCardView[]>(() => {
+    const metrics = this.metrics() ?? EMPTY_DASHBOARD_METRICS;
+
+    return [
+      {
+        label: 'Ventas hoy',
+        value: metrics.todaySales,
+        icon: 'cart',
+        colorVariant: 'blue',
+        format: 'integer',
+      },
+      {
+        label: 'Monto de ventas',
+        value: metrics.todaySalesAmount,
+        icon: 'cash',
+        colorVariant: 'green',
+        format: 'currency',
+      },
+      {
+        label: 'Tareas pendientes',
+        value: metrics.pendingTasks,
+        icon: 'warning',
+        colorVariant: 'yellow',
+        format: 'integer',
+      },
+    ];
+  });
+
+  protected readonly visibleMetricCards = computed(() => {
+    if (this.canViewMetrics()) {
+      return this.metricCards();
+    }
+
+    if (this.canViewSellerMetrics()) {
+      return this.sellerMetricCards();
+    }
+
+    return [];
   });
 
   private formatToday(date: Date): string {
