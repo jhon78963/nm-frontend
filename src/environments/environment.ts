@@ -5,4 +5,7 @@ export const environment = {
   baseUploadUrl: 'http://127.0.0.1:3050',
   chatbotAdminUrl: 'http://localhost:5173',
   COMPANY_ID: 'b14b2a6d-ff01-57e4-9004-7ece99dc46d9',
+  sentryDsn: '',
+  sentryRelease: '',
+  sentryTracesSampleRate: '0.1',
 };

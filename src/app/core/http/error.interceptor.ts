@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ToastService } from '../../shared/ui/toast/toast.service';
+import { captureClientException } from '../sentry/sentry.config';
 
 function readBackendMessage(error: HttpErrorResponse): string | undefined {
   const raw = error.error?.message ?? error.error?.error;
@@ -50,6 +51,11 @@ export const errorInterceptor: HttpInterceptorFn = (request, next) => {
       }
 
       if (status >= 500) {
+        captureClientException(error, {
+          url: request.url,
+          method: request.method,
+          status: String(status),
+        });
         if (!environment.production) {
           console.error('[Server Error]', error);
         }
