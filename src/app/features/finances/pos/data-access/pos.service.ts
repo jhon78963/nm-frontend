@@ -228,7 +228,10 @@ export class PosService {
       })),
       items: this.cart().map((item) => ({
         productSizeId: item.color.product_size_id,
-        colorId: item.color.color_id || undefined,
+        colorId:
+          item.color.color_id && item.color.color_id !== '0'
+            ? item.color.color_id
+            : undefined,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
       })),
@@ -257,6 +260,12 @@ export class PosService {
       }
     } catch (error: unknown) {
       if (error instanceof HttpErrorResponse) {
+        const validation = error.error?.errors?.validation;
+        if (Array.isArray(validation) && typeof validation[0] === 'string' && validation[0].trim()) {
+          this.showToast(validation[0].trim());
+          return;
+        }
+
         const raw = error.error?.message || error.error?.error;
         const msg = Array.isArray(raw) ? raw[0] : raw;
         if (typeof msg === 'string' && msg.trim()) {

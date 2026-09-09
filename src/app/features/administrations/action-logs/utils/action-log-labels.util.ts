@@ -47,6 +47,7 @@ const ACTION_LABELS: Record<string, ActionLogLabel> = {
   'pos.product_searched':  { label: 'Consulta producto POS',   tone: 'neutral' },
   'pos.customer_searched': { label: 'Consulta cliente POS',    tone: 'neutral' },
   'pos.checkout':          { label: 'Venta POS registrada',    tone: 'create'  },
+  'http.post.checkout':    { label: 'Checkout POS',            tone: 'create'  },
 
   // Ventas
   'sale.list_viewed':   { label: 'Lista de ventas consultada',    tone: 'neutral' },
@@ -82,6 +83,7 @@ export const ACTION_LOG_FILTER_GROUPS: ActionLogFilterGroup[] = [
     id: 'pos',
     label: 'POS',
     actions: [
+      'http.post.checkout',
       'pos.checkout',
       'pos.product_searched',
       'pos.customer_searched',

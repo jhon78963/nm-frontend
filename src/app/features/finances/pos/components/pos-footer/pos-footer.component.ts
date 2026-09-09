@@ -130,7 +130,7 @@ export class PosFooterComponent {
     if (active.length === 1) {
       finalPayments = [{ method: active[0].id, amount: total }];
     } else {
-      if (Math.abs(this.currentSum() - total) > 0.1) {
+      if (Math.abs(this.currentSum() - total) > 0.01) {
         this.paymentError.set(`Los montos no cuadran. Faltan S/ ${this.remaining().toFixed(2)}`);
         return;
       }
