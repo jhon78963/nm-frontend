@@ -71,7 +71,6 @@ export class ProductSizesComponent implements OnInit {
 
   protected readonly sizeTableColumns: TableDataColumn<ProductSize>[] = [
     { key: 'select', label: '', width: '3rem' },
-    { key: 'index', label: '#', width: '3rem', align: 'center' },
     { key: 'description', label: 'Talla' },
     { key: 'barcode', label: 'Código de barras' },
     { key: 'stock', label: 'Stock' },
