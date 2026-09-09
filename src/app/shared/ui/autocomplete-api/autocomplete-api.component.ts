@@ -83,15 +83,19 @@ export class AutocompleteApiComponent {
   }
 
   clearAndFocus(): void {
-    this.inputValue.set('');
-    this.hasSelection.set(false);
+    this.setDisplayValue('', false);
+    queueMicrotask(() => {
+      document.getElementById(this.inputId)?.focus();
+    });
+  }
+
+  setDisplayValue(value: string, selected = true): void {
+    this.inputValue.set(value);
+    this.hasSelection.set(selected && value.trim().length > 0);
     this.isOpen.set(false);
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);
     }
-    queueMicrotask(() => {
-      document.getElementById(this.inputId)?.focus();
-    });
   }
 
   protected onFocus(): void {

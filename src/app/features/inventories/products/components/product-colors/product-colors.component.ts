@@ -17,8 +17,8 @@ import { ButtonComponent } from '../../../../../shared/ui/button/button.componen
 import { CheckboxComponent } from '../../../../../shared/ui/checkbox/checkbox.component';
 import { ColorPickerInputComponent } from '../../../../../shared/ui/color-picker-input/color-picker-input.component';
 import { ConfirmDialogComponent } from '../../../../../shared/ui/confirm-dialog/confirm-dialog.component';
+import { AutocompleteApiComponent } from '../../../../../shared/ui/autocomplete-api/autocomplete-api.component';
 import { InputComponent } from '../../../../../shared/ui/input/input.component';
-import { SelectComponent, SelectOption } from '../../../../../shared/ui/select/select.component';
 import { TableActionButtonComponent } from '../../../../../shared/ui/table-action-button/table-action-button.component';
 import {
   TableDataColumn,
@@ -68,8 +68,8 @@ const SELECTED_SIZE_KEY = 'selectedSize';
     CheckboxComponent,
     ColorPickerInputComponent,
     ConfirmDialogComponent,
+    AutocompleteApiComponent,
     InputComponent,
-    SelectComponent,
     TableActionButtonComponent,
     TableDataComponent,
   ],
@@ -108,8 +108,9 @@ export class ProductColorsComponent implements OnInit {
   private readonly selectedColorIds = signal<Set<string>>(new Set());
   private readonly initialColorSnapshots = new Map<string, ColorFieldSnapshot>();
   private readonly colorJumpInputRef = viewChild<ElementRef<HTMLElement>>('colorJumpInput');
+  private readonly sizeAutocomplete = viewChild<AutocompleteApiComponent>('sizeAutocomplete');
 
-  protected readonly filteredSizeOptions = computed(() => {
+  protected readonly filteredSizesForAutocomplete = computed(() => {
     const query = this.sizeSearch().trim().toLowerCase();
     const rows = this.sizes();
     if (!query) {
@@ -120,28 +121,11 @@ export class ProductColorsComponent implements OnInit {
     );
   });
 
-  protected readonly sizeSelectOptions = computed<SelectOption<string>[]>(() =>
-    this.filteredSizeOptions().map((size) => {
-      const physical = size.physicalStock ?? size.stock;
-      const available = size.availableStock ?? size.stock;
-      if (physical == null && available == null) {
-        return { label: size.description, value: size.id };
-      }
+  protected readonly sizeDisplayFn = (item: unknown): string =>
+    String((item as ProductColorSizeOption).description ?? '');
 
-      const reserved = Math.max(0, (physical ?? 0) - (available ?? 0));
-      if (reserved > 0) {
-        return {
-          label: `${size.description} · ${physical ?? 0} bodega · ${available ?? 0} disp.`,
-          value: size.id,
-        };
-      }
-
-      return {
-        label: `${size.description} · ${physical ?? available ?? 0} uds`,
-        value: size.id,
-      };
-    }),
-  );
+  protected readonly sizeSecondaryTextFn = (item: unknown): string =>
+    this.formatSizeStockHint(item as ProductColorSizeOption);
 
   protected readonly selectedColors = computed(() =>
     this.colors().filter((color) => this.selectedColorIds().has(color.id)),
@@ -345,9 +329,18 @@ export class ProductColorsComponent implements OnInit {
       });
   }
 
-  protected onSizeSearchInput(value: string): void {
-    this.sizeSearch.set(value);
-    this.loadSizes(value);
+  protected onSizeAutocompleteSearch(query: string): void {
+    this.sizeSearch.set(query);
+  }
+
+  protected onSizeAutocompleteSelected(item: unknown): void {
+    const size = item as ProductColorSizeOption;
+    this.onSizeSelect(size.id);
+  }
+
+  protected onSizeAutocompleteCleared(): void {
+    this.sizeSearch.set('');
+    this.clearSizeSelection();
   }
 
   protected onSizeSelect(sizeId: string | null): void {
@@ -364,6 +357,7 @@ export class ProductColorsComponent implements OnInit {
 
     this.catalogSelectedSizeId = sid;
     this.selectedSize.set(size);
+    this.syncSizeAutocompleteDisplay();
     this.persistSelectedSizeSnapshot();
     this.catalogColorsPending.set(true);
     this.colors.set([]);
@@ -507,7 +501,7 @@ export class ProductColorsComponent implements OnInit {
           this.creatingColor.set(false);
           this.createModalOpen.set(false);
           this.toastService.show('success', 'Color creado correctamente.');
-          this.loadSizes(this.sizeSearch());
+          this.loadSizes();
           this.reloadCurrentColors();
         },
         error: () => {
@@ -765,7 +759,7 @@ export class ProductColorsComponent implements OnInit {
     this.confirmState.set(null);
   }
 
-  private loadSizes(sizeFilter?: string): void {
+  private loadSizes(): void {
     const productId = this.productId();
     if (!productId) {
       return;
@@ -773,7 +767,7 @@ export class ProductColorsComponent implements OnInit {
 
     this.loadingSizes.set(true);
     this.colorsService
-      .getSizes(productId, sizeFilter)
+      .getSizes(productId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (sizesList) => {
@@ -968,6 +962,7 @@ export class ProductColorsComponent implements OnInit {
 
     row.productSizeId = row.productSizeId ?? current.productSizeId;
     this.selectedSize.set(row);
+    this.syncSizeAutocompleteDisplay();
     this.persistSelectedSizeSnapshot();
     this.bumpPanelStockSourceEpoch();
   }
@@ -1045,6 +1040,7 @@ export class ProductColorsComponent implements OnInit {
     this.colors.set([]);
     this.clearColorSelection();
     localStorage.removeItem(SELECTED_SIZE_KEY);
+    this.sizeAutocomplete()?.setDisplayValue('', false);
     this.bumpPanelStockSourceEpoch();
   }
 
@@ -1130,6 +1126,37 @@ export class ProductColorsComponent implements OnInit {
 
   private bumpPanelStockSourceEpoch(): void {
     this.panelStockSourceEpoch.update((value) => value + 1);
+  }
+
+  private syncSizeAutocompleteDisplay(): void {
+    const size = this.selectedSize();
+    if (!size) {
+      return;
+    }
+
+    queueMicrotask(() => {
+      this.sizeAutocomplete()?.setDisplayValue(this.formatSizeOptionLabel(size), true);
+    });
+  }
+
+  private formatSizeOptionLabel(size: ProductColorSizeOption): string {
+    const hint = this.formatSizeStockHint(size);
+    return hint ? `${size.description} · ${hint}` : size.description;
+  }
+
+  private formatSizeStockHint(size: ProductColorSizeOption): string {
+    const physical = size.physicalStock ?? size.stock;
+    const available = size.availableStock ?? size.stock;
+    if (physical == null && available == null) {
+      return '';
+    }
+
+    const reserved = Math.max(0, (physical ?? 0) - (available ?? 0));
+    if (reserved > 0) {
+      return `${physical ?? 0} bodega · ${available ?? 0} disp.`;
+    }
+
+    return `${physical ?? available ?? 0} uds`;
   }
 
   private filterSizesWithStock(
