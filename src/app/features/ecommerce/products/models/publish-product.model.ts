@@ -19,10 +19,6 @@ export interface PublishProduct {
   isOnSale: boolean;
   wooStatus: 'draft' | 'publish' | null;
   media: PublishProductMediaItem[];
-  wooCommerce?: {
-    productId: string | null;
-    lastSyncedAt: string | null;
-  };
 }
 
 export interface PublishProductListResponse {
@@ -70,21 +66,6 @@ export interface PublishSettingsFormModel {
   percentageDiscount: string;
   cashDiscount: string;
   wooStatus: 'draft' | 'publish';
-}
-
-export interface EcommerceStepState {
-  isPublished: boolean;
-  wooProductId: string | null;
-  wooUrl: string | null;
-  syncStatus: 'synced' | 'pending' | 'error' | 'never';
-  lastSyncError: string | null;
-  lastSyncedAt: string | null;
-}
-
-export interface EcommercePublishFormModel {
-  publishOnline: boolean;
-  wooDescription: string;
-  onlinePrice: number | null;
 }
 
 export interface CatalogOption {

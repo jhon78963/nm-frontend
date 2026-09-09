@@ -1,5 +1,4 @@
 import {
-  EcommerceStepState,
   PublishProduct,
   PublishProductListResponse,
   PublishProductMediaItem,
@@ -37,19 +36,6 @@ export function adaptPublishProduct(raw: unknown): PublishProduct {
     ? (r['media'] as unknown[]).map(adaptMediaItem)
     : [];
 
-  const wooCommerce = r['wooCommerce']
-    ? {
-        productId: (r['wooCommerce'] as Record<string, unknown>)['productId'] != null
-          ? String((r['wooCommerce'] as Record<string, unknown>)['productId'])
-          : null,
-        lastSyncedAt:
-          readString(
-            (r['wooCommerce'] as Record<string, unknown>)['lastSyncedAt'],
-            '',
-          ) || null,
-      }
-    : undefined;
-
   return {
     id: String(r['id'] ?? ''),
     name: readString(r['name']),
@@ -67,7 +53,6 @@ export function adaptPublishProduct(raw: unknown): PublishProduct {
         ? r['wooStatus']
         : null,
     media,
-    wooCommerce,
   };
 }
 
@@ -107,33 +92,5 @@ export function adaptCatalogOption(raw: unknown): { id: string; description: str
   return {
     id: String(r['id'] ?? ''),
     description: readString(r['description']),
-  };
-}
-
-export function toEcommerceStepState(
-  product: Pick<PublishProduct, 'wooStatus' | 'wooCommerce'>,
-  lastError: string | null = null,
-): EcommerceStepState {
-  const wooProductId = product.wooCommerce?.productId ?? null;
-  const lastSyncedAt = product.wooCommerce?.lastSyncedAt ?? null;
-  const wantsPublish = product.wooStatus === 'publish';
-  const isPublished = wooProductId != null || wantsPublish;
-
-  let syncStatus: EcommerceStepState['syncStatus'] = 'never';
-  if (lastError) {
-    syncStatus = 'error';
-  } else if (wooProductId && lastSyncedAt) {
-    syncStatus = 'synced';
-  } else if (isPublished) {
-    syncStatus = 'pending';
-  }
-
-  return {
-    isPublished,
-    wooProductId,
-    wooUrl: null,
-    syncStatus,
-    lastSyncError: lastError,
-    lastSyncedAt,
   };
 }

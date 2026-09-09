@@ -88,10 +88,6 @@ export interface Product {
   isNew?: boolean;
   wooStatus?: 'draft' | 'publish' | null;
   offerPrice?: number | null;
-  wooCommerce?: {
-    productId: string | null;
-    lastSyncedAt: string | null;
-  };
 }
 
 export interface ProductListResponse {

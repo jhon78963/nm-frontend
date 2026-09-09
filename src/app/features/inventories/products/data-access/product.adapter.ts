@@ -282,15 +282,6 @@ export function adaptProduct(raw: unknown): Product {
     ? (r['sizeTypeId'] as string[])
     : [];
 
-  const wooCommerce = r['wooCommerce']
-    ? {
-        productId: (r['wooCommerce'] as Record<string, unknown>)['productId'] != null
-          ? String((r['wooCommerce'] as Record<string, unknown>)['productId'])
-          : null,
-        lastSyncedAt: readString((r['wooCommerce'] as Record<string, unknown>)['lastSyncedAt'], null as any),
-      }
-    : undefined;
-
   // Nest returns gender as { id, name }; legacy returns string
   const genderRaw = r['gender'];
   const genderId = String(r['genderId'] ?? (genderRaw as Record<string, unknown>)?.['id'] ?? '');
@@ -339,7 +330,6 @@ export function adaptProduct(raw: unknown): Product {
       r['wooStatus'] === 'draft' || r['wooStatus'] === 'publish'
         ? r['wooStatus']
         : null,
-    wooCommerce,
   };
 }
 
