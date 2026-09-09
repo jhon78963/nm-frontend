@@ -324,7 +324,6 @@ export class ProductColorsComponent implements OnInit {
 
   protected readonly colorTableColumns: TableDataColumn<ProductColorVariantRow>[] = [
     { key: 'select', label: 'Sel.', width: '3rem' },
-    { key: 'id', label: '#', className: 'hidden w-16 md:table-cell' },
     { key: 'color', label: 'Color' },
     { key: 'stock', label: 'En bodega', width: '9rem' },
     { key: 'actions', label: 'Acciones', align: 'right', width: '6rem' },
@@ -778,7 +777,7 @@ export class ProductColorsComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (sizesList) => {
-          this.sizes.set(sizesList);
+          this.sizes.set(this.filterSizesWithStock(sizesList));
           this.pinSelectedSizeToOptions();
           this.bumpPanelStockSourceEpoch();
           this.loadingSizes.set(false);
@@ -963,6 +962,7 @@ export class ProductColorsComponent implements OnInit {
 
     const row = this.sizes().find((size) => size.id === current.id);
     if (!row) {
+      this.clearSizeSelection();
       return;
     }
 
@@ -999,8 +999,9 @@ export class ProductColorsComponent implements OnInit {
             return;
           }
 
-          this.sizes.set(sizesList);
-          const row = sizesList.find((size) => size.id === sid);
+          const sizesWithStock = this.filterSizesWithStock(sizesList);
+          this.sizes.set(sizesWithStock);
+          const row = sizesWithStock.find((size) => size.id === sid);
           if (!row) {
             this.pinSelectedSizeToOptions();
             return;
@@ -1129,5 +1130,20 @@ export class ProductColorsComponent implements OnInit {
 
   private bumpPanelStockSourceEpoch(): void {
     this.panelStockSourceEpoch.update((value) => value + 1);
+  }
+
+  private filterSizesWithStock(
+    sizes: ProductColorSizeOption[],
+  ): ProductColorSizeOption[] {
+    return sizes.filter((size) => this.sizeHasStock(size));
+  }
+
+  private sizeHasStock(size: ProductColorSizeOption): boolean {
+    if (!size.productSizeId) {
+      return false;
+    }
+
+    const physical = size.physicalStock ?? size.stock ?? size.availableStock ?? 0;
+    return physical > 0;
   }
 }

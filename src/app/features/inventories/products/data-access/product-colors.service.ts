@@ -70,7 +70,9 @@ export class ProductColorsService {
           const raw = item as Record<string, unknown>;
           return {
             id: adapted.id,
-            productSizeId: adapted.productSizeId,
+            productSizeId:
+              adapted.productSizeId ??
+              (raw['productSizeId'] != null ? String(raw['productSizeId']) : undefined),
             description: adapted.description,
             stock: adapted.stock,
             physicalStock:
