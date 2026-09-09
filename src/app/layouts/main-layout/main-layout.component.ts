@@ -2,19 +2,22 @@ import { Component, computed, DestroyRef, effect, inject, OnInit, signal } from 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
-import { isSuperAdmin, isAdminOrSuperAdmin } from '../../core/auth/permission.util';
+import { isSuperAdmin, isAdminOrSuperAdmin, canAccessEcommerceRoutes } from '../../core/auth/permission.util';
 import { buildBreadcrumbPaths } from '../../core/navigation/breadcrumb.util';
 import { AuthService } from '../../features/auth/data-access/auth.service';
 import {
   BreadcrumbComponent,
   BreadcrumbPath,
 } from '../../shared/ui/breadcrumb/breadcrumb.component';
+import { WarehouseSelectorComponent } from '../../core/warehouse/warehouse-selector.component';
 
 export interface NavItem {
   label: string;
   route?: string;
   permission?: string;
   permissions?: string[];
+  /** Visible solo para Admin/Super Admin (alineado con roleGuard en ecommerce). */
+  ecommerceAccess?: boolean;
   items?: NavItem[];
 }
 
@@ -29,7 +32,7 @@ export interface HeaderShortcut {
 
 @Component({
   selector: 'app-main-layout',
-  imports: [RouterOutlet, RouterLink, BreadcrumbComponent],
+  imports: [RouterOutlet, RouterLink, BreadcrumbComponent, WarehouseSelectorComponent],
   templateUrl: './main-layout.component.html',
   styleUrl: './main-layout.component.scss',
 })
@@ -80,47 +83,47 @@ export class MainLayoutComponent implements OnInit {
         {
           label: 'Header',
           route: '/ecommerce/header',
-          permission: 'tenant.get',
+          ecommerceAccess: true,
         },
         {
           label: 'Banners',
           route: '/ecommerce/banners',
-          permission: 'tenant.get',
+          ecommerceAccess: true,
         },
         {
           label: 'Servicios del home',
           route: '/ecommerce/services',
-          permission: 'tenant.get',
+          ecommerceAccess: true,
         },
         {
           label: 'Footer',
           route: '/ecommerce/footer',
-          permission: 'tenant.get',
+          ecommerceAccess: true,
         },
         {
           label: 'Redes sociales',
           route: '/ecommerce/social-media',
-          permission: 'tenant.get',
+          ecommerceAccess: true,
         },
         {
           label: 'Colecciones del home',
           route: '/ecommerce/collections',
-          permission: 'tenant.get',
+          ecommerceAccess: true,
         },
         {
           label: 'Colecciones de la tienda',
           route: '/ecommerce/shop-collections',
-          permission: 'tenant.get',
+          ecommerceAccess: true,
         },
         {
           label: 'Productos por categoría',
           route: '/ecommerce/category-products',
-          permission: 'tenant.get',
+          ecommerceAccess: true,
         },
         {
           label: 'Media',
           route: '/ecommerce/media',
-          permission: 'tenant.get',
+          ecommerceAccess: true,
         },
       ],
     },
@@ -130,27 +133,27 @@ export class MainLayoutComponent implements OnInit {
         {
           label: 'Pedidos',
           route: '/ecommerce/orders',
-          permission: 'tenant.get',
+          ecommerceAccess: true,
         },
         {
           label: 'Reseñas',
           route: '/ecommerce/reviews',
-          permission: 'tenant.get',
+          ecommerceAccess: true,
         },
         {
           label: 'Clientes',
           route: '/ecommerce/customers',
-          permission: 'tenant.get',
+          ecommerceAccess: true,
         },
         {
           label: 'Boletín',
           route: '/ecommerce/newsletter',
-          permission: 'tenant.get',
+          ecommerceAccess: true,
         },
         {
           label: 'Cupones',
           route: '/ecommerce/coupons',
-          permission: 'tenant.get',
+          ecommerceAccess: true,
         },
       ],
     },
@@ -361,6 +364,10 @@ export class MainLayoutComponent implements OnInit {
       !isSuperAdmin(this.authService.currentUser())
     ) {
       return false;
+    }
+
+    if (item.ecommerceAccess) {
+      return canAccessEcommerceRoutes(this.authService.currentUser());
     }
 
     return this.canSeeShortcut(item);

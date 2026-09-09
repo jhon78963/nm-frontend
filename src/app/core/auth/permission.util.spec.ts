@@ -7,7 +7,7 @@ import { AuthUser } from '../../features/auth/models/auth.model';
 
 describe('permission.util', () => {
   const user: AuthUser = {
-    id: 1,
+    id: '1',
     username: 'cajero',
     email: 'c@test.com',
     name: 'C',

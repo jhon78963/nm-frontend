@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { ACTIVE_WAREHOUSE_STORAGE_KEY, ActiveWarehouseService } from './active-warehouse.service';
 import { AuthUser } from '../../features/auth/models/auth.model';
 
-function vendedora(warehouseId = 1): AuthUser {
+function vendedora(warehouseId = '1'): AuthUser {
   return {
-    id: 2,
+    id: '2',
     username: 'vendedora',
     email: 'v@test.com',
     name: 'María',
@@ -15,9 +15,9 @@ function vendedora(warehouseId = 1): AuthUser {
   };
 }
 
-function superAdmin(warehouseId = 1): AuthUser {
+function superAdmin(warehouseId = '1'): AuthUser {
   return {
-    id: 1,
+    id: '1',
     username: 'superadmin',
     email: 'a@test.com',
     name: 'Admin',
@@ -33,9 +33,9 @@ describe('ActiveWarehouseService', () => {
     localStorage.setItem(ACTIVE_WAREHOUSE_STORAGE_KEY, '9999');
     const service = new ActiveWarehouseService();
 
-    service.syncFromAuthUser(vendedora(3));
+    service.syncFromAuthUser(vendedora('3'));
 
-    expect(service.getActiveWarehouseId()).toBe(3);
+    expect(service.getActiveWarehouseId()).toBe('3');
     expect(localStorage.getItem(ACTIVE_WAREHOUSE_STORAGE_KEY)).toBeNull();
   });
 
@@ -43,15 +43,15 @@ describe('ActiveWarehouseService', () => {
     localStorage.setItem(ACTIVE_WAREHOUSE_STORAGE_KEY, '5');
     const service = new ActiveWarehouseService();
 
-    service.syncFromAuthUser(superAdmin(1));
+    service.syncFromAuthUser(superAdmin('1'));
 
-    expect(service.getActiveWarehouseId()).toBe(5);
+    expect(service.getActiveWarehouseId()).toBe('5');
     expect(localStorage.getItem(ACTIVE_WAREHOUSE_STORAGE_KEY)).toBe('5');
   });
 
   it('clearWarehouse resetea signal y storage', () => {
     const service = new ActiveWarehouseService();
-    service.setActiveWarehouseId(7);
+    service.setActiveWarehouseId('7');
     service.clearWarehouse();
 
     expect(service.getActiveWarehouseId()).toBeNull();

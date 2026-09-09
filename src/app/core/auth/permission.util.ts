@@ -58,6 +58,11 @@ export function isAdminOrSuperAdmin(user: AuthUser | null): boolean {
   return isSuperAdmin(user) || isAdmin(user);
 }
 
+/** Misma regla que `roleGuard` en rutas ecommerce (Admin / Super Admin). */
+export function canAccessEcommerceRoutes(user: AuthUser | null): boolean {
+  return isAdminOrSuperAdmin(user);
+}
+
 /** Ruta de inicio según rol: Super Admin solo usa Administración. */
 export function defaultAppHomeRoute(user: AuthUser | null): string {
   return isSuperAdmin(user) ? '/administrations' : '/dashboard';
