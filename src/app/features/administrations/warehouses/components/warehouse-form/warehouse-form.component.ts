@@ -19,6 +19,7 @@ import {
 import { ButtonComponent } from '../../../../../shared/ui/button/button.component';
 import { CheckboxComponent } from '../../../../../shared/ui/checkbox/checkbox.component';
 import { InputComponent } from '../../../../../shared/ui/input/input.component';
+import { MoneyInputComponent } from '../../../../../shared/ui/money-input/money-input.component';
 import { TableActionButtonComponent } from '../../../../../shared/ui/table-action-button/table-action-button.component';
 import { SelectComponent, SelectOption } from '../../../../../shared/ui/select/select.component';
 import { fieldErrorMessage } from '../../../../auth/utils/form-field.util';
@@ -29,12 +30,13 @@ import { TenantLookupOption, WarehouseFormModel } from '../../models/warehouse.m
 const EMPTY_FORM: WarehouseFormModel = {
   name: '',
   tenantId: null,
+  baseCash: 100,
   electronicInvoicingEnabled: false,
 };
 
 @Component({
   selector: 'app-warehouse-form',
-  imports: [FormField, InputComponent, SelectComponent, CheckboxComponent, ButtonComponent, TableActionButtonComponent],
+  imports: [FormField, InputComponent, MoneyInputComponent, SelectComponent, CheckboxComponent, ButtonComponent, TableActionButtonComponent],
   templateUrl: './warehouse-form.component.html',
 })
 export class WarehouseFormComponent implements OnInit {
@@ -140,6 +142,7 @@ export class WarehouseFormComponent implements OnInit {
             this.formModel.set({
               name: warehouse.name,
               tenantId: warehouse.tenantId,
+              baseCash: warehouse.baseCash ?? 100,
               electronicInvoicingEnabled: warehouse.electronicInvoicingEnabled ?? false,
             });
             this.loadingData.set(false);
@@ -171,6 +174,7 @@ export class WarehouseFormComponent implements OnInit {
     const payload = {
       name: model.name.trim(),
       tenantId,
+      baseCash: model.baseCash ?? 100,
       electronicInvoicingEnabled: model.electronicInvoicingEnabled,
     };
 

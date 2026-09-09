@@ -123,8 +123,11 @@ export class CashRegisterComponent implements OnInit {
     this.filteredExpenses().reduce((sum, item) => sum + item.amount, 0),
   );
 
+  protected readonly baseCash = computed(() => this.report().summary.openingBalance);
+
   protected readonly filteredFinalBalance = computed(
-    () => this.filteredTotalIncomes() - this.filteredTotalExpenses(),
+    () =>
+      this.baseCash() + this.filteredTotalIncomes() - this.filteredTotalExpenses(),
   );
 
   protected readonly deleteLabel = computed(() => {

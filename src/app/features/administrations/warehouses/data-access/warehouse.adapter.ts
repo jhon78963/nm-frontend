@@ -6,12 +6,15 @@ import {
 
 export function adaptWarehouse(raw: unknown): Warehouse {
   const r = raw as Warehouse & {
+    base_cash?: number | string;
     tenant_electronic_invoicing_enabled?: boolean;
   };
+
   return {
     id: r.id,
     name: r.name,
     tenantId: r.tenantId ?? null,
+    baseCash: Number(r.baseCash ?? r.base_cash ?? 100),
     electronicInvoicingEnabled: r.electronicInvoicingEnabled ?? false,
     tenantElectronicInvoicingEnabled:
       r.tenantElectronicInvoicingEnabled ??

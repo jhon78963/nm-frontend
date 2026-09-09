@@ -2,6 +2,7 @@ export interface Warehouse {
   id: string;
   name: string;
   tenantId: string | null;
+  baseCash?: number;
   electronicInvoicingEnabled?: boolean;
   tenantElectronicInvoicingEnabled?: boolean;
 }
@@ -14,12 +15,14 @@ export interface WarehouseListResponse {
 export interface WarehousePayload {
   name: string;
   tenantId: string;
+  baseCash?: number;
   electronicInvoicingEnabled?: boolean;
 }
 
 export interface WarehouseFormModel {
   name: string;
   tenantId: string | null;
+  baseCash: number | null;
   electronicInvoicingEnabled: boolean;
 }
 
