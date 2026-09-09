@@ -40,7 +40,9 @@ export const roleGuard: CanActivateFn = (route) => {
         return true;
       }
 
-      return router.createUrlTree(['/dashboard']);
+      return router.createUrlTree(['/access-denied'], {
+        queryParams: { reason: 'role' },
+      });
     }),
   );
 };

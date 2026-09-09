@@ -27,7 +27,10 @@ test.describe('QA — Protección de rutas (v2 path routing)', () => {
     await setupAuthMocks(page);
     await login(page);
     await page.goto('/inventories/purchases/register');
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/access-denied/, { timeout: 10_000 });
+    await expect(
+      page.getByRole('heading', { name: 'Acceso denegado', level: 1 }),
+    ).toBeVisible();
   });
 
   test('vendedora no ve inventario de productos en menú', async ({ page }) => {
@@ -54,7 +57,10 @@ test.describe('QA — Protección de rutas (v2 path routing)', () => {
       );
     });
     await page.goto('/expenses/admin-expenses');
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/access-denied/, { timeout: 10_000 });
+    await expect(
+      page.getByRole('heading', { name: 'Acceso denegado', level: 1 }),
+    ).toBeVisible();
   });
 });
 
@@ -70,7 +76,10 @@ test.describe('QA — Seguridad warehouse / admin / payroll', () => {
     });
 
     await page.goto('/inventories/products');
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/access-denied/, { timeout: 10_000 });
+    await expect(
+      page.getByRole('heading', { name: 'Acceso denegado', level: 1 }),
+    ).toBeVisible();
   });
 
   test('usuario sin rol admin no puede acceder a /administrations', async ({
@@ -79,7 +88,10 @@ test.describe('QA — Seguridad warehouse / admin / payroll', () => {
     await setupAuthMocks(page);
     await login(page);
     await page.goto('/administrations');
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/access-denied/, { timeout: 10_000 });
+    await expect(
+      page.getByRole('heading', { name: 'Acceso denegado', level: 1 }),
+    ).toBeVisible();
   });
 
   test('usuario sin permiso team.getPaymentByMonth no puede acceder a payroll', async ({
@@ -97,7 +109,10 @@ test.describe('QA — Seguridad warehouse / admin / payroll', () => {
     await setupAuthMocks(page, userWithTeamButNoPayroll);
     await login(page);
     await page.goto('/directories/teams/pagos/1');
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/access-denied/, { timeout: 10_000 });
+    await expect(
+      page.getByRole('heading', { name: 'Acceso denegado', level: 1 }),
+    ).toBeVisible();
   });
 });
 

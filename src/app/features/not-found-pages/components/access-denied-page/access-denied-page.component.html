@@ -1,0 +1,26 @@
+<section class="access-denied" aria-labelledby="access-denied-title">
+  <div class="access-denied__card">
+    <p class="access-denied__code" aria-hidden="true">403</p>
+
+    <div class="access-denied__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0V10.5M4.5 10.5h15m-13.5 0V18a2.25 2.25 0 002.25 2.25h6.75A2.25 2.25 0 0018 18v-7.5m-13.5 0h13.5"
+        />
+      </svg>
+    </div>
+
+    <h1 id="access-denied-title" class="access-denied__title">Acceso denegado</h1>
+    <p class="access-denied__message">
+      {{ message() }}
+    </p>
+
+    <div class="access-denied__actions">
+      <app-button type="button" variant="primary" (clicked)="goHome()">
+        Ir al inicio
+      </app-button>
+    </div>
+  </div>
+</section>

@@ -41,7 +41,9 @@ export const permissionGuard: CanActivateFn = (route) => {
         return true;
       }
 
-      return router.createUrlTree(['/not-found']);
+      return router.createUrlTree(['/access-denied'], {
+        queryParams: { reason: 'permission' },
+      });
     }),
   );
 };

@@ -188,6 +188,15 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'access-denied',
+        title: 'Acceso denegado',
+        data: { breadcrumb: 'Acceso denegado' },
+        loadComponent: () =>
+          import(
+            './features/not-found-pages/components/access-denied-page/access-denied-page.component'
+          ).then((m) => m.AccessDeniedPageComponent),
+      },
+      {
         path: 'not-found',
         title: 'No encontrado',
         data: { breadcrumb: 'No encontrado' },
