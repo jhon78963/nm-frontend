@@ -97,7 +97,7 @@
                   (valueChange)="toggleSelectAll($event)"
                 />
               </th>
-              <th scope="col" class="dt-th">#</th>
+              <th scope="col" class="dt-th w-12 text-center">#</th>
               <th scope="col" class="dt-th">Talla</th>
               <th scope="col" class="dt-th">Código de barras</th>
               <th scope="col" class="dt-th">Stock</th>
@@ -108,7 +108,7 @@
             </tr>
           </ng-template>
 
-          <ng-template #rowTemplate let-size>
+          <ng-template #rowTemplate let-size let-index="index">
             <tr class="hover:bg-gray-50">
               <td class="px-4 py-3">
                 <app-checkbox
@@ -116,7 +116,9 @@
                   (valueChange)="toggleSizeSelection(size, $event)"
                 />
               </td>
-              <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{{ size.id }}</td>
+              <td class="whitespace-nowrap px-4 py-3 text-center text-sm text-gray-500">
+                {{ index + 1 }}
+              </td>
               <td class="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
                 {{ size.description }}
                 @if (size.isExists) {
