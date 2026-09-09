@@ -36,7 +36,7 @@ test.describe('QA — Protección de rutas (v2 path routing)', () => {
   test('vendedora ve métricas del día en el dashboard', async ({ page }) => {
     await setupAuthMocks(page);
 
-    await page.route('**/api/dashboard/metrics', async (route) => {
+    await page.route('**/api/v1/dashboard/metrics', async (route) => {
       if (await fulfillPreflight(route)) return;
       await route.fulfill({
         status: 200,
@@ -151,8 +151,8 @@ test.describe('QA — Interceptor 401', () => {
     await setupAuthMocks(page);
     await login(page);
 
-    await page.unroute('**/api/auth/me');
-    await page.route('**/api/auth/me', async (route) => {
+    await page.unroute('**/api/v1/auth/me');
+    await page.route('**/api/v1/auth/me', async (route) => {
       if (route.request().method() === 'OPTIONS') {
         await route.fulfill({
           status: 204,
@@ -167,8 +167,8 @@ test.describe('QA — Interceptor 401', () => {
       });
     });
 
-    await page.unroute('**/api/auth/refresh');
-    await page.route('**/api/auth/refresh', async (route) => {
+    await page.unroute('**/api/v1/auth/refresh');
+    await page.route('**/api/v1/auth/refresh', async (route) => {
       if (route.request().method() === 'OPTIONS') {
         await route.fulfill({
           status: 204,
@@ -216,7 +216,7 @@ test.describe('QA — Listado productos', () => {
 
     await setupAuthMocks(page, userWithProducts);
 
-    await page.route('**/api/products**', async (route) => {
+    await page.route('**/api/v1/products**', async (route) => {
       if (await fulfillPreflight(route)) return;
       await route.fulfill({
         status: 200,
@@ -240,7 +240,7 @@ test.describe('QA — Listado productos', () => {
       });
     });
 
-    await page.route('**/api/genders**', async (route) => {
+    await page.route('**/api/v1/genders**', async (route) => {
       if (await fulfillPreflight(route)) return;
       await route.fulfill({
         status: 200,

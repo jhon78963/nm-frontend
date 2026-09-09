@@ -64,7 +64,7 @@ export async function setupAuthMocks(
     });
   });
 
-  await page.route('**/api/auth/csrf-token', async (route) => {
+  await page.route('**/api/v1/auth/csrf-token', async (route) => {
     if (await fulfillPreflight(route)) return;
     await route.fulfill({
       status: 200,
@@ -76,7 +76,23 @@ export async function setupAuthMocks(
     });
   });
 
-  await page.route('**/api/auth/login', async (route) => {
+  await page.route('**/api/v1/auth/login', async (route) => {
+    if (await fulfillPreflight(route)) return;
+    await route.fulfill({
+      status: 200,
+      headers: {
+        ...corsHeaders(requestOrigin(route)),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        access_token: 'e2e-access-token',
+        refresh_token: 'e2e-refresh-token',
+        user,
+      }),
+    });
+  });
+
+  await page.route('**/api/v1/auth/me', async (route) => {
     if (await fulfillPreflight(route)) return;
     await route.fulfill({
       status: 200,
@@ -88,7 +104,7 @@ export async function setupAuthMocks(
     });
   });
 
-  await page.route('**/api/auth/me', async (route) => {
+  await page.route('**/api/v1/auth/refresh', async (route) => {
     if (await fulfillPreflight(route)) return;
     await route.fulfill({
       status: 200,
@@ -96,23 +112,14 @@ export async function setupAuthMocks(
         ...corsHeaders(requestOrigin(route)),
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(user),
+      body: JSON.stringify({
+        access_token: 'e2e-access-token',
+        refresh_token: 'e2e-refresh-token',
+      }),
     });
   });
 
-  await page.route('**/api/auth/refresh', async (route) => {
-    if (await fulfillPreflight(route)) return;
-    await route.fulfill({
-      status: 200,
-      headers: {
-        ...corsHeaders(requestOrigin(route)),
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ message: 'Token refreshed' }),
-    });
-  });
-
-  await page.route('**/api/auth/logout', async (route) => {
+  await page.route('**/api/v1/auth/logout', async (route) => {
     if (await fulfillPreflight(route)) return;
     await route.fulfill({
       status: 200,

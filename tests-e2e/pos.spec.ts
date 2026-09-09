@@ -44,7 +44,7 @@ async function setupPosApiMocks(page: Page): Promise<void> {
 
   await setupAuthMocks(page);
 
-  await page.route('**/api/pos/products**', async (route) => {
+  await page.route('**/api/v1/pos/products**', async (route) => {
     if (await fulfillPreflight(route)) return;
 
     const url = new URL(route.request().url());
@@ -72,7 +72,7 @@ async function setupPosApiMocks(page: Page): Promise<void> {
     });
   });
 
-  await page.route('**/api/pos/checkout', async (route) => {
+  await page.route('**/api/v1/pos/checkout', async (route) => {
     if (await fulfillPreflight(route)) return;
 
     await route.fulfill({
@@ -90,7 +90,7 @@ async function setupPosApiMocks(page: Page): Promise<void> {
     });
   });
 
-  await page.route('**/api/pos/sales/**/ticket**', async (route) => {
+  await page.route('**/api/v1/pos/sales/**/ticket**', async (route) => {
     await route.fulfill({
       status: 200,
       headers: { 'Content-Type': 'text/html' },
