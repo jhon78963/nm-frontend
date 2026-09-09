@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 
 import { environment } from '../../../../../environments/environment';
 import {
@@ -8,6 +8,12 @@ import {
   NewsletterSubscribersListResponse,
   SendNewsletterCampaignPayload,
 } from '../models/ecommerce-newsletter.model';
+import {
+  adaptNewsletterCampaignsResponse,
+  adaptNewsletterSubscribersListResponse,
+  adaptNewsletterUnsubscribeResponse,
+  adaptSendNewsletterCampaignResponse,
+} from './ecommerce-newsletter.adapter';
 
 @Injectable({ providedIn: 'root' })
 export class EcommerceNewsletterService {
@@ -29,17 +35,21 @@ export class EcommerceNewsletterService {
       httpParams = httpParams.set('status', params.status);
     }
 
-    return this.http.get<NewsletterSubscribersListResponse>(`${this.base}/subscribers`, {
-      params: httpParams,
-    });
+    return this.http
+      .get<unknown>(`${this.base}/subscribers`, { params: httpParams })
+      .pipe(map(adaptNewsletterSubscribersListResponse));
   }
 
   unsubscribeSubscriber(id: string): Observable<{ success: boolean }> {
-    return this.http.patch<{ success: boolean }>(`${this.base}/subscribers/${id}/unsubscribe`, {});
+    return this.http
+      .patch<unknown>(`${this.base}/subscribers/${id}/unsubscribe`, {})
+      .pipe(map(adaptNewsletterUnsubscribeResponse));
   }
 
   listCampaigns(): Observable<NewsletterCampaignsResponse> {
-    return this.http.get<NewsletterCampaignsResponse>(`${this.base}/campaigns`);
+    return this.http
+      .get<unknown>(`${this.base}/campaigns`)
+      .pipe(map(adaptNewsletterCampaignsResponse));
   }
 
   sendCampaign(payload: SendNewsletterCampaignPayload): Observable<{
@@ -47,10 +57,8 @@ export class EcommerceNewsletterService {
     recipientCount: number;
     campaign: NewsletterCampaignsResponse['campaigns'][number];
   }> {
-    return this.http.post<{
-      success: boolean;
-      recipientCount: number;
-      campaign: NewsletterCampaignsResponse['campaigns'][number];
-    }>(`${this.base}/campaigns/send`, payload);
+    return this.http
+      .post<unknown>(`${this.base}/campaigns/send`, payload)
+      .pipe(map(adaptSendNewsletterCampaignResponse));
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 
 import { environment } from '../../../../../environments/environment';
 import {
@@ -8,6 +8,10 @@ import {
   EcommerceOrdersListResponse,
   EcommerceOrderStatus,
 } from '../models/ecommerce-order.model';
+import {
+  adaptEcommerceOrder,
+  adaptEcommerceOrdersListResponse,
+} from './ecommerce-orders.adapter';
 
 @Injectable({ providedIn: 'root' })
 export class EcommerceOrdersService {
@@ -27,11 +31,13 @@ export class EcommerceOrdersService {
     if (params.search) httpParams = httpParams.set('search', params.search);
     if (params.status) httpParams = httpParams.set('status', params.status);
 
-    return this.http.get<EcommerceOrdersListResponse>(this.base, { params: httpParams });
+    return this.http
+      .get<unknown>(this.base, { params: httpParams })
+      .pipe(map(adaptEcommerceOrdersListResponse));
   }
 
   getById(id: string): Observable<EcommerceOrder> {
-    return this.http.get<EcommerceOrder>(`${this.base}/${id}`);
+    return this.http.get<unknown>(`${this.base}/${id}`).pipe(map(adaptEcommerceOrder));
   }
 
   update(
@@ -42,6 +48,8 @@ export class EcommerceOrdersService {
       orderNotes?: string;
     },
   ): Observable<EcommerceOrder> {
-    return this.http.patch<EcommerceOrder>(`${this.base}/${id}`, payload);
+    return this.http
+      .patch<unknown>(`${this.base}/${id}`, payload)
+      .pipe(map(adaptEcommerceOrder));
   }
 }
