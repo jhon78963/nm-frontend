@@ -1,6 +1,8 @@
 <iframe
+  #chatbotFrame
   class="chatbot-iframe"
   [src]="adminUrl"
   title="Panel WhatsApp Malu"
   allow="clipboard-write"
+  (load)="onIframeLoad()"
 ></iframe>

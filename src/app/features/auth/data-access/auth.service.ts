@@ -17,6 +17,7 @@ import {
 } from '../../../core/auth/permission.util';
 import { TokenStorageService } from '../../../core/auth/token-storage.service';
 import { ActiveWarehouseService } from '../../../core/warehouse/active-warehouse.service';
+import { ChatbotSsoBridgeService } from '../../../core/chatbot/chatbot-sso-bridge.service';
 import {
   adaptAuthUser,
   LoginApiResponse,
@@ -39,6 +40,7 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly tokenStorage = inject(TokenStorageService);
   private readonly activeWarehouseService = inject(ActiveWarehouseService);
+  private readonly chatbotSsoBridge = inject(ChatbotSsoBridgeService);
 
   readonly currentUser = signal<AuthUser | null>(null);
 
@@ -203,6 +205,7 @@ export class AuthService {
   }
 
   clearLocalSession(): void {
+    this.chatbotSsoBridge.sendLogout();
     this.currentUser.set(null);
     this.sessionLoadRequest$ = undefined;
     this.tokenStorage.clearTokens();
