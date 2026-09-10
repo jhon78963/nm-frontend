@@ -101,6 +101,14 @@ export class CashRegisterComponent implements OnInit {
     formatViewDate(this.currentDate()),
   );
 
+  protected readonly viewDateIso = computed(() =>
+    this.formatIsoDate(this.currentDate()),
+  );
+
+  protected readonly maxViewDateIso = computed(() =>
+    this.formatIsoDate(new Date()),
+  );
+
   protected readonly filteredSales = computed(() =>
     this.filterList('sales'),
   );
@@ -231,6 +239,22 @@ export class CashRegisterComponent implements OnInit {
 
   protected goToToday(): void {
     this.currentDate.set(new Date());
+    this.loadReport();
+  }
+
+  protected onViewDatePicked(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    if (!value) return;
+
+    const [year, month, day] = value.split('-').map(Number);
+    const picked = new Date(year, month - 1, day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    picked.setHours(0, 0, 0, 0);
+
+    if (picked > today) return;
+
+    this.currentDate.set(picked);
     this.loadReport();
   }
 
