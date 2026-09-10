@@ -13,7 +13,7 @@ import {
   FormField,
   required,
 } from '@angular/forms/signals';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, of, switchMap } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
@@ -70,6 +70,7 @@ function toIsoDate(date: Date): string {
     NgClass,
     FormsModule,
     FormField,
+    RouterLink,
     ButtonComponent,
     InputComponent,
     TableDataComponent,

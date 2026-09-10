@@ -8,7 +8,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { form, FormField } from '@angular/forms/signals';
 import { finalize, switchMap } from 'rxjs';
 import { AlertComponent } from '../../../../../shared/ui/alert/alert.component';
@@ -84,6 +84,7 @@ function formFromProduct(product: Product): ProductEcommerceFormModel {
   selector: 'app-product-ecommerce-step',
   imports: [
     FormField,
+    RouterLink,
     AlertComponent,
     ButtonComponent,
     CheckboxComponent,

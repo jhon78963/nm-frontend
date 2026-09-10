@@ -15,6 +15,7 @@ import {
   maxLength,
   required,
 } from '@angular/forms/signals';
+import { RouterLink } from '@angular/router';
 import { AlertComponent } from '../../../../../shared/ui/alert/alert.component';
 import { ButtonComponent } from '../../../../../shared/ui/button/button.component';
 import { InputComponent } from '../../../../../shared/ui/input/input.component';
@@ -35,6 +36,7 @@ const EMPTY_FORM: ProductFormModel = {
   selector: 'app-product-form',
   imports: [
     FormField,
+    RouterLink,
     InputComponent,
     SelectComponent,
     AlertComponent,

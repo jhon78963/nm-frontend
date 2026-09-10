@@ -22,6 +22,31 @@
     </div>
   } @else {
     <form (submit)="submit($event)" class="flex flex-col gap-6" novalidate>
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900">Información general</h2>
+          <p class="mt-1 text-sm text-gray-500">
+            Datos base del producto: género, almacén y nombre.
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <app-button
+            type="submit"
+            variant="secondary"
+            icon="save"
+            [loading]="saving()"
+            [disabled]="saving()">
+            {{ isEditing() ? 'Guardar' : 'Crear producto' }}
+          </app-button>
+          <a
+            routerLink="/inventories/products"
+            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50">
+            Regresar
+          </a>
+        </div>
+      </div>
+
       <div class="grid gap-6 md:grid-cols-2">
         <app-select
           label="Género *"
@@ -48,15 +73,6 @@
       @if (isEditing() && productId()) {
         <app-product-ai-insights-panel [productId]="productId()!" />
       }
-
-      <div class="flex items-center justify-end gap-3 border-t pt-6">
-        <app-button type="button" variant="secondary" [disabled]="saving()" (clicked)="close()">
-          Cancelar
-        </app-button>
-        <app-button type="submit" variant="primary" [loading]="saving()" [disabled]="saving()">
-          {{ isEditing() ? 'Actualizar' : 'Crear' }} producto
-        </app-button>
-      </div>
     </form>
   }
 </div>

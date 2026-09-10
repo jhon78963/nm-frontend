@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -36,7 +36,7 @@ interface SeverityStyle {
 
 @Component({
   selector: 'app-product-history',
-  imports: [NgClass, FormsModule, ButtonComponent, InputComponent],
+  imports: [NgClass, FormsModule, RouterLink, ButtonComponent, InputComponent],
   templateUrl: './product-history.component.html',
 })
 export class ProductHistoryComponent implements OnInit {
