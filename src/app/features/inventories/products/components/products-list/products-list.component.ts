@@ -190,7 +190,6 @@ export class ProductsListComponent implements OnInit {
   }));
 
   protected readonly tableColumns = signal<TableDataColumn<Product>[]>([
-    { key: 'id', label: '#', align: 'left', width: '80px', className: 'w-20' },
     { key: 'name', label: 'Nombre', align: 'left', mobilePrimary: true },
     { key: 'gender', label: 'Género', align: 'left', width: '128px', className: 'w-32' },
     { key: 'stock', label: 'Stock', align: 'right', width: '112px', className: 'w-28' },

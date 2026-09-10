@@ -62,7 +62,6 @@ export class ProductMultimediaComponent implements OnDestroy {
   });
 
   protected readonly tableColumns = signal<TableDataColumn<PublishProduct>[]>([
-    { key: 'id', label: '#', width: '16' },
     { key: 'thumb', label: 'Foto', align: 'center', width: '56px' },
     { key: 'name', label: 'Producto', align: 'left', mobilePrimary: true },
     { key: 'barcode', label: 'Código', align: 'left' },

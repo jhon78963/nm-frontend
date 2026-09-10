@@ -128,7 +128,6 @@ export class VendorsListComponent implements OnInit {
   }));
 
   protected readonly tableColumns = signal<TableDataColumn<Vendor>[]>([
-    { key: 'id', label: '#', align: 'left', width: '16' },
     { key: 'vendor', label: 'Proveedor', align: 'left', mobilePrimary: true },
     { key: 'phone', label: 'Celular', align: 'left' },
     { key: 'address', label: 'Dirección', align: 'left' },

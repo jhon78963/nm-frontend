@@ -41,7 +41,6 @@
             (click)="selectProduct(product)"
           >
             <td [appDtExpandCell]="+index" (click)="$event.stopPropagation()"></td>
-            <td dtCell="id" class="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{{ product.id }}</td>
             <td dtCell="thumb" class="px-4 py-3">
               @if (listThumbUrl(product); as thumbUrl) {
                 <img
@@ -103,11 +102,10 @@
               <div class="min-w-0">
                 <h2 class="truncate text-base font-semibold text-gray-900">{{ product.name }}</h2>
                 <p class="mt-1 text-xs text-gray-500">
-                  ID {{ product.id }}
                   @if (product.barcode) {
-                    · Código {{ product.barcode }}
+                    Código {{ product.barcode }} ·
                   }
-                  · {{ mediaCount(product) }} imagen(es)
+                  {{ mediaCount(product) }} imagen(es)
                 </p>
               </div>
               <app-table-action-button

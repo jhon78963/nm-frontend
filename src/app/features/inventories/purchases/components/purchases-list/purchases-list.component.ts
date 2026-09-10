@@ -161,7 +161,6 @@ export class PurchasesListComponent implements OnInit {
   }));
 
   protected readonly tableColumns = signal<TableDataColumn<PurchaseRow>[]>([
-    { key: 'id', label: '#', align: 'left', width: '16' },
     { key: 'date', label: 'Fecha doc.', align: 'left' },
     { key: 'supplier', label: 'Proveedor', align: 'left', mobilePrimary: true },
     { key: 'warehouse', label: 'Almacén', align: 'left' },

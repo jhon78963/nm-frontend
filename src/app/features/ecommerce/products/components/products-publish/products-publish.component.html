@@ -60,7 +60,6 @@
               (click)="selectProduct(product)"
             >
               <td [appDtExpandCell]="+index" (click)="$event.stopPropagation()"></td>
-              <td dtCell="id" class="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{{ product.id }}</td>
               <td dtCell="name" class="px-4 py-3">
                 <span class="text-sm font-medium text-gray-900">{{ product.name }}</span>
               </td>

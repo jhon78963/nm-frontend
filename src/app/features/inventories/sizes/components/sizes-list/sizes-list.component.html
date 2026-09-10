@@ -136,9 +136,6 @@
     <ng-template #rowTemplate let-size let-index="index">
       <tr appDtRow [dtRowIndex]="+index" class="group transition-colors hover:bg-violet-50/30">
         <td [appDtExpandCell]="+index"></td>
-        <td dtCell="id" class="px-6 py-4 font-mono text-xs text-gray-400">
-          {{ size.id }}
-        </td>
         <td dtCell="size" class="px-6 py-4">
           <div class="flex items-center gap-3">
             <p class="truncate font-semibold text-gray-900">{{ size.description }}</p>

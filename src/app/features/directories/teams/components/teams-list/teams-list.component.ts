@@ -138,7 +138,6 @@ export class TeamsListComponent implements OnInit {
   }));
 
   protected readonly tableColumns = signal<TableDataColumn<Team>[]>([
-    { key: 'id', label: '#', align: 'left', width: '16' },
     { key: 'member', label: 'Colaborador', align: 'left', mobilePrimary: true },
     { key: 'dni', label: 'DNI', align: 'left' },
     { key: 'salary', label: 'Salario', align: 'left' },

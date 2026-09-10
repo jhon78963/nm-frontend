@@ -111,7 +111,6 @@
     <ng-template #rowTemplate let-team let-index="index">
       <tr appDtRow [dtRowIndex]="+index" class="group transition-colors hover:bg-violet-50/30">
         <td [appDtExpandCell]="+index"></td>
-        <td dtCell="id" class="px-6 py-4 font-mono text-xs text-gray-400">{{ team.id }}</td>
         <td dtCell="member" class="px-6 py-4">
           <div class="flex items-center gap-3">
             <span

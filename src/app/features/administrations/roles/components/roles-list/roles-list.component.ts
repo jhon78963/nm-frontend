@@ -130,7 +130,6 @@ export class RolesListComponent implements OnInit {
   }));
 
   protected readonly tableColumns = signal<TableDataColumn<Role>[]>([
-    { key: 'id', label: '#', align: 'left', width: '16' },
     { key: 'name', label: 'Nombre del rol', align: 'left', mobilePrimary: true },
     { key: 'actions', label: 'Acciones', align: 'right' },
   ]);

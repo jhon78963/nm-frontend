@@ -102,7 +102,6 @@
     <ng-template #rowTemplate let-purchase let-index="index">
       <tr appDtRow [dtRowIndex]="+index" class="group transition-colors hover:bg-emerald-50/40">
         <td [appDtExpandCell]="+index"></td>
-        <td dtCell="id" class="px-6 py-4 font-mono text-xs text-gray-400">{{ purchase.id }}</td>
         <td dtCell="date" class="px-6 py-4 text-sm text-gray-700">{{ formatDate(purchase.registeredAt) }}</td>
         <td dtCell="supplier" class="px-6 py-4">
           <div class="flex items-center gap-3">

@@ -171,7 +171,6 @@ export class WarehousesListComponent implements OnInit {
   });
 
   protected readonly tableColumns = signal<TableDataColumn<Warehouse>[]>([
-    { key: 'id', label: '#', align: 'left', width: '64px', className: 'w-16' },
     { key: 'warehouse', label: 'Tienda', align: 'left', mobilePrimary: true },
     { key: 'tenant', label: 'Cliente', align: 'left' },
     { key: 'actions', label: 'Acciones', align: 'right', width: '100px' },

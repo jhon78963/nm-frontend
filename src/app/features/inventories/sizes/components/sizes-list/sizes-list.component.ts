@@ -175,7 +175,6 @@ export class SizesListComponent implements OnInit {
   });
 
   protected readonly tableColumns = signal<TableDataColumn<Size>[]>([
-    { key: 'id', label: '#', align: 'left', width: '64px', className: 'w-16' },
     { key: 'size', label: 'Talla', align: 'left', mobilePrimary: true },
     { key: 'type', label: 'Tipo', align: 'left' },
     { key: 'actions', label: 'Acciones', align: 'right', width: '100px' },

@@ -130,7 +130,6 @@ export class ColorsListComponent implements OnInit {
   }));
 
   protected readonly tableColumns = signal<TableDataColumn<Color>[]>([
-    { key: 'id', label: '#', align: 'left', width: '64px', className: 'w-16' },
     { key: 'color', label: 'Color', align: 'left', mobilePrimary: true },
     { key: 'sample', label: 'Muestra', align: 'left' },
     { key: 'hex', label: 'Hex', align: 'left' },

@@ -73,7 +73,6 @@ export class ProductsPublishComponent implements OnInit {
   });
 
   protected readonly tableColumns = signal<TableDataColumn<PublishProduct>[]>([
-    { key: 'id', label: '#', width: '16' },
     { key: 'name', label: 'Producto', align: 'left', mobilePrimary: true },
     { key: 'barcode', label: 'Código', align: 'left' },
     { key: 'media', label: 'Imágenes', align: 'center', width: '80px' },
