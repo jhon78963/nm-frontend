@@ -25,6 +25,9 @@ import {
   matchesPaymentFilter,
 } from '../../data-access/cash-movement.adapter';
 import { CashMovementService } from '../../data-access/cash-movement.service';
+import { SaleService } from '../../../sales/lists/data-access/sale.service';
+import { SaleDetail } from '../../../sales/lists/models/sale.model';
+import { SaleFormComponent } from '../../../sales/lists/components/sale-form/sale-form.component';
 import { MovementFormComponent } from '../movement-form/movement-form.component';
 import {
   CashMovementItem,
@@ -53,12 +56,14 @@ type CashRegisterDisplayRow =
     ButtonComponent,
     TableActionButtonComponent,
     MovementFormComponent,
+    SaleFormComponent,
     TableDataComponent,
   ],
   templateUrl: './cash-register.component.html',
 })
 export class CashRegisterComponent implements OnInit {
   private readonly cashMovementService = inject(CashMovementService);
+  private readonly saleService = inject(SaleService);
   private readonly authService = inject(AuthService);
   private readonly toastService = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
@@ -77,6 +82,12 @@ export class CashRegisterComponent implements OnInit {
   protected readonly deleteType = signal<MovementType>('INCOME');
   protected readonly deleting = signal(false);
 
+  protected readonly expandedSaleIds = signal<Set<string>>(new Set());
+  protected readonly saleDetailsCache = signal<Map<string, SaleDetail>>(new Map());
+  protected readonly loadingSaleDetailIds = signal<Set<string>>(new Set());
+  protected readonly saleDetailErrors = signal<Map<string, string>>(new Map());
+  protected readonly editingSaleId = signal<string | null>(null);
+
   protected readonly report = this.cashMovementService.report;
 
   protected readonly isAdmin = computed(() => {
@@ -87,6 +98,10 @@ export class CashRegisterComponent implements OnInit {
 
   protected readonly canStore = computed(() =>
     this.authService.hasPermission('cashflow.store'),
+  );
+
+  protected readonly canEditSales = computed(() =>
+    this.authService.hasPermission('sale.update'),
   );
 
   protected readonly isToday = computed(() => {
@@ -141,7 +156,7 @@ export class CashRegisterComponent implements OnInit {
 
   protected readonly filteredFinalBalance = computed(
     () =>
-      this.baseCash() + this.filteredTotalIncomes() - this.filteredTotalExpenses(),
+      this.filteredTotalIncomes() - this.filteredTotalExpenses(),
   );
 
   protected readonly deleteLabel = computed(() => {
@@ -150,6 +165,8 @@ export class CashRegisterComponent implements OnInit {
     const kind = this.deleteType() === 'INCOME' ? 'ingreso' : 'gasto';
     return `¿Eliminar este ${kind} (S/ ${item.amount.toFixed(2)})? Esta acción no se puede deshacer.`;
   });
+
+  protected readonly tableColspan = computed(() => (this.isAdmin() ? 6 : 5) + 1);
 
   protected readonly movementTableColumns = computed<TableDataColumn<CashRegisterDisplayRow>[]>(() => {
     const cols: TableDataColumn<CashRegisterDisplayRow>[] = [
@@ -338,6 +355,108 @@ export class CashRegisterComponent implements OnInit {
       });
   }
 
+  protected toggleSaleExpand(saleId: string): void {
+    const willExpand = !this.expandedSaleIds().has(saleId);
+
+    this.expandedSaleIds.update((current) => {
+      const next = new Set(current);
+      if (next.has(saleId)) {
+        next.delete(saleId);
+      } else {
+        next.add(saleId);
+      }
+      return next;
+    });
+
+    if (willExpand) {
+      this.loadSaleDetail(saleId);
+    }
+  }
+
+  protected isSaleExpanded(saleId: string): boolean {
+    return this.expandedSaleIds().has(saleId);
+  }
+
+  protected isSaleDetailLoading(saleId: string): boolean {
+    return this.loadingSaleDetailIds().has(saleId);
+  }
+
+  protected getSaleDetail(saleId: string): SaleDetail | undefined {
+    return this.saleDetailsCache().get(saleId);
+  }
+
+  protected getSaleDetailError(saleId: string): string | undefined {
+    return this.saleDetailErrors().get(saleId);
+  }
+
+  protected openSaleEdit(saleId: string): void {
+    this.editingSaleId.set(saleId);
+  }
+
+  protected closeSaleForm(): void {
+    this.editingSaleId.set(null);
+  }
+
+  protected onSaleSaved(message: string): void {
+    const saleId = this.editingSaleId();
+    this.closeSaleForm();
+
+    if (saleId) {
+      this.saleDetailsCache.update((cache) => {
+        const next = new Map(cache);
+        next.delete(saleId);
+        return next;
+      });
+      this.saleDetailErrors.update((errors) => {
+        const next = new Map(errors);
+        next.delete(saleId);
+        return next;
+      });
+
+      if (this.isSaleExpanded(saleId)) {
+        this.loadSaleDetail(saleId);
+      }
+    }
+
+    this.loadReport();
+    this.toastService.show('success', message);
+  }
+
+  protected canEditSale(detail: SaleDetail): boolean {
+    return (
+      detail.status !== 'CANCELED' &&
+      this.authService.hasPermission('sale.update')
+    );
+  }
+
+  protected formatMoney(value?: number | null): string {
+    if (value == null || !Number.isFinite(Number(value))) {
+      return '—';
+    }
+    return `S/ ${Number(value).toFixed(2)}`;
+  }
+
+  protected formatPaymentMethod(method: string): string {
+    const normalized = method.toUpperCase();
+    if (normalized.includes('CASH') || normalized.includes('EFECTIVO')) {
+      return 'Efectivo';
+    }
+    if (normalized.includes('YAPE') || normalized.includes('PLIN')) {
+      return 'Yape / Plin';
+    }
+    if (normalized.includes('CARD') || normalized.includes('TARJETA')) {
+      return 'Tarjeta';
+    }
+    if (normalized.includes('MIXED') || normalized.includes('MIXTO')) {
+      return 'Mixto';
+    }
+    return method || '—';
+  }
+
+  protected trackSaleItem(item: SaleDetail['items'][number]): string {
+    return item.id ?? `${item.descriptionFull}-${item.unitPrice}-${item.quantity}`;
+  }
+
   protected methodBadgeClass(method: string): string {
     const normalized = method.toUpperCase();
     if (normalized.includes('YAPE') || normalized.includes('PLIN')) {
@@ -347,6 +466,52 @@ export class CashRegisterComponent implements OnInit {
       return 'bg-blue-50 text-blue-700 ring-blue-200';
     }
     return 'bg-emerald-50 text-emerald-700 ring-emerald-200';
+  }
+
+  private loadSaleDetail(saleId: string): void {
+    if (
+      this.saleDetailsCache().has(saleId) ||
+      this.loadingSaleDetailIds().has(saleId)
+    ) {
+      return;
+    }
+
+    this.loadingSaleDetailIds.update((current) => new Set(current).add(saleId));
+    this.saleDetailErrors.update((errors) => {
+      const next = new Map(errors);
+      next.delete(saleId);
+      return next;
+    });
+
+    this.saleService
+      .getOne(saleId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (detail) => {
+          this.saleDetailsCache.update((cache) => {
+            const next = new Map(cache);
+            next.set(saleId, detail);
+            return next;
+          });
+          this.loadingSaleDetailIds.update((current) => {
+            const next = new Set(current);
+            next.delete(saleId);
+            return next;
+          });
+        },
+        error: () => {
+          this.loadingSaleDetailIds.update((current) => {
+            const next = new Set(current);
+            next.delete(saleId);
+            return next;
+          });
+          this.saleDetailErrors.update((errors) => {
+            const next = new Map(errors);
+            next.set(saleId, 'No se pudo cargar el detalle de la venta.');
+            return next;
+          });
+        },
+      });
   }
 
   private filterList(section: ListSection): CashMovementItem[] {

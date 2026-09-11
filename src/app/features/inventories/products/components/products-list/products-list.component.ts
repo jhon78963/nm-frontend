@@ -27,9 +27,6 @@ import {
   TableDataColumn,
   TableDataEmptyState,
   TableDataPagination,
-  DtCellDirective,
-  DtExpandCellComponent,
-  DtRowDirective,
 } from '../../../../../shared/ui/table-data/table-data.component';
 import { TableActionButtonComponent } from '../../../../../shared/ui/table-action-button/table-action-button.component';
 import { TableActionsComponent } from '../../../../../shared/ui/table-actions/table-actions.component';
@@ -43,15 +40,21 @@ import {
 } from '../../../../../core/table-filters/table-filter-state.util';
 import { ProductService } from '../../data-access/product.service';
 import { ProductLookupService } from '../../data-access/product-lookup.service';
-import { Product, Gender } from '../../models/product.model';
+import { Product, Gender, ProductColor, ProductSize } from '../../models/product.model';
 
 const FILTER_STORAGE_KEY = TABLE_FILTER_KEYS.products;
 
 export type ProductImageFilter = 'all' | 'with' | 'without';
+export type ProductSortBy = 'createdAt' | 'name';
 
 interface ProductFilterState extends SearchPageFilterState {
   genderIds: string[];
   imageFilter: ProductImageFilter;
+  sortBy: ProductSortBy;
+}
+
+function isProductSortBy(value: unknown): value is ProductSortBy {
+  return value === 'createdAt' || value === 'name';
 }
 
 function isProductImageFilter(value: unknown): value is ProductImageFilter {
@@ -68,7 +71,10 @@ function isProductFilterState(value: unknown): value is ProductFilterState {
     return false;
   }
 
-  return state.imageFilter === undefined || isProductImageFilter(state.imageFilter);
+  return (
+    (state.imageFilter === undefined || isProductImageFilter(state.imageFilter)) &&
+    (state.sortBy === undefined || isProductSortBy(state.sortBy))
+  );
 }
 
 @Component({
@@ -80,9 +86,6 @@ function isProductFilterState(value: unknown): value is ProductFilterState {
     InputComponent,
     ConfirmDialogComponent,
     TableDataComponent,
-    DtCellDirective,
-    DtExpandCellComponent,
-    DtRowDirective,
     ExportButtonComponent,
     ExcelUploadComponent,
     TableActionButtonComponent,
@@ -107,10 +110,20 @@ export class ProductsListComponent implements OnInit {
 
   protected readonly deleteConfirmId = signal<string | null>(null);
   protected readonly deleting = signal(false);
+  protected readonly expandedProductIds = signal<Set<string>>(new Set());
 
   protected readonly genders = signal<Gender[]>([]);
   protected readonly selectedGenderIds = signal<string[]>([]);
   protected readonly imageFilter = signal<ProductImageFilter>('all');
+  protected readonly sortBy = signal<ProductSortBy>('createdAt');
+
+  protected readonly sortOptions: ReadonlyArray<{
+    id: ProductSortBy;
+    label: string;
+  }> = [
+    { id: 'createdAt', label: 'Más reciente' },
+    { id: 'name', label: 'Nombre (A-Z)' },
+  ];
 
   protected readonly imageFilterOptions: ReadonlyArray<{
     id: ProductImageFilter;
@@ -174,7 +187,8 @@ export class ProductsListComponent implements OnInit {
     () =>
       this.currentSearch().trim().length > 0 ||
       this.selectedGenderIds().length > 0 ||
-      this.imageFilter() !== 'all',
+      this.imageFilter() !== 'all' ||
+      this.sortBy() !== 'createdAt',
   );
 
   protected readonly tableEmptySearch = computed(() => {
@@ -195,6 +209,8 @@ export class ProductsListComponent implements OnInit {
     { key: 'stock', label: 'Stock', align: 'right', width: '112px', className: 'w-28' },
     { key: 'actions', label: 'Acciones', align: 'right', width: '320px', className: 'w-80' },
   ]);
+
+  protected readonly tableColspan = computed(() => this.tableColumns().length + 1);
 
   ngOnInit(): void {
     this.restoreFilters();
@@ -224,6 +240,7 @@ export class ProductsListComponent implements OnInit {
         search: this.currentSearch(),
         genderId: this.selectedGenderIds(),
         hasImages: this.resolveHasImagesParam(),
+        sortBy: this.sortBy(),
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -342,6 +359,7 @@ export class ProductsListComponent implements OnInit {
     this.currentSearch.set('');
     this.selectedGenderIds.set([]);
     this.imageFilter.set('all');
+    this.sortBy.set('createdAt');
     this.page.set(1);
     this.filterStorage.remove(FILTER_STORAGE_KEY);
     this.loadProducts();
@@ -379,6 +397,21 @@ export class ProductsListComponent implements OnInit {
 
   protected isImageFilterSelected(filter: ProductImageFilter): boolean {
     return this.imageFilter() === filter;
+  }
+
+  protected setSortBy(sort: ProductSortBy): void {
+    if (this.sortBy() === sort) {
+      return;
+    }
+
+    this.sortBy.set(sort);
+    this.page.set(1);
+    this.persistFilters();
+    this.loadProducts();
+  }
+
+  protected isSortSelected(sort: ProductSortBy): boolean {
+    return this.sortBy() === sort;
   }
 
   protected exportProducts(): void {
@@ -457,6 +490,59 @@ export class ProductsListComponent implements OnInit {
     return Math.max(0, Math.trunc(Number(product.stock) || 0));
   }
 
+  protected toggleProductDetail(productId: string): void {
+    this.expandedProductIds.update((current) => {
+      const next = new Set(current);
+      if (next.has(productId)) {
+        next.delete(productId);
+      } else {
+        next.add(productId);
+      }
+      return next;
+    });
+  }
+
+  protected isProductDetailExpanded(productId: string): boolean {
+    return this.expandedProductIds().has(productId);
+  }
+
+  protected formatMoney(value?: number | null): string {
+    if (value == null || !Number.isFinite(Number(value))) {
+      return '—';
+    }
+    return `S/ ${Number(value).toFixed(2)}`;
+  }
+
+  protected formatBarcode(value?: string | null): string {
+    const barcode = value?.trim();
+    return barcode ? barcode : '—';
+  }
+
+  protected formatColorSummary(colors?: ProductColor[]): string {
+    if (!colors?.length) {
+      return '—';
+    }
+
+    return colors
+      .map((color) => {
+        const stock = color.stock ?? 0;
+        return stock > 0 ? `${color.description} (${stock})` : color.description;
+      })
+      .join(', ');
+  }
+
+  protected getSizeStock(size: ProductSize): number {
+    if (size.colors?.length) {
+      return size.colors.reduce((sum, color) => sum + (color.stock ?? 0), 0);
+    }
+
+    return Math.max(0, Math.trunc(Number(size.stock) || 0));
+  }
+
+  protected trackSize(size: ProductSize): string {
+    return size.productSizeId ?? size.id;
+  }
+
   private restoreFilters(): void {
     const saved = this.filterStorage.load(FILTER_STORAGE_KEY, isProductFilterState);
     if (!saved) {
@@ -468,6 +554,7 @@ export class ProductsListComponent implements OnInit {
     this.currentSearch.set(saved.search);
     this.selectedGenderIds.set(saved.genderIds);
     this.imageFilter.set(saved.imageFilter ?? 'all');
+    this.sortBy.set(saved.sortBy ?? 'createdAt');
 
     if (saved.search) {
       this.filterForm.controls.search.setValue(saved.search, {
@@ -483,6 +570,7 @@ export class ProductsListComponent implements OnInit {
       search: this.currentSearch(),
       genderIds: this.selectedGenderIds(),
       imageFilter: this.imageFilter(),
+      sortBy: this.sortBy(),
     });
   }
 

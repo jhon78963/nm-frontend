@@ -24,6 +24,14 @@
   />
 }
 
+@if (editingSaleId()) {
+  <app-sale-form
+    [saleId]="editingSaleId()"
+    (saved)="onSaleSaved($event)"
+    (closed)="closeSaleForm()"
+  />
+}
+
 <div class="flex min-h-[calc(100dvh-8rem)] flex-col bg-slate-50">
   <!-- Header -->
   <header class="sticky top-0 z-20 border-b border-gray-200 bg-white/95 backdrop-blur-sm">
@@ -226,6 +234,7 @@
           >
             <ng-template #headerTemplate>
               <tr class="dt-thead-row">
+                <th class="dt-th w-10 px-2 text-center" scope="col" aria-label="Detalle"></th>
                 <th class="dt-th w-20" scope="col">Hora</th>
                 <th class="dt-th w-10 text-center" scope="col"><span class="sr-only">Tipo</span></th>
                 <th class="dt-th" scope="col">Descripción</th>
@@ -241,7 +250,7 @@
               @if (row.kind === 'section') {
                 <tr [class]="row.rowClass">
                   <td
-                    [attr.colspan]="isAdmin() ? 6 : 5"
+                    [attr.colspan]="tableColspan()"
                     class="px-4 py-2 text-xs font-bold uppercase tracking-wide"
                     [class]="row.labelClass"
                   >
@@ -250,12 +259,32 @@
                 </tr>
               } @else if (row.kind === 'empty') {
                 <tr>
-                  <td [attr.colspan]="isAdmin() ? 6 : 5" class="px-4 py-4 text-center text-xs italic text-gray-400">
+                  <td [attr.colspan]="tableColspan()" class="px-4 py-4 text-center text-xs italic text-gray-400">
                     {{ row.message }}
                   </td>
                 </tr>
               } @else {
                 <tr class="transition-colors hover:bg-gray-50/80">
+                  <td class="w-10 px-2 py-3 text-center align-middle">
+                    @if (row.movementKind === 'sales') {
+                      <button
+                        type="button"
+                        class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                        [attr.aria-expanded]="isSaleExpanded(row.item.id)"
+                        [attr.aria-label]="isSaleExpanded(row.item.id) ? 'Ocultar detalle de venta' : 'Ver detalle de venta'"
+                        (click)="toggleSaleExpand(row.item.id)">
+                        <svg
+                          class="h-4 w-4 transition-transform duration-200"
+                          [class.rotate-180]="isSaleExpanded(row.item.id)"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    }
+                  </td>
                   <td class="px-4 py-3 font-mono text-xs text-gray-400">{{ row.item.time }}</td>
                   <td class="px-4 py-3 text-center">
                     @if (row.movementKind === 'sales') {
@@ -298,6 +327,18 @@
                   @if (isAdmin()) {
                     <td class="px-4 py-3">
                       @if (row.movementKind === 'sales') {
+                        @if (canEditSales()) {
+                          <div class="flex items-center justify-center">
+                            <app-table-action-button
+                              label="Editar venta"
+                              tone="indigo"
+                              (clicked)="openSaleEdit(row.item.id)">
+                              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                              </svg>
+                            </app-table-action-button>
+                          </div>
+                        }
                       } @else if (row.movementKind === 'incomes') {
                         <div class="flex items-center justify-center gap-1">
                           <app-table-action-button
@@ -344,6 +385,52 @@
                     </td>
                   }
                 </tr>
+                @if (row.movementKind === 'sales' && isSaleExpanded(row.item.id)) {
+                  <tr class="bg-indigo-50/40">
+                    <td [attr.colspan]="tableColspan()" class="px-4 py-3 md:px-6">
+                      @if (isSaleDetailLoading(row.item.id)) {
+                        <p class="text-xs text-gray-500">Cargando detalle de la venta...</p>
+                      } @else if (getSaleDetailError(row.item.id); as error) {
+                        <p class="text-xs text-red-600">{{ error }}</p>
+                      } @else if (getSaleDetail(row.item.id); as detail) {
+                        <div class="space-y-3">
+                          <div class="overflow-x-auto rounded-lg border border-indigo-100 bg-white/80">
+                            <table class="w-full min-w-[520px] text-xs text-gray-600">
+                              <thead>
+                                <tr class="border-b border-gray-200 text-[11px] uppercase tracking-wide text-gray-500">
+                                  <th class="px-3 py-2 text-left font-semibold">Cant.</th>
+                                  <th class="px-3 py-2 text-left font-semibold">Descripción</th>
+                                  <th class="px-3 py-2 text-right font-semibold">Precio</th>
+                                  <th class="px-3 py-2 text-right font-semibold">Subtotal</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                @for (item of detail.items; track trackSaleItem(item)) {
+                                  <tr class="border-t border-gray-100">
+                                    <td class="px-3 py-2 tabular-nums">{{ item.quantity }}</td>
+                                    <td class="px-3 py-2 text-gray-800">{{ item.descriptionFull || item.productName }}</td>
+                                    <td class="px-3 py-2 text-right tabular-nums">{{ formatMoney(item.unitPrice) }}</td>
+                                    <td class="px-3 py-2 text-right tabular-nums">{{ formatMoney(item.subtotal) }}</td>
+                                  </tr>
+                                }
+                              </tbody>
+                              <tfoot>
+                                <tr class="border-t border-gray-200">
+                                  <td colspan="3" class="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                                    Total venta
+                                  </td>
+                                  <td class="px-3 py-2 text-right text-sm font-bold tabular-nums text-indigo-700">
+                                    {{ formatMoney(detail.total) }}
+                                  </td>
+                                </tr>
+                              </tfoot>
+                            </table>
+                          </div>
+                        </div>
+                      }
+                    </td>
+                  </tr>
+                }
               }
             </ng-template>
           </app-table-data>

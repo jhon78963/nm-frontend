@@ -33,7 +33,7 @@
         class="block w-full"
         label="Buscar"
         formControlName="search"
-        placeholder="Buscar por nombre, código completo o últimos 4-5 dígitos"
+        placeholder="Buscar por nombre, UUID, código o últimos dígitos"
       />
 
       <div class="flex flex-col gap-2">
@@ -116,6 +116,33 @@
     }
 
     <div class="mt-4">
+      <span class="mb-2 block text-sm font-medium text-gray-700">Ordenar</span>
+      <div
+        class="flex flex-wrap items-center gap-1 rounded-xl bg-gray-50 p-1 ring-1 ring-gray-200/80"
+        role="group"
+        aria-label="Ordenar productos">
+        @for (option of sortOptions; track option.id) {
+          <div
+            class="[&_.btn-base]:rounded-lg [&_.btn-base]:px-3.5 [&_.btn-base]:py-2 [&_.btn-base]:text-sm [&_.btn-base]:font-medium [&_.btn-base]:whitespace-nowrap [&_.btn-base]:shadow-none [&_.btn-base]:ring-1 [&_.btn-base]:ring-inset"
+            [ngClass]="
+              isSortSelected(option.id)
+                ? '[&_.btn-base]:bg-white [&_.btn-base]:text-sky-700 [&_.btn-base]:ring-sky-200 hover:[&_.btn-base]:bg-white'
+                : '[&_.btn-base]:bg-transparent [&_.btn-base]:text-gray-600 [&_.btn-base]:ring-transparent hover:[&_.btn-base]:bg-white/80 hover:[&_.btn-base]:text-gray-900'
+            "
+          >
+            <app-button
+              type="button"
+              variant="secondary"
+              [attr.aria-pressed]="isSortSelected(option.id)"
+              (clicked)="setSortBy(option.id)">
+              {{ option.label }}
+            </app-button>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="mt-4">
       <span class="mb-2 block text-sm font-medium text-gray-700">Imágenes</span>
       <div
         class="flex flex-wrap items-center gap-1 rounded-xl bg-gray-50 p-1 ring-1 ring-gray-200/80"
@@ -152,11 +179,30 @@
     [pagination]="paginationData()"
     [theme]="'sky'"
     [minWidth]="'800px'"
+    [mobileCompact]="false"
     [ariaLabel]="'Lista de productos'"
     (emptyAction)="openCreate()"
     (clearSearch)="clearFilters()"
     (pageChange)="goToPage($event)"
   >
+    <ng-template #headerTemplate>
+      <tr class="dt-thead-row">
+        <th scope="col" class="dt-th w-10 px-2 text-center" aria-label="Detalle"></th>
+        @for (col of tableColumns(); track col.key) {
+          <th
+            scope="col"
+            class="dt-th px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500"
+            [class.text-left]="col.align === 'left'"
+            [class.text-right]="col.align === 'right'"
+            [class.text-center]="col.align === 'center'"
+            [style.width]="col.width"
+            [class]="col.className">
+            {{ col.label }}
+          </th>
+        }
+      </tr>
+    </ng-template>
+
     <ng-template #emptyIcon>
       <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -164,9 +210,26 @@
     </ng-template>
 
     <ng-template #rowTemplate let-product let-index="index">
-      <tr appDtRow [dtRowIndex]="+index" class="group transition-colors hover:bg-gray-50">
-        <td [appDtExpandCell]="+index"></td>
-        <td dtCell="name" class="px-6 py-4">
+      <tr class="group transition-colors hover:bg-gray-50">
+        <td class="w-10 px-2 py-4 text-center align-middle">
+          <button
+            type="button"
+            class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+            [attr.aria-expanded]="isProductDetailExpanded(product.id)"
+            [attr.aria-label]="isProductDetailExpanded(product.id) ? 'Ocultar detalle de tallas' : 'Ver detalle de tallas'"
+            (click)="toggleProductDetail(product.id)">
+            <svg
+              class="h-4 w-4 transition-transform duration-200"
+              [class.rotate-180]="isProductDetailExpanded(product.id)"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </td>
+        <td class="px-6 py-4">
           <div class="flex items-center gap-3">
             <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700 text-sm font-semibold ring-1 ring-sky-200">
               {{ getProductInitials(product) }}
@@ -179,12 +242,12 @@
             </div>
           </div>
         </td>
-        <td dtCell="gender" class="px-6 py-4 whitespace-nowrap">
+        <td class="px-6 py-4 whitespace-nowrap">
           <span class="inline-flex items-center rounded-full bg-sky-50 px-2.5 py-0.5 text-xs font-medium text-sky-700 ring-1 ring-inset ring-sky-600/20">
             {{ product.gender }}
           </span>
         </td>
-        <td dtCell="stock" class="px-6 py-4 whitespace-nowrap text-right">
+        <td class="px-6 py-4 whitespace-nowrap text-right">
           @if (getProductStock(product) === 0) {
             <span class="inline-flex min-w-[2.5rem] items-center justify-center rounded-full bg-gray-100 px-2.5 py-0.5 text-sm font-semibold tabular-nums text-gray-600 ring-1 ring-inset ring-gray-200">
               0
@@ -195,7 +258,7 @@
             </span>
           }
         </td>
-        <td dtCell="actions" class="px-6 py-4 whitespace-nowrap text-right text-sm">
+        <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
           <app-table-actions>
             <app-table-action-button
               label="Actualizar inventario"
@@ -228,6 +291,44 @@
           </app-table-actions>
         </td>
       </tr>
+      @if (isProductDetailExpanded(product.id)) {
+        <tr class="bg-sky-50/50">
+          <td [attr.colspan]="tableColspan()" class="px-4 py-3 md:px-6">
+            @if (product.sizes?.length) {
+              <div class="overflow-x-auto rounded-lg border border-sky-100 bg-white/80">
+                <table class="w-full min-w-[720px] text-xs text-gray-600">
+                  <thead>
+                    <tr class="border-b border-gray-200 text-[11px] uppercase tracking-wide text-gray-500">
+                      <th class="px-3 py-2 text-left font-semibold">Talla</th>
+                      <th class="px-3 py-2 text-left font-semibold">Código de barras</th>
+                      <th class="px-3 py-2 text-right font-semibold">Stock</th>
+                      <th class="px-3 py-2 text-right font-semibold">Precio compra</th>
+                      <th class="px-3 py-2 text-right font-semibold">Precio venta</th>
+                      <th class="px-3 py-2 text-right font-semibold">Precio mínimo</th>
+                      <th class="px-3 py-2 text-left font-semibold">Colores</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (size of product.sizes; track trackSize(size)) {
+                      <tr class="border-t border-gray-100">
+                        <td class="px-3 py-2 font-medium text-gray-800">{{ size.description }}</td>
+                        <td class="px-3 py-2 font-mono text-[11px] text-gray-500">{{ formatBarcode(size.barcode) }}</td>
+                        <td class="px-3 py-2 text-right tabular-nums">{{ getSizeStock(size) }}</td>
+                        <td class="px-3 py-2 text-right tabular-nums">{{ formatMoney(size.purchasePrice) }}</td>
+                        <td class="px-3 py-2 text-right tabular-nums">{{ formatMoney(size.salePrice ?? size.price) }}</td>
+                        <td class="px-3 py-2 text-right tabular-nums">{{ formatMoney(size.minSalePrice) }}</td>
+                        <td class="px-3 py-2 text-gray-500">{{ formatColorSummary(size.colors) }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <p class="text-xs text-gray-500">Sin tallas registradas.</p>
+            }
+          </td>
+        </tr>
+      }
     </ng-template>
   </app-table-data>
 </div>

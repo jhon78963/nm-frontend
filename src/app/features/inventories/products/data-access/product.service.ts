@@ -49,6 +49,7 @@ export class ProductService {
     search?: string;
     genderId?: string[];
     hasImages?: boolean;
+    sortBy?: 'name' | 'createdAt';
   }): Observable<ProductListResponse> {
     let url = `${this.base}?perPage=${params.limit}&page=${params.page}`;
 
@@ -64,6 +65,10 @@ export class ProductService {
       url += '&hasImages=true';
     } else if (params.hasImages === false) {
       url += '&hasImages=false';
+    }
+
+    if (params.sortBy) {
+      url += `&sortBy=${params.sortBy}`;
     }
 
     return this.http.get<unknown>(url).pipe(map(adaptProductList));
