@@ -3,9 +3,11 @@ import {
   Component,
   computed,
   DestroyRef,
+  ElementRef,
   inject,
   OnInit,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../../../auth/data-access/auth.service';
@@ -107,6 +109,10 @@ export class CashRegisterComponent implements OnInit {
 
   protected readonly maxViewDateIso = computed(() =>
     this.formatIsoDate(new Date()),
+  );
+
+  private readonly datePickerInput = viewChild<ElementRef<HTMLInputElement>>(
+    'datePickerInput',
   );
 
   protected readonly filteredSales = computed(() =>
@@ -240,6 +246,23 @@ export class CashRegisterComponent implements OnInit {
   protected goToToday(): void {
     this.currentDate.set(new Date());
     this.loadReport();
+  }
+
+  protected openDatePicker(): void {
+    const input = this.datePickerInput()?.nativeElement;
+    if (!input) return;
+
+    if (typeof input.showPicker === 'function') {
+      try {
+        input.showPicker();
+        return;
+      } catch {
+        // Safari puede lanzar si no hay gesto de usuario válido.
+      }
+    }
+
+    input.focus();
+    input.click();
   }
 
   protected onViewDatePicked(event: Event): void {

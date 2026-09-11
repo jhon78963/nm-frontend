@@ -58,38 +58,45 @@
           }
 
           @if (isAdmin()) {
-            <label
-              class="group relative flex min-w-0 flex-1 cursor-pointer flex-col items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 transition-colors hover:border-indigo-200 hover:bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 sm:min-w-[240px] sm:flex-none"
-            >
-              <span class="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-                Visualizando
-              </span>
-              <span class="flex max-w-full items-center gap-1.5 truncate text-sm font-semibold text-gray-900">
-                <span class="truncate">{{ formattedViewDate() }}</span>
-                <svg
-                  class="h-4 w-4 shrink-0 text-gray-400 transition-colors group-hover:text-indigo-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  aria-hidden="true"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-              </span>
+            <div class="relative min-w-0 flex-1 sm:min-w-[240px] sm:flex-none">
+              <button
+                type="button"
+                class="group flex w-full min-w-0 flex-col items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 transition-colors hover:border-indigo-200 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-100"
+                aria-label="Seleccionar fecha a visualizar"
+                (click)="openDatePicker()"
+              >
+                <span class="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                  Visualizando
+                </span>
+                <span class="flex max-w-full items-center gap-1.5 truncate text-sm font-semibold text-gray-900">
+                  <span class="truncate">{{ formattedViewDate() }}</span>
+                  <svg
+                    class="h-4 w-4 shrink-0 text-gray-400 transition-colors group-hover:text-indigo-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    aria-hidden="true"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </span>
+              </button>
               <input
+                #datePickerInput
                 type="date"
-                class="absolute inset-0 cursor-pointer opacity-0"
+                class="pointer-events-none absolute left-0 top-0 h-px w-px opacity-0"
+                tabindex="-1"
                 [value]="viewDateIso()"
                 [max]="maxViewDateIso()"
-                aria-label="Seleccionar fecha a visualizar"
+                aria-hidden="true"
                 (change)="onViewDatePicked($event)"
               />
-            </label>
+            </div>
           } @else {
             <div class="flex min-w-0 flex-1 flex-col items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 sm:min-w-[240px] sm:flex-none">
               <span class="text-[10px] font-semibold uppercase tracking-wider text-gray-400">

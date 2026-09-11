@@ -1,6 +1,11 @@
 import { ApplicationConfig, ErrorHandler, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideRouter, withPreloading, PreloadAllModules } from '@angular/router';
+import {
+  provideRouter,
+  withPreloading,
+  PreloadAllModules,
+  withRouterConfig,
+} from '@angular/router';
 import * as Sentry from '@sentry/angular';
 
 import { routes } from './app.routes';
@@ -22,6 +27,10 @@ export const appConfig: ApplicationConfig = {
         tokenInterceptor, // Más cercano al HTTP: captura 401 y refresca antes que errorInterceptor
       ]),
     ),
-    provideRouter(routes, withPreloading(PreloadAllModules)),
+    provideRouter(
+      routes,
+      withPreloading(PreloadAllModules),
+      withRouterConfig({ onSameUrlNavigation: 'reload' }),
+    ),
   ],
 };
