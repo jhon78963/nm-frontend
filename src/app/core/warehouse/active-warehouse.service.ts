@@ -33,9 +33,19 @@ export class ActiveWarehouseService {
     }
   }
 
+  private readonly changeVersionState = signal(0);
+
+  /** Incrementa cuando el almacén activo cambia (para recargar vistas dependientes). */
+  readonly warehouseChangeVersion = this.changeVersionState.asReadonly();
+
   setActiveWarehouseId(id: string | null): void {
+    const previous = this.activeWarehouseId();
     this.activeWarehouseId.set(id);
     this.persistToStorage(id);
+
+    if (previous !== id) {
+      this.changeVersionState.update((value) => value + 1);
+    }
   }
 
   clearWarehouse(): void {
