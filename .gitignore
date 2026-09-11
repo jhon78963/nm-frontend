@@ -5,6 +5,9 @@
 /tmp
 /out-tsc
 /bazel-out
+*.tsbuildinfo
+# Accidental `tsc` emit beside sources (Angular builds via ng → dist/)
+/src/**/*.js
 
 # Node
 /node_modules
