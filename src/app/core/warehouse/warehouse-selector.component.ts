@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -34,13 +34,12 @@ import { ActiveWarehouseService } from './active-warehouse.service';
     }
   `,
 })
-export class WarehouseSelectorComponent implements OnInit {
+export class WarehouseSelectorComponent {
   private readonly authService = inject(AuthService);
   private readonly activeWarehouseService = inject(ActiveWarehouseService);
   private readonly warehouseLookupService = inject(ActiveWarehouseLookupService);
   private readonly toastService = inject(ToastService);
   private readonly router = inject(Router);
-  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly warehouses = signal<SelectableWarehouse[]>([]);
   protected readonly loading = signal(false);
@@ -57,7 +56,7 @@ export class WarehouseSelectorComponent implements OnInit {
     return this.loading() || this.warehouses().length > 1;
   });
 
-  ngOnInit(): void {
+  constructor() {
     toObservable(this.authService.currentUser)
       .pipe(
         filter((user) => isAdminOrSuperAdmin(user)),
@@ -67,7 +66,7 @@ export class WarehouseSelectorComponent implements OnInit {
             finalize(() => this.loading.set(false)),
           ),
         ),
-        takeUntilDestroyed(this.destroyRef),
+        takeUntilDestroyed(),
       )
       .subscribe({
         next: (items) => {
