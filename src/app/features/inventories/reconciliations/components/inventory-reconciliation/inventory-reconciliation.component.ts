@@ -27,6 +27,7 @@ import { ConfirmDialogComponent } from '../../../../../shared/ui/confirm-dialog/
 import { InputComponent } from '../../../../../shared/ui/input/input.component';
 import { MoneyInputComponent } from '../../../../../shared/ui/money-input/money-input.component';
 import { SelectComponent, SelectOption } from '../../../../../shared/ui/select/select.component';
+import { AutocompleteApiComponent } from '../../../../../shared/ui/autocomplete-api/autocomplete-api.component';
 import { TableActionButtonComponent } from '../../../../../shared/ui/table-action-button/table-action-button.component';
 import {
   TableDataColumn,
@@ -95,6 +96,7 @@ type ReconciliationTableRow =
     InputComponent,
     MoneyInputComponent,
     SelectComponent,
+    AutocompleteApiComponent,
     TableActionButtonComponent,
     TableDataComponent,
   ],
@@ -131,6 +133,7 @@ export class InventoryReconciliationComponent implements OnInit, AfterViewInit {
 
   protected readonly replaceDialogVisible = signal(false);
   protected readonly replaceTargetColorId = signal<string | null>(null);
+  protected readonly replaceColorSearch = signal('');
   protected readonly catalogColors = signal<CatalogColorOption[]>([]);
   protected readonly catalogColorsLoading = signal(false);
   protected readonly replacingVariantColor = signal(false);
@@ -237,12 +240,20 @@ export class InventoryReconciliationComponent implements OnInit, AfterViewInit {
     () => this.posSalesSummary()?.sinceLabel ?? '10/07/2026',
   );
 
-  protected readonly replaceColorOptions = computed<SelectOption<string>[]>(() => {
+  protected readonly filteredReplaceColorsForAutocomplete = computed(() => {
     const fromId = this.replaceCtx()?.fromColorId;
-    return this.catalogColors()
-      .filter((color) => color.id !== fromId)
-      .map((color) => ({ label: color.description, value: color.id }));
+    const query = this.replaceColorSearch().trim().toLowerCase();
+    let colors = this.catalogColors().filter((color) => color.id !== fromId);
+    if (query) {
+      colors = colors.filter((color) =>
+        color.description.toLowerCase().includes(query),
+      );
+    }
+    return colors;
   });
+
+  protected readonly replaceColorDisplayFn = (item: unknown): string =>
+    String((item as CatalogColorOption).description ?? '');
 
   protected readonly addColorOptions = computed<SelectOption<string>[]>(() => {
     const ctx = this.addColorCtx();
@@ -980,6 +991,7 @@ export class InventoryReconciliationComponent implements OnInit, AfterViewInit {
       stock: Math.max(0, Math.trunc(Number(color.stock) || 0)),
     });
     this.replaceTargetColorId.set(null);
+    this.replaceColorSearch.set('');
     this.replaceDialogVisible.set(true);
     this.ensureCatalogColorsLoaded();
   }
@@ -988,6 +1000,7 @@ export class InventoryReconciliationComponent implements OnInit, AfterViewInit {
     this.replaceDialogVisible.set(false);
     this.replaceCtx.set(null);
     this.replaceTargetColorId.set(null);
+    this.replaceColorSearch.set('');
   }
 
   protected confirmReplaceVariantColor(): void {
@@ -1062,8 +1075,20 @@ export class InventoryReconciliationComponent implements OnInit, AfterViewInit {
     this.closeReplaceColorDialog();
   }
 
-  protected onReplaceColorSelected(value: string | null): void {
-    this.replaceTargetColorId.set(value);
+  protected onReplaceColorAutocompleteSearch(query: string): void {
+    this.replaceColorSearch.set(query);
+    this.replaceTargetColorId.set(null);
+  }
+
+  protected onReplaceColorAutocompleteSelected(item: unknown): void {
+    const color = item as CatalogColorOption;
+    this.replaceTargetColorId.set(color.id);
+    this.replaceColorSearch.set(color.description);
+  }
+
+  protected onReplaceColorAutocompleteCleared(): void {
+    this.replaceColorSearch.set('');
+    this.replaceTargetColorId.set(null);
   }
 
   protected onAddColorSelected(value: string | null): void {

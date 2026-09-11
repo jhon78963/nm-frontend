@@ -486,12 +486,17 @@
       @if (catalogColorsLoading()) {
         <p class="mt-4 text-sm text-gray-500">Cargando colores…</p>
       } @else {
-        <app-select
+        <app-autocomplete-api
+          class="mt-4 block"
           label="Color destino"
-          placeholder="Buscar color destino…"
-          [options]="replaceColorOptions()"
-          [ngModel]="replaceTargetColorId()"
-          (ngModelChange)="onReplaceColorSelected($event)"
+          placeholder="Buscar o seleccionar color…"
+          [minChars]="0"
+          [completeOnFocus]="true"
+          [options]="filteredReplaceColorsForAutocomplete()"
+          [displayFn]="replaceColorDisplayFn"
+          (search)="onReplaceColorAutocompleteSearch($event)"
+          (selected)="onReplaceColorAutocompleteSelected($event)"
+          (cleared)="onReplaceColorAutocompleteCleared()"
         />
       }
       <div class="mt-5 flex justify-end gap-3">
