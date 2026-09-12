@@ -155,6 +155,7 @@ export class InventoryReconciliationComponent implements OnInit, AfterViewInit {
   protected readonly addColorCtx = signal<{ productSizeId: string; sizeLabel: string } | null>(null);
   protected readonly addColorMode = signal<'catalog' | 'new'>('catalog');
   protected readonly addColorTargetId = signal<string | null>(null);
+  protected readonly addColorSearch = signal('');
   protected readonly addColorNewName = signal('');
   protected readonly addColorInitialStock = signal(0);
   protected readonly addingColor = signal(false);
@@ -255,15 +256,20 @@ export class InventoryReconciliationComponent implements OnInit, AfterViewInit {
   protected readonly replaceColorDisplayFn = (item: unknown): string =>
     String((item as CatalogColorOption).description ?? '');
 
-  protected readonly addColorOptions = computed<SelectOption<string>[]>(() => {
+  protected readonly filteredAddColorsForAutocomplete = computed(() => {
     const ctx = this.addColorCtx();
     const size = this.draft()?.sizes.find((item) => item.id === ctx?.productSizeId);
     const used = new Set(
       (size ? getActiveColors(size) : []).map((color) => color.colorId),
     );
-    return this.catalogColors()
-      .filter((color) => !used.has(color.id))
-      .map((color) => ({ label: color.description, value: color.id }));
+    const query = this.addColorSearch().trim().toLowerCase();
+    let colors = this.catalogColors().filter((color) => !used.has(color.id));
+    if (query) {
+      colors = colors.filter((color) =>
+        color.description.toLowerCase().includes(query),
+      );
+    }
+    return colors;
   });
 
   protected readonly confirmDialogState = computed(() => {
@@ -873,6 +879,7 @@ export class InventoryReconciliationComponent implements OnInit, AfterViewInit {
     });
     this.addColorMode.set('catalog');
     this.addColorTargetId.set(null);
+    this.addColorSearch.set('');
     this.addColorNewName.set('');
     this.addColorInitialStock.set(0);
     this.addColorDialogVisible.set(true);
@@ -883,11 +890,16 @@ export class InventoryReconciliationComponent implements OnInit, AfterViewInit {
     this.addColorDialogVisible.set(false);
     this.addColorCtx.set(null);
     this.addColorTargetId.set(null);
+    this.addColorSearch.set('');
     this.addColorNewName.set('');
   }
 
   protected setAddColorMode(mode: 'catalog' | 'new'): void {
     this.addColorMode.set(mode);
+    if (mode === 'catalog') {
+      this.addColorTargetId.set(null);
+      this.addColorSearch.set('');
+    }
   }
 
   protected onAddColorNewNameChange(value: string): void {
@@ -1091,8 +1103,20 @@ export class InventoryReconciliationComponent implements OnInit, AfterViewInit {
     this.replaceTargetColorId.set(null);
   }
 
-  protected onAddColorSelected(value: string | null): void {
-    this.addColorTargetId.set(value);
+  protected onAddColorAutocompleteSearch(query: string): void {
+    this.addColorSearch.set(query);
+    this.addColorTargetId.set(null);
+  }
+
+  protected onAddColorAutocompleteSelected(item: unknown): void {
+    const color = item as CatalogColorOption;
+    this.addColorTargetId.set(color.id);
+    this.addColorSearch.set(color.description);
+  }
+
+  protected onAddColorAutocompleteCleared(): void {
+    this.addColorSearch.set('');
+    this.addColorTargetId.set(null);
   }
 
   private loadLookups(): void {
